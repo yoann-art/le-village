@@ -25,20 +25,30 @@ sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.bias = -0.0008;
 scene.add(sun, sun.target);
 
-/* Distance de la caméra, recalculée quand l'écran change de taille :
-   on voit environ 8 P de large autour du personnage. */
-export let D = 24;
+/* Distance de la caméra au personnage */
+export let D = 0;
+let tanH = .17;
 function resize(){
   const w = app.clientWidth, h = app.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  const tanH = Math.tan(camera.fov * Math.PI / 360) * camera.aspect;
-  D = Math.min(34, Math.max(14, 8 / (2 * tanH)));
   camera.updateProjectionMatrix();
+  tanH = Math.tan(camera.fov * Math.PI / 360) * camera.aspect;
+}
+window.addEventListener("resize", resize);
+resize();
+/* Distance pour voir environ `width` P de large autour du personnage
+   (sur un écran en largeur, on garde un minimum pour ne pas voir de trop près) */
+export const distanceFor = width => Math.min(34, Math.max(width * 1.75, width / (2 * tanH)));
+/* Demi-largeur vue autour du personnage, en P */
+export const halfViewWidth = () => D * tanH;
+/* Place la caméra à la distance d : le brouillard et la zone des ombres suivent */
+export function setDistance(d){
+  if(Math.abs(d - D) < .01) return;
+  D = d;
   scene.fog.near = D + 12; scene.fog.far = D + 48;
   const sb = Math.min(20, D * .75), sc = sun.shadow.camera;
   sc.left = -sb; sc.right = sb; sc.top = sb; sc.bottom = -sb; sc.near = 1; sc.far = 70;
   sc.updateProjectionMatrix();
 }
-window.addEventListener("resize", resize);
-resize();
+setDistance(distanceFor(8));

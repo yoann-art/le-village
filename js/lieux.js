@@ -6,7 +6,7 @@ import { $ } from "./outils.js";
 import { B } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { sizeOf, doorTile } from "./regles.js";
-import { scene } from "./monde/scene.js";
+import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable } from "./monde/personnage.js";
@@ -86,12 +86,13 @@ export function checkDoors(pushing){
    pour reprendre dehors si le jeu est rouvert */
 export function islandPos(){ return inside ? outsideSpot(inside.b) : {x: player.position.x, z: player.position.z}; }
 
-/* Point que regarde la caméra : dedans, elle suit le personnage sans sortir de la pièce */
+/* Point que regarde la caméra : dedans, elle suit le personnage sans trop sortir de la pièce
+   (si la pièce tient dans l'écran, elle reste au milieu) */
 const target = new THREE.Vector3();
 export function cameraTarget(){
   if(!inside) return player.position;
   const {w, d} = inside.room, p = player.position;
-  const mx = Math.max(0, w/2 - 3.5), mz = Math.max(0, d/2 - 3);
+  const mx = Math.max(0, w/2 + .3 - halfViewWidth()), mz = Math.max(0, d/2 - 1.5);
   return target.set(Math.max(-mx, Math.min(mx, p.x)), 0, Math.max(-mz, Math.min(mz, p.z)));
 }
 /* Vrai une seule fois juste après un changement de lieu */

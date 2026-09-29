@@ -7,10 +7,11 @@ import "./miseajour.js";
 import "./verification.js";
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
-import { renderer, camera, sun, D } from "./monde/scene.js";
+import { renderer, camera, sun, D, distanceFor, setDistance } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
 import { player, updatePlayer } from "./monde/personnage.js";
+import { view } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail } from "./construire.js";
@@ -39,6 +40,8 @@ wrap.addEventListener("click", e => {
 });
 
 /* ================= Boucle de jeu ================= */
+/* Largeur vue autour du personnage, en P, avant zoom : 8 dehors, 6 dedans (plus près) */
+const VIEW_OUT = 8, VIEW_IN = 6;
 let lastSave = 0, dirty = false;
 const OFF = new THREE.Vector3(0, .78, .63).normalize(), camT = new THREE.Vector3();
 camT.copy(player.position);
@@ -50,6 +53,7 @@ function tick(now){
     const pushing = wrap.hidden && !isBusy() && updatePlayer(dt);
     if(pushing) dirty = true;
     checkDoors(pushing);
+    setDistance(distanceFor(isInside() ? VIEW_IN : VIEW_OUT) * view.zoom);
     const target = cameraTarget();
     if(takeJump()) camT.copy(target);
     else camT.lerp(target, 1 - Math.pow(.0005, dt));
