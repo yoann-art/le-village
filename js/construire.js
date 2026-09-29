@@ -4,7 +4,7 @@
 import { $ } from "./outils.js";
 import { RES, B, ORDER } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sizeOf, doorTile, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
+import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
 import { scene } from "./monde/scene.js";
 import { H, idx, inb, map } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh } from "./monde/batiments.js";
@@ -129,12 +129,14 @@ function openDetail(b){
   let up = `<p class="muted" style="margin-top:12px">Niveau maximum atteint.</p>`;
   if(b.lvl < max){
     const c = upCost(b.type, b.lvl);
-    up = `<div class="upbox"><div><p>Passer au niveau ${b.lvl + 1}</p><div>${costHTML(c)}</div></div>
+    const next = roomSide(b.type, b.lvl + 1);
+    up = `<div class="upbox"><div><p>Passer au niveau ${b.lvl + 1} : pièce de ${next} × ${next} P</p><div>${costHTML(c)}</div></div>
       <button class="btn primary" data-up ${canAfford(c) ? "" : "disabled"}>Améliorer</button></div>`;
   }
   openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p style="margin:4px 0">Niveau ${b.lvl} sur ${max}, ${d.stars * b.lvl} ★ pour ton village.</p>
-    <p class="muted" style="margin:0">${effect}</p>${up}`);
+    <p class="muted" style="margin:0">${effect}</p>
+    <p class="muted" style="margin:0">Intérieur : pièce de ${roomSide(b.type, b.lvl)} × ${roomSide(b.type, b.lvl)} P.</p>${up}`);
 }
 /* Bouton « Améliorer » de la fiche */
 export function upgradeDetail(){
