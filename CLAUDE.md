@@ -8,9 +8,24 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 
 ## Les documents de référence
 
-- `bible.pdf` : le plan de production complet, exporté depuis le document de suivi. La partie « Phase 0 » est la bible du jeu, validée par Yo : toutes les règles du monde y sont. En cas de doute, la bible fait foi. Ne jamais contredire une décision de la bible sans en parler d'abord à Yo.
-- `prototype/index.html` : le prototype actuel, en three.js r128, dans un seul fichier. Il contient l'île en 3D, le joystick, le placement libre de 7 bâtiments à 3 niveaux et 3 mini-jeux (Bûcheron, Carrière, Runes).
+- `bible.pdf` : le plan de production complet, exporté depuis le document de suivi. La partie « Phase 0 » est la bible du jeu, validée par Yo : toutes les règles du monde y sont. En cas de doute, la bible fait foi. Ne jamais contredire une décision de la bible sans en parler d'abord à Yo. Elle reste sur le PC : le dépôt GitHub est public, les PDF n'y sont pas envoyés.
+- Le jeu : `index.html` à la racine, `css/style.css` et le code découpé dans `js/` (voir « Organisation du code »). Il contient l'île en 3D, le joystick, le placement de 7 bâtiments à 3 niveaux et 3 mini-jeux (Bûcheron, Carrière, Runes).
+- `prototype/index.html` : l'ancien prototype en un seul fichier, gardé pour comparer jusqu'à ce que Yo valide le découpage.
 - `essais/scierie-essai.html` : l'essai validé de la Scierie, construite en code à partir de formes simples. C'est la référence de style pour tout le décor : formes arrondies, palette de la bible, ombrage toon commun à tous les modèles.
+
+## Organisation du code
+
+- three.js r128, chargé depuis cdnjs comme variable globale `THREE`. Pas d'outil de compilation : modules JavaScript natifs (`import`/`export`), lus tels quels par le navigateur.
+- Conséquence : le jeu ne s'ouvre pas par double-clic sur `index.html`, il faut un serveur. En local : configuration « jeu » de `.claude/launch.json` (http://localhost:8000).
+- `js/main.js` relie tout et fait tourner la boucle. L'ordre de ses `import` compte : `verification.js` d'abord, puis le décor dans l'ordre où il est posé.
+- `js/donnees.js` : les chiffres réglables (ressources, bâtiments, mini-jeux). `js/regles.js` : coûts, niveaux, bonus. `js/sauvegarde.js` : partie gardée dans le navigateur (clé `le-village-v2-ile`).
+- `js/monde/` : la 3D. `formes.js` est la boîte à outils commune (matières, formes) : c'est là que viendra l'ombrage toon de la Scierie pour tous les modèles.
+- `js/minijeux/` : un fichier par mini-jeu, plus `minijeux.js` (menu, écran, récompense).
+
+## Tester sur téléphone
+
+- En ligne : https://yoann-art.github.io/le-village/ (GitHub Pages, dépôt public `yoann-art/le-village`, branche `main`, dossier racine). Mise à jour environ une minute après chaque envoi.
+- L'envoi sur GitHub (`git push`) est lancé par Yo lui-même : lui donner la commande à exécuter.
 
 ## Où on en est
 
@@ -20,7 +35,7 @@ Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 
 
 - Parler à Yo en français, simplement, sans jargon. À la fin de chaque séance, dire ce qui a changé et comment le tester.
 - Avant d'écrire le code d'une étape, proposer un découpage et attendre l'accord de Yo.
-- Première tâche : découper le prototype en plusieurs fichiers lisibles, sans rien casser. La technologie web actuelle (three.js) reste en place ; le choix entre le web et Godot se fera à l'étape 2.6.
+- Première tâche : découper le prototype en plusieurs fichiers lisibles, sans rien casser (fait le 29 septembre 2026, en attente de la validation de Yo sur téléphone). La technologie web actuelle (three.js) reste en place ; le choix entre le web et Godot se fera à l'étape 2.6.
 - Utiliser git : un commit clair à chaque avancée qui fonctionne, pour pouvoir revenir en arrière.
 - Le jeu doit tourner dans le navigateur d'un téléphone Android modeste. Proposer à Yo la façon la plus simple de l'ouvrir sur son téléphone, et la lui expliquer pas à pas.
 - En phase 1, pas de modèles finaux : des formes simples suffisent.
