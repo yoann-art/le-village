@@ -10,7 +10,6 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 
 - `bible.pdf` : le plan de production complet, exporté depuis le document de suivi. La partie « Phase 0 » est la bible du jeu, validée par Yo : toutes les règles du monde y sont. En cas de doute, la bible fait foi. Ne jamais contredire une décision de la bible sans en parler d'abord à Yo. Elle reste sur le PC : le dépôt GitHub est public, les PDF n'y sont pas envoyés.
 - Le jeu : `index.html` à la racine, `css/style.css` et le code découpé dans `js/` (voir « Organisation du code »). Il contient l'île en 3D, le joystick, le placement de 7 bâtiments à 3 niveaux et 3 mini-jeux (Bûcheron, Carrière, Runes).
-- `prototype/index.html` : l'ancien prototype en un seul fichier, gardé pour comparer jusqu'à ce que Yo valide le découpage.
 - `essais/scierie-essai.html` : l'essai validé de la Scierie, construite en code à partir de formes simples. C'est la référence de style pour tout le décor : formes arrondies, palette de la bible, ombrage toon commun à tous les modèles.
 
 ## Organisation du code
@@ -31,11 +30,13 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 
 Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 du plan, dans l'ordre, environ une par séance. Porte de sortie : la boucle de jeu est amusante, testée par de vrais joueurs sur téléphone.
 
+Étape 1.0 (passer sur Claude Code) terminée le 29 septembre 2026. Prochaine étape : 1.1, entrer dans un bâtiment.
+
 ## Règles de travail
 
 - Parler à Yo en français, simplement, sans jargon. À la fin de chaque séance, dire ce qui a changé et comment le tester.
 - Avant d'écrire le code d'une étape, proposer un découpage et attendre l'accord de Yo.
-- Première tâche : découper le prototype en plusieurs fichiers lisibles, sans rien casser (fait le 29 septembre 2026, en attente de la validation de Yo sur téléphone). La technologie web actuelle (three.js) reste en place ; le choix entre le web et Godot se fera à l'étape 2.6.
+- Le prototype a été découpé en plusieurs fichiers le 29 septembre 2026, validé par Yo sur téléphone (l'ancien fichier unique reste dans l'historique git). La technologie web actuelle (three.js) reste en place ; le choix entre le web et Godot se fera à l'étape 2.6.
 - Utiliser git : un commit clair à chaque avancée qui fonctionne, pour pouvoir revenir en arrière.
 - Le jeu doit tourner dans le navigateur d'un téléphone Android modeste. Proposer à Yo la façon la plus simple de l'ouvrir sur son téléphone, et la lui expliquer pas à pas.
 - En phase 1, pas de modèles finaux : des formes simples suffisent.
