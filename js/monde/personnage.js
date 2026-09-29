@@ -1,6 +1,6 @@
 /* ================= Personnage =================
    Le modèle du personnage, sa marche et les obstacles. */
-import { G, part } from "./formes.js";
+import { P, G, part } from "./formes.js";
 import { scene } from "./scene.js";
 import { map, idx, inb, tileOf } from "./ile.js";
 import { occ } from "./batiments.js";
@@ -18,7 +18,7 @@ body.add(part(G.eye, 0x1C2230, 1,1,1, .08,.87,.22));
 const legL = part(G.cyl, 0x3B4A6B, .13,.24,.13, -.09,.12,0);
 const legR = part(G.cyl, 0x3B4A6B, .13,.24,.13, .09,.12,0);
 body.add(legL, legR);
-player.scale.setScalar(.78);
+player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P
 scene.add(player);
 
 const R = .26;

@@ -16,11 +16,11 @@ export let placing = null;
 let ghost = null, ghostOk = false, ghostAt = null;
 const ghostMat = new THREE.MeshBasicMaterial({color:0xFFFFFF, transparent:true, opacity:.6, depthWrite:false});
 const baseMat = new THREE.MeshBasicMaterial({color:0xFFE27A, transparent:true, opacity:.55, depthWrite:false});
+/* Le carré de cases du bâtiment commence juste devant le personnage, centré sur lui */
 function anchorFor(type){
   const s = sizeOf(type), d = dir4(), [fx, fz] = frontTile(1.3);
-  if(s === 1) return [fx, fz];
-  const ax = d.x > 0 ? fx : d.x < 0 ? fx - 1 : Math.round(player.position.x + H) - 1;
-  const az = d.z > 0 ? fz : d.z < 0 ? fz - 1 : Math.round(player.position.z + H) - 1;
+  const ax = d.x > 0 ? fx : d.x < 0 ? fx - (s - 1) : Math.round(player.position.x + H - s/2);
+  const az = d.z > 0 ? fz : d.z < 0 ? fz - (s - 1) : Math.round(player.position.z + H - s/2);
   return [ax, az];
 }
 function canPlace(type, ax, az){

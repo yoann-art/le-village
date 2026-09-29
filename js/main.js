@@ -9,7 +9,7 @@ import { renderer, scene, camera, sun, D } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
 import { player, updatePlayer } from "./monde/personnage.js";
-import { state, save, migrated, eraseSave } from "./sauvegarde.js";
+import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail } from "./construire.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
@@ -66,6 +66,6 @@ $("#version").textContent = "v" + VERSION;
 renderHUD();
 requestAnimationFrame(tick);
 setTimeout(() => {
-  if(migrated) toast("Tes ressources du prototype sont récupérées, et tes anciens bâtiments remboursés.", 4200);
+  if(migrationMsg) toast(migrationMsg, 4200);
   else if(!state.buildings.length) toast("Déplace-toi avec le joystick. Touche Construire pour bâtir devant toi.", 4200);
 }, 700);

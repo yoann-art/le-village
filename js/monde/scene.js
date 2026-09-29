@@ -25,14 +25,15 @@ sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.bias = -0.0008;
 scene.add(sun, sun.target);
 
-/* Distance de la caméra, recalculée quand l'écran change de taille */
+/* Distance de la caméra, recalculée quand l'écran change de taille :
+   on voit environ 9 P de large autour du personnage. */
 export let D = 24;
 function resize(){
   const w = app.clientWidth, h = app.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   const tanH = Math.tan(camera.fov * Math.PI / 360) * camera.aspect;
-  D = Math.min(28, Math.max(12, 7.2 / (2 * tanH)));
+  D = Math.min(34, Math.max(14, 9 / (2 * tanH)));
   camera.updateProjectionMatrix();
   scene.fog.near = D + 12; scene.fog.far = D + 48;
   const sb = Math.min(20, D * .75), sc = sun.shadow.camera;

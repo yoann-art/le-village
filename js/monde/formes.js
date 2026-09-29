@@ -1,6 +1,11 @@
 /* ================= Formes 3D de base =================
    Matières et formes partagées par tous les modèles du décor.
    C'est ici qu'on changera le rendu de tous les modèles d'un coup. */
+
+/* P : la hauteur du personnage, l'unité de mesure de la bible.
+   Une case du sol mesure 1 P de côté. */
+export const P = 1;
+
 const MAT = {};
 export const mat = hex => MAT[hex] || (MAT[hex] = new THREE.MeshLambertMaterial({color:hex}));
 export const G = {

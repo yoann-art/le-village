@@ -15,9 +15,10 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 ## Organisation du code
 
 - three.js r128, chargé depuis cdnjs comme variable globale `THREE`. Pas d'outil de compilation : modules JavaScript natifs (`import`/`export`), lus tels quels par le navigateur.
-- Conséquence : le jeu ne s'ouvre pas par double-clic sur `index.html`, il faut un serveur. En local : configuration « jeu » de `.claude/launch.json` (http://localhost:8000).
+- Conséquence : le jeu ne s'ouvre pas par double-clic sur `index.html`, il faut un serveur. En local : configuration « jeu » de `.claude/launch.json` (http://localhost:8000), qui lance `.claude/serveur.py` (serveur sans mémoire cache, pour toujours voir la dernière version).
+- Mesures : 1 case du sol = 1 P = 1 unité 3D (`P` dans `js/monde/formes.js`). L'île fait 40 × 40 cases. Bâtiments : 3 × 3 P (Chaumière, Scierie, Carrière, Forge) ou 4 × 4 P (Marché, Taverne, Château), murs de 2 P, porte de 1,5 P au milieu de la façade tournée vers le bas de l'écran (`DOOR_X` et `frontOf` dans `batiments.js`). Arbres 3 à 4 P, jamais collés ; rochers ½ à 1 P.
 - `js/main.js` relie tout et fait tourner la boucle. L'ordre de ses `import` compte : `verification.js` d'abord, puis le décor dans l'ordre où il est posé.
-- `js/donnees.js` : les chiffres réglables (ressources, bâtiments, mini-jeux). `js/regles.js` : coûts, niveaux, bonus. `js/sauvegarde.js` : partie gardée dans le navigateur (clé `le-village-v2-ile`).
+- `js/donnees.js` : les chiffres réglables (ressources, bâtiments, mini-jeux). `js/regles.js` : coûts, niveaux, bonus. `js/sauvegarde.js` : partie gardée dans le navigateur (clé `le-village-v2-ile`, format v3 ; les parties v2 sont reprises avec leurs bâtiments remboursés).
 - `js/monde/` : la 3D. `formes.js` est la boîte à outils commune (matières, formes) : c'est là que viendra l'ombrage toon de la Scierie pour tous les modèles.
 - `js/minijeux/` : un fichier par mini-jeu, plus `minijeux.js` (menu, écran, récompense).
 
@@ -25,13 +26,16 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 
 - En ligne : https://yoann-art.github.io/le-village/ (GitHub Pages, dépôt public `yoann-art/le-village`, branche `main`, dossier racine). Mise à jour environ une minute après chaque envoi.
 - L'envoi sur GitHub (`git push`) est lancé par Yo lui-même : lui donner la commande à exécuter.
-- Numéro de version affiché en bas de l'écran, réglé dans `js/version.js`. Il suit l'étape du plan (1.0, 1.1, 1.2…) ; une correction ajoute un chiffre (1.1.1). Le changer avant chaque envoi, pour que Yo voie tout de suite si son téléphone montre la dernière version (GitHub peut garder l'ancienne en mémoire une dizaine de minutes).
+- Numéro de version affiché en bas de l'écran, réglé dans `js/version.js`. Il suit l'étape du plan (1.0, 1.1, 1.2…) ; chaque envoi en cours d'étape ou correction ajoute un chiffre (1.1.1, 1.1.2…). Le changer avant chaque envoi, pour que Yo voie tout de suite si son téléphone montre la dernière version (GitHub peut garder l'ancienne en mémoire une dizaine de minutes).
 
 ## Où on en est
 
 Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 du plan, dans l'ordre, environ une par séance. Porte de sortie : la boucle de jeu est amusante, testée par de vrais joueurs sur téléphone.
 
-Étape 1.0 (passer sur Claude Code) terminée le 29 septembre 2026. Prochaine étape : 1.1, entrer dans un bâtiment.
+Étape 1.0 (passer sur Claude Code) terminée le 29 septembre 2026. En cours : étape 1.1, entrer dans un bâtiment, validée par Yo en trois morceaux :
+1. Tout à la bonne taille (v1.1.1) : fait.
+2. Entrer et sortir (v1.1.2) : on entre en marchant dans la porte, fondu au noir ; pièce vue de biais, mur de devant retiré, caméra qui suit sans sortir de la pièce ; on sort en repassant la porte ; dedans, pas de bouton Construire ; jeu rouvert à l'intérieur = on reprend dehors devant la porte.
+3. Une pièce par bâtiment (v1.1.3) : moyenne 6 × 6 P, puis 7 × 7 et 8 × 8 aux niveaux 2 et 3 ; grande 8 × 8, 9 × 9, 10 × 10 (Château : 8 × 8, un seul niveau) ; couleurs selon l'ambiance de la bible ; pièces vides (meubles à l'étape 1.2). Tailles à revoir visuellement avec Yo.
 
 ## Règles de travail
 

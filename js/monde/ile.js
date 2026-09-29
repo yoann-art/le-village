@@ -4,8 +4,8 @@ import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 
-/* Carte de l'île */
-export const N = 30, H = N / 2;
+/* Carte de l'île : N × N cases, une case = 1 P */
+export const N = 40, H = N / 2;
 export const idx = (x,z) => z * N + x;
 export const inb = (x,z) => x >= 0 && z >= 0 && x < N && z < N;
 export const tileOf = w => Math.floor(w + H);
@@ -27,16 +27,18 @@ function genMap(seed){
     const d = Math.hypot((x-c)/(N/2), (z-c)/(N/2));
     const h = 1 - d*1.2 + (noise(g1,x,z) - .5)*.6;
     let t = h < .1 ? "water" : h < .24 ? "sand" : "grass";
-    if(Math.hypot(x-c, z-c) < 3) t = "grass";
-    if(Math.hypot(x-(c+6), z-(c-5)) < 1.7 && t === "grass") t = "water";
+    if(Math.hypot(x-c, z-c) < 4) t = "grass";
+    if(Math.hypot(x-(c+8), z-(c-7)) < 2.3 && t === "grass") t = "water";
     type[idx(x,z)] = t;
   }
+  /* Un arbre ne pousse pas collé à un autre : son feuillage fait 2 P de large */
+  const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && obj[idx(x+dx, z+dz)] === "tree");
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x,z);
-    if(Math.hypot(x-c, z-c) < 3.5) continue;
+    if(Math.hypot(x-c, z-c) < 5) continue;
     const r = rnd();
     if(type[i] === "grass"){
-      if((noise(g2,x,z) > .6 && r < .5) || r < .035) obj[i] = "tree";
+      if((noise(g2,x,z) > .6 && r < .5) || r < .035){ if(!treeNear(x,z)) obj[i] = "tree"; }
       else if(r < .06) obj[i] = "rock";
     } else if(type[i] === "sand" && r < .03) obj[i] = "rock";
   }
@@ -69,18 +71,19 @@ const seabed = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90), mat(0x2F93AE)
 seabed.rotation.x = -Math.PI/2; seabed.position.y = -1.05;
 scene.add(water, seabed);
 
-/* Arbres et rochers */
+/* Arbres (3 à 4 P de haut) et rochers (½ à 1 P) */
 map.obj.forEach((o,i) => {
   if(!o) return;
   const r = ((i*9301 + 49297) % 233280) / 233280;
   const g = new THREE.Group();
   if(o === "tree"){
-    g.add(part(G.trunk, 0x8A5A3B, 1,1,1, 0,.27,0));
-    g.add(part(G.leaf, r < .5 ? 0x3E9D50 : 0x479F46, 1,1,1, 0,.82,0));
-    g.add(part(G.leaf2, 0x57B25C, 1,1,1, .05,1.18,.02));
-    g.scale.setScalar(.85 + r*.35);
+    g.add(part(G.trunk, 0x8A5A3B, 2.2,2.4,2.2, 0,.66,0));
+    g.add(part(G.leaf, r < .5 ? 0x3E9D50 : 0x479F46, 2,2,2, 0,1.95,0));
+    g.add(part(G.leaf2, 0x57B25C, 2,2,2, .1,2.75,.05));
+    g.scale.setScalar(.9 + r*.25);
   } else {
-    g.add(part(G.dode, r < .5 ? 0x9EA3A8 : 0x8F959B, .68,.48,.68, 0,.14,0));
+    g.add(part(G.dode, r < .5 ? 0x9EA3A8 : 0x8F959B, .9,.7,.9, 0,.25,0));
+    g.scale.setScalar(.8 + r*.4);
   }
   g.rotation.y = r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
