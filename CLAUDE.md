@@ -33,9 +33,9 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 du plan, dans l'ordre, environ une par séance. Porte de sortie : la boucle de jeu est amusante, testée par de vrais joueurs sur téléphone.
 
 Étape 1.0 (passer sur Claude Code) terminée le 29 septembre 2026. En cours : étape 1.1, entrer dans un bâtiment, validée par Yo en trois morceaux :
-1. Tout à la bonne taille (v1.1.1) : fait.
-2. Entrer et sortir (v1.1.2) : on entre en marchant dans la porte, fondu au noir ; pièce vue de biais, mur de devant retiré, caméra qui suit sans sortir de la pièce ; on sort en repassant la porte ; dedans, pas de bouton Construire ; jeu rouvert à l'intérieur = on reprend dehors devant la porte.
-3. Une pièce par bâtiment (v1.1.3) : moyenne 6 × 6 P, puis 7 × 7 et 8 × 8 aux niveaux 2 et 3 ; grande 8 × 8, 9 × 9, 10 × 10 (Château : 8 × 8, un seul niveau) ; couleurs selon l'ambiance de la bible ; pièces vides (meubles à l'étape 1.2). Tailles à revoir visuellement avec Yo.
+1. Tout à la bonne taille (v1.1.1) : fait et validé ; caméra rapprochée à 8 P de large à la demande de Yo (v1.1.2).
+2. Entrer et sortir : on entre en marchant dans la porte, fondu au noir ; pièce vue de biais, mur de devant retiré, caméra qui suit sans sortir de la pièce ; on sort en repassant la porte ; dedans, pas de bouton Construire ; jeu rouvert à l'intérieur = on reprend dehors devant la porte.
+3. Une pièce par bâtiment : moyenne 6 × 6 P, puis 7 × 7 et 8 × 8 aux niveaux 2 et 3 ; grande 8 × 8, 9 × 9, 10 × 10 (Château : 8 × 8, un seul niveau) ; couleurs selon l'ambiance de la bible ; pièces vides (meubles à l'étape 1.2). Tailles à revoir visuellement avec Yo.
 
 ## Règles de travail
 
