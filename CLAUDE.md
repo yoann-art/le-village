@@ -1,0 +1,35 @@
+# Hearthwild : instructions pour Claude Code
+
+## Le projet
+
+Hearthwild (nom de travail : « Le Village ») est un jeu mobile Android pour adultes. On bâtit son île en paix, puis on part chercher l'aventure et le danger au-dehors. Univers médiéval-fantastique, vue façon Animal Crossing, joystick virtuel.
+
+Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à pas, et valide chaque étape en jouant sur son téléphone.
+
+## Les documents de référence
+
+- `bible.pdf` : le plan de production complet, exporté depuis le document de suivi. La partie « Phase 0 » est la bible du jeu, validée par Yo : toutes les règles du monde y sont. En cas de doute, la bible fait foi. Ne jamais contredire une décision de la bible sans en parler d'abord à Yo.
+- `prototype/index.html` : le prototype actuel, en three.js r128, dans un seul fichier. Il contient l'île en 3D, le joystick, le placement libre de 7 bâtiments à 3 niveaux et 3 mini-jeux (Bûcheron, Carrière, Runes).
+- `essais/scierie-essai.html` : l'essai validé de la Scierie, construite en code à partir de formes simples. C'est la référence de style pour tout le décor : formes arrondies, palette de la bible, ombrage toon commun à tous les modèles.
+
+## Où on en est
+
+Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 du plan, dans l'ordre, environ une par séance. Porte de sortie : la boucle de jeu est amusante, testée par de vrais joueurs sur téléphone.
+
+## Règles de travail
+
+- Parler à Yo en français, simplement, sans jargon. À la fin de chaque séance, dire ce qui a changé et comment le tester.
+- Avant d'écrire le code d'une étape, proposer un découpage et attendre l'accord de Yo.
+- Première tâche : découper le prototype en plusieurs fichiers lisibles, sans rien casser. La technologie web actuelle (three.js) reste en place ; le choix entre le web et Godot se fera à l'étape 2.6.
+- Utiliser git : un commit clair à chaque avancée qui fonctionne, pour pouvoir revenir en arrière.
+- Le jeu doit tourner dans le navigateur d'un téléphone Android modeste. Proposer à Yo la façon la plus simple de l'ouvrir sur son téléphone, et la lui expliquer pas à pas.
+- En phase 1, pas de modèles finaux : des formes simples suffisent.
+
+## Règles de la bible à ne jamais oublier
+
+- Style jouet : rond et doux pour le refuge, pointu et anguleux pour le danger. Même ombrage toon pour tous les modèles.
+- Tout se mesure en P, la hauteur du personnage (trois têtes de haut). Une porte fait 1,5 P, un étage 2 P.
+- Placement des objets libre, au centimètre, avec un aimantage facultatif.
+- Aucune jauge d'énergie, aucune limite qui bloque une longue session. Le temps réel rythme la journée sans jamais bloquer.
+- Le village est un refuge : le danger reste dehors, dans les zones sauvages et les grottes.
+- Les mini-jeux sont le geste d'une activité : courts, jamais bloquants (rater donne une qualité moindre, jamais rien) et automatisables une fois maîtrisés.

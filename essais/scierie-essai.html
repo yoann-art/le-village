@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hearthwild : la Scierie (essai)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap">
+<style>
+:root{--ink:#3B2A1A;--chip:#FFF8EC;--chip-line:#E3CFA8;--focus:#C8643C;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#F4E6CF;--chip:#2B2320;--chip-line:#5A4636;}}
+:root[data-theme="dark"]{--ink:#F4E6CF;--chip:#2B2320;--chip-line:#5A4636;}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);}
+body{margin:0;height:100%;background:#BFE3F2;color:var(--ink);font-family:'Fredoka',ui-rounded,'Segoe UI Rounded','Segoe UI',system-ui,sans-serif;overflow:hidden;transition:background .6s;}
+#stage{position:relative;height:100%;}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;}
+#stage canvas:active{cursor:grabbing;}
+.tag{position:absolute;left:16px;top:16px;max-width:calc(100% - 32px);background:var(--chip);border:2px solid var(--chip-line);border-radius:20px;padding:10px 16px;}
+.tag h1{margin:0;font-size:20px;font-weight:600;line-height:1.2;}
+.tag p{margin:4px 0 0;font-size:14px;line-height:1.4;opacity:.8;}
+.bar{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:center;}
+button{font:inherit;font-size:16px;font-weight:600;color:var(--ink);background:var(--chip);border:2px solid var(--chip-line);border-radius:999px;padding:12px 22px;cursor:pointer;}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:3px;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="tag">
+    <h1>La Scierie</h1>
+    <p>Essai en formes simples. Glisse pour tourner, pince pour zoomer.</p>
+  </div>
+  <div class="bar"><button id="night" type="button">Passer à la nuit</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const canvas=renderer.domElement;
+canvas.setAttribute('role','img');
+canvas.setAttribute('aria-label','Maquette 3D de la Scierie de Hearthwild, avec sa roue à eau, sa scie et ses piles de bois');
+stage.prepend(canvas);
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#BFE3F2');
+const camera=new THREE.PerspectiveCamera(35,1,0.1,120);
+
+const grad=new THREE.DataTexture(new Uint8Array([140,200,255]),3,1,THREE.LuminanceFormat);
+grad.minFilter=THREE.NearestFilter;grad.magFilter=THREE.NearestFilter;grad.generateMipmaps=false;grad.needsUpdate=true;
+const cache={};
+const mat=c=>cache[c]||(cache[c]=new THREE.MeshToonMaterial({color:c,gradientMap:grad}));
+
+const C={grass:'#8DBF6A',dirt:'#B98A55',wood:'#D9A55B',woodDark:'#9B6433',woodMid:'#C28E47',door:'#8A5A2B',tile:'#C8643C',tileDark:'#A94E2E',stone:'#8C95A0',stoneDark:'#6F7884',path:'#EAD7AC',water:'#6EC3E0',steel:'#B7C0C9',steelDark:'#8E98A3',bark:'#7A4E2A',cut:'#EBC98E',leaf:'#6FAE4F',leafLight:'#8DBF6A',rock:'#A3A9AE',plank:'#E0B274',gold:'#F2C14E'};
+
+function rr(W,H,cr){
+  const s=new THREE.Shape(),x=-W/2,y=-H/2;
+  s.moveTo(x+cr,y);s.lineTo(x+W-cr,y);s.quadraticCurveTo(x+W,y,x+W,y+cr);
+  s.lineTo(x+W,y+H-cr);s.quadraticCurveTo(x+W,y+H,x+W-cr,y+H);
+  s.lineTo(x+cr,y+H);s.quadraticCurveTo(x,y+H,x,y+H-cr);
+  s.lineTo(x,y+cr);s.quadraticCurveTo(x,y,x+cr,y);
+  return s;
+}
+function rbox(w,h,d,r){
+  r=Math.min(r,w/2-0.005,h/2-0.005,d/2-0.005);
+  const W=w-2*r,H=h-2*r,D=Math.max(d-2*r,0.001);
+  const g=new THREE.ExtrudeGeometry(rr(W,H,Math.max(Math.min(r,W/2,H/2),0)),{depth:D,bevelEnabled:true,bevelThickness:r,bevelSize:r,bevelSegments:3,curveSegments:6});
+  g.translate(0,0,-D/2);
+  return g;
+}
+function add(geo,m,x,y,z,parent){
+  const mesh=new THREE.Mesh(geo,typeof m==='string'?mat(m):m);
+  mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;
+  (parent||scene).add(mesh);return mesh;
+}
+
+add(new THREE.CylinderGeometry(3.45,3.45,0.4,64),C.grass,0,-0.2,0);
+add(new THREE.CylinderGeometry(3.45,3.1,0.6,64),C.dirt,0,-0.7,0);
+add(rbox(0.8,0.06,1.9,0.03),C.path,-0.6,0.02,1.65);
+add(rbox(0.8,0.06,5.4,0.03),C.water,1.6,0.02,0);
+
+const house=new THREE.Group();house.position.set(-0.2,0,-0.4);scene.add(house);
+add(rbox(2.8,0.35,2.2,0.1),C.stone,0,0.175,0,house);
+add(rbox(2.6,1.7,2.0,0.1),C.wood,0,1.2,0,house);
+[0.75,1.15,1.55,1.9].forEach(y=>{add(rbox(2.5,0.04,0.02,0.01),C.woodMid,0,y,1.01,house);add(rbox(2.5,0.04,0.02,0.01),C.woodMid,0,y,-1.01,house);});
+[-1,1].forEach(sx=>[-1,1].forEach(sz=>add(rbox(0.22,1.75,0.22,0.07),C.woodDark,sx*1.3,1.2,sz*1.0,house)));
+const tri=new THREE.Shape();tri.moveTo(-1.0,0);tri.lineTo(1.0,0);tri.lineTo(0,0.85);tri.lineTo(-1.0,0);
+const gableGeo=new THREE.ExtrudeGeometry(tri,{depth:0.1,bevelEnabled:false});
+[1.25,-1.35].forEach(x=>{const g=add(gableGeo,C.wood,x,2.05,0,house);g.rotation.y=Math.PI/2;});
+const slab=rbox(3.2,0.18,1.56,0.08);
+add(slab,C.tile,0,2.55,0.6,house).rotation.x=0.695;
+add(slab,C.tile,0,2.55,-0.6,house).rotation.x=-0.695;
+add(new THREE.CylinderGeometry(0.13,0.13,3.3,16),C.tileDark,0,3.08,0,house).rotation.z=Math.PI/2;
+add(rbox(0.8,1.3,0.12,0.12),C.door,-0.4,1.0,1.06,house);
+add(new THREE.SphereGeometry(0.06,12,12),C.gold,-0.15,1.0,1.14,house);
+
+const glassMat=new THREE.MeshToonMaterial({color:'#A8D8EA',gradientMap:grad,emissive:'#000000'});
+add(new THREE.TorusGeometry(0.27,0.06,10,28),C.woodDark,0.6,1.4,1.04,house);
+add(new THREE.CylinderGeometry(0.26,0.26,0.05,28),glassMat,0.6,1.4,1.02,house).rotation.x=Math.PI/2;
+add(rbox(0.5,0.04,0.03,0.01),C.woodDark,0.6,1.4,1.06,house);
+add(rbox(0.04,0.5,0.03,0.01),C.woodDark,0.6,1.4,1.06,house);
+add(new THREE.TorusGeometry(0.27,0.06,10,28),C.woodDark,-1.33,1.4,0.2,house).rotation.y=Math.PI/2;
+add(new THREE.CylinderGeometry(0.26,0.26,0.05,28),glassMat,-1.31,1.4,0.2,house).rotation.z=Math.PI/2;
+
+add(rbox(0.42,1.2,0.42,0.08),C.stoneDark,-0.8,2.9,-0.5,house);
+add(rbox(0.54,0.12,0.54,0.05),C.stone,-0.8,3.55,-0.5,house);
+const puffs=[];
+for(let i=0;i<4;i++){
+  const m=new THREE.MeshToonMaterial({color:'#F7F4EE',gradientMap:grad,transparent:true,opacity:0.8});
+  const s=new THREE.Mesh(new THREE.SphereGeometry(0.2,14,14),m);scene.add(s);puffs.push({s,m,o:i/4});
+}
+
+const wheel=new THREE.Group();wheel.position.set(1.45,1.0,-0.2);scene.add(wheel);
+add(new THREE.TorusGeometry(0.85,0.08,12,36),C.woodDark,0,0,0,wheel).rotation.y=Math.PI/2;
+add(new THREE.CylinderGeometry(0.16,0.16,0.4,16),C.woodDark,0,0,0,wheel).rotation.z=Math.PI/2;
+for(let i=0;i<4;i++)add(rbox(0.08,1.7,0.08,0.03),C.woodMid,0,0,0,wheel).rotation.x=i*Math.PI/4;
+for(let i=0;i<8;i++){const a=i*Math.PI/4;add(rbox(0.42,0.3,0.1,0.04),C.woodMid,0,Math.cos(a)*0.92,Math.sin(a)*0.92,wheel).rotation.x=a;}
+add(new THREE.CylinderGeometry(0.07,0.07,0.5,10),C.stoneDark,-0.25,0,0,wheel).rotation.z=Math.PI/2;
+
+const bench=new THREE.Group();bench.position.set(-1.9,0,1.2);scene.add(bench);
+add(rbox(1.1,0.1,0.6,0.04),C.woodMid,0,0.75,0,bench);
+[-1,1].forEach(sx=>[-1,1].forEach(sz=>add(new THREE.CylinderGeometry(0.05,0.05,0.7,8),C.woodDark,sx*0.45,0.35,sz*0.22,bench)));
+const blade=new THREE.Group();blade.position.set(-0.15,0.82,0);bench.add(blade);
+add(new THREE.CylinderGeometry(0.3,0.3,0.035,32),C.steel,0,0,0,blade).rotation.x=Math.PI/2;
+for(let i=0;i<14;i++){const a=i/14*Math.PI*2;add(new THREE.ConeGeometry(0.045,0.1,4),C.steelDark,Math.cos(a)*0.33,Math.sin(a)*0.33,0,blade).rotation.z=a-Math.PI/2;}
+add(new THREE.CylinderGeometry(0.06,0.06,0.06,12),C.gold,0,0,0,blade).rotation.x=Math.PI/2;
+const logMats=[mat(C.bark),mat(C.cut),mat(C.cut)];
+add(new THREE.CylinderGeometry(0.14,0.14,0.8,16),logMats,0.2,0.94,0,bench).rotation.z=Math.PI/2;
+
+const pile=new THREE.Group();pile.position.set(-2.1,0,-1.2);scene.add(pile);
+const logGeo=new THREE.CylinderGeometry(0.2,0.2,1.2,16);
+[[-0.42,0.2],[0,0.2],[0.42,0.2],[-0.21,0.56],[0.21,0.56],[0,0.92]].forEach(([x,y])=>add(logGeo,logMats,x,y,0,pile).rotation.x=Math.PI/2);
+
+for(let i=0;i<4;i++)add(rbox(1.0,0.07,0.28,0.02),C.plank,0.4,0.04+i*0.075,1.5,scene).rotation.y=(i%2?0.05:-0.05);
+
+function tree(x,z,s){
+  const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(s);scene.add(g);
+  add(new THREE.CylinderGeometry(0.13,0.17,0.9,10),C.bark,0,0.45,0,g);
+  add(new THREE.SphereGeometry(0.6,20,16),C.leaf,0,1.3,0,g);
+  add(new THREE.SphereGeometry(0.42,18,14),C.leafLight,0.25,1.65,0.15,g);
+  add(new THREE.SphereGeometry(0.38,18,14),C.leaf,-0.3,1.55,-0.1,g);
+}
+tree(-2.6,0.4,1.5);tree(2.6,-1.9,1.3);
+add(new THREE.SphereGeometry(0.3,16,12),C.rock,0.9,0.12,-2.5).scale.set(1.3,0.7,1);
+add(new THREE.SphereGeometry(0.3,16,12),C.rock,2.7,0.1,1.3).scale.set(0.8,0.6,0.8);
+
+add(new THREE.CylinderGeometry(0.05,0.05,1.2,8),C.woodDark,0.25,0.6,0.95);
+const lampMat=new THREE.MeshToonMaterial({color:'#FFE3A3',gradientMap:grad,emissive:'#000000'});
+add(new THREE.SphereGeometry(0.11,14,14),lampMat,0.25,1.28,0.95);
+add(new THREE.ConeGeometry(0.16,0.14,12),C.tileDark,0.25,1.42,0.95);
+const lamp=new THREE.PointLight('#FFB85C',0,4);lamp.position.set(0.25,1.28,0.95);scene.add(lamp);
+
+const hemi=new THREE.HemisphereLight('#E4F4FF','#8DBF6A',0.65);scene.add(hemi);
+const sun=new THREE.DirectionalLight('#FFF1D6',0.95);sun.position.set(5,9,4);sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:1,far:25});
+sun.shadow.camera.updateProjectionMatrix();
+sun.shadow.bias=-0.0008;scene.add(sun);
+
+let night=false;
+const btn=document.getElementById('night');
+function setNight(n){
+  night=n;
+  const bg=n?'#2E3E66':'#BFE3F2';
+  scene.background.set(bg);document.body.style.background=bg;
+  hemi.color.set(n?'#7F90C9':'#E4F4FF');hemi.groundColor.set(n?'#2F4A3A':'#8DBF6A');hemi.intensity=n?0.45:0.65;
+  sun.color.set(n?'#A9BCF0':'#FFF1D6');sun.intensity=n?0.35:0.95;
+  glassMat.color.set(n?'#FFCF70':'#A8D8EA');glassMat.emissive.set(n?'#FFB347':'#000000');
+  lampMat.emissive.set(n?'#FFB347':'#000000');lamp.intensity=n?1.4:0;
+  btn.textContent=n?'Revenir au jour':'Passer à la nuit';
+}
+btn.addEventListener('click',()=>setNight(!night));
+
+let theta=0.5,elev=0.62,zoom=1,fit=12,auto=!reduceMotion;
+const target=new THREE.Vector3(0,1,0);
+function resize(){
+  const w=stage.clientWidth||1,h=stage.clientHeight||1;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;camera.fov=camera.aspect<1?50:35;camera.updateProjectionMatrix();
+  const halfV=THREE.MathUtils.degToRad(camera.fov/2);
+  const halfH=Math.atan(Math.tan(halfV)*camera.aspect);
+  fit=Math.max(4.3/Math.tan(halfH),5.2/Math.tan(halfV));
+}
+new ResizeObserver(resize).observe(stage);resize();
+
+const pts=new Map();let lastDist=0;
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDist=0;auto=false;});
+canvas.addEventListener('pointermove',e=>{
+  const p=pts.get(e.pointerId);if(!p)return;
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(pts.size===1){theta-=dx*0.008;elev=clamp(elev+dy*0.005,0.3,1.15);}
+  else if(pts.size===2){const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(lastDist)zoom=clamp(zoom*lastDist/d,0.55,1.5);lastDist=d;}
+});
+['pointerup','pointercancel'].forEach(t=>canvas.addEventListener(t,e=>{pts.delete(e.pointerId);lastDist=0;}));
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom*(1+e.deltaY*0.001),0.55,1.5);auto=false;},{passive:false});
+
+const clock=new THREE.Clock();
+function frame(){
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(auto)theta+=dt*0.15;
+  const r=fit*zoom;
+  camera.position.set(target.x+r*Math.cos(elev)*Math.sin(theta),target.y+r*Math.sin(elev),target.z+r*Math.cos(elev)*Math.cos(theta));
+  camera.lookAt(target);
+  wheel.rotation.x-=dt*0.7;
+  blade.rotation.z-=dt*6;
+  puffs.forEach(p=>{p.o=(p.o+dt*0.22)%1;const t=p.o;p.s.position.set(-1.0+t*0.35,3.65+t*1.5,-0.9);p.s.scale.setScalar(0.7+t*1.4);p.m.opacity=0.8*(1-t);});
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>
