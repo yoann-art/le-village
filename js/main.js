@@ -1,7 +1,9 @@
 /* ================= Point de départ du jeu =================
    Relie tous les morceaux, fait tourner la boucle de jeu et lance la partie.
-   L'ordre des lignes « import » compte : la vérification d'abord,
-   puis le décor dans l'ordre où il est posé (lumières, île, bâtiments, personnage). */
+   L'ordre des lignes « import » compte : la mise à jour en tout premier (même si la 3D
+   ne charge pas), puis la vérification, puis le décor dans l'ordre où il est posé
+   (lumières, île, bâtiments, personnage). */
+import "./miseajour.js";
 import "./verification.js";
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
