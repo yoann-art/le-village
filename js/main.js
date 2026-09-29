@@ -3,6 +3,8 @@
    L'ordre des lignes « import » compte : la vérification d'abord,
    puis le décor dans l'ordre où il est posé (lumières, île, bâtiments, personnage). */
 import "./verification.js";
+import { $ } from "./outils.js";
+import { VERSION } from "./version.js";
 import { renderer, scene, camera, sun, D } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
@@ -60,6 +62,7 @@ function tick(now){
 }
 
 /* ================= Démarrage ================= */
+$("#version").textContent = "v" + VERSION;
 renderHUD();
 requestAnimationFrame(tick);
 setTimeout(() => {

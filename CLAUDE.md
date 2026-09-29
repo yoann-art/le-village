@@ -25,6 +25,7 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 
 - En ligne : https://yoann-art.github.io/le-village/ (GitHub Pages, dépôt public `yoann-art/le-village`, branche `main`, dossier racine). Mise à jour environ une minute après chaque envoi.
 - L'envoi sur GitHub (`git push`) est lancé par Yo lui-même : lui donner la commande à exécuter.
+- Numéro de version affiché en bas de l'écran, réglé dans `js/version.js`. Il suit l'étape du plan (1.0, 1.1, 1.2…) ; une correction ajoute un chiffre (1.1.1). Le changer avant chaque envoi, pour que Yo voie tout de suite si son téléphone montre la dernière version (GitHub peut garder l'ancienne en mémoire une dizaine de minutes).
 
 ## Où on en est
 
