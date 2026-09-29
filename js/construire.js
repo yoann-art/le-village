@@ -4,7 +4,7 @@
 import { $ } from "./outils.js";
 import { RES, B, ORDER } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sizeOf, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
+import { sizeOf, doorTile, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
 import { scene } from "./monde/scene.js";
 import { H, idx, inb, map } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh } from "./monde/batiments.js";
@@ -23,12 +23,17 @@ function anchorFor(type){
   const az = d.z > 0 ? fz : d.z < 0 ? fz - (s - 1) : Math.round(player.position.z + H - s/2);
   return [ax, az];
 }
-function canPlace(type, ax, az){
-  return footprint(type, ax, az).every(([x,z]) => {
-    if(!inb(x,z)) return false;
-    const i = idx(x,z);
-    return map.type[i] !== "water" && !map.obj[i] && !occ.has(i);
-  });
+/* Peut-on poser ici ? null si oui ; sinon « occupé » (terrain déjà pris)
+   ou « porte » (sa porte serait bloquée, ou il bloquerait celle d'un autre bâtiment) */
+const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && !map.obj[idx(x,z)] && !occ.has(idx(x,z));
+function placeProblem(type, ax, az){
+  const cells = footprint(type, ax, az);
+  if(!cells.every(([x,z]) => freeTile(x, z))) return "occupé";
+  const [dx, dz] = doorTile(type, ax, az);
+  if(!freeTile(dx, dz)) return "porte";
+  const mine = new Set(cells.map(([x,z]) => idx(x,z)));
+  if(state.buildings.some(b => { const [x,z] = doorTile(b.type, b.x, b.z); return inb(x,z) && mine.has(idx(x,z)); })) return "porte";
+  return null;
 }
 export function startPlacing(type){
   placing = type;
@@ -50,11 +55,14 @@ export function stopPlacing(){
 export function updateInteraction(){
   if(placing){
     const [ax, az] = anchorFor(placing), s = sizeOf(placing);
-    ghostOk = canPlace(placing, ax, az); ghostAt = [ax, az];
+    const problem = placeProblem(placing, ax, az);
+    ghostOk = !problem; ghostAt = [ax, az];
     ghost.position.set(ax - H + s/2, 0, az - H + s/2);
     ghostMat.color.setHex(ghostOk ? 0xFFFFFF : 0xE4776C); baseMat.color.setHex(ghostOk ? 0xFFE27A : 0xE4776C);
     const hint = $("#place-hint"), btn = $("#btn-place");
-    const txt = ghostOk ? `${B[placing].emoji} ${B[placing].nom} : place libre` : `${B[placing].emoji} Terrain occupé, avance ailleurs`;
+    const txt = ghostOk ? `${B[placing].emoji} ${B[placing].nom} : place libre`
+      : problem === "porte" ? `${B[placing].emoji} Une porte serait bloquée, décale-toi`
+      : `${B[placing].emoji} Terrain occupé, avance ailleurs`;
     if(hint.textContent !== txt){ hint.textContent = txt; hint.classList.toggle("bad", !ghostOk); }
     btn.disabled = !ghostOk;
     return;

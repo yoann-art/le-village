@@ -5,14 +5,15 @@ export const RES = {
   pierre: {emoji:"🪨", nom:"pierre"},
   or:     {emoji:"🪙", nom:"or"}
 };
+/* size : côté du carré de cases (en P) ; door : décalage de la porte sur la façade (en P, − vers la gauche) */
 export const B = {
-  chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:8, pierre:3}, stars:1, size:3, desc:"Loge des villageois. Rapporte des étoiles."},
-  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:10, or:4}, stars:1, size:3, bonus:{res:"bois", pct:25}, desc:"+25 % de bois au Bûcheron, par niveau."},
-  carriere: {nom:"Carrière", emoji:"⛏️", cost:{bois:12, or:5}, stars:1, size:3, bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre à la Carrière, par niveau."},
-  marche:   {nom:"Marché", emoji:"⚖️", cost:{bois:12, pierre:10}, stars:2, size:4, bonus:{res:"or", pct:25}, desc:"+25 % d'or aux Runes, par niveau."},
-  taverne:  {nom:"Taverne", emoji:"🍺", cost:{bois:18, pierre:12, or:10}, stars:3, size:4, all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
-  forge:    {nom:"Forge", emoji:"⚒️", cost:{pierre:22, or:8}, stars:3, size:3, desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
-  chateau:  {nom:"Château", emoji:"🏰", cost:{bois:45, pierre:60, or:40}, stars:10, unique:true, size:4, desc:"Le cœur du village. Il couronne ta partie."}
+  chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:8, pierre:3}, stars:1, size:3, door:0, desc:"Loge des villageois. Rapporte des étoiles."},
+  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:10, or:4}, stars:1, size:3, door:-.45, bonus:{res:"bois", pct:25}, desc:"+25 % de bois au Bûcheron, par niveau."},
+  carriere: {nom:"Carrière", emoji:"⛏️", cost:{bois:12, or:5}, stars:1, size:3, door:-.45, bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre à la Carrière, par niveau."},
+  marche:   {nom:"Marché", emoji:"⚖️", cost:{bois:12, pierre:10}, stars:2, size:4, door:0, bonus:{res:"or", pct:25}, desc:"+25 % d'or aux Runes, par niveau."},
+  taverne:  {nom:"Taverne", emoji:"🍺", cost:{bois:18, pierre:12, or:10}, stars:3, size:4, door:0, all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
+  forge:    {nom:"Forge", emoji:"⚒️", cost:{pierre:22, or:8}, stars:3, size:3, door:-.4, desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
+  chateau:  {nom:"Château", emoji:"🏰", cost:{bois:45, pierre:60, or:40}, stars:10, unique:true, size:4, door:0, desc:"Le cœur du village. Il couronne ta partie."}
 };
 export const ORDER = ["chaumiere","scierie","carriere","marche","taverne","forge","chateau"];
 export const GAMES = {

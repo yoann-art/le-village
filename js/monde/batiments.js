@@ -6,6 +6,7 @@
 import { P, G, part, roof } from "./formes.js";
 import { scene } from "./scene.js";
 import { H, idx } from "./ile.js";
+import { B } from "../donnees.js";
 import { state } from "../sauvegarde.js";
 import { sizeOf, maxLvl } from "../regles.js";
 
@@ -13,10 +14,9 @@ const MUR = 2 * P, PORTE = 1.5 * P;
 const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8553D, white:0xF4EFE6, blue:0x4E6DB3, stone:0xAEB0B3, stone2:0x8E9195, gold:0xE2B24D, lit:0xF6D27A};
 const emberMat = new THREE.MeshLambertMaterial({color:0xFF7A2E, emissive:0xFF5A00, emissiveIntensity:.7});
 
-/* Place de la porte sur la façade, décalée à gauche (−) ou à droite (+) du milieu */
-export const DOOR_X = {chaumiere:0, scierie:-.45, carriere:-.45, marche:0, taverne:0, forge:-.4, chateau:0};
-/* La façade est à 0,2 P du bord du carré de cases */
-export const frontOf = type => sizeOf(type) / 2 - .2;
+/* La façade est à 0,2 P du bord du carré de cases ; la place de la porte
+   sur la façade est dans les données (B[type].door) */
+const frontOf = type => sizeOf(type) / 2 - .2;
 
 function door(g, x, z){
   g.add(part(G.box, C.dark, 1.14*P, PORTE + .07, .05, x, (PORTE + .07)/2, z + .01));
@@ -89,7 +89,7 @@ const BUILD = {
 export function makeBuilding(type, lvl){
   const g = new THREE.Group();
   BUILD[type](g);
-  door(g, DOOR_X[type], frontOf(type));
+  door(g, B[type].door, frontOf(type));
   if(maxLvl(type) > 1 && lvl >= 2){
     const e = sizeOf(type) / 2 - .15;
     g.add(part(G.cyl, C.dark, .06, 2.8, .06, -e, 1.4, e));

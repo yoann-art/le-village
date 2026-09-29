@@ -7,13 +7,14 @@ import "./miseajour.js";
 import "./verification.js";
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
-import { renderer, scene, camera, sun, D } from "./monde/scene.js";
+import { renderer, camera, sun, D } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
 import { player, updatePlayer } from "./monde/personnage.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail } from "./construire.js";
+import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
 /* Touche Échap : ferme ce qui est ouvert */
@@ -46,17 +47,24 @@ let last = performance.now();
 function tick(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if(gameEl.hidden){
-    if(wrap.hidden && updatePlayer(dt)) dirty = true;
-    camT.lerp(player.position, 1 - Math.pow(.0005, dt));
+    const pushing = wrap.hidden && !isBusy() && updatePlayer(dt);
+    if(pushing) dirty = true;
+    checkDoors(pushing);
+    const target = cameraTarget();
+    if(takeJump()) camT.copy(target);
+    else camT.lerp(target, 1 - Math.pow(.0005, dt));
     camera.position.copy(camT).addScaledVector(OFF, D);
     camera.lookAt(camT.x, .4, camT.z);
-    sun.position.set(camT.x + 6, 16, camT.z + 5);
-    sun.target.position.copy(camT);
-    water.position.y = -.2 + Math.sin(now * .0012) * .02;
-    updateInteraction();
-    renderer.render(scene, camera);
+    if(!isInside()){
+      sun.position.set(camT.x + 6, 16, camT.z + 5);
+      sun.target.position.copy(camT);
+      water.position.y = -.2 + Math.sin(now * .0012) * .02;
+      updateInteraction();
+    }
+    renderer.render(currentScene(), camera);
     if(dirty && now - lastSave > 2000){
-      state.player = {x:+player.position.x.toFixed(2), z:+player.position.z.toFixed(2)};
+      const p = islandPos();
+      state.player = {x:+p.x.toFixed(2), z:+p.z.toFixed(2)};
       save(); lastSave = now; dirty = false;
     }
   }

@@ -4,6 +4,8 @@ import { RES, B } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
+/* La case juste devant la porte d'un bâtiment posé en (x, z) : elle doit rester libre */
+export const doorTile = (t, x, z) => [x + Math.floor(sizeOf(t)/2 + (B[t].door || 0)), z + sizeOf(t)];
 export const maxLvl = t => B[t].unique ? 1 : 3;
 export function upCost(t, lvl){
   const c = {};

@@ -3,6 +3,7 @@
 import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
+import { doorTile } from "../regles.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P */
 export const N = 40, H = N / 2;
@@ -45,6 +46,11 @@ function genMap(seed){
   return {type, obj};
 }
 export const map = genMap(state.seed);
+/* Rien ne pousse devant la porte d'un bâtiment déjà posé */
+state.buildings.forEach(b => {
+  const [x, z] = doorTile(b.type, b.x, b.z);
+  if(inb(x, z)) map.obj[idx(x, z)] = null;
+});
 
 /* Terrain : dalle d'herbe ou de sable sur un socle de terre */
 {

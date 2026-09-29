@@ -130,6 +130,10 @@ button{font:inherit;color:inherit}
 .toast{position:fixed;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translate(-50%,-10px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;z-index:40;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
+/* Fondu au noir quand on entre ou sort d'un bâtiment */
+.fondu{position:fixed;inset:0;z-index:45;background:#000;opacity:0;pointer-events:none;transition:opacity .25s}
+.fondu.on{opacity:1}
+
 @keyframes pop{40%{transform:scale(1.35)}}
 @keyframes shake{25%{transform:rotate(-7deg)}75%{transform:rotate(6deg)}}
 @keyframes float{to{transform:translate(-50%,-70%);opacity:0}}

@@ -21,19 +21,29 @@ body.add(legL, legR);
 player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P
 scene.add(player);
 
-const R = .26;
-function walkable(wx, wz){
+/* Où peut-on marcher ? Dehors, sur l'île ; dedans, dans la pièce (voir lieux.js) */
+export const R = .26;
+export function islandWalkable(wx, wz){
   const x = tileOf(wx), z = tileOf(wz);
   if(!inb(x,z)) return false;
   const i = idx(x,z);
   return map.type[i] !== "water" && !map.obj[i] && !occ.has(i);
 }
+let walkable = islandWalkable;
+export function setWalkable(fn){ walkable = fn; }
 const free = (wx, wz) => walkable(wx-R, wz-R) && walkable(wx+R, wz-R) && walkable(wx-R, wz+R) && walkable(wx+R, wz+R);
 player.position.set(state.player.x, 0, state.player.z);
 if(!free(player.position.x, player.position.z)) player.position.set(.5, 0, .5);
 const facing = {x:0, z:1};
 
-/* Déplacement : renvoie true si le personnage a bougé */
+/* Pose le personnage à un endroit, tourné dans une direction (entrée et sortie des bâtiments) */
+export function placePlayer(x, z, fx, fz){
+  player.position.set(x, 0, z);
+  facing.x = fx; facing.z = fz;
+  player.rotation.y = Math.atan2(fx, fz);
+}
+
+/* Déplacement : renvoie true si le joueur pousse le joystick (même contre un mur) */
 const SPEED = 3.4;
 let walkT = 0;
 export function dir4(){ return Math.abs(facing.x) > Math.abs(facing.z) ? {x:Math.sign(facing.x), z:0} : {x:0, z:Math.sign(facing.z) || 1}; }
