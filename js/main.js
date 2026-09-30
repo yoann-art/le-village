@@ -14,7 +14,7 @@ import { player, updatePlayer } from "./monde/personnage.js";
 import { view } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
-import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail } from "./construire.js";
+import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
 import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
@@ -50,11 +50,11 @@ let last = performance.now();
 function tick(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if(gameEl.hidden){
-    const pushing = wrap.hidden && !isBusy() && updatePlayer(dt);
+    const pushing = wrap.hidden && !isBusy() && !placing && updatePlayer(dt);   // pendant une pose, le personnage attend
     if(pushing) dirty = true;
     checkDoors(pushing);
     setDistance(distanceFor(isInside() ? VIEW_IN : VIEW_OUT) * view.zoom);
-    const target = cameraTarget();
+    const target = (!isInside() && placementFocus()) || cameraTarget();
     if(takeJump()) camT.copy(target);
     else camT.lerp(target, 1 - Math.pow(.0005, dt));
     camera.position.copy(camT).addScaledVector(OFF, D);
@@ -63,7 +63,7 @@ function tick(now){
       sun.position.set(camT.x + 6, 16, camT.z + 5);
       sun.target.position.copy(camT);
       water.position.y = -.2 + Math.sin(now * .0012) * .02;
-      updateInteraction();
+      updateInteraction(dt);
     }
     renderer.render(currentScene(), camera);
     if(dirty && now - lastSave > 2000){

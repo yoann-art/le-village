@@ -113,6 +113,17 @@ export function placeMesh(b){
   g.position.set(b.x - H + s/2, 0, b.z - H + s/2);
   scene.add(g); bMeshes.set(b.id, g);
 }
+/* Montre ou cache le modèle d'un bâtiment posé (caché pendant qu'on le déplace) */
+export function setMeshVisible(id, v){ const g = bMeshes.get(id); if(g) g.visible = v; }
+/* Le bâtiment touché par un rayon (celui du doigt), ou null */
+export function pickBuilding(ray){
+  let best = null, dist = Infinity;
+  for(const [id, g] of bMeshes){
+    const h = ray.intersectObject(g, true)[0];
+    if(h && h.distance < dist){ dist = h.distance; best = id; }
+  }
+  return best;
+}
 state.buildings.forEach(b => {
   placeMesh(b);
   footprint(b.type, b.x, b.z).forEach(([x,z]) => occ.set(idx(x,z), b.id));
