@@ -6,7 +6,7 @@ import { $ } from "./outils.js";
 import { RES, B, ORDER } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
-import { renderer, scene, camera } from "./monde/scene.js";
+import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, idx, inb, map, tileOf } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
@@ -69,17 +69,9 @@ export function stopPlacing(){
 export const placementFocus = () => placing ? focus : null;
 
 /* ----- Le doigt sur l'île ----- */
-const canvas = renderer.domElement, touches = new Map();
-const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
+const canvas = renderer.domElement, touches = new Map(), hit = new THREE.Vector3();
 let drag = null;                     // doigt qui fait glisser le fantôme : {id, p0, g0}
 let press = null;                    // appui long en cours sur un bâtiment posé : {id, pid, sx, sy, timer}
-function aim(sx, sy){
-  const r = canvas.getBoundingClientRect();
-  ndc.set((sx - r.left) / r.width * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
-  camera.updateMatrixWorld();
-  ray.setFromCamera(ndc, camera);
-}
-const groundAt = (sx, sy, out) => { aim(sx, sy); return ray.ray.intersectPlane(groundPlane, out); };
 const outside = () => player.parent === scene;   // dedans, le personnage est dans la scène de la pièce
 function startDrag(pid){
   const t = touches.get(pid);

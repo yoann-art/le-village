@@ -7,6 +7,7 @@
    La pièce est construite au moment où l'on entre ; elle est vide (meubles : étape 1.2). */
 import { P, G, part } from "./formes.js";
 import { roomSide } from "../regles.js";
+import { makeMeuble } from "./meubles.js";
 
 export const interior = new THREE.Scene();
 interior.background = new THREE.Color(0x1E1813);
@@ -42,9 +43,11 @@ floor.receiveShadow = true;
 interior.add(floor);
 
 let room = null;
+const itemMeshes = new Map();                    // meubles de la pièce : id → modèle
 export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
+  itemMeshes.clear();
   const a = AMBIANCE[b.type], w = roomSide(b.type, b.lvl), d = w;
 
   hemi.groundColor.setHex(a.ground || 0x6B4A2F);
@@ -80,5 +83,33 @@ export function buildRoom(b){
   room.add(part(G.box, MAT, P, .03, .6, 0, .015, d/2 - .3));                            // paillasson de la sortie
   interior.add(room);
   lamp.target.position.set(0, 0, 0);
+  ((b.deco && b.deco.items) || []).forEach(addItemMesh);
   return {w, d, doorX: 0};
+}
+
+/* Les meubles posés dans la pièce (position au centre du meuble, en P depuis le milieu de la pièce ;
+   rot = nombre de quarts de tour) */
+export function placeItemMesh(it){
+  const g = itemMeshes.get(it.id);
+  if(!g) return;
+  g.position.set(it.x, 0, it.z);
+  g.rotation.y = -it.rot * Math.PI / 2;
+}
+export function addItemMesh(it){
+  const g = makeMeuble(it.type);
+  room.add(g); itemMeshes.set(it.id, g);
+  placeItemMesh(it);
+}
+export function removeItemMesh(id){
+  const g = itemMeshes.get(id);
+  if(g){ room.remove(g); itemMeshes.delete(id); }
+}
+/* Le meuble touché par un rayon (celui du doigt), ou null */
+export function pickItem(ray){
+  let best = null, dist = Infinity;
+  for(const [id, g] of itemMeshes){
+    const h = ray.intersectObject(g, true)[0];
+    if(h && h.distance < dist){ dist = h.distance; best = id; }
+  }
+  return best;
 }

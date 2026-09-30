@@ -17,6 +17,15 @@ export const B = {
   chateau:  {nom:"Château", emoji:"🏰", cost:{bois:45, pierre:60, or:40}, stars:10, unique:true, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."}
 };
 export const ORDER = ["chaumiere","scierie","carriere","marche","taverne","forge","chateau"];
+/* Meubles du catalogue : gabarit de la bible (petit ≈ 1 P², moyen ≈ 2 P², grand ≈ 4 P²),
+   taille au sol w × d en P (w de gauche à droite, d de l'arrière à l'avant),
+   flat : posé à plat comme un tapis (on marche dessus, on pose des meubles dessus) */
+export const MEUBLES = {
+  chaise:{nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
+  coffre:{nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
+  lit:   {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2}
+};
+export const MEUBLES_ORDER = ["chaise","coffre","lit"];
 export const GAMES = {
   bucheron:{nom:"Le Bûcheron", cat:"Adresse", color:"sinople", emoji:"🪓", res:"bois", gain:"du bois",
     rules:"Frappe quand le curseur passe dans la zone verte. Au centre doré, c'est un coup parfait. 8 coups."},

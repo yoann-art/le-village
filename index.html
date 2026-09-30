@@ -23,11 +23,23 @@
   <div class="actions" id="actions">
     <button class="act ctx" id="btn-ctx" hidden></button>
     <button class="act" id="btn-build">🔨 Construire</button>
+    <button class="act" id="btn-deco" hidden>🪑 Décorer</button>
     <button class="act" id="btn-games">🎲 Mini-jeux</button>
   </div>
   <div class="actions" id="place-actions" hidden>
     <button class="act primary" id="btn-place">Poser ici</button>
     <button class="act" id="btn-cancel">Annuler</button>
+  </div>
+  <div class="deco-bar" id="deco-bar" hidden>
+    <div class="deco-row" id="deco-sel" hidden>
+      <button class="act" id="deco-rot">↻ Tourner</button>
+      <button class="act" id="deco-store">📥 Ranger</button>
+    </div>
+    <div class="deco-row">
+      <button class="act" id="deco-cat">➕ Meubles</button>
+      <button class="act" id="deco-magnet" aria-pressed="true">🧲 Aimant</button>
+      <button class="act primary" id="deco-done">Terminé</button>
+    </div>
   </div>
 
   <div class="version" id="version"></div>

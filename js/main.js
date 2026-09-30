@@ -16,11 +16,12 @@ import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
 import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
+import { decorating, decoView, addMeuble, finishDeco } from "./decorer.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
 /* Touche Échap : ferme ce qui est ouvert */
 window.addEventListener("keydown", e => {
-  if(e.key === "Escape"){ if(!gameEl.hidden) closeGame(); else if(!wrap.hidden) closeSheet(); else if(placing) stopPlacing(); }
+  if(e.key === "Escape"){ if(!gameEl.hidden) closeGame(); else if(!wrap.hidden) closeSheet(); else if(decorating()) finishDeco(); else if(placing) stopPlacing(); }
 });
 
 /* Boutons des panneaux du bas */
@@ -28,6 +29,8 @@ wrap.addEventListener("click", e => {
   if(e.target.closest("[data-close]")){ closeSheet(); return; }
   const pick = e.target.closest("[data-pick]");
   if(pick){ closeSheet(); startPlacing(pick.dataset.pick); return; }
+  const mb = e.target.closest("[data-meuble]");
+  if(mb){ closeSheet(); addMeuble(mb.dataset.meuble); return; }
   const gm = e.target.closest("[data-game]");
   if(gm){ closeSheet(); setTimeout(() => openGame(gm.dataset.game), 150); return; }
   if(e.target.closest("[data-up]")){ upgradeDetail(); return; }
@@ -50,11 +53,12 @@ let last = performance.now();
 function tick(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if(gameEl.hidden){
-    const pushing = wrap.hidden && !isBusy() && !placing && updatePlayer(dt);   // pendant une pose, le personnage attend
+    const pushing = wrap.hidden && !isBusy() && !placing && !decorating() && updatePlayer(dt);   // pendant une pose ou la déco, le personnage attend
     if(pushing) dirty = true;
     checkDoors(pushing);
-    setDistance(distanceFor(isInside() ? VIEW_IN : VIEW_OUT) * view.zoom);
-    const target = (!isInside() && placementFocus()) || cameraTarget();
+    const dv = decoView();
+    setDistance(distanceFor(dv ? dv.width : isInside() ? VIEW_IN : VIEW_OUT) * view.zoom);
+    const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
     if(takeJump()) camT.copy(target);
     else camT.lerp(target, 1 - Math.pow(.0005, dt));
     camera.position.copy(camT).addScaledVector(OFF, D);

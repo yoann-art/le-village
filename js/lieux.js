@@ -9,6 +9,7 @@ import { sizeOf, doorTile } from "./regles.js";
 import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
+import { meubleAt } from "./monde/meubles.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable } from "./monde/personnage.js";
 import { placing } from "./construire.js";
 
@@ -18,6 +19,8 @@ let jump = false;         // la caméra doit sauter d'un coup au nouveau lieu
 const fondu = $("#fondu");
 
 export const isInside = () => !!inside;
+/* La pièce où l'on est : {b : le bâtiment, room : {w, d, doorX}}, ou null dehors */
+export const currentPlace = () => inside;
 export const isBusy = () => busy;
 export const currentScene = () => inside ? interior : scene;
 
@@ -48,10 +51,12 @@ function enter(b){
     const room = buildRoom(b);
     inside = {b, room};
     interior.add(player);
-    setWalkable((x, z) => Math.abs(x) < room.w/2 && Math.abs(z) < room.d/2);
+    /* Dans la pièce : entre les murs, en contournant les meubles */
+    setWalkable((x, z) => Math.abs(x) < room.w/2 && Math.abs(z) < room.d/2 && !meubleAt((b.deco && b.deco.items) || [], x, z));
     placePlayer(room.doorX, room.d/2 - R - .3, 0, -1);
     $("#btn-build").hidden = true;
     $("#btn-ctx").hidden = true;
+    $("#btn-deco").hidden = false;
   });
 }
 function exit(){
@@ -63,6 +68,7 @@ function exit(){
     const p = outsideSpot(b);
     placePlayer(p.x, p.z, 0, 1);
     $("#btn-build").hidden = false;
+    $("#btn-deco").hidden = true;
   });
 }
 

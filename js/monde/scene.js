@@ -52,3 +52,16 @@ export function setDistance(d){
   sc.updateProjectionMatrix();
 }
 setDistance(distanceFor(8));
+
+/* Ce que touche le doigt : le rayon qui part de la caméra et passe sous le doigt */
+export const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2(), groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+export function aim(sx, sy){
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((sx - r.left) / r.width * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
+  camera.updateMatrixWorld();
+  ray.setFromCamera(ndc, camera);
+  return ray;
+}
+/* Le point du sol sous le doigt (dans out), ou null */
+export const groundAt = (sx, sy, out) => aim(sx, sy).ray.intersectPlane(groundPlane, out);
