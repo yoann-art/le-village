@@ -34,6 +34,8 @@ function genMap(seed){
   }
   /* Un arbre ne pousse pas collé à un autre : son feuillage fait 2 P de large */
   const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && obj[idx(x+dx, z+dz)] === "tree");
+  /* (Ne pas changer le 5 ci-dessous : cela redistribuerait tous les arbres de l'île.
+     Pour faire de la place, on retire des arbres après coup, voir la place du village.) */
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x,z);
     if(Math.hypot(x-c, z-c) < 5) continue;
@@ -43,6 +45,8 @@ function genMap(seed){
       else if(r < .06) obj[i] = "rock";
     } else if(type[i] === "sand" && r < .03) obj[i] = "rock";
   }
+  /* La place du village : ni arbre ni rocher à moins de 9 cases du centre */
+  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++) if(Math.hypot(x-c, z-c) < 9) obj[idx(x,z)] = null;
   return {type, obj};
 }
 export const map = genMap(state.seed);
