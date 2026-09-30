@@ -8,6 +8,7 @@
 import { P, G, part } from "./formes.js";
 import { roomSide } from "../regles.js";
 import { makeMeuble } from "./meubles.js";
+import { COULEURS } from "../donnees.js";
 
 export const interior = new THREE.Scene();
 interior.background = new THREE.Color(0x1E1813);
@@ -49,6 +50,10 @@ export function buildRoom(b){
   room = new THREE.Group();
   itemMeshes.clear();
   const a = AMBIANCE[b.type], w = roomSide(b.type, b.lvl), d = w;
+  /* Couleurs des murs et du sol : celles choisies par le joueur, sinon celles de l'ambiance */
+  const deco = b.deco || {}, pick = key => COULEURS[key] && COULEURS[key].hex;
+  const wall = pick(deco.wall) || a.wall;
+  const tiles = pick(deco.floor) ? [pick(deco.floor), new THREE.Color(pick(deco.floor)).multiplyScalar(.9).getHex()] : a.floor;
 
   hemi.groundColor.setHex(a.ground || 0x6B4A2F);
   lamp.color.setHex(a.light); lamp.intensity = a.power;
@@ -57,14 +62,14 @@ export function buildRoom(b){
   let k = 0;
   for(let z = 0; z < d; z++) for(let x = 0; x < w; x++, k++){
     m4.makeTranslation(x - w/2 + .5, -.1, z - d/2 + .5); floor.setMatrixAt(k, m4);
-    floor.setColorAt(k, col.setHex(a.floor[(x + z) % 2]));
+    floor.setColorAt(k, col.setHex(tiles[(x + z) % 2]));
   }
   floor.count = k;
   floor.instanceMatrix.needsUpdate = true; floor.instanceColor.needsUpdate = true;
 
-  room.add(part(G.box, a.wall, w + 2*EP, MUR, EP, 0, MUR/2, -d/2 - EP/2));            // fond
-  room.add(part(G.box, a.wall, EP, MUR, d + EP, -w/2 - EP/2, MUR/2, -EP/2));          // gauche
-  room.add(part(G.box, a.wall, EP, MUR, d + EP, w/2 + EP/2, MUR/2, -EP/2));           // droite
+  room.add(part(G.box, wall, w + 2*EP, MUR, EP, 0, MUR/2, -d/2 - EP/2));              // fond
+  room.add(part(G.box, wall, EP, MUR, d + EP, -w/2 - EP/2, MUR/2, -EP/2));            // gauche
+  room.add(part(G.box, wall, EP, MUR, d + EP, w/2 + EP/2, MUR/2, -EP/2));             // droite
   room.add(part(G.box, a.beam, w + 2*EP + .04, .14, EP + .04, 0, MUR, -d/2 - EP/2));
   room.add(part(G.box, a.beam, EP + .04, .14, d + EP + .04, -w/2 - EP/2, MUR, -EP/2));
   room.add(part(G.box, a.beam, EP + .04, .14, d + EP + .04, w/2 + EP/2, MUR, -EP/2));
@@ -96,10 +101,12 @@ export function placeItemMesh(it){
   g.rotation.y = -it.rot * Math.PI / 2;
 }
 export function addItemMesh(it){
-  const g = makeMeuble(it.type);
+  const g = makeMeuble(it.type, it.color);
   room.add(g); itemMeshes.set(it.id, g);
   placeItemMesh(it);
 }
+/* Refait le modèle d'un meuble (après un changement de couleur) */
+export function refreshItemMesh(it){ removeItemMesh(it.id); addItemMesh(it); }
 export function removeItemMesh(id){
   const g = itemMeshes.get(id);
   if(g){ room.remove(g); itemMeshes.delete(id); }

@@ -4,14 +4,14 @@
    Catalogue gratuit et illimité pour l'instant (fabrication : étape 1.3, inventaire : étape 1.4).
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER } from "./donnees.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
-import { interior, addItemMesh, removeItemMesh, placeItemMesh, pickItem } from "./monde/interieurs.js";
+import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, pickItem } from "./monde/interieurs.js";
 import { footOf } from "./monde/meubles.js";
 import { player, R, placePlayer } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
-import { openSheet, toast } from "./interface.js";
+import { openSheet, toast, wrap } from "./interface.js";
 import { currentPlace } from "./lieux.js";
 
 let deco = null;                     // la pièce qu'on décore : {b, room}
@@ -84,7 +84,7 @@ function hint(text, bad = false){
 function showSel(){
   $("#deco-sel").hidden = !sel;
   plate.visible = !!sel;
-  if(!sel){ hint("Touche « Meubles » pour en poser un, ou touche un meuble pour le déplacer"); return; }
+  if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
   const [w, d] = footOf(sel), pb = problem(sel);
   plate.scale.set(w + .1, d + .1, 1);
   plate.position.set(sel.x, MEUBLES[sel.type].flat ? .05 : .03, sel.z);
@@ -157,6 +157,37 @@ $("#deco-store").addEventListener("click", () => {
   toast(`${MEUBLES[sel.type].emoji} Meuble rangé`);
   sel = null; showSel(); save();
 });
+/* ----- Couleurs : du meuble choisi, ou des murs et du sol de la pièce (palette gratuite) ----- */
+const hexCss = n => "#" + n.toString(16).padStart(6, "0");
+function swatches(target, current){
+  const one = (key, label, style, text) => `<div class="sw-item"><button class="swatch${(current || "") === key ? " on" : ""}" ${style}
+    data-couleur="${key}" data-cible="${target}" aria-label="${label}">${text}</button>${label}</div>`;
+  return `<div class="swatches">${one("", "D'origine", "", "↺")}` +
+    COULEURS_ORDER.map(k => one(k, COULEURS[k].nom, `style="--sw:${hexCss(COULEURS[k].hex)}"`, "")).join("") + `</div>`;
+}
+$("#deco-color").addEventListener("click", () => {
+  if(!sel) return;
+  const m = MEUBLES[sel.type];
+  openSheet(`<div class="sh-head"><h2 class="display">🎨 ${m.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p class="muted" style="margin:0 0 6px">Touche une couleur : le meuble change tout de suite.</p>${swatches("item", sel.color)}`);
+});
+$("#deco-room").addEventListener("click", () => {
+  const d = deco.b.deco;
+  openSheet(`<div class="sh-head"><h2 class="display">🎨 La pièce</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p class="muted" style="margin:0 0 6px">« D'origine » garde l'ambiance du bâtiment.</p>
+    <h3 style="margin:10px 0 0">Murs</h3>${swatches("wall", d.wall)}
+    <h3 style="margin:4px 0 0">Sol</h3>${swatches("floor", d.floor)}`);
+});
+wrap.addEventListener("click", e => {
+  const btn = e.target.closest("[data-couleur]");
+  if(!btn || !deco) return;
+  const key = btn.dataset.couleur || undefined, target = btn.dataset.cible, d = deco.b.deco;
+  if(target === "item"){ if(!sel) return; sel.color = key; refreshItemMesh(sel); }
+  else { d[target] = key; buildRoom(deco.b); }                        // murs ou sol : on refait la pièce
+  btn.closest(".swatches").querySelectorAll(".swatch").forEach(s => s.classList.toggle("on", s === btn));
+  showSel(); save();
+});
+
 function setMagnetButton(){ $("#deco-magnet").setAttribute("aria-pressed", String(magnet)); }
 $("#deco-magnet").addEventListener("click", () => {
   magnet = !magnet;

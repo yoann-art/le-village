@@ -36,6 +36,17 @@ export const MEUBLES = {
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true}
 };
+/* Palette gratuite : couleur d'un meuble, des murs ou du sol d'une pièce.
+   (Plus tard : des couleurs à gagner, avec un cadenas — voir la Boîte à idées du plan de production.) */
+export const COULEURS = {
+  miel:  {nom:"Bois miel", hex:0xC8955A},
+  sombre:{nom:"Bois sombre", hex:0x6B4428},
+  tuile: {nom:"Rouge tuile", hex:0xC8643C},
+  vert:  {nom:"Vert tendre", hex:0x8DBF6A},
+  bleu:  {nom:"Bleu ardoise", hex:0x6B86B8},
+  creme: {nom:"Crème", hex:0xF2E2C2}
+};
+export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 export const GAMES = {
   bucheron:{nom:"Le Bûcheron", cat:"Adresse", color:"sinople", emoji:"🪓", res:"bois", gain:"du bois",
