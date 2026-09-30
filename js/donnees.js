@@ -19,13 +19,24 @@ export const B = {
 export const ORDER = ["chaumiere","scierie","carriere","marche","taverne","forge","chateau"];
 /* Meubles du catalogue : gabarit de la bible (petit ≈ 1 P², moyen ≈ 2 P², grand ≈ 4 P²),
    taille au sol w × d en P (w de gauche à droite, d de l'arrière à l'avant),
-   flat : posé à plat comme un tapis (on marche dessus, on pose des meubles dessus) */
+   flat : posé à plat comme un tapis (on marche dessus, on pose des meubles dessus),
+   where : les seuls bâtiments où il se pose (meuble de métier) ; sans where, il se pose partout */
 export const MEUBLES = {
-  chaise:{nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
-  coffre:{nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
-  lit:   {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2}
+  chaise:   {nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
+  tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
+  pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
+  lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5},
+  tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
+  coffre:   {nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
+  banc:     {nom:"Banc", emoji:"🛋️", gabarit:"moyen", w:1.6, d:.6},
+  etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
+  cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
+  petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
+  table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
+  lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
+  grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true}
 };
-export const MEUBLES_ORDER = ["chaise","coffre","lit"];
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 export const GAMES = {
   bucheron:{nom:"Le Bûcheron", cat:"Adresse", color:"sinople", emoji:"🪓", res:"bois", gain:"du bois",
     rules:"Frappe quand le curseur passe dans la zone verte. Au centre doré, c'est un coup parfait. 8 coups."},

@@ -4,7 +4,7 @@
    Catalogue gratuit et illimité pour l'instant (fabrication : étape 1.3, inventaire : étape 1.4).
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { MEUBLES, MEUBLES_ORDER } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER } from "./donnees.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
 import { interior, addItemMesh, removeItemMesh, placeItemMesh, pickItem } from "./monde/interieurs.js";
@@ -30,16 +30,17 @@ export const decoView = () => deco ? view : null;
 
 /* ----- Règles de place ----- */
 const MAT_W = 1.1, MAT_D = .7;       // le paillasson (la sortie) reste toujours libre
-const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", personnage:"Le personnage est là"};
+const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", tapis:"Pas sur un autre tapis", personnage:"Le personnage est là"};
+/* Deux couches : les tapis au sol, les meubles par-dessus. On ne chevauche que sa propre couche. */
 function problem(it){
-  const [w, d] = footOf(it), {room} = deco;
+  const [w, d] = footOf(it), {room} = deco, flat = !!MEUBLES[it.type].flat;
   if(Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
-  if(MEUBLES[it.type].flat) return null;
   for(const o of items()){
-    if(o === it || MEUBLES[o.type].flat) continue;
+    if(o === it || !!MEUBLES[o.type].flat !== flat) continue;
     const [ow, od] = footOf(o);
-    if(Math.abs(it.x - o.x) < (w + ow)/2 - .001 && Math.abs(it.z - o.z) < (d + od)/2 - .001) return "meuble";
+    if(Math.abs(it.x - o.x) < (w + ow)/2 - .001 && Math.abs(it.z - o.z) < (d + od)/2 - .001) return flat ? "tapis" : "meuble";
   }
+  if(flat) return null;
   const p = player.position;
   if(Math.abs(p.x - it.x) < w/2 + R && Math.abs(p.z - it.z) < d/2 + R) return "personnage";
   return null;
@@ -86,7 +87,7 @@ function showSel(){
   if(!sel){ hint("Touche « Meubles » pour en poser un, ou touche un meuble pour le déplacer"); return; }
   const [w, d] = footOf(sel), pb = problem(sel);
   plate.scale.set(w + .1, d + .1, 1);
-  plate.position.set(sel.x, .03, sel.z);
+  plate.position.set(sel.x, MEUBLES[sel.type].flat ? .05 : .03, sel.z);
   plateMat.color.setHex(pb ? 0xE4776C : 0xFFE27A);
   hint(pb ? WHY[pb] : `${MEUBLES[sel.type].emoji} ${MEUBLES[sel.type].nom} : glisse-le du doigt`, !!pb);
 }
@@ -116,20 +117,25 @@ export function finishDeco(){
 }
 
 /* ----- Catalogue, tourner, ranger, aimant ----- */
-const GAB = {petit:"Petit gabarit, environ 1 P² au sol", moyen:"Gabarit moyen, environ 2 P² au sol", grand:"Grand gabarit, environ 4 P² au sol"};
+/* Un meuble de métier ne se pose que dans ses bâtiments ; les autres, partout */
+const allowedIn = (type, bType) => !MEUBLES[type].where || MEUBLES[type].where.includes(bType);
+const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles moyens", "environ 2 P² au sol"], grand:["Grands meubles", "environ 4 P² au sol"]};
 $("#deco-cat").addEventListener("click", () => {
+  const here = deco.b.type;
   openSheet(`<div class="sh-head"><h2 class="display">Meubles</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Gratuits pour l'instant. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
-    MEUBLES_ORDER.map(t => {
-      const m = MEUBLES[t];
-      return `<div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
-        <div class="bt"><span class="bn">${m.nom}</span><p>${GAB[m.gabarit]}</p></div>
-        <button class="btn primary" data-meuble="${t}">Poser</button></div>`;
-    }).join(""));
+    Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
+      MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
+        const m = MEUBLES[t], ok = allowedIn(t, here);
+        const where = m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}` : "Partout";
+        return `<div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
+          <div class="bt"><span class="bn">${m.nom}</span><p>${m.flat ? "À plat, on marche dessus. " : ""}${where}</p></div>
+          <button class="btn primary" data-meuble="${t}" ${ok ? "" : "disabled"}>Poser</button></div>`;
+      }).join("")).join(""));
 });
 /* Choisi dans le catalogue (voir main.js) : le meuble apparaît à la place libre la plus proche du milieu */
 export function addMeuble(type){
-  if(!deco) return;
+  if(!deco || !allowedIn(type, deco.b.type)) return;
   const it = {id: deco.b.deco.next++, type, x: 0, z: 0, rot: 0};
   if(!findSpot(it)){ toast("Plus de place pour ce meuble dans la pièce"); return; }
   items().push(it); addItemMesh(it);
