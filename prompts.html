@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prompts des bâtiments</title>
+<!-- Les prompts Gemini des 20 bâtiments de la bible, à copier d'un toucher depuis le téléphone.
+     Même contenu que la fiche « Prompts Gemini : bâtiments » (doc Claude) : garder les deux d'accord. -->
+<style>
+:root{
+  --bg:#F6F1E7; --card:#FFFDF8; --ink:#3B2A1A; --muted:#7A6652; --line:#E6D9C3;
+  --prompt:#F3EADA; --accent:#2F6B3A; --on-accent:#FFFFFF; --done:#2F6B3A; --chip:#EFE3CD;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A1612; --card:#241E18; --ink:#F1E6D4; --muted:#B9A68E; --line:#3A3027;
+    --prompt:#2E261E; --accent:#6DB47A; --on-accent:#0E1A12; --done:#6DB47A; --chip:#3A3027;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A1612; --card:#241E18; --ink:#F1E6D4; --muted:#B9A68E; --line:#3A3027;
+  --prompt:#2E261E; --accent:#6DB47A; --on-accent:#0E1A12; --done:#6DB47A; --chip:#3A3027;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
+h1{font-size:26px;line-height:1.2;margin:8px 0 4px}
+.lead{color:var(--muted);margin:0 0 12px}
+.steps{margin:0 0 12px;padding-left:22px}
+.steps li{margin:2px 0}
+.progress{position:sticky;top:0;z-index:2;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);font-weight:600}
+h2{font-size:20px;margin:24px 0 8px}
+.note{color:var(--muted);font-size:14px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
+.card.is-done{border-color:var(--done)}
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 8px}
+.head h3{font-size:18px;margin:0;line-height:1.25}
+.size{flex:none;background:var(--chip);border-radius:999px;padding:1px 10px;font-size:13px;color:var(--muted)}
+.prompt{background:var(--prompt);border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:14px;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
+.prompt .style{color:var(--muted)}
+.actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.copy{appearance:none;border:0;border-radius:12px;min-height:48px;padding:0 22px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation}
+.copy.ok{filter:brightness(1.1)}
+.check{display:flex;align-items:center;gap:8px;min-height:48px;cursor:pointer;color:var(--muted)}
+.check input{width:24px;height:24px;accent-color:var(--done)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Prompts des bâtiments</h1>
+  <p class="lead">Un prompt par bâtiment de la bible, prêt pour Gemini. Chacun commence par la phrase de style de la bible, mot pour mot.</p>
+  <ol class="steps">
+    <li>Touche <b>Copier</b>, puis colle dans Gemini.</li>
+    <li>Vérifie l'image : un seul bâtiment, entier, fond blanc, vu de trois quarts, porte bien visible.</li>
+    <li>Enregistre-la sous le nom du bâtiment (par exemple scierie.png) et coche la case.</li>
+  </ol>
+  <div class="progress" id="progress" aria-live="polite"></div>
+  <div id="list"></div>
+</main>
+
+<script>
+(function(){
+"use strict";
+/* Phrase de style de la bible (fiche de commande, étape 0.7), mot pour mot */
+const STYLE = "Objet 3D en style jouet, formes rondes et douces, couleurs chaudes et simples, ombrage doux en aplats, univers médiéval-fantastique chaleureux. Un seul objet, entier et centré, vue de trois quarts légèrement en hauteur, sur fond blanc uni, sans texte, sans personnage, sans décor autour.";
+const FAMILIES = [
+  {name:"Ateliers", items:[
+    {id:"scierie", name:"Scierie", size:"moyenne", line:"Une scierie en bois couleur miel, taille moyenne, toit de tuiles orange, roue à eau sur le côté, scie circulaire sur un établi devant, piles de bûches, porte d'entrée bien visible sur la façade avant."},
+    {id:"carriere", name:"Carrière", size:"moyenne", line:"Une carrière avec une cabane en bois couleur miel, taille moyenne, toit d'ardoise gris-bleu, blocs de pierre taillés empilés à côté, gros rochers arrondis aux veines de cuivre, lanterne accrochée près de l'entrée, porte d'entrée bien visible sur la façade avant."},
+    {id:"forge", name:"Forge", size:"moyenne", line:"Une forge en pierre grise aux angles arrondis, taille moyenne, toit d'ardoise gris-bleu, grosse cheminée de pierre qui fume, lueur orange des braises par une ouverture, enclume et baquet d'eau à côté, porte d'entrée bien visible sur la façade avant."},
+    {id:"taverne", name:"Taverne", size:"grande", line:"Une taverne chaleureuse à colombages crème et bois couleur miel, grande taille, toit de tuiles rouges, cheminée de pierre, fenêtres éclairées d'une lumière dorée, enseigne en bois en forme de chope, tonneaux près de l'entrée, porte d'entrée bien visible sur la façade avant."},
+    {id:"apothicairerie", name:"Apothicairerie", size:"petite", line:"Une apothicairerie en pierre et bois couleur miel, petite taille, toit d'ardoise gris-bleu, bouquets d'herbes séchées suspendus sous l'avant-toit, fioles colorées en vitrine, petit chaudron à côté, porte d'entrée bien visible sur la façade avant."},
+    {id:"tour-des-runes", name:"Tour des runes", size:"petite, haute", line:"Une tour ronde en pierre claire, petite taille mais haute, toit conique d'ardoise bleu nuit, runes gravées qui brillent d'une lueur bleutée sur les pierres, petite fenêtre ronde en haut, porte d'entrée bien visible sur la façade avant."}
+  ]},
+  {name:"Vie du village", items:[
+    {id:"chaumiere", name:"Chaumière", size:"moyenne", line:"Une chaumière douillette aux murs crème et aux poutres de bois couleur miel, taille moyenne, épais toit de chaume doré et arrondi, petite cheminée de pierre, fenêtres à croisillons, pots de fleurs devant, porte d'entrée bien visible sur la façade avant."},
+    {id:"marche", name:"Marché", size:"grande", line:"Un marché couvert en bois couleur miel, grande taille, toit de tuiles orange, auvents rayés rouge et crème au-dessus d'étals colorés de fruits et d'étoffes, caisses, tonneaux et balance devant, porte d'entrée bien visible sur la façade avant."},
+    {id:"chateau", name:"Château", size:"grande", line:"Un petit château trapu en pierre claire aux formes arrondies, grande taille, quatre tours rondes coiffées de toits coniques d'ardoise bleue, bannières rouge et or, grande porte d'entrée en bois bien visible sur la façade avant."},
+    {id:"ferme", name:"Ferme", size:"moyenne", line:"Une ferme en bois couleur miel, taille moyenne, toit de tuiles orange, grande porte de grange, bottes de foin empilées, petit enclos en bois vide à côté, mangeoire, porte d'entrée bien visible sur la façade avant."},
+    {id:"entrepot", name:"Entrepôt", size:"moyenne", line:"Un entrepôt en bois couleur miel sur une base de pierre, taille moyenne, toit de tuiles orange, larges portes doubles bien visibles sur la façade avant, caisses et sacs empilés devant, poulie de levage sous le toit."}
+  ]},
+  {name:"Collections", items:[
+    {id:"maison-des-eaux", name:"Maison des eaux", size:"grande", line:"Une maison des eaux en pierre claire et bois couleur miel, grande taille, toit arrondi d'ardoise bleu-vert, grandes fenêtres rondes laissant deviner des bassins, fontaine en forme de coquillage devant, ornements en forme de poissons, porte d'entrée bien visible sur la façade avant."},
+    {id:"maison-des-plumes", name:"Maison des plumes", size:"moyenne", line:"Une maison des plumes en bois clair, taille moyenne, toit de tuiles orange en pente douce, nichoirs accrochés aux murs, girouette en forme d'oiseau, grandes fenêtres lumineuses, porte d'entrée bien visible sur la façade avant."},
+    {id:"maison-des-ailes", name:"Maison des ailes", size:"moyenne", line:"Une maison des ailes en pierre claire et bois couleur miel, taille moyenne, coiffée d'une verrière arrondie, massifs de fleurs tout autour, enseigne en forme de papillon, porte d'entrée bien visible sur la façade avant."},
+    {id:"maison-des-simples", name:"Maison des simples", size:"moyenne", line:"Une maison des simples en pierre et bois couleur miel, taille moyenne, toit couvert de mousse et de plantes, jardinières d'herbes aromatiques aux fenêtres, champignons au pied des murs, plates-bandes devant, porte d'entrée bien visible sur la façade avant."}
+  ]},
+  {name:"Départs", note:"Sans intérieur, donc sans porte. Tailles proposées, à valider. Le transport sera un modèle à part, d'où le « sans » en fin de ligne.", items:[
+    {id:"ponton", name:"Ponton (barque, Marais)", size:"petite", line:"Un ponton en bois couleur miel sur pilotis, petite taille, planches aux bords arrondis, poteau d'amarrage avec une corde enroulée, lanterne sur un piquet, sans bateau."},
+    {id:"quai", name:"Quai (navire, Récif)", size:"moyenne", line:"Un quai de pierre claire et de bois couleur miel, taille moyenne, bittes d'amarrage, cordages enroulés, caisses et tonneaux, petite grue en bois, sans bateau."},
+    {id:"gare", name:"Gare de wagonnet (Montagnes)", size:"moyenne", line:"Une petite gare de wagonnet en bois couleur miel et pierre, taille moyenne, rails qui entrent dans un tunnel à l'arche arrondie, auvent de tuiles orange au-dessus d'un quai, lanterne, sans wagonnet."},
+    {id:"aire-montgolfiere", name:"Aire de montgolfière (Désert)", size:"grande", line:"Une aire de départ de montgolfière, grande taille, plateforme ronde en bois couleur miel, mât d'amarrage avec des cordages, sacs de sable empilés, fanions colorés, sans ballon."},
+    {id:"aire-envol", name:"Aire d'envol (griffon, dragon)", size:"grande", line:"Une aire d'envol au sommet d'une tour de pierre claire basse et large, grande taille, plateforme ronde pavée, grand perchoir en bois couleur miel, bannières au vent, abreuvoir, sans créature."}
+  ]}
+];
+
+/* Cases cochées : gardées dans le navigateur du téléphone */
+const KEY = "le-village-prompts-faits";
+let done = {};
+try{ done = JSON.parse(localStorage.getItem(KEY)) || {}; }catch(_){}
+function saveDone(){ try{ localStorage.setItem(KEY, JSON.stringify(done)); }catch(_){} }
+
+async function copy(text){
+  try{ await navigator.clipboard.writeText(text); return true; }catch(_){}
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try{ ok = document.execCommand("copy"); }catch(_){}
+  ta.remove();
+  return ok;
+}
+
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const total = FAMILIES.reduce((n, f) => n + f.items.length, 0);
+function renderProgress(){
+  const n = FAMILIES.reduce((c, f) => c + f.items.filter(i => done[i.id]).length, 0);
+  document.getElementById("progress").textContent = `${n} sur ${total} images générées`;
+}
+
+document.getElementById("list").innerHTML = FAMILIES.map(f => `
+  <h2>${f.name}</h2>${f.note ? `<p class="note">${f.note}</p>` : ""}
+  ${f.items.map(i => `
+    <section class="card${done[i.id] ? " is-done" : ""}" data-id="${i.id}">
+      <div class="head"><h3>${i.name}</h3><span class="size">${i.size}</span></div>
+      <p class="prompt"><span class="style">${esc(STYLE)}</span>\n${esc(i.line)}</p>
+      <div class="actions">
+        <button class="copy" type="button">Copier</button>
+        <label class="check"><input type="checkbox"${done[i.id] ? " checked" : ""}> Image générée</label>
+      </div>
+    </section>`).join("")}`).join("");
+
+const byId = {};
+FAMILIES.forEach(f => f.items.forEach(i => { byId[i.id] = i; }));
+document.getElementById("list").addEventListener("click", async e => {
+  const btn = e.target.closest(".copy");
+  if(!btn) return;
+  const item = byId[btn.closest(".card").dataset.id];
+  const ok = await copy(STYLE + "\n" + item.line);
+  btn.textContent = ok ? "Copié ✓" : "Échec : sélectionne le texte";
+  btn.classList.toggle("ok", ok);
+  setTimeout(() => { btn.textContent = "Copier"; btn.classList.remove("ok"); }, 1800);
+});
+document.getElementById("list").addEventListener("change", e => {
+  if(e.target.type !== "checkbox") return;
+  const card = e.target.closest(".card");
+  done[card.dataset.id] = e.target.checked;
+  card.classList.toggle("is-done", e.target.checked);
+  saveDone(); renderProgress();
+});
+renderProgress();
+})();
+</script>
+</body>
+</html>
