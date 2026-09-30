@@ -66,6 +66,7 @@ En cours : étape 1.2, décorer l'intérieur, plan validé par Yo le 30 septembr
 - Avant d'écrire le code d'une étape, proposer un découpage et attendre l'accord de Yo.
 - Le prototype a été découpé en plusieurs fichiers le 29 septembre 2026, validé par Yo sur téléphone (l'ancien fichier unique reste dans l'historique git). La technologie web actuelle (three.js) reste en place ; le choix entre le web et Godot se fera à l'étape 2.6.
 - Utiliser git : un commit clair à chaque avancée qui fonctionne, pour pouvoir revenir en arrière.
+- Plan de production (demande de Yo, 30 septembre 2026) : c'est Claude qui coche les cases des tâches faites, à chaque fois, et qui note les idées de Yo dans la Boîte à idées quand il le demande. Doc Claude : projet `ee5c708d-8e3c-4c25-ac21-5f46ecd19aa9`, corps du texte `a62d34f3-3460` (lire les listes de cases avec une vue `parentId`, cocher avec `set` + `checked: true` sur l'élément de liste). Une tâche est cochée quand elle est faite ; l'étape est finie quand Yo l'a validée sur son téléphone.
 - Le jeu doit tourner dans le navigateur d'un téléphone Android modeste. Proposer à Yo la façon la plus simple de l'ouvrir sur son téléphone, et la lui expliquer pas à pas.
 - En phase 1, pas de modèles finaux : des formes simples suffisent.
 
