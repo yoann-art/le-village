@@ -26,6 +26,13 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 - `js/monde/` : la 3D. `formes.js` est la boîte à outils commune (matières, formes) : c'est là que viendra l'ombrage toon de la Scierie pour tous les modèles.
 - `js/minijeux/` : un fichier par mini-jeu, plus `minijeux.js` (menu, écran, récompense).
 
+## Tester en local (notes de travail de Claude)
+
+- Aperçu intégré : configuration « jeu » (`preview_start`), en taille téléphone (375 × 812). Quand l'aperçu est caché, le jeu y est quasiment à l'arrêt : piloter les tests en important les modules depuis la page (`await import('/js/…')`) et en appelant soi-même `updatePlayer(.016)`, `checkDoors(…)`, `updateInteraction(dt)` ; faire une capture d'écran avant de viser à l'écran (elle place la caméra).
+- Simuler les doigts avec des `PointerEvent` envoyés au canvas ; trouver la position à l'écran d'un point 3D avec `vector.project(camera)`.
+- Toujours tester sur une partie de test (`localStorage`), puis effacer le `localStorage` à la fin.
+- `git push` est bloqué pour Claude : donner à Yo la commande à lancer.
+
 ## Tester sur téléphone
 
 - En ligne : https://yoann-art.github.io/le-village/ (GitHub Pages, dépôt public `yoann-art/le-village`, branche `main`, dossier racine). Mise à jour environ une minute après chaque envoi.
