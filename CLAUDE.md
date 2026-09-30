@@ -34,10 +34,12 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 
 Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 du plan, dans l'ordre, environ une par séance. Porte de sortie : la boucle de jeu est amusante, testée par de vrais joueurs sur téléphone.
 
-Étape 1.0 (passer sur Claude Code) terminée le 29 septembre 2026. En cours : étape 1.1, entrer dans un bâtiment, validée par Yo en trois morceaux :
+Étape 1.0 (passer sur Claude Code) terminée le 29 septembre 2026. Étape 1.1 (entrer dans un bâtiment) terminée et validée par Yo le 30 septembre 2026 ; la taille des pièces sera revue quand on aura les vrais bâtiments. Prochaine étape : 1.2, décorer l'intérieur (plan à proposer à Yo avant tout code).
+
+Étape 1.1, faite en trois morceaux :
 1. Tout à la bonne taille (v1.1.1) : fait et validé ; caméra rapprochée à 8 P de large à la demande de Yo (v1.1.2).
 2. Entrer et sortir (v1.1.4) : fait. Demandé ensuite par Yo (v1.1.5) : caméra plus proche dedans (6 P de large au lieu de 8) et zoom partout (pincer à deux doigts, molette, touches + et −), de 0,6 à 1,6 fois la distance normale, gardé sur l'appareil (`view.zoom` dans `commandes.js`, clé `le-village-zoom`). On entre en marchant dans la porte, fondu au noir ; pièce vue de biais, mur de devant retiré, caméra qui suit sans sortir de la pièce ; on sort en repassant la porte ; dedans, pas de bouton Construire ; jeu rouvert à l'intérieur = on reprend dehors devant la porte.
-3. Une pièce par bâtiment (v1.1.6) : fait, à valider par Yo. Taille dans `donnees.js` (`taille`) et `roomSide` dans `regles.js` ; ambiances (sol, murs, poutres, lumière, bande du Marché, bannières du Château) dans `AMBIANCE` de `js/monde/interieurs.js` ; la fiche d'un bâtiment affiche la taille de sa pièce. Moyenne 6 × 6 P, puis 7 × 7 et 8 × 8 aux niveaux 2 et 3 ; grande 8 × 8, 9 × 9, 10 × 10 (Château : 8 × 8, un seul niveau) ; couleurs selon l'ambiance de la bible ; pièces vides (meubles à l'étape 1.2). Tailles à revoir visuellement avec Yo.
+3. Une pièce par bâtiment (v1.1.6) : fait et validé. Taille dans `donnees.js` (`taille`) et `roomSide` dans `regles.js` ; ambiances (sol, murs, poutres, lumière, bande du Marché, bannières du Château) dans `AMBIANCE` de `js/monde/interieurs.js` ; la fiche d'un bâtiment affiche la taille de sa pièce. Moyenne 6 × 6 P, puis 7 × 7 et 8 × 8 aux niveaux 2 et 3 ; grande 8 × 8, 9 × 9, 10 × 10 (Château : 8 × 8, un seul niveau) ; couleurs selon l'ambiance de la bible ; pièces vides (meubles à l'étape 1.2). Tailles à revoir visuellement avec Yo.
 
 ## Règles de travail
 
