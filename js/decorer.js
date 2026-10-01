@@ -1,40 +1,40 @@
 /* ================= Décorer =================
-   Le mode décoration d'une pièce : on pose les meubles du catalogue, on les fait glisser au doigt
-   (au centimètre, ou alignés par l'aimant), on les tourne d'un quart de tour, on les range.
-   Catalogue gratuit et illimité pour l'instant (fabrication : étape 1.3, inventaire : étape 1.4).
+   Le mode décoration d'une pièce : on pose les meubles du catalogue, on les fait glisser au doigt,
+   on les tourne d'un quart de tour, on les range. Hors de ce mode, un appui long sur un meuble le
+   soulève : on le glisse du doigt, il se pose quand on lève le doigt.
+   Les meubles s'alignent toujours (grille de ½ P, collés aux murs) : plus d'aimant ni de placement
+   au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
 import { RES, B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, GAMES } from "./donnees.js";
 import { owned, addOwned, hasAll } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
-import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, pickItem } from "./monde/interieurs.js";
+import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem } from "./monde/interieurs.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player, R, placePlayer } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
-import { currentPlace } from "./lieux.js";
+import { currentPlace, isBusy } from "./lieux.js";
 
 let deco = null;                     // la pièce qu'on décore : {b, room}
 let sel = null;                      // le meuble choisi
-const items = () => deco.b.deco.items;
-
-/* Aimant : aligne sur une grille de ½ P et colle aux murs. Allumé par défaut, gardé sur l'appareil */
-const MAG_KEY = "le-village-aimant";
-let magnet = true;
-try{ const v = localStorage.getItem(MAG_KEY); if(v !== null) magnet = v === "1"; }catch(_){}
+let lift = null;                     // hors du mode décoration, le meuble soulevé : {place, it, pid, x, y, x0, y0, from, last}
+const cur = () => deco || lift.place;          // la pièce où l'on bouge un meuble
+const items = () => cur().b.deco.items;
 
 export const decorating = () => !!deco;
-/* Pendant la décoration, la caméra regarde le milieu de la pièce et la montre en entier */
+export const lifting = () => !!lift;
+/* Pendant la décoration ou un meuble soulevé, la caméra regarde le milieu de la pièce et la montre en entier */
 const view = {target: new THREE.Vector3(), width: 8};
-export const decoView = () => deco ? view : null;
+export const decoView = () => deco || lift ? view : null;
 
 /* ----- Règles de place ----- */
 const MAT_W = 1.1, MAT_D = .7;       // le paillasson (la sortie) reste toujours libre
 const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", tapis:"Pas sur un autre tapis", personnage:"Le personnage est là"};
 /* Deux couches : les tapis au sol, les meubles par-dessus. On ne chevauche que sa propre couche. */
 function problem(it){
-  const [w, d] = footOf(it), {room} = deco, flat = !!MEUBLES[it.type].flat;
+  const [w, d] = footOf(it), {room} = cur(), flat = !!MEUBLES[it.type].flat;
   if(Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
   for(const o of items()){
     if(o === it || !!MEUBLES[o.type].flat !== flat) continue;
@@ -46,21 +46,19 @@ function problem(it){
   if(Math.abs(p.x - it.x) < w/2 + R && Math.abs(p.z - it.z) < d/2 + R) return "personnage";
   return null;
 }
-/* Aimant : le bord du meuble se cale sur la grille de ½ P, et contre le mur s'il en est tout près */
+/* Alignement : le bord du meuble se cale sur la grille de ½ P, et contre le mur s'il en est tout près */
 function snap(v, half, lim){
   let lo = Math.round((v - half) * 2) / 2;
   if(lo < -lim + .3) lo = -lim;
   if(lo + 2*half > lim - .3) lo = lim - 2*half;
   return lo + half;
 }
-/* Pose le meuble au plus près de (x, z) : toujours entre les murs ; aligné si l'aimant est allumé,
-   sinon au centimètre */
+/* Pose le meuble au plus près de (x, z), aligné, toujours entre les murs */
 function settle(it, x, z){
-  const [w, d] = footOf(it), hw = deco.room.w/2, hd = deco.room.d/2;
-  if(magnet){ x = snap(x, w/2, hw); z = snap(z, d/2, hd); }
+  const [w, d] = footOf(it), hw = cur().room.w/2, hd = cur().room.d/2;
   const cm = v => Math.round(v * 100) / 100;
-  it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, x)));
-  it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, z)));
+  it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, snap(x, w/2, hw))));
+  it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, snap(z, d/2, hd))));
 }
 /* La place libre la plus proche du milieu de la pièce */
 function findSpot(it){
@@ -82,15 +80,21 @@ function hint(text, bad = false){
   if(h.textContent !== text) h.textContent = text;
   h.classList.toggle("bad", bad);
 }
+/* La plaque sous le meuble : jaune, ou rouge si sa place ne va pas (renvoie ce qui ne va pas) */
+function showPlate(it){
+  plate.visible = !!it;
+  if(!it) return null;
+  const [w, d] = footOf(it), pb = problem(it);
+  plate.scale.set(w + .1, d + .1, 1);
+  plate.position.set(it.x, MEUBLES[it.type].flat ? .05 : .03, it.z);
+  plateMat.color.setHex(pb ? 0xE4776C : 0xFFE27A);
+  return pb;
+}
 function showSel(){
   $("#deco-sel").hidden = !sel;
   $("#deco-store").hidden = !!(sel && MEUBLES[sel.type].plan);       // un plan de travail ne se range pas
-  plate.visible = !!sel;
+  const pb = showPlate(sel);
   if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
-  const [w, d] = footOf(sel), pb = problem(sel);
-  plate.scale.set(w + .1, d + .1, 1);
-  plate.position.set(sel.x, MEUBLES[sel.type].flat ? .05 : .03, sel.z);
-  plateMat.color.setHex(pb ? 0xE4776C : 0xFFE27A);
   hint(pb ? WHY[pb] : `${MEUBLES[sel.type].emoji} ${MEUBLES[sel.type].nom} : glisse-le du doigt`, !!pb);
 }
 
@@ -105,7 +109,6 @@ export function startDeco(){
   view.target.set(0, 0, 0); view.width = room.w + 1;
   resetJoy();
   $("#actions").hidden = true; $("#joy").hidden = true; $("#deco-bar").hidden = false;
-  setMagnetButton();
   sel = null; showSel();
 }
 export function finishDeco(){
@@ -118,7 +121,7 @@ export function finishDeco(){
   save();
 }
 
-/* ----- Catalogue, tourner, ranger, aimant ----- */
+/* ----- Catalogue, tourner, ranger ----- */
 /* Un meuble de métier ne se pose que dans ses bâtiments ; les autres, partout */
 const allowedIn = (type, bType) => !MEUBLES[type].where || MEUBLES[type].where.includes(bType);
 const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles moyens", "environ 2 P² au sol"], grand:["Grands meubles", "environ 4 P² au sol"]};
@@ -223,28 +226,65 @@ wrap.addEventListener("click", e => {
   showSel(); save();
 });
 
-function setMagnetButton(){ $("#deco-magnet").setAttribute("aria-pressed", String(magnet)); }
-$("#deco-magnet").addEventListener("click", () => {
-  magnet = !magnet;
-  try{ localStorage.setItem(MAG_KEY, magnet ? "1" : "0"); }catch(_){}
-  setMagnetButton();
-  toast(magnet ? "Aimant allumé : les meubles s'alignent" : "Aimant éteint : placement libre");
-});
 $("#deco-done").addEventListener("click", finishDeco);
 $("#btn-deco").addEventListener("click", startDeco);
 
-/* ----- Le doigt : toucher un meuble le choisit, le faire glisser le déplace ----- */
+/* ----- Le doigt : en décoration, toucher un meuble le choisit, le faire glisser le déplace ;
+   hors décoration, un appui long (½ s) sur un meuble le soulève (demande de Yo) ----- */
 const canvas = renderer.domElement, touches = new Set(), hit = new THREE.Vector3();
 let drag = null;                     // {pid, ox, oz, last} : écart doigt-meuble et dernière place valable
+let press = null;                    // appui long en cours sur un meuble : {id, pid, x, y, sx, sy, timer}
 function endDrag(){
   if(!drag) return;
   if(problem(sel)){ sel.x = drag.last.x; sel.z = drag.last.z; placeItemMesh(sel); }   // place refusée : il revient
   drag = null; showSel(); save();
 }
+function cancelPress(){ if(press){ clearTimeout(press.timer); press = null; } }
+function startLift(){
+  const {id, pid, x, y} = press, place = currentPlace();
+  press = null;
+  const it = place && !deco && !isBusy() && wrap.hidden ? place.b.deco.items.find(v => v.id === id) : null;
+  if(!it) return;
+  try{ if(navigator.vibrate) navigator.vibrate(30); }catch(_){}
+  lift = {place, it, pid, x, y, x0: x, y0: y, from: {x: it.x, z: it.z}, last: {x: it.x, z: it.z}};
+  view.target.set(0, 0, 0); view.width = place.room.w + 1;
+  resetJoy();
+  $("#actions").hidden = true; $("#joy").hidden = true;
+  raiseItemMesh(it.id, .15);
+  showLift();
+}
+function showLift(){
+  const m = MEUBLES[lift.it.type], pb = showPlate(lift.it);
+  hint(pb ? WHY[pb] : `${m.emoji} ${m.nom} : glisse ton doigt, puis lève-le pour poser`, !!pb);
+}
+/* À chaque image et à chaque mouvement : le meuble soulevé bouge autant que le doigt depuis l'appui
+   (mesuré avec la caméra du moment, qui recule pour montrer la pièce : doigt immobile, meuble immobile) */
+const hit0 = new THREE.Vector3();
+export function updateLift(){
+  if(!lift || !groundAt(lift.x0, lift.y0, hit0) || !groundAt(lift.x, lift.y, hit)) return;
+  const it = lift.it, x = it.x, z = it.z;
+  settle(it, lift.from.x + hit.x - hit0.x, lift.from.z + hit.z - hit0.z);
+  if(!problem(it)) lift.last = {x: it.x, z: it.z};
+  if(it.x !== x || it.z !== z){ placeItemMesh(it); showLift(); }
+}
+function endLift(){
+  const it = lift.it;
+  if(problem(it)){ it.x = lift.last.x; it.z = lift.last.z; }     // place refusée : il revient à la dernière bonne place
+  raiseItemMesh(it.id, 0); placeItemMesh(it);
+  lift = null; plate.visible = false;
+  $("#place-hint").hidden = true; $("#place-hint").classList.remove("bad");
+  $("#actions").hidden = false; $("#joy").hidden = false;
+  save();
+}
 canvas.addEventListener("pointerdown", e => {
-  if(!deco) return;
   touches.add(e.pointerId);
-  if(touches.size > 1){ endDrag(); return; }                        // deux doigts : c'est un zoom
+  if(touches.size > 1){ cancelPress(); endDrag(); return; }        // deux doigts : c'est un zoom
+  if(!deco){
+    if(lift || !currentPlace() || isBusy() || !wrap.hidden) return;
+    const id = pickItem(aim(e.clientX, e.clientY));
+    if(id !== null) press = {id, pid: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, timer: setTimeout(startLift, 500)};
+    return;
+  }
   const id = pickItem(aim(e.clientX, e.clientY));
   const it = id !== null ? items().find(v => v.id === id) : null;
   sel = it || null;
@@ -252,6 +292,11 @@ canvas.addEventListener("pointerdown", e => {
   showSel();
 });
 canvas.addEventListener("pointermove", e => {
+  if(press && e.pointerId === press.pid){
+    press.x = e.clientX; press.y = e.clientY;
+    if(Math.hypot(press.x - press.sx, press.y - press.sy) > 12) cancelPress();   // le doigt a bougé : pas d'appui long
+  }
+  if(lift && e.pointerId === lift.pid){ lift.x = e.clientX; lift.y = e.clientY; updateLift(); }
   if(!deco || !drag || e.pointerId !== drag.pid || !groundAt(e.clientX, e.clientY, hit)) return;
   settle(sel, hit.x + drag.ox, hit.z + drag.oz);
   if(!problem(sel)) drag.last = {x: sel.x, z: sel.z};
@@ -259,6 +304,8 @@ canvas.addEventListener("pointermove", e => {
 });
 function fingerUp(e){
   touches.delete(e.pointerId);
+  if(press && e.pointerId === press.pid) cancelPress();
+  if(lift && e.pointerId === lift.pid) endLift();
   if(drag && e.pointerId === drag.pid) endDrag();
 }
 canvas.addEventListener("pointerup", fingerUp);
@@ -269,8 +316,8 @@ const STEP = {ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0
 window.addEventListener("keydown", e => {
   if(!deco || !sel || !$("#sheetWrap").hidden) return;
   if(STEP[e.code]){
-    const s = magnet ? .5 : .1, before = {x: sel.x, z: sel.z};
-    settle(sel, sel.x + STEP[e.code][0] * s, sel.z + STEP[e.code][1] * s);
+    const before = {x: sel.x, z: sel.z};
+    settle(sel, sel.x + STEP[e.code][0] * .5, sel.z + STEP[e.code][1] * .5);
     if(problem(sel)) Object.assign(sel, before);
     placeItemMesh(sel); showSel(); save();
     e.preventDefault();

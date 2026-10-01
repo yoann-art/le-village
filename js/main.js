@@ -16,7 +16,7 @@ import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
 import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
-import { decorating, decoView, addMeuble, finishDeco } from "./decorer.js";
+import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
@@ -54,7 +54,7 @@ let last = performance.now();
 function tick(now){
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if(gameEl.hidden){
-    const pushing = wrap.hidden && !isBusy() && !placing && !decorating() && updatePlayer(dt);   // pendant une pose ou la déco, le personnage attend
+    const pushing = wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && updatePlayer(dt);   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
     if(pushing) dirty = true;
     checkDoors(pushing);
     const dv = decoView();
@@ -64,13 +64,14 @@ function tick(now){
     else camT.lerp(target, 1 - Math.pow(.0005, dt));
     camera.position.copy(camT).addScaledVector(OFF, D);
     camera.lookAt(camT.x, .4, camT.z);
+    updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
     if(!isInside()){
       sun.position.set(camT.x + 6, 16, camT.z + 5);
       sun.target.position.copy(camT);
       water.position.y = -.2 + Math.sin(now * .0012) * .02;
       updateInteraction(dt);
     }
-    updatePlan(isInside() && !decorating() && !isBusy());   // bouton du plan de travail, quand on est tout près
+    updatePlan(isInside() && !decorating() && !lifting() && !isBusy());   // bouton du plan de travail, quand on est tout près
     renderer.render(currentScene(), camera);
     if(dirty && now - lastSave > 2000){
       const p = islandPos();
