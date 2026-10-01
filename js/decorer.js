@@ -4,15 +4,15 @@
    Catalogue gratuit et illimité pour l'instant (fabrication : étape 1.3, inventaire : étape 1.4).
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A } from "./donnees.js";
-import { owned, addOwned } from "./regles.js";
+import { RES, B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, GAMES } from "./donnees.js";
+import { owned, addOwned, hasAll } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
 import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, pickItem } from "./monde/interieurs.js";
-import { footOf } from "./monde/meubles.js";
+import { footOf, hasPlan } from "./monde/meubles.js";
 import { player, R, placePlayer } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
-import { openSheet, toast, wrap } from "./interface.js";
+import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
 
 let deco = null;                     // la pièce qu'on décore : {b, room}
@@ -125,10 +125,28 @@ const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles m
 /* Un meuble qui a une recette se fabrique : on pose ce qu'on a en réserve. Sans recette (pas encore
    d'atelier pour lui), il reste gratuit. */
 const craftable = type => !!FABRIQUE_A[type];
+/* Le plan de travail du bâtiment (établi de la Scierie…) : il se construit avec des ressources
+   (demande de Yo, pas gratuit), puis se pose où l'on veut, comme un meuble. Un seul par bâtiment. */
+const WHERE = {};                       // ressource → mini-jeu qui la donne (bois : le Bûcheron…)
+for(const g of Object.values(GAMES)) WHERE[g.res] = g.nom;
+function planHTML(b){
+  const a = ATELIERS[b.type];
+  if(!a) return "";
+  const m = MEUBLES[a.meuble], built = hasPlan(b), ok = !built && hasAll(a.cost);
+  const chips = Object.entries(a.cost).map(([k, v]) => `<span class="chip ${owned(k) >= v ? "" : "short"}">${RES[k].emoji} ${owned(k)}/${v}</span>`).join("");
+  const missing = Object.entries(a.cost).filter(([k, v]) => owned(k) < v).map(([k]) => k);
+  return `<h3 style="margin:10px 0 2px">Plan de travail</h3>
+    <div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
+      <div class="bt"><span class="bn">${m.nom}</span>
+        <p>${built ? "Déjà construit : touche-le dans la pièce pour le déplacer." : `Pour fabriquer ${a.fait}. Un seul par bâtiment.`}</p>
+        ${built ? "" : `<div>${chips}</div>`}
+        ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} Le ${RES[k].nom} s'obtient avec « ${WHERE[k] || "les mini-jeux"} », dans Mini-jeux.`).join(" ")}</p>`}</div>
+      <button class="btn primary" data-meuble="${a.meuble}" ${ok ? "" : "disabled"}>${built ? "Construit" : "Construire"}</button></div>`;
+}
 $("#deco-cat").addEventListener("click", () => {
   const here = deco.b.type;
   openSheet(`<div class="sh-head"><h2 class="display">Meubles</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Ta réserve de meubles. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
+    <p class="muted" style="margin:0 0 6px">Ta réserve de meubles. Choisis-en un : il apparaît au milieu de la pièce.</p>` + planHTML(deco.b) +
     Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
       MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
         const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
@@ -142,10 +160,18 @@ $("#deco-cat").addEventListener("click", () => {
 });
 /* Choisi dans le catalogue (voir main.js) : le meuble apparaît à la place libre la plus proche du milieu */
 export function addMeuble(type){
-  if(!deco || !allowedIn(type, deco.b.type) || (craftable(type) && owned(type) < 1)) return;
+  if(!deco) return;
+  const plan = MEUBLES[type].plan, a = ATELIERS[deco.b.type];
+  if(plan){ if(!a || a.meuble !== type || hasPlan(deco.b) || !hasAll(a.cost)) return; }   // plan de travail : construit et payé
+  else if(!allowedIn(type, deco.b.type) || (craftable(type) && owned(type) < 1)) return;
   const it = {id: deco.b.deco.next++, type, x: 0, z: 0, rot: 0};
-  if(!findSpot(it)){ toast("Plus de place pour ce meuble dans la pièce"); return; }
-  if(craftable(type)) addOwned(type, -1);                              // pris dans la réserve
+  if(!findSpot(it)){ toast(`Plus de place pour ${plan ? a.le : "ce meuble"} dans la pièce`); return; }
+  if(plan){
+    for(const [k, v] of Object.entries(a.cost)) addOwned(k, -v);
+    renderHUD();
+    toast(`${a.emoji} ${a.le[0].toUpperCase() + a.le.slice(1)} est construit : fais-le glisser où tu veux`, 3200);
+  }
+  else if(craftable(type)) addOwned(type, -1);                         // pris dans la réserve
   items().push(it); addItemMesh(it);
   sel = it; showSel(); save();
 }

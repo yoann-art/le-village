@@ -3,15 +3,16 @@
    on en sort en repassant par la porte (le paillasson).
    Un court fondu au noir cache le changement de lieu. */
 import { $ } from "./outils.js";
-import { B } from "./donnees.js";
+import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { sizeOf, doorTile } from "./regles.js";
 import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
-import { meubleAt, ensurePlan } from "./monde/meubles.js";
+import { meubleAt, hasPlan } from "./monde/meubles.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable } from "./monde/personnage.js";
 import { placing } from "./construire.js";
+import { toast } from "./interface.js";
 
 let inside = null;        // {b, room} quand on est dans un bâtiment
 let busy = false;         // pendant le fondu
@@ -48,7 +49,6 @@ function fade(change){
 }
 function enter(b){
   fade(() => {
-    ensurePlan(b);                                   // le plan de travail du bâtiment, posé d'office
     const room = buildRoom(b);
     inside = {b, room};
     interior.add(player);
@@ -58,6 +58,9 @@ function enter(b){
     $("#btn-build").hidden = true;
     $("#btn-ctx").hidden = true;
     $("#btn-deco").hidden = false;
+    /* Pas encore de plan de travail : on dit comment le construire */
+    const a = ATELIERS[b.type];
+    if(a && !hasPlan(b)) setTimeout(() => toast(`${a.emoji} Pas encore ${a.le.startsWith("l'") ? "d'" + a.le.slice(2) : "de " + a.le.slice(3)} ici : construis-le dans « 🪑 Décorer », puis « Meubles »`, 4200), 400);
   });
 }
 function exit(){

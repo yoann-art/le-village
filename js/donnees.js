@@ -35,7 +35,8 @@ export const MEUBLES = {
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
-  /* Plans de travail (plan:true) : un par bâtiment, posé d'office, jamais rangé, absent du catalogue */
+  /* Plans de travail (plan:true) : un par bâtiment, construit avec des ressources (ATELIERS, cost)
+     depuis le haut du catalogue, posé où l'on veut dans sa pièce, jamais rangé */
   etabli:   {nom:"Établi", emoji:"🪚", gabarit:"moyen", w:1.6, d:.8, plan:true}
 };
 
@@ -43,11 +44,12 @@ export const MEUBLES = {
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"}
 };
-/* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce et ses recettes.
+/* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
+   construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le) et ses recettes.
    Recette : ce qu'elle donne (out, n exemplaires), ses ingrédients (in), son temps en secondes (t)
    et le niveau du bâtiment qu'il faut (lvl). Chiffres à régler en jouant. */
 export const ATELIERS = {
-  scierie:{nom:"Établi", emoji:"🪚", meuble:"etabli", recettes:[
+  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:10}, fait:"des planches et des meubles en bois", recettes:[
     {out:"planche", n:2, in:{bois:1}, t:5, lvl:1},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},

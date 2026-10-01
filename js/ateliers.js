@@ -7,7 +7,7 @@ import { $ } from "./outils.js";
 import { RES, B, MEUBLES, PRODUITS, ATELIERS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots } from "./regles.js";
-import { footOf } from "./monde/meubles.js";
+import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
@@ -74,7 +74,7 @@ export function updatePlan(active){
   const place = active && currentPlace(), a = place && ATELIERS[place.b.type];
   let near = false;
   if(a){
-    const it = place.b.deco.items.find(o => o.type === a.meuble);
+    const it = place.b.deco && place.b.deco.items.find(o => o.type === a.meuble);
     if(it){
       const [w, d] = footOf(it), p = player.position;
       near = Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
@@ -116,7 +116,7 @@ function render(){
 }
 btn.addEventListener("click", () => {
   const place = currentPlace();
-  if(!place || !ATELIERS[place.b.type]) return;
+  if(!place || !hasPlan(place.b)) return;
   openFor = place.b;
   render();
 });
