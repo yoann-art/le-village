@@ -9,6 +9,16 @@ export const doorTile = (t, x, z) => [x + Math.floor(sizeOf(t)/2 + (B[t].door ||
 /* Côté de la pièce intérieure, en P : elle grandit de 1 P à chaque niveau */
 const ROOM = {petite:4, moyenne:6, grande:8};
 export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);
+
+/* Ce qu'on possède : les ressources (bois, pierre, or) et la réserve (planches, meubles…) */
+export const owned = k => k in state.res ? state.res[k] : (state.stock[k] || 0);
+export function addOwned(k, n){
+  if(k in state.res) state.res[k] += n;
+  else state.stock[k] = (state.stock[k] || 0) + n;
+}
+export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
+/* File d'attente d'un plan de travail : 3 places au niveau 1, une de plus par niveau */
+export const queueSlots = lvl => 2 + lvl;
 export const maxLvl = t => B[t].unique ? 1 : 3;
 export function upCost(t, lvl){
   const c = {};

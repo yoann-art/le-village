@@ -3,7 +3,8 @@
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
 import { G, part } from "./formes.js";
-import { MEUBLES, COULEURS } from "../donnees.js";
+import { MEUBLES, COULEURS, ATELIERS } from "../donnees.js";
+import { roomSide } from "../regles.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
   red:0xA9322A, cream:0xE8C48A, stone:0xAEB0B3, stone2:0x8E9195, soot:0x2A2522, clay:0xC8643C, leaf:0x57B25C, yellow:0xF2C14E};
@@ -13,7 +14,7 @@ const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
-  etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue};
+  etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, etabli:C.wood};
 
 const BUILD = {
   chaise(g, m){
@@ -92,6 +93,16 @@ const BUILD = {
     g.add(part(G.box, m, 2.4, .02, 1.8, 0, .012, 0));                                 // bordure
     g.add(part(G.box, C.cream, 2, .025, 1.4, 0, .014, 0));
     g.add(part(G.box, C.gold, 1, .028, .6, 0, .016, 0));
+  },
+  etabli(g, m){
+    g.add(part(G.box, m, 1.6, .12, .75, 0, .55, 0));                                  // plateau
+    for(const [x,z] of [[-.7,-.28],[.7,-.28],[-.7,.28],[.7,.28]]) g.add(part(G.box, m, .1, .5, .1, x, .25, z));
+    g.add(part(G.box, C.dark, 1.4, .05, .6, 0, .15, 0));                               // étagère du bas
+    for(const y of [.2, .25, .3]) g.add(part(G.box, C.cream, 1.2, .05, .16, 0, y, -.05 + (y - .25)));   // planches rangées
+    g.add(part(G.box, C.dark, .2, .16, .22, -.6, .69, .25));                           // étau
+    g.add(part(G.box, C.metal, .5, .02, .14, .2, .62, .12));                           // lame de scie
+    g.add(part(G.box, C.light, .14, .06, .1, .52, .64, .12));                          // poignée
+    g.add(part(G.box, C.light, .45, .08, .2, -.15, .65, -.18));                        // pièce de bois en cours
   }
 };
 /* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine */
@@ -103,6 +114,27 @@ export function makeMeuble(type, color){
 
 /* Taille au sol d'un meuble posé (largeur, profondeur), selon qu'il est tourné ou non */
 export const footOf = it => { const m = MEUBLES[it.type]; return it.rot % 2 ? [m.d, m.w] : [m.w, m.d]; };
+/* Le plan de travail d'un bâtiment est toujours dans sa pièce : s'il manque, on le pose contre le mur
+   du fond, au milieu si c'est libre, sinon un peu à côté (le joueur pourra le déplacer). */
+export function ensurePlan(b){
+  const atelier = ATELIERS[b.type];
+  if(!atelier) return;
+  if(!b.deco) b.deco = {items: [], next: 1};
+  const items = b.deco.items;
+  if(items.some(it => it.type === atelier.meuble)) return;
+  const m = MEUBLES[atelier.meuble], side = roomSide(b.type, b.lvl);
+  const it = {id: b.deco.next++, type: atelier.meuble, x: 0, z: -side/2 + m.d/2, rot: 0};
+  const clash = () => items.some(o => {
+    if(MEUBLES[o.type].flat) return false;
+    const [w, d] = footOf(o);
+    return Math.abs(it.x - o.x) < (m.w + w)/2 && Math.abs(it.z - o.z) < (m.d + d)/2;
+  });
+  for(const dx of [0, .5, -.5, 1, -1, 1.5, -1.5, 2, -2]){
+    it.x = Math.max(-side/2 + m.w/2, Math.min(side/2 - m.w/2, dx));
+    if(!clash()) break;
+  }
+  items.push(it);
+}
 /* Un meuble (pas un tapis) couvre-t-il ce point de la pièce ? */
 export function meubleAt(items, x, z){
   return items.some(it => {

@@ -56,6 +56,13 @@ button{font:inherit;color:inherit}
 .deco-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .deco-bar .act{padding:0 12px}
 .act[aria-pressed="true"]{background:#E2B24D;color:#1C2230}
+/* File d'attente d'un plan de travail */
+.job{display:grid;grid-template-columns:1fr auto auto;grid-template-areas:"name time x" "bar bar x";align-items:center;gap:2px 8px;padding:6px 0;border-top:1px solid var(--line)}
+.job-name{grid-area:name;font-weight:700}
+.job-time{grid-area:time;color:var(--muted);font-size:14px}
+.job-bar{grid-area:bar;height:8px;border-radius:4px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+.job-bar i{display:block;height:100%;width:0;background:var(--sinople)}
+.job-x{grid-area:x;padding:6px 10px}
 /* Nuanciers : couleur d'un meuble, des murs, du sol */
 .swatches{display:flex;flex-wrap:wrap;gap:10px 6px;margin:6px 0 14px}
 .sw-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:66px;font-size:12px;line-height:1.2;color:var(--muted);text-align:center}

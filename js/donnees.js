@@ -34,8 +34,34 @@ export const MEUBLES = {
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
-  grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true}
+  grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
+  /* Plans de travail (plan:true) : un par bâtiment, posé d'office, jamais rangé, absent du catalogue */
+  etabli:   {nom:"Établi", emoji:"🪚", gabarit:"moyen", w:1.6, d:.8, plan:true}
 };
+
+/* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
+export const PRODUITS = {
+  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"}
+};
+/* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce et ses recettes.
+   Recette : ce qu'elle donne (out, n exemplaires), ses ingrédients (in), son temps en secondes (t)
+   et le niveau du bâtiment qu'il faut (lvl). Chiffres à régler en jouant. */
+export const ATELIERS = {
+  scierie:{nom:"Établi", emoji:"🪚", meuble:"etabli", recettes:[
+    {out:"planche", n:2, in:{bois:1}, t:5, lvl:1},
+    {out:"tabouret", in:{planche:2}, t:20, lvl:1},
+    {out:"chaise", in:{planche:3}, t:30, lvl:1},
+    {out:"banc", in:{planche:4}, t:40, lvl:1},
+    {out:"coffre", in:{planche:4, or:1}, t:60, lvl:1},
+    {out:"tonneau", in:{planche:5}, t:60, lvl:2},
+    {out:"table", in:{planche:6}, t:90, lvl:2},
+    {out:"etagere", in:{planche:6}, t:90, lvl:2},
+    {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
+  ]}
+};
+/* Pour chaque objet fabriqué : le bâtiment dont l'atelier le fabrique */
+export const FABRIQUE_A = {};
+for(const [b, a] of Object.entries(ATELIERS)) for(const r of a.recettes) FABRIQUE_A[r.out] = b;
 /* Palette gratuite : couleur d'un meuble, des murs ou du sol d'une pièce.
    (Plus tard : des couleurs à gagner, avec un cadenas — voir la Boîte à idées du plan de production.) */
 export const COULEURS = {

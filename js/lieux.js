@@ -9,7 +9,7 @@ import { sizeOf, doorTile } from "./regles.js";
 import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
-import { meubleAt } from "./monde/meubles.js";
+import { meubleAt, ensurePlan } from "./monde/meubles.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable } from "./monde/personnage.js";
 import { placing } from "./construire.js";
 
@@ -48,6 +48,7 @@ function fade(change){
 }
 function enter(b){
   fade(() => {
+    ensurePlan(b);                                   // le plan de travail du bâtiment, posé d'office
     const room = buildRoom(b);
     inside = {b, room};
     interior.add(player);

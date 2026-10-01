@@ -4,7 +4,8 @@
    Catalogue gratuit et illimité pour l'instant (fabrication : étape 1.3, inventaire : étape 1.4).
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A } from "./donnees.js";
+import { owned, addOwned } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
 import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, pickItem } from "./monde/interieurs.js";
@@ -83,6 +84,7 @@ function hint(text, bad = false){
 }
 function showSel(){
   $("#deco-sel").hidden = !sel;
+  $("#deco-store").hidden = !!(sel && MEUBLES[sel.type].plan);       // un plan de travail ne se range pas
   plate.visible = !!sel;
   if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
   const [w, d] = footOf(sel), pb = problem(sel);
@@ -120,24 +122,30 @@ export function finishDeco(){
 /* Un meuble de métier ne se pose que dans ses bâtiments ; les autres, partout */
 const allowedIn = (type, bType) => !MEUBLES[type].where || MEUBLES[type].where.includes(bType);
 const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles moyens", "environ 2 P² au sol"], grand:["Grands meubles", "environ 4 P² au sol"]};
+/* Un meuble qui a une recette se fabrique : on pose ce qu'on a en réserve. Sans recette (pas encore
+   d'atelier pour lui), il reste gratuit. */
+const craftable = type => !!FABRIQUE_A[type];
 $("#deco-cat").addEventListener("click", () => {
   const here = deco.b.type;
   openSheet(`<div class="sh-head"><h2 class="display">Meubles</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Gratuits pour l'instant. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
+    <p class="muted" style="margin:0 0 6px">Ta réserve de meubles. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
     Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
       MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
-        const m = MEUBLES[t], ok = allowedIn(t, here);
+        const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
         const where = m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}` : "Partout";
+        const stock = !craftable(t) ? "Gratuit pour l'instant"
+          : n > 0 ? `${n} en réserve` : `À fabriquer : ${ATELIERS[FABRIQUE_A[t]].nom} (${B[FABRIQUE_A[t]].nom})`;
         return `<div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
-          <div class="bt"><span class="bn">${m.nom}</span><p>${m.flat ? "À plat, on marche dessus. " : ""}${where}</p></div>
+          <div class="bt"><span class="bn">${m.nom}${craftable(t) && n > 0 ? ` × ${n}` : ""}</span><p>${stock}. ${m.flat ? "À plat, on marche dessus. " : ""}${where}</p></div>
           <button class="btn primary" data-meuble="${t}" ${ok ? "" : "disabled"}>Poser</button></div>`;
       }).join("")).join(""));
 });
 /* Choisi dans le catalogue (voir main.js) : le meuble apparaît à la place libre la plus proche du milieu */
 export function addMeuble(type){
-  if(!deco || !allowedIn(type, deco.b.type)) return;
+  if(!deco || !allowedIn(type, deco.b.type) || (craftable(type) && owned(type) < 1)) return;
   const it = {id: deco.b.deco.next++, type, x: 0, z: 0, rot: 0};
   if(!findSpot(it)){ toast("Plus de place pour ce meuble dans la pièce"); return; }
+  if(craftable(type)) addOwned(type, -1);                              // pris dans la réserve
   items().push(it); addItemMesh(it);
   sel = it; showSel(); save();
 }
@@ -150,11 +158,12 @@ $("#deco-rot").addEventListener("click", () => {
   placeItemMesh(sel); showSel(); save();
 });
 $("#deco-store").addEventListener("click", () => {
-  if(!sel) return;
+  if(!sel || MEUBLES[sel.type].plan) return;                          // le plan de travail reste dans son bâtiment
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);
-  toast(`${MEUBLES[sel.type].emoji} Meuble rangé`);
+  if(craftable(sel.type)) addOwned(sel.type, 1);                      // rendu à la réserve
+  toast(`${MEUBLES[sel.type].emoji} Rangé dans ta réserve`);
   sel = null; showSel(); save();
 });
 /* ----- Couleurs : du meuble choisi, ou des murs et du sol de la pièce (palette gratuite) ----- */

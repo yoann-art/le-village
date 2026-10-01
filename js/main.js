@@ -17,6 +17,7 @@ import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
 import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
 import { decorating, decoView, addMeuble, finishDeco } from "./decorer.js";
+import { updatePlan } from "./ateliers.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
 /* Touche Échap : ferme ce qui est ouvert */
@@ -69,6 +70,7 @@ function tick(now){
       water.position.y = -.2 + Math.sin(now * .0012) * .02;
       updateInteraction(dt);
     }
+    updatePlan(isInside() && !decorating() && !isBusy());   // bouton du plan de travail, quand on est tout près
     renderer.render(currentScene(), camera);
     if(dirty && now - lastSave > 2000){
       const p = islandPos();
