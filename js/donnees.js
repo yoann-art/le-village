@@ -1,22 +1,25 @@
 /* ================= Données du jeu =================
    Les chiffres qu'on règle : ressources, bâtiments, meubles, plans de travail, outils, récolte. */
 export const RES = {
-  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", le:"Le bois", ou:"en coupant des arbres avec une hache"},
-  pierre: {emoji:"🪨", nom:"pierre", pluriel:"pierres", le:"La pierre", ou:"en minant des rochers avec une pioche"},
-  or:     {emoji:"🪙", nom:"or", pluriel:"or", le:"L'or", ou:"en vendant ton surplus au comptoir du Marché"}
+  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", aide:"Le bois : ramasse les morceaux de bois au sol, puis coupe des arbres avec une hache."},
+  pierre: {emoji:"🪨", nom:"pierre", pluriel:"pierres", aide:"La pierre : ramasse les petits cailloux au sol, puis mine des rochers avec une pioche."},
+  or:     {emoji:"🪙", nom:"or", pluriel:"or", aide:"L'or : vends ton surplus au comptoir du Marché."}
 };
 /* size : côté du carré de cases dehors (en P) ; door : décalage de la porte sur la façade (en P, − vers la gauche) ;
-   taille : taille de la pièce intérieure selon la bible (petite, moyenne, grande) */
+   taille : taille de la pièce intérieure selon la bible (petite, moyenne, grande).
+   cost : une suite logique (décidée avec Yo le 1er octobre 2026) : d'abord ce qu'on ramasse à la main (bois,
+   pierre, fibres), puis ce que fabriquent les plans de travail des bâtiments d'avant (planches, blocs, or),
+   puis le cuivre de la mine. Dans l'ordre de ORDER. Chiffres à régler en jouant. */
 export const B = {
-  chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:8, pierre:3}, stars:1, size:3, door:0, taille:"moyenne", desc:"Loge des villageois. Rapporte des étoiles."},
-  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:10, or:4}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois en coupant les arbres, par niveau."},
-  carriere: {nom:"Carrière", emoji:"⛏️", cost:{bois:12, or:5}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre en minant les rochers, par niveau."},
-  marche:   {nom:"Marché", emoji:"⚖️", cost:{bois:12, pierre:10}, stars:2, size:4, door:0, taille:"grande", bonus:{res:"or", pct:25}, desc:"+25 % d'or aux ventes du comptoir, par niveau."},
-  taverne:  {nom:"Taverne", emoji:"🍺", cost:{bois:18, pierre:12, or:10}, stars:3, size:4, door:0, taille:"grande", all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
-  forge:    {nom:"Forge", emoji:"⚒️", cost:{pierre:22, or:8}, stars:3, size:3, door:-.4, taille:"moyenne", desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
-  chateau:  {nom:"Château", emoji:"🏰", cost:{bois:45, pierre:60, or:40}, stars:10, unique:true, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."}
+  chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:20, pierre:10, fibre:12}, stars:1, size:3, door:0, taille:"moyenne", desc:"Loge des villageois. Rapporte des étoiles."},
+  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:12, pierre:6, fibre:4}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois en coupant les arbres, par niveau."},
+  carriere: {nom:"Carrière", emoji:"⛏️", cost:{planche:15, pierre:20}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre en minant les rochers, par niveau."},
+  marche:   {nom:"Marché", emoji:"⚖️", cost:{planche:25, bloc:15, fibre:10}, stars:2, size:4, door:0, taille:"grande", bonus:{res:"or", pct:25}, desc:"+25 % d'or aux ventes du comptoir, par niveau."},
+  taverne:  {nom:"Taverne", emoji:"🍺", cost:{planche:30, bloc:25, or:20}, stars:3, size:4, door:0, taille:"grande", all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
+  forge:    {nom:"Forge", emoji:"⚒️", cost:{bloc:30, cuivre:15, or:20}, stars:3, size:3, door:-.4, taille:"moyenne", desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
+  chateau:  {nom:"Château", emoji:"🏰", cost:{bloc:60, planche:40, cuivre:30, or:80}, stars:10, unique:true, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."}
 };
-export const ORDER = ["chaumiere","scierie","carriere","marche","taverne","forge","chateau"];
+export const ORDER = ["scierie","chaumiere","carriere","marche","taverne","forge","chateau"];
 /* Meubles du catalogue : gabarit de la bible (petit ≈ 1 P², moyen ≈ 2 P², grand ≈ 4 P²),
    taille au sol w × d en P (w de gauche à droite, d de l'arrière à l'avant),
    flat : posé à plat comme un tapis (on marche dessus, on pose des meubles dessus),
@@ -98,22 +101,23 @@ export const RECOLTE = {
   buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600}
 };
 
-/* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : de quoi fabriquer sa première hache
-   et sa première pioche, pour qu'une nouvelle partie ne soit jamais bloquée. Ce que donne chacun (n, avant
+/* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi
+   bâtir la Scierie, son établi, puis la première hache et la première pioche, sans attendre. Ce que donne chacun (n, avant
    les bonus des bâtiments), combien il y en a au plus sur l'île (max), où ils apparaissent (pres : à côté
    d'un arbre), et toutes les combien de secondes il en revient un de chaque (retour). */
 export const SOL = {
-  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:2, max:8, sols:["grass"], pres:"tree"},
-  caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, max:5, sols:["grass", "sand"]}
+  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:2, max:12, sols:["grass"], pres:"tree"},
+  caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, max:12, sols:["grass", "sand"]}
 };
-export const SOL_RETOUR = 900;
+export const SOL_RETOUR = 600;
 
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */
 export const PRODUITS = {
-  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},
-  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱"},
-  fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾"},
-  baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐"}
+  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫", aide:"Les planches se fabriquent à l'établi de la Scierie."},
+  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱", aide:"Les blocs se taillent à la table de taille de la Carrière."},
+  fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
+  baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐", aide:"Les baies se cueillent sur les buissons de baies."},
+  cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se trouve à la mine (bientôt)."}
 };
 /* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
    construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le ; fem : nom féminin),
@@ -121,7 +125,7 @@ export const PRODUITS = {
    Recette : ce qu'elle donne (out, n exemplaires), ses ingrédients (in), son temps en secondes (t)
    et le niveau du bâtiment qu'il faut (lvl). Chiffres à régler en jouant. */
 export const ATELIERS = {
-  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:10}, pour:"fabriquer des planches et des meubles en bois", recettes:[
+  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:8}, pour:"fabriquer des planches et des meubles en bois", recettes:[
     {out:"planche", n:2, in:{bois:1}, t:5, lvl:1, cat:"Matériaux"},
     /* Outils de départ ; le fil de la canne à pêche est en fibres */
     {out:"hachePierre", in:{planche:3, pierre:2}, t:30, lvl:1, cat:"Outils"},
@@ -139,7 +143,7 @@ export const ATELIERS = {
     {out:"etagere", in:{planche:6}, t:90, lvl:2},
     {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
   ]},
-  chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{bois:6, or:2},
+  chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{planche:6, fibre:4},
     pour:"fabriquer des pots de fleurs, des lanternes et des tapis", recettes:[
     {out:"pot", in:{pierre:2}, t:20, lvl:1},
     {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
@@ -147,13 +151,13 @@ export const ATELIERS = {
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1},
     {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2}
   ]},
-  carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{bois:4, pierre:8},
+  carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{pierre:10, planche:4},
     pour:"tailler des blocs, des statues et des cheminées", recettes:[
     {out:"bloc", n:2, in:{pierre:1}, t:5, lvl:1},
     {out:"statue", in:{bloc:3}, t:40, lvl:1},
     {out:"cheminee", in:{bloc:6, planche:2}, t:90, lvl:2}
   ]},
-  marche:{nom:"Comptoir", le:"le comptoir", emoji:"⚖️", meuble:"comptoir", cost:{bois:8, pierre:4}, vente:true,
+  marche:{nom:"Comptoir", le:"le comptoir", emoji:"⚖️", meuble:"comptoir", cost:{planche:10, bloc:5}, vente:true,
     pour:"vendre ton surplus contre de l'or", recettes:[
     {out:"or", in:{bois:6}, t:10, lvl:1},
     {out:"or", in:{pierre:6}, t:10, lvl:1},
@@ -162,19 +166,19 @@ export const ATELIERS = {
   ]},
   /* Plans de travail en attente : posés, recettes affichées mais verrouillées (lock = la raison),
      en attendant ce qu'il leur faut. note : une phrase de plus en haut de leur fiche. */
-  taverne:{nom:"Fourneau", le:"le fourneau", emoji:"🍲", meuble:"fourneau", cost:{bois:4, pierre:8},
+  taverne:{nom:"Fourneau", le:"le fourneau", emoji:"🍲", meuble:"fourneau", cost:{bloc:10, planche:5},
     pour:"cuisiner des plats qui donnent des bonus", note:"Les recettes se découvriront en essayant des ingrédients.", recettes:[
     {nom:"Poisson grillé", emoji:"🐟", lock:"Arrive avec la pêche"},
     {nom:"Ragoût de gibier", emoji:"🍖", lock:"Arrive avec la chasse"},
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
-  forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{pierre:6, or:4},
+  forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
     pour:"forger des outils et des armes en métal", recettes:[
     {nom:"Pioche en cuivre", emoji:"⛏️", lock:"Arrive avec le cuivre de la carrière"},
     {nom:"Hache en cuivre", emoji:"🪓", lock:"Arrive avec le cuivre de la carrière"},
     {nom:"Épée en cuivre", emoji:"🗡️", lock:"Arrive avec le cuivre de la carrière"}
   ]},
-  chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{bois:10, or:10}, titre:"Grands chantiers",
+  chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",
     pour:"lancer les grands chantiers et les quêtes", note:"La salle du trône : c'est d'ici que tu lanceras les grands chantiers.", recettes:[
     {nom:"Navire à voile", emoji:"⛵", lock:"Arrive avec les voyages vers les zones sauvages"},
     {nom:"Gare de wagonnet", emoji:"🚃", lock:"Arrive avec les voyages vers les zones sauvages"},

@@ -99,8 +99,6 @@ window.addEventListener("keydown", e => {
   toggleHold(state.barre[i]);
 });
 
-/* Au démarrage : les cases et l'outil tenu, tels que la partie les a gardés. La toute première fois,
-   les outils déjà dans le sac (fabriqués avant les cases rapides) remplissent les cases. */
-if(!state.barreVue){ for(const it of state.sac) barreAuto(it.k); state.barreVue = true; save(); }
+/* Au démarrage : les cases et l'outil tenu, tels que la partie les a gardés */
 syncBarre();
 if(state.main) holdTool(state.main);

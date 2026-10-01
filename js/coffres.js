@@ -6,8 +6,8 @@
    state.coffres = [{id, i (la case), items: [{k, n}]}] ; sur la carte, la case porte o = "coffre" et l'id. */
 import { COFFRE, SAC, OUTILS, GRAINES, POSABLES, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { slotsAdd, slotsTake, slotsPlace, sacAdd, sacTake, doorTile } from "./regles.js";
-import { map, idx, inb, N, tileOf, setObj, setEtat } from "./monde/ile.js";
+import { slotsAdd, slotsTake, sacAdd, sacTake, doorTile } from "./regles.js";
+import { map, inb, N, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
@@ -107,29 +107,3 @@ wrap.addEventListener("click", e => {
   } else return;
   syncBarre(); save(); renderHUD(); render();
 });
-
-/* ----- L'ancienne réserve (avant les coffres) : elle est rangée une fois dans un coffre près de la place du
-   village ; dans une partie toute neuve, le bois et la pierre du départ vont dans le sac ----- */
-if(!state.coffresPrets){
-  const avant = Object.entries(state.stock || {}).filter(([, n]) => n > 0);
-  for(const r of ["bois", "pierre"]) if(state.res[r] > 0) avant.unshift([r, state.res[r]]);
-  delete state.res.bois; delete state.res.pierre; state.stock = {};
-  const neuve = !state.buildings.length && avant.every(([k]) => k === "bois" || k === "pierre");
-  if(neuve) for(const [k, n] of avant) sacAdd(k, n);
-  else if(avant.length){
-    /* la case libre la plus proche du centre de l'île, à un pas du personnage */
-    const c = (N - 1) / 2, libres = [];
-    for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){ const i = idx(x, z); if(!poseProblem(i) && Math.hypot(player.position.x - (x - N/2 + .5), player.position.z - (z - N/2 + .5)) > 1.5) libres.push(i); }
-    libres.sort((a, b) => Math.hypot(a % N - c, Math.floor(a / N) - c) - Math.hypot(b % N - c, Math.floor(b / N) - c));
-    let co = null;
-    for(const [k, n] of avant){
-      let left = n;
-      while(left > 0){
-        if(!co || slotsPlace(co.items, COFFRE.places, k) === 0){ if(!libres.length) break; co = newCoffre(libres.shift()); }
-        left -= slotsAdd(co.items, COFFRE.places, k, left);
-      }
-    }
-    setTimeout(() => toast("🗃️ Nouveau : ta réserve est rangée dans un coffre près de la place du village. Ce que tu récoltes va maintenant dans ton sac.", 6000), 1600);
-  }
-  state.coffresPrets = true; save();
-}

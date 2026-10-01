@@ -7,8 +7,8 @@ import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
 
-/* Carte de l'île : N × N cases, une case = 1 P */
-export const N = 40, H = N / 2;
+/* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026) */
+export const N = 56, H = N / 2;
 export const idx = (x,z) => z * N + x;
 export const inb = (x,z) => x >= 0 && z >= 0 && x < N && z < N;
 export const tileOf = w => Math.floor(w + H);
@@ -60,8 +60,8 @@ export const map = genMap(state.seed);
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z), r = rnd();
     if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .13) map.obj[i] = "herbe";                // environ 18 touffes et 6 buissons sur l'île de départ
-    else if(r < .175) map.obj[i] = "buisson";
+    if(r < .065) map.obj[i] = "herbe";               // une trentaine de touffes et une dizaine de buissons
+    else if(r < .085) map.obj[i] = "buisson";
   }
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */

@@ -123,6 +123,7 @@ button.tile{font:inherit;padding:8px 6px;border:2px solid transparent}
 .rec-cat{margin:12px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .co-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0}
 .co-head h3{margin:0}
+.manque{font-size:13px;color:var(--or)}
 .hint-box{margin:6px 0 10px;padding:10px 12px;border-radius:12px;border-left:4px solid var(--or);background:var(--bg);font-size:15px}
 .muted{color:var(--muted)}
 .upbox{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}

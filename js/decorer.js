@@ -6,8 +6,8 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { RES, B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A } from "./donnees.js";
-import { owned, addOwned, hasAll, placeFor } from "./regles.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, objet } from "./donnees.js";
+import { owned, addOwned, hasAll, placeFor, missingHTML } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
 import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem } from "./monde/interieurs.js";
@@ -135,14 +135,13 @@ function planHTML(b){
   const a = ATELIERS[b.type];
   if(!a) return "";
   const m = MEUBLES[a.meuble], built = hasPlan(b), ok = !built && hasAll(a.cost), e = a.fem ? "e" : "", pr = a.fem ? "la" : "le";
-  const chips = Object.entries(a.cost).map(([k, v]) => `<span class="chip ${owned(k) >= v ? "" : "short"}">${RES[k].emoji} ${owned(k)}/${v}</span>`).join("");
-  const missing = Object.entries(a.cost).filter(([k, v]) => owned(k) < v).map(([k]) => k);
+  const chips = Object.entries(a.cost).map(([k, v]) => `<span class="chip ${owned(k) >= v ? "" : "short"}">${objet(k).emoji} ${owned(k)}/${v}</span>`).join("");
   return `<h3 style="margin:10px 0 2px">Plan de travail</h3>
     <div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
       <div class="bt"><span class="bn">${m.nom}</span>
         <p>${built ? `Déjà construit${e} : touche-${pr} dans la pièce pour ${pr} déplacer.` : `Pour ${a.pour}. Un seul par bâtiment.`}</p>
         ${built ? "" : `<div>${chips}</div>`}
-        ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} ${RES[k].le} s'obtient ${RES[k].ou}.`).join(" ")}</p>`}</div>
+        ${built || ok ? "" : `<p>${missingHTML(a.cost)}</p>`}</div>
       <button class="btn primary" data-meuble="${a.meuble}" ${ok ? "" : "disabled"}>${built ? `Construit${e}` : "Construire"}</button></div>`;
 }
 /* « à l'établi », « au comptoir », « à la table de taille » */

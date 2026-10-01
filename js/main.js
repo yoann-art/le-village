@@ -88,5 +88,5 @@ renderHUD();
 requestAnimationFrame(tick);
 setTimeout(() => {
   if(migrationMsg) toast(migrationMsg, 4200);
-  else if(!state.buildings.length) toast("Déplace-toi avec le joystick. Touche Construire pour bâtir devant toi.", 4200);
+  else if(!state.buildings.length) toast("Ramasse les morceaux de bois et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
 }, 700);

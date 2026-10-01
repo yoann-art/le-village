@@ -1,7 +1,7 @@
 /* ================= Interface =================
    Compteurs du haut, petits messages, panneau qui monte du bas. */
 import { $ } from "./outils.js";
-import { RES, B } from "./donnees.js";
+import { RES, B, objet } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { totalStars, owned } from "./regles.js";
 import { resetJoy } from "./commandes.js";
@@ -14,7 +14,7 @@ export function renderHUD(){
   if(state.crowned){ g.textContent = "Village couronné"; return; }
   g.innerHTML = "Château : " + Object.entries(B.chateau.cost).map(([r,v]) => {
     const have = Math.min(owned(r), v);
-    return `<span class="${have >= v ? "ok" : ""}">${RES[r].emoji} ${have}/${v}</span>`;
+    return `<span class="${have >= v ? "ok" : ""}">${objet(r).emoji} ${have}/${v}</span>`;
   }).join(" ");
 }
 export function pulse(r){ const el = $("#r-" + r); if(!el) return; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }

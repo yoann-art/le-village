@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, SAC, COFFRE } from "./donnees.js";
+import { RES, B, OUTILS, SAC, COFFRE, objet } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -92,4 +92,6 @@ export function mult(r){
   return m;
 }
 export const costHTML = c => Object.entries(c).map(([r,v]) =>
-  `<span class="chip ${owned(r) >= v ? "" : "short"}">${RES[r].emoji} ${v}</span>`).join("");
+  `<span class="chip ${owned(r) >= v ? "" : "short"}">${objet(r).emoji} ${v}</span>`).join("");
+/* Ce qui manque pour un prix, avec d'où ça vient (une phrase par matière) */
+export const missingHTML = c => Object.entries(c).filter(([r, v]) => owned(r) < v).map(([r]) => objet(r).aide).filter(Boolean).join(" ");

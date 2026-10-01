@@ -5,7 +5,7 @@
 import { $ } from "./outils.js";
 import { RES, B, ORDER } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
+import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, idx, inb, map, tileOf, setObj } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
@@ -200,7 +200,8 @@ $("#btn-build").addEventListener("click", () => {
     ORDER.map(t => {
       const b = B[t], built = b.unique && state.buildings.some(v => v.type === t), ok = !built && canAfford(b.cost);
       return `<div class="brow"><div class="be" aria-hidden="true">${b.emoji}</div>
-        <div class="bt"><span class="bn">${b.nom}</span><span class="st">★ ${b.stars}</span><p>${b.desc}</p><div>${costHTML(b.cost)}</div></div>
+        <div class="bt"><span class="bn">${b.nom}</span><span class="st">★ ${b.stars}</span><p>${b.desc}</p><div>${costHTML(b.cost)}</div>
+          ${built || ok ? "" : `<p class="manque">${missingHTML(b.cost)}</p>`}</div>
         <button class="btn primary" data-pick="${t}" ${ok ? "" : "disabled"}>${built ? "Déjà bâti" : "Choisir"}</button></div>`;
     }).join(""));
 });
@@ -222,7 +223,7 @@ function openDetail(b){
   if(b.lvl < max){
     const c = upCost(b.type, b.lvl);
     const next = roomSide(b.type, b.lvl + 1);
-    up = `<div class="upbox"><div><p>Passer au niveau ${b.lvl + 1} : pièce de ${next} × ${next} P</p><div>${costHTML(c)}</div></div>
+    up = `<div class="upbox"><div><p>Passer au niveau ${b.lvl + 1} : pièce de ${next} × ${next} P</p><div>${costHTML(c)}</div>${canAfford(c) ? "" : `<p class="manque">${missingHTML(c)}</p>`}</div>
       <button class="btn primary" data-up ${canAfford(c) ? "" : "disabled"}>Améliorer</button></div>`;
   }
   openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
