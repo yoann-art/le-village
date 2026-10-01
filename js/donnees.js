@@ -59,21 +59,31 @@ export const OUTILS = {
   hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", emoji:"🪓", famille:"hache", force:1, usage:"Servira à couper les arbres."},
   piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", emoji:"⛏️", famille:"pioche", force:1, usage:"Servira à casser les rochers."},
   canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Servira à pêcher."},
-  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."}
+  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."},
+  arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, usage:"Sert à arroser les buissons de baies vides, pour que les baies reviennent."}
 };
 
-/* Graines (étape 1.5) : un arbre abattu en donne une ; on la plante où l'on veut sur l'île.
+/* Graines (étape 1.5) : un arbre abattu, des herbes arrachées, un buisson coupé en donnent une ;
+   on la plante où l'on veut sur l'île.
    plante : ce qui pousse ; pousse : temps pour devenir adulte, en secondes, avec l'horloge du téléphone
    (à régler en jouant ; plus tard selon la météo et la saison, étape 1.10) */
 export const GRAINES = {
   graineArbre:{nom:"Graine d'arbre", pluriel:"graines d'arbre", emoji:"🌰", plante:"tree", pousse:7200,
-    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre."}
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre."},
+  graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
+  graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : un buisson de baies y poussera."}
 };
-/* Récolter sur l'île : l'outil qu'il faut (sa famille), le nombre de coups pour abattre, ce que donne
-   chaque coup avec un outil de force 1 (+1 par force en plus), et la graine du dernier coup.
-   Les bonus des bâtiments s'ajoutent (Scierie : +25 % de bois par niveau…). */
+/* Récolter sur l'île. Couper : l'outil qu'il faut (sa famille), le nombre de coups pour abattre, ce que
+   donne chaque coup avec un outil de force 1 (+1 par force en plus) et la graine du dernier coup.
+   Cueillir (à la main) : ce que ça donne (cueille, n) ; herbes : repousse en secondes, ou arrachées à la
+   2e cueillette de suite (une graine, plus de repousse) ; buisson : vide après la cueillette, les baies
+   reviennent « retour » secondes après l'arrosage (décidé par Yo). Les bonus des bâtiments s'ajoutent. */
 export const RECOLTE = {
-  tree:{nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:2, graine:"graineArbre"}
+  tree:   {nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:2, graine:"graineArbre"},
+  herbe:  {nom:"les herbes hautes", cueille:"fibre", n:2, repousse:900, graine:"graineHerbe"},
+  buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : de quoi fabriquer sa première hache
@@ -89,7 +99,9 @@ export const SOL_RETOUR = 900;
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},
-  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱"}
+  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱"},
+  fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾"},
+  baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐"}
 };
 /* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
    construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le ; fem : nom féminin),
@@ -99,10 +111,11 @@ export const PRODUITS = {
 export const ATELIERS = {
   scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:10}, pour:"fabriquer des planches et des meubles en bois", recettes:[
     {out:"planche", n:2, in:{bois:1}, t:5, lvl:1, cat:"Matériaux"},
-    /* Outils de départ ; canne à pêche : or provisoire, en attendant le fil des fibres (étape 1.5) */
+    /* Outils de départ ; le fil de la canne à pêche est en fibres */
     {out:"hachePierre", in:{planche:3, pierre:2}, t:30, lvl:1, cat:"Outils"},
     {out:"piochePierre", in:{planche:3, pierre:3}, t:30, lvl:1, cat:"Outils"},
-    {out:"canneBois", in:{planche:4, or:1}, t:40, lvl:1, cat:"Outils"},
+    {out:"arrosoir", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Outils"},
+    {out:"canneBois", in:{planche:4, fibre:3}, t:40, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
@@ -117,9 +130,9 @@ export const ATELIERS = {
     pour:"fabriquer des pots de fleurs, des lanternes et des tapis", recettes:[
     {out:"pot", in:{pierre:2}, t:20, lvl:1},
     {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
-    /* Tapis : ingrédients provisoires (bois et or), remplacés par les fibres à l'étape 1.5 */
-    {out:"petitTapis", in:{bois:2, or:1}, t:40, lvl:1},
-    {out:"grandTapis", in:{bois:3, or:2}, t:60, lvl:2}
+    /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
+    {out:"petitTapis", in:{fibre:6}, t:40, lvl:1},
+    {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2}
   ]},
   carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{bois:4, pierre:8},
     pour:"tailler des blocs, des statues et des cheminées", recettes:[

@@ -7,7 +7,7 @@ import { RES, B, ORDER } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
-import { H, idx, inb, map, tileOf } from "./monde/ile.js";
+import { H, idx, inb, map, tileOf, setObj } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
@@ -30,7 +30,10 @@ function anchorFor(type){
 }
 /* Peut-on poser ici ? null si oui ; sinon « occupé » (terrain déjà pris), « perso » (le personnage
    est dessous) ou « porte » (sa porte serait bloquée, ou il bloquerait celle d'un autre bâtiment) */
-const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && !map.obj[idx(x,z)] && !occ.has(idx(x,z));
+/* Une case libre pour bâtir : terre ferme, rien dessus (les herbes hautes, elles, s'en vont sous le bâtiment) */
+const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && (!map.obj[idx(x,z)] || map.obj[idx(x,z)] === "herbe") && !occ.has(idx(x,z));
+const clearHerbes = (type, ax, az) => [...footprint(type, ax, az), doorTile(type, ax, az)]
+  .forEach(([x,z]) => { if(inb(x,z) && map.obj[idx(x,z)] === "herbe") setObj(idx(x,z), null); });   // rien ne pousse devant la porte
 function placeProblem(type, ax, az){
   const cells = footprint(type, ax, az);
   if(!cells.every(([x,z]) => freeTile(x, z))) return "occupé";
@@ -165,6 +168,7 @@ $("#btn-place").addEventListener("click", () => {
     const b = moving;
     moving = null;
     b.x = ax; b.z = az;
+    clearHerbes(b.type, ax, az);
     footprint(b.type, ax, az).forEach(([x,z]) => occ.set(idx(x,z), b.id));
     placeMesh(b);
     stopPlacing(); save();
@@ -176,6 +180,7 @@ $("#btn-place").addEventListener("click", () => {
   pay(d.cost);
   const b = {id:state.nextId++, type, lvl:1, x:ax, z:az};
   state.buildings.push(b);
+  clearHerbes(type, ax, az);
   footprint(type, ax, az).forEach(([x,z]) => occ.set(idx(x,z), b.id));
   placeMesh(b);
   stopPlacing(); save(); renderHUD();

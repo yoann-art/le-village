@@ -42,7 +42,7 @@ export function islandWalkable(wx, wz){
   const x = tileOf(wx), z = tileOf(wz);
   if(!inb(x,z)) return false;
   const i = idx(x,z);
-  return map.type[i] !== "water" && !map.obj[i] && !occ.has(i);
+  return map.type[i] !== "water" && (!map.obj[i] || map.obj[i] === "herbe") && !occ.has(i);   // on traverse les herbes hautes
 }
 let walkable = islandWalkable;
 export function setWalkable(fn){ walkable = fn; }

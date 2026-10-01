@@ -24,6 +24,14 @@ const BUILD = {
     g.add(part(G.cyl, C.dark, .09, .05, .09, 0, .02, .04));                            // moulinet
     g.add(part(G.cyl, C.cream, .008, .3, .008, 0, .7, .03));                           // fil
   },
+  arrosoir(g){
+    g.add(part(G.cyl, C.wood, .28, .26, .28, 0, .02, .1));                            // le seau, tenu par son anse
+    g.add(part(G.cyl, C.dark, .3, .03, .3, 0, .15, .1));                              // cerclage
+    const bec = part(G.cyl, C.wood, .05, .3, .05, 0, .1, .32);                       // bec verseur
+    bec.rotation.x = 1.1; g.add(bec);
+    const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
+    anse.rotation.x = Math.PI/2; g.add(anse);
+  },
   arme(g){
     g.add(part(G.cyl, C.dark, .045, .14, .045, 0, 0, 0));                              // poignée
     g.add(part(G.box, C.dark, .06, .04, .2, 0, .08, 0));                               // garde

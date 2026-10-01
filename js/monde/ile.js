@@ -1,10 +1,10 @@
 /* ================= L'île =================
-   Carte en cases, terrain, mer, arbres et rochers. */
+   Carte en cases, terrain, mer, arbres, rochers, herbes hautes et buissons de baies. */
 import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
-import { doorTile } from "../regles.js";
-import { GRAINES } from "../donnees.js";
+import { doorTile, sizeOf } from "../regles.js";
+import { GRAINES, RECOLTE } from "../donnees.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P */
 export const N = 40, H = N / 2;
@@ -51,13 +51,26 @@ function genMap(seed){
   return {type, obj};
 }
 export const map = genMap(state.seed);
+/* Herbes hautes et buissons de baies (étape 1.5) : posés après coup, avec leur propre tirage, pour ne pas
+   déplacer les arbres et les rochers des parties déjà commencées ; jamais sous un bâtiment déjà posé */
+{
+  const rnd = mulberry32(state.seed * 7 + 3), c = (N-1)/2, sous = new Set();
+  state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
+  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
+    const i = idx(x, z), r = rnd();
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || Math.hypot(x-c, z-c) < 9) continue;
+    if(r < .13) map.obj[i] = "herbe";                // environ 18 touffes et 6 buissons sur l'île de départ
+    else if(r < .175) map.obj[i] = "buisson";
+  }
+}
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
 state.buildings.forEach(b => {
   const [x, z] = doorTile(b.type, b.x, b.z);
   if(inb(x, z)) map.obj[idx(x, z)] = null;
 });
-/* Ce que le joueur a changé sur l'île (étape 1.5) : state.ile = {case: {o, plante?}} ; o = "tree", "rock"
-   ou null (enlevé) ; plante = l'heure où il a été planté (il pousse avec l'horloge du téléphone) */
+/* Ce que le joueur a changé sur l'île (étape 1.5) : state.ile = {case: {o, plante?, coupe?, vide?, arrose?}} ;
+   o = "tree", "rock", "herbe", "buisson" ou null (enlevé) ; plante = l'heure où il a été planté (il pousse avec
+   l'horloge du téléphone) ; coupe = herbes cueillies à cette heure ; vide = buisson sans baies, arrose = arrosé à cette heure */
 for(const [i, c] of Object.entries(state.ile)) map.obj[+i] = c.o;
 
 /* Terrain : dalle d'herbe ou de sable sur un socle de terre */
@@ -85,7 +98,7 @@ const seabed = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90), mat(0x2F93AE)
 seabed.rotation.x = -Math.PI/2; seabed.position.y = -1.05;
 scene.add(water, seabed);
 
-/* Arbres (3 à 4 P de haut) et rochers (½ à 1 P), un modèle par case */
+/* Arbres (3 à 4 P de haut), rochers (½ à 1 P), herbes hautes et buissons, un modèle par case */
 const POUSSE = {};                                   // ce qui pousse → temps pour devenir adulte (s)
 for(const g of Object.values(GRAINES)) POUSSE[g.plante] = g.pousse;
 /* Où en est ce qui a été planté : de 0 (graine plantée) à 1 (adulte) ; ce qui était là au départ est adulte */
@@ -98,14 +111,28 @@ export function growth(i){
 export const growthLeft = i => { const c = state.ile[i]; return c && c.plante ? Math.max(0, POUSSE[c.o] * (1 - growth(i))) : 0; };
 /* Étape de pousse : 0 pousse, 1 jeune plant, 2 adulte */
 const stageOf = i => { const g = growth(i); return g < .5 ? 0 : g < 1 ? 1 : 2; };
+/* Herbes cueillies une fois : rases, elles repoussent ; temps restant en secondes (0 = hautes) */
+export function herbeLeft(i){
+  const c = state.ile[i];
+  return c && c.coupe ? Math.max(0, RECOLTE.herbe.repousse - (Date.now() - c.coupe) / 1000) : 0;
+}
+/* Buisson : plein de baies, sauf s'il a été cueilli et que ses baies ne sont pas revenues (arrosé depuis assez longtemps) */
+export function baiesLeft(i){                         // -1 : vide, pas arrosé ; 0 : plein ; sinon secondes avant le retour
+  const c = state.ile[i];
+  if(!c || !c.vide) return 0;
+  if(!c.arrose) return -1;
+  return Math.max(0, RECOLTE.buisson.retour - (Date.now() - c.arrose) / 1000);
+}
+/* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
+const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "");
 
-const meshes = new Map(), stages = new Map();
+const meshes = new Map(), looks = new Map();
 function buildObj(i){
   const o = map.obj[i], r = ((i*9301 + 49297) % 233280) / 233280;
   const g = new THREE.Group();
+  looks.set(i, lookOf(i));
   if(o === "tree"){
     const st = stageOf(i);
-    stages.set(i, st);
     if(st === 0){                                    // une pousse
       g.add(part(G.trunk, 0x8A5A3B, .6,.5,.6, 0,.14,0));
       g.add(part(G.leaf2, 0x6CC46A, .9,.9,.9, 0,.42,0));
@@ -115,6 +142,20 @@ function buildObj(i){
       g.add(part(G.leaf2, 0x57B25C, 2,2,2, .1,2.75,.05));
       g.scale.setScalar((.9 + r*.25) * (st === 1 ? .5 : 1));   // jeune plant : moitié de la taille
     }
+  } else if(o === "herbe"){                         // des brins hauts et souples ; ras une fois cueillis
+    const h = stageOf(i) < 2 ? .45 : herbeLeft(i) > 0 ? .25 : 1;
+    [[0,0,0x6FBF4E],[.14,.08,0x5DAE45],[-.13,.1,0x7CCB58],[.06,-.14,0x67B84B],[-.08,-.1,0x5DAE45]].forEach(([x, z, c], k) => {
+      const b = part(G.cone, c, .16, .6 * h * (1 + (k % 2) * .25), .16, x, .3 * h * (1 + (k % 2) * .25), z);
+      b.rotation.set(z * 1.2, 0, -x * 1.2); g.add(b);
+    });
+  } else if(o === "buisson"){                       // une touffe ronde, avec ses baies si elle est pleine
+    const st = stageOf(i);
+    g.add(part(G.leaf, 0x3E8F48, 1.1, .9, 1.1, 0, .38, 0));
+    g.add(part(G.leaf2, 0x4FA556, 1.1, 1, 1.1, .18, .62, -.1));
+    if(st === 2 && !baiesLeft(i))
+      [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
+        g.add(part(G.head, 0x4A5FC1, .32, .32, .32, x, y, z)));
+    if(st < 2) g.scale.setScalar(st === 0 ? .4 : .7);
   } else {
     g.add(part(G.dode, r < .5 ? 0x9EA3A8 : 0x8F959B, .9,.7,.9, 0,.25,0));
     g.scale.setScalar(.8 + r*.4);
@@ -126,7 +167,7 @@ function buildObj(i){
 /* Refait le modèle d'une case (après une coupe, une plantation, une pousse) */
 function refreshObj(i){
   const old = meshes.get(i);
-  if(old){ scene.remove(old); meshes.delete(i); stages.delete(i); }
+  if(old){ scene.remove(old); meshes.delete(i); looks.delete(i); }
   if(map.obj[i]) buildObj(i);
 }
 export const objMesh = i => meshes.get(i);
@@ -136,8 +177,14 @@ export function setObj(i, o, plante){
   state.ile[i] = plante ? {o, plante} : {o};
   refreshObj(i);
 }
+/* Change l'état de ce qui est sur une case (herbes cueillies, buisson vide ou arrosé…) ; undefined efface */
+export function setEtat(i, patch){
+  const c = state.ile[i] || (state.ile[i] = {o: map.obj[i]});
+  for(const [k, v] of Object.entries(patch)) if(v === undefined) delete c[k]; else c[k] = v;
+  refreshObj(i);
+}
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
-/* Ce qui a été planté grandit : on regarde régulièrement s'il a changé d'étape */
+/* Ce qui a été planté grandit, les herbes repoussent, les baies reviennent : on regarde régulièrement */
 setInterval(() => {
-  for(const [i, c] of Object.entries(state.ile)) if(c.plante && map.obj[+i] && stages.get(+i) !== stageOf(+i)) refreshObj(+i);
+  for(const i of Object.keys(state.ile)) if(map.obj[+i] && looks.get(+i) !== lookOf(+i)) refreshObj(+i);
 }, 10000);
