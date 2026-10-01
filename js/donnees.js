@@ -47,6 +47,10 @@ export const MEUBLES = {
   trone:    {nom:"Trône", emoji:"👑", gabarit:"moyen", w:1.2, d:1, plan:true}
 };
 
+/* Le sac à dos (étape 1.4) : nombre d'emplacements au départ (agrandissable plus tard),
+   et combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul) */
+export const SAC = {places:12, pile:30};
+
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},

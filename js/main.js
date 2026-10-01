@@ -18,6 +18,7 @@ import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, p
 import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
 import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
+import "./sac.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
 /* Touche Échap : ferme ce qui est ouvert */

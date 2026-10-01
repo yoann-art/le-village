@@ -90,6 +90,18 @@ button{font:inherit;color:inherit}
 .brow .btn{flex:none;padding:9px 12px;font-size:15px}
 .chip{display:inline-block;font-size:15px;margin-right:8px;white-space:nowrap}
 .chip.short{color:var(--gueules);font-weight:700}
+.sh-tabs{display:flex;gap:8px;margin:4px 0 10px}
+.sh-tab{flex:1;appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;min-height:46px;font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation}
+.sh-tab[aria-selected="true"]{background:var(--sinople);color:var(--on-sinople);border-color:var(--sinople)}
+.sac-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 6px}
+.slot{position:relative;aspect-ratio:1;border-radius:12px;background:var(--bg);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:30px}
+.slot.empty{border-style:dashed}
+.slot .sn{position:absolute;right:6px;bottom:2px;font-size:14px;font-weight:700}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:2px 0 8px}
+.tile{background:var(--bg);border-radius:12px;padding:8px 6px;text-align:center}
+.tile .te{font-size:28px;line-height:1.15}
+.tile .tn{font-weight:700}
+.tile .tl{font-size:13px;color:var(--muted);line-height:1.2}
 .hint-box{margin:6px 0 10px;padding:10px 12px;border-radius:12px;border-left:4px solid var(--or);background:var(--bg);font-size:15px}
 .muted{color:var(--muted)}
 .upbox{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
