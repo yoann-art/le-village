@@ -41,7 +41,10 @@ export const MEUBLES = {
   etabli:   {nom:"Établi", emoji:"🪚", gabarit:"moyen", w:1.6, d:.8, plan:true},
   atelierDeco:{nom:"Atelier de décoration", emoji:"🧵", gabarit:"moyen", w:1.6, d:.8, plan:true},
   tableTaille:{nom:"Table de taille", emoji:"⛏️", gabarit:"moyen", w:1.6, d:.9, plan:true},
-  comptoir: {nom:"Comptoir", emoji:"⚖️", gabarit:"grand", w:2.2, d:.9, plan:true}
+  comptoir: {nom:"Comptoir", emoji:"⚖️", gabarit:"grand", w:2.2, d:.9, plan:true},
+  fourneau: {nom:"Fourneau", emoji:"🍲", gabarit:"moyen", w:1.4, d:.8, plan:true},
+  enclume:  {nom:"Enclume", emoji:"⚒️", gabarit:"petit", w:.9, d:.7, plan:true},
+  trone:    {nom:"Trône", emoji:"👑", gabarit:"moyen", w:1.2, d:1, plan:true}
 };
 
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
@@ -86,11 +89,32 @@ export const ATELIERS = {
     {out:"or", in:{pierre:6}, t:10, lvl:1},
     {out:"or", in:{planche:10}, t:10, lvl:1},
     {out:"or", in:{bloc:10}, t:10, lvl:1}
+  ]},
+  /* Plans de travail en attente : posés, recettes affichées mais verrouillées (lock = la raison),
+     en attendant ce qu'il leur faut. note : une phrase de plus en haut de leur fiche. */
+  taverne:{nom:"Fourneau", le:"le fourneau", emoji:"🍲", meuble:"fourneau", cost:{bois:4, pierre:8},
+    pour:"cuisiner des plats qui donnent des bonus", note:"Les recettes se découvriront en essayant des ingrédients.", recettes:[
+    {nom:"Poisson grillé", emoji:"🐟", lock:"Arrive avec la pêche"},
+    {nom:"Ragoût de gibier", emoji:"🍖", lock:"Arrive avec la chasse"},
+    {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
+  ]},
+  forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{pierre:6, or:4},
+    pour:"forger des outils et des armes en métal", recettes:[
+    {nom:"Pioche en cuivre", emoji:"⛏️", lock:"Arrive avec le cuivre de la carrière"},
+    {nom:"Hache en cuivre", emoji:"🪓", lock:"Arrive avec le cuivre de la carrière"},
+    {nom:"Épée en cuivre", emoji:"🗡️", lock:"Arrive avec le cuivre de la carrière"}
+  ]},
+  chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{bois:10, or:10}, titre:"Grands chantiers",
+    pour:"lancer les grands chantiers et les quêtes", note:"La salle du trône : c'est d'ici que tu lanceras les grands chantiers.", recettes:[
+    {nom:"Navire à voile", emoji:"⛵", lock:"Arrive avec les voyages vers les zones sauvages"},
+    {nom:"Gare de wagonnet", emoji:"🚃", lock:"Arrive avec les voyages vers les zones sauvages"},
+    {nom:"Aire de montgolfière", emoji:"🎈", lock:"Arrive avec les voyages vers les zones sauvages"},
+    {nom:"Aire d'envol", emoji:"🐉", lock:"Arrive avec les voyages vers les zones sauvages"}
   ]}
 };
 /* Pour chaque objet fabriqué (meuble ou produit) : le bâtiment dont l'atelier le fabrique */
 export const FABRIQUE_A = {};
-for(const [b, a] of Object.entries(ATELIERS)) for(const r of a.recettes) if(!RES[r.out]) FABRIQUE_A[r.out] = b;
+for(const [b, a] of Object.entries(ATELIERS)) for(const r of a.recettes) if(r.out && !RES[r.out]) FABRIQUE_A[r.out] = b;
 /* Palette gratuite : couleur d'un meuble, des murs ou du sol d'une pièce.
    (Plus tard : des couleurs à gagner, avec un cadenas — voir la Boîte à idées du plan de production.) */
 export const COULEURS = {

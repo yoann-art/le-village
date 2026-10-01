@@ -3,7 +3,8 @@
    en s'en approchant, un bouton ouvre sa fiche ; « Fabriquer » ajoute une recette à la file d'attente.
    La fabrication avance en temps réel, même jeu fermé ; ce qui est fini va tout seul dans la réserve.
    File d'un bâtiment : b.atelier.queue = [{out, n, in, t, start, end}], une recette après l'autre.
-   Le comptoir du Marché (vente) marche pareil : ce qu'on vend part, l'or arrive à la fin du temps. */
+   Le comptoir du Marché (vente) marche pareil : ce qu'on vend part, l'or arrive à la fin du temps.
+   Une recette verrouillée (lock) est affichée avec sa raison, sans bouton (fourneau, enclume, trône). */
 import { $ } from "./outils.js";
 import { RES, B, MEUBLES, PRODUITS, ATELIERS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
@@ -37,7 +38,7 @@ function chain(q){
 }
 function fabriquer(b, r){
   const q = queueOf(b);
-  if(b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(r.in)) return;
+  if(r.lock || b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(r.in)) return;
   for(const [k, v] of Object.entries(r.in)) addOwned(k, -v);
   q.push({out: r.out, n: r.n || 1, in: {...r.in}, t: r.t, start: 0, end: 0});
   chain(q); save(); renderHUD();
@@ -109,13 +110,18 @@ function fileHTML(b){
 }
 function render(){
   const b = openFor, a = ATELIERS[b.type], q = queueOf(b), full = q.length >= queueSlots(b.lvl);
+  const waiting = a.recettes.every(r => r.lock);      // plan de travail en attente : tout est verrouillé
   openSheet(`<div class="sh-head"><h2 class="display">${a.emoji} ${a.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">${B[b.type].nom} niveau ${b.lvl}. ${a.vente
-      ? "Ce que tu vends part tout de suite ; l'or arrive à la fin du temps, même jeu fermé."
+    <p class="muted" style="margin:0 0 6px">${B[b.type].nom} niveau ${b.lvl}. ${a.note ? a.note + " " : ""}${waiting
+      ? `Ses ${a.titre ? a.titre.toLowerCase() : "recettes"} arrivent bientôt.`
+      : a.vente ? "Ce que tu vends part tout de suite ; l'or arrive à la fin du temps, même jeu fermé."
       : "Ce qui est fini va tout seul dans ta réserve, même jeu fermé."}</p>
-    <h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>
-    <h3 style="margin:14px 0 2px">${a.vente ? "Ventes" : "Recettes"}</h3>` +
+    ${waiting ? "" : `<h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>`}
+    <h3 style="margin:14px 0 2px">${a.titre || (a.vente ? "Ventes" : "Recettes")}</h3>` +
     a.recettes.map((r, i) => {
+      if(r.lock) return `<div class="brow"><div class="be" aria-hidden="true">${r.emoji}</div>
+        <div class="bt"><span class="bn">${r.nom}</span><p>🔒 ${r.lock}</p></div>
+        <button class="btn primary" disabled>Bientôt</button></div>`;
       const locked = b.lvl < r.lvl, ok = !locked && !full && hasAll(r.in);
       const why = locked ? `Niveau ${r.lvl}` : full ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
       return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>

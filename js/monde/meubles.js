@@ -14,7 +14,7 @@ const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
-  etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red};
+  etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 const BUILD = {
   chaise(g, m){
@@ -144,6 +144,40 @@ const BUILD = {
     g.add(part(G.box, C.wood, .5, .25, .4, .55, 1.045, -.05));                          // cagette de pommes
     for(const [x,z] of [[.45,-.12],[.62,-.1],[.5,.04],[.66,.05]]) g.add(part(G.head, C.red, .45, .45, .45, x, 1.2, z));
     for(let k = 0; k < 3; k++) g.add(part(G.cyl, C.gold, .14, .03, .14, .05, .935 + k * .03, .2));   // pièces empilées
+  },
+  fourneau(g, m){
+    g.add(part(G.box, m, 1.4, .5, .78, 0, .25, 0));                                   // socle de pierre
+    g.add(part(G.head, m, 2.2, 2.2, 2.2, -.3, .55, -.02));                             // four en dôme
+    g.add(part(G.box, C.soot, .4, .32, .06, -.3, .48, .52));                           // bouche du four, devant le dôme
+    g.add(part(G.box, fireMat, .28, .12, .03, -.3, .4, .555));                         // braises
+    g.add(part(G.cyl, C.stone2, .22, .5, .22, -.3, 1.25, -.1));                         // petite cheminée
+    g.add(part(G.box, C.soot, .55, .06, .62, .38, .53, 0));                             // plaque de cuisson
+    g.add(part(G.cyl, C.soot, .38, .3, .38, .38, .71, 0));                              // marmite
+    g.add(part(G.cyl, C.metal, .42, .04, .42, .38, .86, 0));
+  },
+  enclume(g, m){
+    g.add(part(G.cyl, C.light, .56, .44, .56, 0, .22, 0));                             // billot
+    g.add(part(G.box, m, .36, .06, .24, 0, .47, 0));                                  // pied de l'enclume
+    g.add(part(G.box, m, .2, .12, .16, 0, .56, 0));
+    g.add(part(G.box, m, .5, .14, .26, -.04, .69, 0));                                // table de frappe
+    const horn = part(G.cone, m, .2, .26, .2, .33, .69, 0);                           // bigorne
+    horn.rotation.z = -Math.PI/2; g.add(horn);
+    const handle = part(G.box, C.light, .05, .42, .05, -.34, .27, .24);               // marteau posé contre le billot
+    handle.rotation.z = .35; g.add(handle);
+    g.add(part(G.box, C.metal, .1, .16, .1, -.41, .47, .24));
+  },
+  trone(g, m){
+    g.add(part(G.box, C.stone, 1.2, .16, 1, 0, .08, 0));                               // estrade
+    g.add(part(G.box, m, .8, .36, .6, 0, .34, .05));                                  // base
+    g.add(part(G.box, m, .8, 1.05, .14, 0, 1.0, -.26));                               // haut dossier
+    g.add(part(G.head, m, 1.7, .9, .6, 0, 1.52, -.26));                               // dossier arrondi
+    g.add(part(G.box, C.red, .66, .1, .5, 0, .57, .08));                               // coussin
+    g.add(part(G.box, C.red, .6, .72, .04, 0, 1.0, -.18));                             // dossier rembourré
+    for(const x of [-.38, .38]){
+      g.add(part(G.box, m, .1, .26, .52, x, .7, .05));                                // accoudoirs
+      g.add(part(G.head, C.gold, .45, .45, .45, x, .85, .3));                          // pommeaux dorés
+    }
+    g.add(part(G.head, C.gold, .6, .6, .6, 0, 1.75, -.26));                            // ornement doré
   }
 };
 /* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine */
