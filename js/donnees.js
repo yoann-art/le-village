@@ -76,6 +76,16 @@ export const RECOLTE = {
   tree:{nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:2, graine:"graineArbre"}
 };
 
+/* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : de quoi fabriquer sa première hache
+   et sa première pioche, pour qu'une nouvelle partie ne soit jamais bloquée. Ce que donne chacun (n, avant
+   les bonus des bâtiments), combien il y en a au plus sur l'île (max), où ils apparaissent (pres : à côté
+   d'un arbre), et toutes les combien de secondes il en revient un de chaque (retour). */
+export const SOL = {
+  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:2, max:8, sols:["grass"], pres:"tree"},
+  caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, max:5, sols:["grass", "sand"]}
+};
+export const SOL_RETOUR = 900;
+
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},

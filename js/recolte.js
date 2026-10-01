@@ -3,13 +3,15 @@
    dans le sac ; chaque coup donne du bois (plus avec un outil plus fort, plus avec la Scierie), et au
    dernier coup l'arbre tombe et donne une graine. Devant un jeune arbre, le bouton dit quand il sera adulte.
    Une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
-   du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés. */
+   du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés.
+   Au sol, des morceaux de bois et des petits cailloux : « ✋ Ramasser », à la main (voir monde/sol.js). */
 import { $ } from "./outils.js";
-import { RES, OUTILS, GRAINES, RECOLTE, objet } from "./donnees.js";
+import { RES, OUTILS, GRAINES, RECOLTE, SOL, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, sacAdd, sacTake, gain, doorTile } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, setObj, objMesh } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
+import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile } from "./monde/personnage.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre } from "./barre.js";
@@ -20,6 +22,10 @@ const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 6
 
 /* Ce qu'il y a devant le personnage : un objet de l'île, ou la case libre juste devant */
 function target(){
+  for(const dist of [0, .8]){                         // ce qui est par terre, à ses pieds ou juste devant
+    const [x, z] = dist ? frontTile(dist) : [tileOf(player.position.x), tileOf(player.position.z)];
+    if(inb(x, z) && solAt(idx(x, z))) return {i: idx(x, z), x, z, sol: solAt(idx(x, z))};
+  }
   for(const dist of [.8, 1.3]){
     const [x, z] = frontTile(dist);
     if(!inb(x, z)) continue;
@@ -37,6 +43,7 @@ function plantProblem(t, plante){
   const i = t.i;
   if(map.type[i] !== "grass") return "Ça ne pousse que sur l'herbe";
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
+  if(solAt(i)) return "Ramasse d'abord ce qui est par terre";
   if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour planter devant toi";
   if(plante === "tree" && NEAR.some(([dx, dz]) => inb(t.x + dx, t.z + dz) && map.obj[idx(t.x + dx, t.z + dz)] === "tree"))
@@ -66,7 +73,8 @@ export function updateRecolte(dt, active){
   cur = active && !anim ? target() : null;
   if(!cur){ if(!btn.hidden) btn.hidden = true; return; }
   const seed = GRAINES[state.main];
-  if(cur.o === "tree"){
+  if(cur.sol) show(`✋ Ramasser : ${SOL[cur.sol].nom.toLowerCase()}`);
+  else if(cur.o === "tree"){
     if(growth(cur.i) < 1) show(`🌱 Jeune arbre : adulte dans ${duree(growthLeft(cur.i))}`);
     else show(`🪓 Couper${hits.get(cur.i) ? ` (${RECOLTE.tree.coups - hits.get(cur.i)})` : ""}`);
   }
@@ -75,9 +83,19 @@ export function updateRecolte(dt, active){
 }
 btn.addEventListener("click", () => {
   if(!cur || anim) return;
-  if(cur.o === "tree"){ if(growth(cur.i) >= 1) couper(cur); else toast(btn.textContent); }
+  if(cur.sol) ramasser(cur);
+  else if(cur.o === "tree"){ if(growth(cur.i) >= 1) couper(cur); else toast(btn.textContent); }
   else if(!cur.o && GRAINES[state.main]) planter(cur);
 });
+
+/* ----- Ramasser ce qui est par terre ----- */
+function ramasser(t){
+  const k = pickUp(t.i);
+  if(!k) return;
+  const d = SOL[k], n = gain(d.n, d.res);
+  addOwned(d.res, n); renderHUD(); save();
+  toast(`${RES[d.res].emoji} +${n} ${RES[d.res].nom}`, 1200);
+}
 
 /* ----- Couper ----- */
 function couper(t){
@@ -127,17 +145,4 @@ function planter(t){
   setObj(t.i, gr.plante, Date.now());
   syncBarre(); save();
   toast(`🌱 ${gr.nom} plantée : ${gr.plante === "tree" ? "un arbre" : "elle sera"} adulte dans ${duree(gr.pousse)}`, 3000);
-}
-
-/* ----- Cadeau de départ, une seule fois : sans mini-jeux, le bois et la pierre viennent des arbres et
-   des rochers ; il faut donc une hache et une pioche pour commencer (sinon la partie serait bloquée :
-   la hache se fabrique avec des planches, donc avec du bois) ----- */
-if(!state.cadeau){
-  const has = famille => [...state.sac.map(it => it.k), ...Object.keys(state.stock).filter(k => state.stock[k] > 0)]
-    .some(k => OUTILS[k] && OUTILS[k].famille === famille);
-  const dons = [["hache", "hachePierre"], ["pioche", "piochePierre"]].filter(([f]) => !has(f)).map(([, k]) => k);
-  for(const k of dons){ if(sacAdd(k, 1)) barreAuto(k); else addOwned(k, 1); }
-  state.cadeau = true; save();
-  const POUR = {hachePierre: "couper les arbres", piochePierre: "casser les rochers"};
-  if(dons.length) setTimeout(() => toast(`🎁 Cadeau : ${dons.map(k => objet(k).nom.toLowerCase()).join(" et ")} dans ton sac, pour ${dons.map(k => POUR[k]).join(" et ")}`, 4200), 1500);
 }
