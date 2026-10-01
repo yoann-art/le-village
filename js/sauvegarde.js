@@ -53,6 +53,7 @@ export let state, migrationMsg = null;
   if(!state.barre) state.barre = [null, null, null]; // cases rapides : les outils à portée de main
   if(state.main === undefined) state.main = null;  // l'outil tenu
   if(!state.ile) state.ile = {};                   // ce que le joueur a changé sur l'île (étape 1.5)
+  if(state.eau === undefined) state.eau = 0;       // l'eau dans l'arrosoir (il commence vide)
   /* Peau neuve (demande de Yo, 1er octobre 2026), une seule fois : tous les meubles posés sont retirés.
      Les bâtiments, les couleurs des pièces, la réserve et les fabrications en cours restent ;
      un plan de travail retiré est remboursé. */

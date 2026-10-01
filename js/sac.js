@@ -10,7 +10,7 @@ import { RES, PRODUITS, MEUBLES, MEUBLES_ORDER, OUTILS, GRAINES, SAC, objet } fr
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacAdd, sacPile } from "./regles.js";
 import { openSheet, toast, wrap } from "./interface.js";
-import { toggleHold, syncBarre, barreAuto, utilisable } from "./barre.js";
+import { toggleHold, syncBarre, barreAuto, utilisable, jauge } from "./barre.js";
 
 const info = objet;
 const cap = t => t[0].toUpperCase() + t.slice(1);
@@ -23,11 +23,11 @@ function sacHTML(){
     const it = items[i];
     if(!it) return `<div class="slot empty" aria-label="Emplacement vide"></div>`;
     const m = info(it.k);
-    return `<button class="slot${pick === i ? " on" : ""}" data-slot="${i}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${m.emoji}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}</button>`;
+    return `<button class="slot${pick === i ? " on" : ""}" data-slot="${i}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${m.emoji}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}${jauge(it.k)}</button>`;
   }).join("");
   const it = typeof pick === "number" && items[pick];
   const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${info(it.k).emoji}</span>
-      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
+      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
       <div class="pa">${utilisable(it.k) ? `<button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>` : ""}
       <button class="btn ghost" data-sac-ranger>Ranger dans la réserve</button></div></div>`
     : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length ? "Touche un objet pour le choisir." : "Fabrique tes outils à l'établi de la Scierie : ils arrivent ici."}</p>`;

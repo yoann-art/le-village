@@ -7,6 +7,8 @@
      « ✋ Arracher » (des fibres et une graine ; elles ne repoussent pas) ;
    - un buisson de baies : « ✋ Cueillir les baies » (le buisson est vide) ; vide : « 💧 Arroser » (l'arrosoir ;
      les baies reviennent une heure après) ; la hache en main : « 🪓 Couper le buisson » (une graine) ;
+   - l'eau (mer, étang), l'arrosoir en main : « 💧 Remplir l'arrosoir » ; chaque arrosage use une mesure d'eau
+     (state.eau ; une jauge la montre dans sa case rapide et dans le sac) ;
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
      du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés. */
 import { $ } from "./outils.js";
@@ -18,7 +20,7 @@ import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile } from "./monde/personnage.js";
 import { toast, renderHUD } from "./interface.js";
-import { hold, barreAuto, syncBarre } from "./barre.js";
+import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -33,12 +35,14 @@ function target(){
     const [x, z] = dist ? frontTile(dist) : own;
     if(inb(x, z) && solAt(idx(x, z))) return {i: idx(x, z), x, z, sol: solAt(idx(x, z))};
   }
+  const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
   for(const dist of [.8, 1.3]){
     const [x, z] = frontTile(dist);
     if(!inb(x, z)) continue;
     const i = idx(x, z);
     if(occ.has(i)) return null;                       // un bâtiment : c'est son bouton à lui
     if(map.obj[i]) return {i, x, z, o: map.obj[i]};
+    if(arrosoir && map.type[i] === "water") return {i, x, z, eau: true};   // le bord de l'eau, l'arrosoir en main
   }
   const [x, z] = frontTile(.8);
   if(GRAINES[state.main] && inb(x, z)) return {i: idx(x, z), x, z, o: null};
@@ -89,6 +93,8 @@ const hits = new Map();                               // coups déjà donnés à
 const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
+  if(t.eau){ const max = OUTILS[state.main].eau;
+    return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o ? growth(t.i) : 1, h = hits.get(t.i);
   const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
   if(t.o === "tree")
@@ -103,7 +109,7 @@ function actionOf(t){
     if(tenu === "hache") return {label: `🪓 Couper le buisson${h ? ` (${RECOLTE.buisson.coups - h})` : ""}`, run: () => couper(t)};
     const b = baiesLeft(t.i);
     return b === 0 ? {label: "✋ Cueillir les baies", run: () => cueillirBaies(t)}
-      : b < 0 ? {label: "💧 Arroser", run: () => arroser(t)}
+      : b < 0 ? {label: `💧 Arroser${tenu === "arrosoir" ? ` (eau ${state.eau}/${OUTILS[state.main].eau})` : ""}`, run: () => arroser(t)}
       : info(`🫐 Baies dans ${duree(b)}`);
   }
   if(!t.o && GRAINES[state.main]) return {label: "🌱 Planter", run: () => planter(t)};
@@ -149,10 +155,18 @@ function cueillirBaies(t){
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le buisson pour qu'elles reviennent`, 3000);
 }
 function arroser(t){
-  if(!takeTool("arrosoir")){ toast(`💧 Il te faut un arrosoir : fabrique-le à l'établi de la Scierie`, 3000); return; }
-  setEtat(t.i, {arrose: Date.now()}); save();
+  const k = takeTool("arrosoir");
+  if(!k){ toast(`💧 Il te faut un arrosoir : fabrique-le à l'établi de la Scierie`, 3000); return; }
+  if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
+  state.eau--;
+  setEtat(t.i, {arrose: Date.now()}); renderBarre(); save();
   anim = {i: t.i, t: 0, kind: "shake"};
-  toast(`💧 Arrosé : les baies reviennent dans ${duree(RECOLTE.buisson.retour)}`, 2600);
+  toast(`💧 Arrosé : les baies reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
+}
+function remplir(){
+  const max = OUTILS[state.main].eau;
+  state.eau = max; renderBarre(); save();
+  toast(`💧 Arrosoir rempli : ${max} arrosages`, 2000);
 }
 
 /* ----- Couper (un arbre, un buisson) ----- */

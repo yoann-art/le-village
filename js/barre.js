@@ -35,9 +35,12 @@ export function barreAuto(k){
   const i = state.barre.indexOf(null);
   if(i >= 0){ state.barre[i] = k; renderBarre(); }
 }
+/* La jauge d'eau d'un arrosoir (vide si ce n'est pas un arrosoir) */
+export const jauge = k => OUTILS[k] && OUTILS[k].eau
+  ? `<span class="jauge" aria-hidden="true"><i style="width:${Math.round(100 * Math.min(state.eau, OUTILS[k].eau) / OUTILS[k].eau)}%"></i></span>` : "";
 export function renderBarre(){
   bar.innerHTML = state.barre.map((k, i) => k
-    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}">${objet(k).emoji}${GRAINES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}</button>`
+    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}${OUTILS[k] && OUTILS[k].eau ? `, eau ${state.eau} sur ${OUTILS[k].eau}` : ""}">${objet(k).emoji}${GRAINES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}${jauge(k)}</button>`
     : `<button class="case vide" data-case="${i}" aria-label="Case vide : choisir un outil">+</button>`).join("");
 }
 
