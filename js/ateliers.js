@@ -13,6 +13,7 @@ import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
+import { barreAuto } from "./barre.js";
 
 /* ----- Noms et images de ce qu'on fabrique ou utilise ----- */
 const info = k => RES[k] ? RES[k] : PRODUITS[k] ? PRODUITS[k] : OUTILS[k] ? OUTILS[k]
@@ -59,6 +60,7 @@ function livrer(){
     while(q && q.length && q[0].end <= now){
       const j = q.shift();
       const inSac = OUTILS[j.out] ? sacAdd(j.out, j.n) : 0;
+      if(inSac) barreAuto(j.out);                      // un nouvel outil prend une case rapide libre
       if(j.n > inSac) addOwned(j.out, j.n - inSac);
       faits.push({b, j, inSac});
     }

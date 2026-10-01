@@ -10,6 +10,7 @@ import { RES, PRODUITS, MEUBLES, MEUBLES_ORDER, OUTILS, SAC } from "./donnees.js
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacAdd } from "./regles.js";
 import { openSheet, toast, wrap } from "./interface.js";
+import { toggleHold, syncBarre, barreAuto } from "./barre.js";
 
 const info = k => RES[k] || PRODUITS[k] || OUTILS[k] || MEUBLES[k];
 const cap = t => t[0].toUpperCase() + t.slice(1);
@@ -27,7 +28,8 @@ function sacHTML(){
   const it = typeof pick === "number" && items[pick];
   const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${info(it.k).emoji}</span>
       <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${OUTILS[it.k] ? `<p>${OUTILS[it.k].usage}</p>` : ""}</div>
-      <button class="btn ghost" data-sac-ranger>Ranger dans la réserve</button></div>`
+      <div class="pa">${OUTILS[it.k] ? `<button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>` : ""}
+      <button class="btn ghost" data-sac-ranger>Ranger dans la réserve</button></div></div>`
     : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length ? "Touche un objet pour le choisir." : "Fabrique tes outils à l'établi de la Scierie : ils arrivent ici."}</p>`;
   return `<p class="muted" style="margin:0 0 8px">Ce que tu portes sur toi : ${items.length} emplacement${items.length > 1 ? "s" : ""} pris sur ${SAC.places}.
     Sur l'île, ce que tu récoltes va directement dans la réserve ; le sac servira pour les sorties (grotte, voyages).</p>
@@ -66,14 +68,18 @@ wrap.addEventListener("click", e => {
   if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; render(); } return; }
   if(slot){ const i = +slot.dataset.slot; pick = pick === i ? null : i; render(); return; }
   if(res){ const k = res.dataset.resPick; pick = pick === k ? null : k; render(); return; }
+  if(e.target.closest("[data-sac-main]") && typeof pick === "number" && state.sac[pick]){
+    const k = state.sac[pick].k;
+    barreAuto(k); toggleHold(k); render(); return;
+  }
   if(e.target.closest("[data-sac-ranger]") && typeof pick === "number" && state.sac[pick]){
     const [it] = state.sac.splice(pick, 1);
-    addOwned(it.k, it.n); save();
+    addOwned(it.k, it.n); syncBarre(); save();
     toast(`${info(it.k).emoji} Rangé dans ta réserve`);
     pick = null; render(); return;
   }
   if(e.target.closest("[data-sac-mettre]") && typeof pick === "string" && owned(pick) > 0){
-    if(sacAdd(pick, 1)){ addOwned(pick, -1); save(); toast(`${info(pick).emoji} Dans ton sac`); }
+    if(sacAdd(pick, 1)){ addOwned(pick, -1); barreAuto(pick); save(); toast(`${info(pick).emoji} Dans ton sac`); }
     pick = null; render();
   }
 });

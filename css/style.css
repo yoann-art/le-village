@@ -45,6 +45,11 @@ button{font:inherit;color:inherit}
 .place-hint.bad{color:var(--gueules)}
 
 .joy{position:absolute;right:18px;bottom:22px;z-index:2;width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.65);touch-action:none}
+.barre{position:absolute;right:12px;bottom:162px;z-index:2;display:flex;gap:6px}
+#joy[hidden] + .barre{display:none}
+.case{appearance:none;width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--hud);font-size:24px;line-height:1;cursor:pointer;touch-action:manipulation;padding:0;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.case.vide{border-style:dashed;color:var(--muted);font-size:22px;font-weight:700}
+.case.on{border-color:var(--sinople);background:var(--sinople)}
 .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 3px 8px rgba(0,0,0,.25);pointer-events:none}
 .actions{position:absolute;left:14px;bottom:24px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 .act{border:0;border-radius:999px;min-height:50px;padding:0 18px;background:var(--hud);font-weight:700;font-size:17px;box-shadow:0 3px 0 rgba(0,0,0,.2);cursor:pointer;touch-action:manipulation;white-space:nowrap}
@@ -104,6 +109,7 @@ button.tile{font:inherit;padding:8px 6px;border:2px solid transparent}
 .pick .pt{flex:1;min-width:0}
 .pick .pt p{margin:2px 0 0;color:var(--muted);font-size:14px}
 .pick .btn{flex:none;padding:9px 12px;font-size:15px}
+.pick .pa{display:flex;flex-direction:column;gap:6px;flex:none}
 .slot .sn{position:absolute;right:6px;bottom:2px;font-size:14px;font-weight:700}
 .res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:2px 0 8px}
 .tile{background:var(--bg);border-radius:12px;padding:8px 6px;text-align:center}

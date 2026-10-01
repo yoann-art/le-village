@@ -48,8 +48,9 @@ export const MEUBLES = {
 };
 
 /* Le sac à dos (étape 1.4) : nombre d'emplacements au départ (agrandissable plus tard),
-   et combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul) */
-export const SAC = {places:12, pile:30};
+   combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul),
+   et le nombre de cases rapides au-dessus du joystick (demande de Yo : changer d'outil sans ouvrir le sac) */
+export const SAC = {places:12, pile:30, cases:3};
 
 /* Outils (étape 1.4) : rangés dans le sac, ils ne s'usent pas. Prévus en familles avec une force
    (demande de Yo : des outils et des armes de plus en plus puissants au fil de la partie) ;

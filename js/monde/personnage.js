@@ -6,6 +6,7 @@ import { map, idx, inb, tileOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state } from "../sauvegarde.js";
 import { jv, keys } from "../commandes.js";
+import { makeOutil } from "./outils3d.js";
 
 export const player = new THREE.Group();
 const body = new THREE.Group();
@@ -18,6 +19,20 @@ body.add(part(G.eye, 0x1C2230, 1,1,1, .08,.87,.22));
 const legL = part(G.cyl, 0x3B4A6B, .13,.24,.13, -.09,.12,0);
 const legR = part(G.cyl, 0x3B4A6B, .13,.24,.13, .09,.12,0);
 body.add(legL, legR);
+/* La main droite, qui n'apparaît qu'avec un outil ; l'outil penche un peu vers l'avant (étape 1.4) */
+const hand = new THREE.Group();
+hand.position.set(-.27, .4, .08);
+hand.rotation.x = .35;
+hand.add(part(G.head, 0xF2C9A0, .38,.38,.38, 0,0,0));
+hand.visible = false;
+body.add(hand);
+let held = null;
+/* Met un outil dans la main du personnage (une clé de OUTILS), ou la vide (null) */
+export function holdTool(k){
+  if(held){ hand.remove(held); held = null; }
+  if(k){ held = makeOutil(k); hand.add(held); }
+  hand.visible = !!k;
+}
 player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P
 scene.add(player);
 

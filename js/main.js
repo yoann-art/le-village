@@ -19,6 +19,7 @@ import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, isl
 import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
 import "./sac.js";
+import "./barre.js";
 import { gameEl, openGame, closeGame } from "./minijeux/minijeux.js";
 
 /* Touche Échap : ferme ce qui est ouvert */

@@ -3,7 +3,7 @@
 import { RES, B, ATELIERS } from "./donnees.js";
 
 const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
-function fresh(){ return {v:3, seed:7, res:{bois:15, pierre:8, or:6}, stock:{}, sac:[], buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, peauNeuve:true}; }
+function fresh(){ return {v:3, seed:7, res:{bois:15, pierre:8, or:6}, stock:{}, sac:[], barre:[null, null, null], main:null, buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, peauNeuve:true}; }
 function read(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
 function load(){
   const s = read(SAVE_KEY);
@@ -50,6 +50,8 @@ export let state, migrationMsg = null;
   else { const m = migrate(); if(m){ state = m.s; migrationMsg = m.msg; save(); } else state = fresh(); }
   if(!state.stock) state.stock = {};               // réserve (étape 1.3) : absente des parties plus anciennes
   if(!state.sac) state.sac = [];                   // sac à dos (étape 1.4)
+  if(!state.barre) state.barre = [null, null, null]; // cases rapides : les outils à portée de main
+  if(state.main === undefined) state.main = null;  // l'outil tenu
   /* Peau neuve (demande de Yo, 1er octobre 2026), une seule fois : tous les meubles posés sont retirés.
      Les bâtiments, les couleurs des pièces, la réserve et les fabrications en cours restent ;
      un plan de travail retiré est remboursé. */
