@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, SAC } from "./donnees.js";
+import { RES, B, OUTILS, SAC, COFFRE } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -10,35 +10,61 @@ export const doorTile = (t, x, z) => [x + Math.floor(sizeOf(t)/2 + (B[t].door ||
 const ROOM = {petite:4, moyenne:6, grande:8};
 export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);
 
-/* Ce qu'on possède : les ressources (bois, pierre, or) et la réserve (planches, meubles…) */
-export const owned = k => k in state.res ? state.res[k] : (state.stock[k] || 0);
-export function addOwned(k, n){
-  if(k in state.res) state.res[k] += n;
-  else state.stock[k] = (state.stock[k] || 0) + n;
+/* Ce qu'on possède (demande de Yo) : l'or dans la bourse (state.res.or) ; tout le reste dans le sac
+   (state.sac) et dans les coffres de réserve posés au village (state.coffres[].items). On fabrique et on
+   construit avec le sac et les coffres ensemble ; la récolte va dans le sac, et on range soi-même dans un coffre. */
+const BOURSE = "or";
+/* Des emplacements (le sac, un coffre) : [{k, n}], au plus cap emplacements ; un outil prend un emplacement
+   à lui seul, le reste s'empile jusqu'à SAC.pile */
+export const pileOf = k => OUTILS[k] ? 1 : SAC.pile;
+export const slotsCount = (list, k) => list.reduce((c, it) => c + (it.k === k ? it.n : 0), 0);
+/* Combien de k peuvent encore entrer */
+export function slotsPlace(list, cap, k){
+  const p = pileOf(k);
+  return list.reduce((n, it) => n + (it.k === k ? p - it.n : 0), Math.max(0, cap - list.length) * p);
 }
-export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
-/* Le sac (state.sac = [{k, n}], au plus SAC.places emplacements) : un outil prend un emplacement
-   à lui seul, le reste s'empile jusqu'à SAC.pile. sacAdd renvoie combien sont entrés dans le sac. */
-export const sacPile = k => OUTILS[k] ? 1 : SAC.pile;
-export const sacCount = k => state.sac.reduce((c, it) => c + (it.k === k ? it.n : 0), 0);
-/* Retire n objets k du sac (en commençant par la dernière pile) ; renvoie combien ont été retirés */
-export function sacTake(k, n){
+/* Ajoute n objets k ; renvoie combien sont entrés */
+export function slotsAdd(list, cap, k, n){
+  const p = pileOf(k);
   let left = n;
-  for(let i = state.sac.length - 1; i >= 0 && left > 0; i--){
-    const it = state.sac[i];
+  for(const it of list) if(it.k === k && it.n < p && left > 0){ const m = Math.min(p - it.n, left); it.n += m; left -= m; }
+  while(left > 0 && list.length < cap){ const m = Math.min(p, left); list.push({k, n: m}); left -= m; }
+  return n - left;
+}
+/* Retire n objets k (en commençant par la dernière pile) ; renvoie combien ont été retirés */
+export function slotsTake(list, k, n){
+  let left = n;
+  for(let i = list.length - 1; i >= 0 && left > 0; i--){
+    const it = list[i];
     if(it.k !== k) continue;
     const m = Math.min(it.n, left); it.n -= m; left -= m;
-    if(!it.n) state.sac.splice(i, 1);
+    if(!it.n) list.splice(i, 1);
   }
   return n - left;
 }
-export function sacAdd(k, n){
-  const pile = sacPile(k);
-  let left = n;
-  for(const it of state.sac) if(it.k === k && it.n < pile && left > 0){ const m = Math.min(pile - it.n, left); it.n += m; left -= m; }
-  while(left > 0 && state.sac.length < SAC.places){ const m = Math.min(pile, left); state.sac.push({k, n: m}); left -= m; }
-  return n - left;
+export const sacCount = k => slotsCount(state.sac, k);
+export const sacPlace = k => slotsPlace(state.sac, SAC.places, k);
+export const sacAdd = (k, n) => slotsAdd(state.sac, SAC.places, k, n);
+export const sacTake = (k, n) => slotsTake(state.sac, k, n);
+export const coffresCount = k => state.coffres.reduce((c, co) => c + slotsCount(co.items, k), 0);
+/* La place pour k dans le sac et tous les coffres */
+export const placeFor = k => k === BOURSE ? Infinity : sacPlace(k) + state.coffres.reduce((n, co) => n + slotsPlace(co.items, COFFRE.places, k), 0);
+export const owned = k => k === BOURSE ? state.res.or : sacCount(k) + coffresCount(k);
+/* n > 0 : ajoute dans le sac, puis dans les coffres (renvoie {sac, coffre, reste} : ce qui n'a pas trouvé de place) ;
+   n < 0 : retire du sac, puis des coffres */
+export function addOwned(k, n){
+  if(k === BOURSE){ state.res.or += n; return {sac: 0, coffre: 0, reste: 0, bourse: n}; }
+  if(n < 0){
+    let left = -n - sacTake(k, -n);
+    for(const co of state.coffres){ if(left <= 0) break; left -= slotsTake(co.items, k, left); }
+    return {sac: 0, coffre: 0, reste: 0};
+  }
+  const sac = sacAdd(k, n);
+  let left = n - sac, coffre = 0;
+  for(const co of state.coffres){ if(left <= 0) break; const m = slotsAdd(co.items, COFFRE.places, k, left); coffre += m; left -= m; }
+  return {sac, coffre, reste: left};
 }
+export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
 /* File d'attente d'un plan de travail : 3 places au niveau 1, une de plus par niveau */
 export const queueSlots = lvl => 2 + lvl;
 export const maxLvl = t => B[t].unique ? 1 : 3;
@@ -47,8 +73,8 @@ export function upCost(t, lvl){
   for(const [r,v] of Object.entries(B[t].cost)) c[r] = Math.ceil(v * 1.5 * lvl);
   return c;
 }
-export const canAfford = c => Object.entries(c).every(([r,v]) => state.res[r] >= v);
-export function pay(c){ for(const [r,v] of Object.entries(c)) state.res[r] -= v; }
+export const canAfford = hasAll;
+export function pay(c){ for(const [r,v] of Object.entries(c)) addOwned(r, -v); }
 export const totalStars = () => state.buildings.reduce((s,b) => s + B[b.type].stars * b.lvl, 0);
 /* Ce que rapporte une récolte ou une vente avec les bonus des bâtiments : la part décimale devient
    une chance d'en avoir un de plus (2 × 1,25 = 2,5 : 2 ou 3, moitié-moitié) */
@@ -66,4 +92,4 @@ export function mult(r){
   return m;
 }
 export const costHTML = c => Object.entries(c).map(([r,v]) =>
-  `<span class="chip ${state.res[r] >= v ? "" : "short"}">${RES[r].emoji} ${v}</span>`).join("");
+  `<span class="chip ${owned(r) >= v ? "" : "short"}">${RES[r].emoji} ${v}</span>`).join("");

@@ -7,7 +7,7 @@
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
 import { RES, B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A } from "./donnees.js";
-import { owned, addOwned, hasAll } from "./regles.js";
+import { owned, addOwned, hasAll, placeFor } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
 import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem } from "./monde/interieurs.js";
@@ -149,11 +149,11 @@ function planHTML(b){
 const aLe = a => a.le.startsWith("le ") ? "au " + a.le.slice(3) : "à " + a.le;
 $("#deco-cat").addEventListener("click", () => {
   const here = deco.b.type;
-  /* Réserve vide : on dit comment avoir des meubles (demande de Yo : tout semblait grisé sans raison) */
+  /* Aucun meuble : on dit comment en avoir (demande de Yo : tout semblait grisé sans raison) */
   const empty = !MEUBLES_ORDER.some(t => craftable(t) && owned(t) > 0);
   openSheet(`<div class="sh-head"><h2 class="display">Meubles</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Ta réserve de meubles. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
-    (empty ? `<p class="hint-box">Ta réserve est vide. Chaque meuble se fabrique au plan de travail d'un bâtiment : la chaise ${aLe(ATELIERS.scierie)} de la Scierie, le pot de fleurs ${aLe(ATELIERS.chaumiere)} de la Chaumière… Approche-toi du plan de travail, touche son bouton, puis « Fabriquer ». Le meuble arrive ici quand il est prêt.</p>` : "") +
+    <p class="muted" style="margin:0 0 6px">Tes meubles, dans ton sac et tes coffres de réserve. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
+    (empty ? `<p class="hint-box">Tu n'as pas encore de meuble. Chaque meuble se fabrique au plan de travail d'un bâtiment : la chaise ${aLe(ATELIERS.scierie)} de la Scierie, le pot de fleurs ${aLe(ATELIERS.chaumiere)} de la Chaumière… Approche-toi du plan de travail, touche son bouton, puis « Fabriquer ». Le meuble arrive dans ton sac quand il est prêt.</p>` : "") +
     planHTML(deco.b) +
     Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
       MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
@@ -161,8 +161,8 @@ $("#deco-cat").addEventListener("click", () => {
         const where = m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}` : "Partout";
         const fab = FABRIQUE_A[t], af = fab && ATELIERS[fab];
         const stock = !craftable(t) ? "Gratuit pour l'instant"
-          : n > 0 ? `${n} en réserve` : `Aucun en réserve. Se fabrique ${aLe(af)} (${B[fab].nom})`;
-        /* Pas en réserve, mais son plan de travail est ici : « Fabriquer » ouvre sa fiche */
+          : n > 0 ? `Tu en as ${n}` : `Tu n'en as pas. Se fabrique ${aLe(af)} (${B[fab].nom})`;
+        /* Pas de meuble de ce type, mais son plan de travail est ici : « Fabriquer » ouvre sa fiche */
         const btn = ok ? `<button class="btn primary" data-meuble="${t}">Poser</button>`
           : craftable(t) && n === 0 && fab === here && hasPlan(deco.b) ? `<button class="btn primary" data-atelier>Fabriquer</button>`
           : `<button class="btn primary" disabled>Poser</button>`;
@@ -184,7 +184,7 @@ export function addMeuble(type){
     renderHUD();
     toast(`${a.emoji} ${a.le[0].toUpperCase() + a.le.slice(1)} est construit${a.fem ? "e : fais-la" : " : fais-le"} glisser où tu veux`, 3200);
   }
-  else if(craftable(type)) addOwned(type, -1);                         // pris dans la réserve
+  else if(craftable(type)) addOwned(type, -1);                         // pris dans le sac, ou dans un coffre
   items().push(it); addItemMesh(it);
   sel = it; showSel(); save();
 }
@@ -198,11 +198,13 @@ $("#deco-rot").addEventListener("click", () => {
 });
 $("#deco-store").addEventListener("click", () => {
   if(!sel || MEUBLES[sel.type].plan) return;                          // le plan de travail reste dans son bâtiment
+  if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);
-  if(craftable(sel.type)) addOwned(sel.type, 1);                      // rendu à la réserve
-  toast(`${MEUBLES[sel.type].emoji} Rangé dans ta réserve`);
+  let ou = "dans ton sac";
+  if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
+  toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`);
   sel = null; showSel(); save();
 });
 /* ----- Couleurs : du meuble choisi, ou des murs et du sol de la pièce (palette gratuite) ----- */

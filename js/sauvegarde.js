@@ -50,6 +50,7 @@ export let state, migrationMsg = null;
   else { const m = migrate(); if(m){ state = m.s; migrationMsg = m.msg; save(); } else state = fresh(); }
   if(!state.stock) state.stock = {};               // réserve (étape 1.3) : absente des parties plus anciennes
   if(!state.sac) state.sac = [];                   // sac à dos (étape 1.4)
+  if(!state.coffres) state.coffres = [];           // coffres de réserve (l'ancienne réserve y est rangée par coffres.js)
   if(!state.barre) state.barre = [null, null, null]; // cases rapides : les outils à portée de main
   if(state.main === undefined) state.main = null;  // l'outil tenu
   if(!state.ile) state.ile = {};                   // ce que le joueur a changé sur l'île (étape 1.5)

@@ -5,6 +5,7 @@ import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE } from "../donnees.js";
+import { makeMeuble } from "./meubles.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P */
 export const N = 40, H = N / 2;
@@ -156,11 +157,14 @@ function buildObj(i){
       [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
         g.add(part(G.head, 0x4A5FC1, .32, .32, .32, x, y, z)));
     if(st < 2) g.scale.setScalar(st === 0 ? .4 : .7);
+  } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
+    const c = makeMeuble("coffre");
+    c.scale.setScalar(.75); g.add(c);
   } else {
     g.add(part(G.dode, r < .5 ? 0x9EA3A8 : 0x8F959B, .9,.7,.9, 0,.25,0));
     g.scale.setScalar(.8 + r*.4);
   }
-  g.rotation.y = r * 6.28;
+  g.rotation.y = o === "coffre" ? 0 : r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   scene.add(g); meshes.set(i, g);
 }

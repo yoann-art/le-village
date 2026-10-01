@@ -3,17 +3,17 @@
 import { $ } from "./outils.js";
 import { RES, B } from "./donnees.js";
 import { state } from "./sauvegarde.js";
-import { totalStars } from "./regles.js";
+import { totalStars, owned } from "./regles.js";
 import { resetJoy } from "./commandes.js";
 
 export function renderHUD(){
   $("#res").innerHTML = Object.entries(RES).map(([k,r]) =>
-    `<div class="rchip" id="r-${k}" aria-label="${state.res[k]} ${r.nom}"><span aria-hidden="true">${r.emoji}</span><b>${state.res[k]}</b></div>`).join("");
+    `<div class="rchip" id="r-${k}" aria-label="${owned(k)} ${r.nom}"><span aria-hidden="true">${r.emoji}</span><b>${owned(k)}</b></div>`).join("");
   $("#stars").textContent = "★ " + totalStars();
   const g = $("#goal");
   if(state.crowned){ g.textContent = "Village couronné"; return; }
   g.innerHTML = "Château : " + Object.entries(B.chateau.cost).map(([r,v]) => {
-    const have = Math.min(state.res[r], v);
+    const have = Math.min(owned(r), v);
     return `<span class="${have >= v ? "ok" : ""}">${RES[r].emoji} ${have}/${v}</span>`;
   }).join(" ");
 }

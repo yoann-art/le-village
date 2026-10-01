@@ -11,6 +11,7 @@ import { renderer, camera, sun, D, distanceFor, setDistance } from "./monde/scen
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
 import { player, updatePlayer } from "./monde/personnage.js";
+import "./coffres.js";
 import { view } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";

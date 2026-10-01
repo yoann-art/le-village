@@ -4,7 +4,7 @@
    longtemps sur une case, ouvre le choix de son outil. Sur ordinateur : touches 1, 2 et 3.
    state.barre = [clé d'outil ou null, ×3] ; state.main = l'outil tenu. Une case ne garde qu'un outil du sac. */
 import { $ } from "./outils.js";
-import { OUTILS, GRAINES, objet } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacCount } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
@@ -12,7 +12,7 @@ import { openSheet, closeSheet, toast, wrap } from "./interface.js";
 
 const bar = $("#barre");
 /* Ce qui se tient en main : un outil, ou une graine qu'on va planter */
-export const utilisable = k => !!(OUTILS[k] || GRAINES[k]);
+export const utilisable = k => !!(OUTILS[k] || GRAINES[k] || POSABLES[k]);
 
 /* Prend un outil en main (une clé de OUTILS), ou vide la main (null) */
 export function hold(k){
@@ -40,7 +40,7 @@ export const jauge = k => OUTILS[k] && OUTILS[k].eau
   ? `<span class="jauge" aria-hidden="true"><i style="width:${Math.round(100 * Math.min(state.eau, OUTILS[k].eau) / OUTILS[k].eau)}%"></i></span>` : "";
 export function renderBarre(){
   bar.innerHTML = state.barre.map((k, i) => k
-    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}${OUTILS[k] && OUTILS[k].eau ? `, eau ${state.eau} sur ${OUTILS[k].eau}` : ""}">${objet(k).emoji}${GRAINES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}${jauge(k)}</button>`
+    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}${OUTILS[k] && OUTILS[k].eau ? `, eau ${state.eau} sur ${OUTILS[k].eau}` : ""}">${objet(k).emoji}${GRAINES[k] || POSABLES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}${jauge(k)}</button>`
     : `<button class="case vide" data-case="${i}" aria-label="Case vide : choisir un outil">+</button>`).join("");
 }
 

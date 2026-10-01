@@ -51,6 +51,14 @@ export const MEUBLES = {
    combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul),
    et le nombre de cases rapides au-dessus du joystick (demande de Yo : changer d'outil sans ouvrir le sac) */
 export const SAC = {places:12, pile:30, cases:3};
+/* Un coffre de réserve (demande de Yo) : posé au village, on y range ce qu'on veut ; on peut en fabriquer
+   plusieurs pour trier. places : ses emplacements (piles comme dans le sac) */
+export const COFFRE = {places:20};
+/* Ce qui se pose sur l'île depuis le sac (en main, « Poser ») : pose = ce qui apparaît sur la case */
+export const POSABLES = {
+  coffreReserve:{nom:"Coffre de réserve", pluriel:"coffres de réserve", emoji:"🗃️", pose:"coffre",
+    usage:"Prends-le en main, puis touche « Poser le coffre » devant une case libre du village. On y range ce qu'on veut."}
+};
 
 /* Outils (étape 1.4) : rangés dans le sac, ils ne s'usent pas. Prévus en familles avec une force
    (demande de Yo : des outils et des armes de plus en plus puissants au fil de la partie) ;
@@ -98,7 +106,7 @@ export const SOL = {
 };
 export const SOL_RETOUR = 900;
 
-/* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
+/* Produits fabriqués ou récoltés qui ne sont pas des meubles */
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},
   bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱"},
@@ -119,6 +127,7 @@ export const ATELIERS = {
     {out:"arrosoir", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"canneBois", in:{planche:4, fibre:3}, t:40, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
+    {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"banc", in:{planche:4}, t:40, lvl:1},
@@ -186,5 +195,5 @@ export const COULEURS = {
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
-/* Tout ce qui peut aller dans le sac ou la réserve : sa fiche (nom, emoji…) */
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || MEUBLES[k];
+/* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || MEUBLES[k];

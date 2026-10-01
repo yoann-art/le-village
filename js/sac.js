@@ -1,21 +1,21 @@
-/* ================= Le sac et la réserve =================
+/* ================= Le sac et les coffres =================
    Le bouton « 🎒 Sac » ouvre un panneau à deux onglets :
    - Sac : ce que le personnage porte sur lui, en SAC.places emplacements (state.sac = [{k, n}]).
-     Un outil prend un emplacement ; le reste s'empile jusqu'à SAC.pile.
-   - Réserve : tout ce que garde le village (ressources, produits, outils, meubles), sans limite.
-   Sur l'île, la récolte va directement dans la réserve ; le sac compte pour les sorties (grotte, voyages).
-   Toucher un objet le choisit : on peut le ranger dans la réserve, ou mettre un outil dans le sac. */
+     Un outil prend un emplacement ; le reste s'empile jusqu'à SAC.pile. Tout ce qu'on récolte arrive ici.
+   - Coffres : ce que contiennent tous les coffres de réserve du village, pour s'y retrouver.
+   Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
+   on peut le prendre en main (outil, graine, coffre à poser). */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES, MEUBLES_ORDER, OUTILS, GRAINES, SAC, objet } from "./donnees.js";
-import { state, save } from "./sauvegarde.js";
-import { owned, addOwned, sacAdd, sacPile } from "./regles.js";
-import { openSheet, toast, wrap } from "./interface.js";
-import { toggleHold, syncBarre, barreAuto, utilisable, jauge } from "./barre.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, SAC, COFFRE, objet } from "./donnees.js";
+import { state } from "./sauvegarde.js";
+import { coffresCount } from "./regles.js";
+import { openSheet, wrap } from "./interface.js";
+import { toggleHold, barreAuto, utilisable, jauge } from "./barre.js";
 
 const info = objet;
 const cap = t => t[0].toUpperCase() + t.slice(1);
-let tab = "sac";                      // onglet ouvert : "sac" ou "reserve"
-let pick = null;                      // l'objet choisi : un emplacement du sac (nombre) ou une clé de la réserve
+let tab = "sac";                      // onglet ouvert : "sac" ou "coffres"
+let pick = null;                      // l'emplacement du sac choisi
 
 function sacHTML(){
   const items = state.sac;
@@ -27,61 +27,45 @@ function sacHTML(){
   }).join("");
   const it = typeof pick === "number" && items[pick];
   const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${info(it.k).emoji}</span>
-      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
-      <div class="pa">${utilisable(it.k) ? `<button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>` : ""}
-      <button class="btn ghost" data-sac-ranger>Ranger dans la réserve</button></div></div>`
-    : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length ? "Touche un objet pour le choisir." : "Fabrique tes outils à l'établi de la Scierie : ils arrivent ici."}</p>`;
+      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}<p>Pour le ranger, ouvre un coffre de réserve.</p></div>
+      ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button></div>` : ""}</div>`
+    : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length ? "Touche un objet pour le choisir." : "Ce que tu récoltes et fabriques arrive ici."}</p>`;
   return `<p class="muted" style="margin:0 0 8px">Ce que tu portes sur toi : ${items.length} emplacement${items.length > 1 ? "s" : ""} pris sur ${SAC.places}.
-    Sur l'île, ce que tu récoltes va directement dans la réserve ; le sac servira pour les sorties (grotte, voyages).</p>
+    Ce que tu récoltes et fabriques arrive ici ; quand il est plein, range tes affaires dans un coffre de réserve.</p>
     <div class="sac-grid">${slots}</div>${detail}`;
 }
 
 function tiles(keys){
-  const have = keys.filter(k => owned(k) > 0);
-  if(!have.length) return `<p class="muted" style="margin:2px 0 8px">Aucun pour l'instant.</p>`;
+  const have = keys.filter(k => coffresCount(k) > 0);
+  if(!have.length) return `<p class="muted" style="margin:2px 0 8px">Aucun.</p>`;
   return `<div class="res-grid">${have.map(k => { const m = info(k);
-    const inner = `<div class="te" aria-hidden="true">${m.emoji}</div><div class="tn">${owned(k)}</div><div class="tl">${cap(m.nom)}</div>`;
-    return utilisable(k) ? `<button class="tile${pick === k ? " on" : ""}" data-res-pick="${k}">${inner}</button>` : `<div class="tile">${inner}</div>`; }).join("")}</div>`;
+    return `<div class="tile"><div class="te" aria-hidden="true">${m.emoji}</div><div class="tn">${coffresCount(k)}</div><div class="tl">${cap(m.nom)}</div></div>`; }).join("")}</div>`;
 }
-function reserveHTML(){
-  const k = typeof pick === "string" && owned(pick) > 0 ? pick : null;
-  const detail = k ? `<div class="pick"><span class="pe" aria-hidden="true">${info(k).emoji}</span>
-      <div class="pt"><b>${info(k).nom}</b><p>${info(k).usage}</p></div>
-      <button class="btn primary" data-sac-mettre ${state.sac.length < SAC.places ? "" : "disabled"}>${state.sac.length < SAC.places ? "Mettre dans le sac" : "Sac plein"}</button></div>` : "";
-  return `<p class="muted" style="margin:0 0 8px">Tout ce que garde ton village, sans limite. C'est là que vont tes récoltes et ce que tu fabriques.</p>
-    <h3 style="margin:8px 0 4px">Ressources</h3>${tiles(Object.keys(RES))}
+function coffresHTML(){
+  const n = state.coffres.length;
+  if(!n) return `<p class="hint-box">Tu n'as pas encore de coffre de réserve. Fabrique-le à l'établi de la Scierie (5 planches), prends-le en main et pose-le au village : tu pourras y ranger ce que tu veux. Fabriques-en plusieurs pour trier.</p>`;
+  return `<p class="muted" style="margin:0 0 8px">Ce que contiennent tes ${n} coffre${n > 1 ? "s" : ""} de réserve (${COFFRE.places} emplacements chacun). Pour ranger ou reprendre, va ouvrir un coffre.</p>
+    <h3 style="margin:8px 0 4px">Ressources</h3>${tiles(Object.keys(RES).filter(k => k !== "or"))}
     <h3 style="margin:8px 0 4px">Produits</h3>${tiles(Object.keys(PRODUITS))}
-    <h3 style="margin:8px 0 4px">Outils</h3>${tiles(Object.keys(OUTILS))}${detail && OUTILS[k] ? detail : ""}
-    <h3 style="margin:8px 0 4px">Graines</h3>${tiles(Object.keys(GRAINES))}${detail && GRAINES[k] ? detail : ""}
+    <h3 style="margin:8px 0 4px">Outils</h3>${tiles([...Object.keys(OUTILS), ...Object.keys(POSABLES)])}
+    <h3 style="margin:8px 0 4px">Graines</h3>${tiles(Object.keys(GRAINES))}
     <h3 style="margin:8px 0 4px">Meubles</h3>${tiles(MEUBLES_ORDER)}`;
 }
 
 function render(){
-  openSheet(`<div class="sh-head"><h2 class="display">${tab === "sac" ? "🎒 Sac" : "🏠 Réserve"}</h2><button class="btn ghost" data-close>Fermer</button></div>
+  openSheet(`<div class="sh-head"><h2 class="display">${tab === "sac" ? "🎒 Sac" : "🗃️ Coffres"}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <div class="sh-tabs" role="tablist">
       <button class="sh-tab" role="tab" data-sac-tab="sac" aria-selected="${tab === "sac"}">🎒 Sac</button>
-      <button class="sh-tab" role="tab" data-sac-tab="reserve" aria-selected="${tab === "reserve"}">🏠 Réserve</button>
-    </div>` + (tab === "sac" ? sacHTML() : reserveHTML()));
+      <button class="sh-tab" role="tab" data-sac-tab="coffres" aria-selected="${tab === "coffres"}">🗃️ Coffres</button>
+    </div>` + (tab === "sac" ? sacHTML() : coffresHTML()));
 }
 $("#btn-sac").addEventListener("click", () => { pick = null; render(); });
 wrap.addEventListener("click", e => {
-  const t = e.target.closest("[data-sac-tab]"), slot = e.target.closest("[data-slot]"), res = e.target.closest("[data-res-pick]");
+  const t = e.target.closest("[data-sac-tab]"), slot = e.target.closest("[data-slot]");
   if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; render(); } return; }
   if(slot){ const i = +slot.dataset.slot; pick = pick === i ? null : i; render(); return; }
-  if(res){ const k = res.dataset.resPick; pick = pick === k ? null : k; render(); return; }
   if(e.target.closest("[data-sac-main]") && typeof pick === "number" && state.sac[pick]){
     const k = state.sac[pick].k;
-    barreAuto(k); toggleHold(k); render(); return;
-  }
-  if(e.target.closest("[data-sac-ranger]") && typeof pick === "number" && state.sac[pick]){
-    const [it] = state.sac.splice(pick, 1);
-    addOwned(it.k, it.n); syncBarre(); save();
-    toast(`${info(it.k).emoji} Rangé dans ta réserve`);
-    pick = null; render(); return;
-  }
-  if(e.target.closest("[data-sac-mettre]") && typeof pick === "string" && owned(pick) > 0){
-    const n = sacAdd(pick, Math.min(owned(pick), sacPile(pick)));       // un outil, ou une pile de graines
-    if(n){ addOwned(pick, -n); barreAuto(pick); save(); toast(`${info(pick).emoji} Dans ton sac`); }
-    pick = null; render();
+    barreAuto(k); toggleHold(k); render();
   }
 });

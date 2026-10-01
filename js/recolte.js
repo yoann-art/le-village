@@ -1,7 +1,7 @@
 /* ================= Récolter et planter sur l'île =================
    Un bouton d'action à gauche, selon ce qu'il y a devant le personnage :
    - par terre (morceau de bois, petit caillou) : « ✋ Ramasser », à la main (voir monde/sol.js) ;
-   - un arbre adulte : « 🪓 Couper » ; l'outil est pris en main tout seul (du sac ou de la réserve) ; chaque
+   - un arbre adulte : « 🪓 Couper » ; l'outil du sac est pris en main tout seul ; chaque
      coup donne du bois, au dernier l'arbre tombe et donne une graine ;
    - des herbes hautes : « ✋ Cueillir » (des fibres ; rases, elles repoussent) ; cueillies une 2e fois de suite :
      « ✋ Arracher » (des fibres et une graine ; elles ne repoussent pas) ;
@@ -10,22 +10,28 @@
    - l'eau (mer, étang), l'arrosoir en main : « 💧 Remplir l'arrosoir » ; chaque arrosage use une mesure d'eau
      (state.eau ; une jauge la montre dans sa case rapide et dans le sac) ;
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
-     du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés. */
+     du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés ;
+   - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js).
+   Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
-import { RES, OUTILS, GRAINES, RECOLTE, SOL, objet } from "./donnees.js";
+import { RES, OUTILS, GRAINES, POSABLES, RECOLTE, SOL, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { addOwned, sacAdd, sacTake, gain, doorTile } from "./regles.js";
+import { addOwned, sacAdd, sacTake, sacPlace, gain, doorTile } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile } from "./monde/personnage.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
+import { openCoffre, poserCoffre } from "./coffres.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
   return h ? `${h} h${m ? " " + String(m).padStart(2, "0") : ""}` : `${Math.max(1, Math.ceil(s / 60))} min`; };
 const nomDe = (k, n) => { const o = objet(k); return n > 1 ? o.pluriel || o.nom : o.nom.toLowerCase(); };
+/* Le sac a-t-il la place ? Sinon un message : on range dans un coffre (demande de Yo) */
+const PLEIN = "🎒 Ton sac est plein : range tes affaires dans un coffre de réserve (il se fabrique à l'établi de la Scierie)";
+function sacOk(k, n){ if(sacPlace(k) >= n) return true; toast(PLEIN, 3600); return false; }
 
 /* Ce qu'il y a devant le personnage : par terre, un objet de l'île, la case libre devant (pour planter),
    ou les herbes hautes où il se tient (on les traverse) */
@@ -45,7 +51,7 @@ function target(){
     if(arrosoir && map.type[i] === "water") return {i, x, z, eau: true};   // le bord de l'eau, l'arrosoir en main
   }
   const [x, z] = frontTile(.8);
-  if(GRAINES[state.main] && inb(x, z)) return {i: idx(x, z), x, z, o: null};
+  if((GRAINES[state.main] || POSABLES[state.main]) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
   if(inb(...own) && map.obj[idx(...own)] === "herbe") return {i: idx(...own), x: own[0], z: own[1], o: "herbe"};
   return inb(x, z) ? {i: idx(x, z), x, z, o: null} : null;
 }
@@ -64,14 +70,9 @@ function plantProblem(t, plante){
   return null;
 }
 
-/* Le meilleur outil d'une famille dans le sac (le plus fort) ; s'il n'y en a pas, on le prend dans la réserve */
+/* Le meilleur outil d'une famille dans le sac (le plus fort) */
 function bestTool(famille){
-  const best = keys => keys.filter(k => OUTILS[k] && OUTILS[k].famille === famille).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
-  const k = best(state.sac.map(it => it.k));
-  if(k) return k;
-  const r = best(Object.keys(state.stock).filter(k => state.stock[k] > 0));
-  if(r && sacAdd(r, 1)){ addOwned(r, -1); toast(`${objet(r).emoji} ${objet(r).nom} prise dans ta réserve`); return r; }
-  return null;
+  return state.sac.map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === famille).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
 }
 /* Prend en main l'outil d'une famille (celui qu'on tient, ou le meilleur) ; null s'il n'y en a pas */
 function takeTool(famille){
@@ -79,12 +80,12 @@ function takeTool(famille){
   if(k && state.main !== k){ barreAuto(k); hold(k); }
   return k;
 }
-/* Une graine récoltée : dans le sac (et une case rapide), ou dans la réserve si le sac est plein */
+/* Une graine récoltée : dans le sac (et une case rapide) ; sac plein : dans un coffre s'il y a de la place */
 function giveSeed(k){
-  const inSac = sacAdd(k, 1);
-  if(inSac) barreAuto(k); else addOwned(k, 1);
+  const r = addOwned(k, 1);
+  if(r.sac) barreAuto(k);
   syncBarre();
-  return inSac ? "dans ton sac" : "dans ta réserve (sac plein)";
+  return r.sac ? "dans ton sac" : r.coffre ? "dans un coffre (sac plein)" : "perdue : ton sac et tes coffres sont pleins";
 }
 
 /* ----- Le bouton d'action : son texte, et ce qu'il fait ----- */
@@ -93,6 +94,7 @@ const hits = new Map();                               // coups déjà donnés à
 const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
+  if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
   if(t.eau){ const max = OUTILS[state.main].eau;
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o ? growth(t.i) : 1, h = hits.get(t.i);
@@ -113,6 +115,7 @@ function actionOf(t){
       : info(`🫐 Baies dans ${duree(b)}`);
   }
   if(!t.o && GRAINES[state.main]) return {label: "🌱 Planter", run: () => planter(t)};
+  if(!t.o && POSABLES[state.main]) return {label: "🗃️ Poser le coffre", run: () => poserCoffre(t.i)};
   return null;
 }
 export function updateRecolte(dt, active){
@@ -127,36 +130,38 @@ btn.addEventListener("click", () => { if(act && !anim) act.run(); });
 
 /* ----- Ramasser ce qui est par terre ----- */
 function ramasser(t){
-  const k = pickUp(t.i);
-  if(!k) return;
-  const d = SOL[k], n = gain(d.n, d.res);
-  addOwned(d.res, n); renderHUD(); save();
+  const d = SOL[solAt(t.i)], n = gain(d.n, d.res);
+  if(!sacOk(d.res, n) || !pickUp(t.i)) return;
+  sacAdd(d.res, n); renderHUD(); save();
   toast(`${RES[d.res].emoji} +${n} ${RES[d.res].nom}`, 1200);
 }
 
 /* ----- Cueillir ----- */
 function cueillirHerbe(t){
   const R = RECOLTE.herbe, n = gain(R.n, R.cueille);
-  addOwned(R.cueille, n);
+  if(!sacOk(R.cueille, n)) return;
+  sacAdd(R.cueille, n);
   setEtat(t.i, {coupe: Date.now()}); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Elles repoussent dans ${duree(R.repousse)} ; cueille encore pour avoir la graine`, 3200);
 }
 function arracher(t){
   const R = RECOLTE.herbe, n = gain(R.n, R.cueille);
-  addOwned(R.cueille, n);
+  if(!sacOk(R.cueille, n)) return;
+  sacAdd(R.cueille, n);
   setObj(t.i, null);
   const ou = giveSeed(R.graine); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}, +1 ${nomDe(R.graine, 1)} ${ou} : elles ne repousseront pas ici`, 3200);
 }
 function cueillirBaies(t){
   const R = RECOLTE.buisson, n = gain(R.n, R.cueille);
-  addOwned(R.cueille, n);
+  if(!sacOk(R.cueille, n)) return;
+  sacAdd(R.cueille, n);
   setEtat(t.i, {vide: true, arrose: undefined}); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le buisson pour qu'elles reviennent`, 3000);
 }
 function arroser(t){
   const k = takeTool("arrosoir");
-  if(!k){ toast(`💧 Il te faut un arrosoir : fabrique-le à l'établi de la Scierie`, 3000); return; }
+  if(!k){ toast(`💧 Il te faut un arrosoir dans ton sac : fabrique-le à l'établi de la Scierie, ou reprends-le dans un coffre`, 3200); return; }
   if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
   state.eau--;
   setEtat(t.i, {arrose: Date.now()}); renderBarre(); save();
@@ -173,9 +178,9 @@ function remplir(){
 const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé"};
 function couper(t){
   const R = RECOLTE[t.o], k = takeTool(R.outil);
-  if(!k){ toast(`🪓 Il te faut une hache : fabrique-la à l'établi de la Scierie`, 3000); return; }
+  if(!k){ toast(`🪓 Il te faut une hache dans ton sac : fabrique-la à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
   const n = R.res ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
-  if(n){ addOwned(R.res, n); renderHUD(); }
+  if(n){ if(!sacOk(R.res, n)) return; sacAdd(R.res, n); renderHUD(); }
   const h = (hits.get(t.i) || 0) + 1;
   if(h < R.coups){ hits.set(t.i, h); anim = {i: t.i, t: 0, kind: "shake"}; if(n) toast(`${RES[R.res].emoji} +${n} ${RES[R.res].nom}`, 1200); }
   else {

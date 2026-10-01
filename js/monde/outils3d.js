@@ -3,7 +3,8 @@
    et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
 import { G, part } from "./formes.js";
-import { OUTILS, GRAINES } from "../donnees.js";
+import { OUTILS, GRAINES, POSABLES } from "../donnees.js";
+import { makeMeuble } from "./meubles.js";
 
 const C = {wood:0xB07A4A, dark:0x654028, stone:0x9EA3A8, metal:0x6F7884, cream:0xF4EFE6, red:0xC8643C};
 
@@ -47,7 +48,9 @@ function graine(g){
 /* Le modèle d'un outil (une clé de OUTILS) ou d'une graine (une clé de GRAINES) */
 export function makeOutil(k){
   const g = new THREE.Group();
-  if(GRAINES[k]) graine(g); else BUILD[OUTILS[k].famille](g);
+  if(GRAINES[k]) graine(g);
+  else if(POSABLES[k]){ const c = makeMeuble("coffre"); c.scale.setScalar(.22); c.position.y = .05; g.add(c); return g; }   // un coffre à poser
+  else BUILD[OUTILS[k].famille](g);
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;
 }

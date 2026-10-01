@@ -1,23 +1,23 @@
 /* ================= Plans de travail =================
    Dans la pièce d'un bâtiment, son plan de travail (l'établi de la Scierie…) :
    en s'en approchant, un bouton ouvre sa fiche ; « Fabriquer » ajoute une recette à la file d'attente.
-   La fabrication avance en temps réel, même jeu fermé ; ce qui est fini va tout seul dans la réserve.
+   La fabrication avance en temps réel, même jeu fermé ; ce qui est fini va tout seul dans le sac (ou dans un
+   coffre de réserve si le sac est plein) ; s'il n'y a de place nulle part, c'est prêt mais ça attend ici.
    File d'un bâtiment : b.atelier.queue = [{out, n, in, t, start, end}], une recette après l'autre.
    Le comptoir du Marché (vente) marche pareil : ce qu'on vend part, l'or arrive à la fin du temps.
    Une recette verrouillée (lock) est affichée avec sa raison, sans bouton (fourneau, enclume, trône). */
 import { $ } from "./outils.js";
-import { RES, B, MEUBLES, PRODUITS, ATELIERS, OUTILS } from "./donnees.js";
+import { B, ATELIERS, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { owned, addOwned, hasAll, queueSlots, sacAdd, sacCount, gain } from "./regles.js";
+import { owned, addOwned, hasAll, queueSlots, placeFor, gain } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
-import { barreAuto } from "./barre.js";
+import { barreAuto, utilisable } from "./barre.js";
 
 /* ----- Noms et images de ce qu'on fabrique ou utilise ----- */
-const info = k => RES[k] ? RES[k] : PRODUITS[k] ? PRODUITS[k] : OUTILS[k] ? OUTILS[k]
-  : {nom: MEUBLES[k].nom, pluriel: MEUBLES[k].nom, emoji: MEUBLES[k].emoji};
+const info = k => { const o = objet(k); return {nom: o.nom, pluriel: o.pluriel || o.nom, emoji: o.emoji}; };
 const label = (k, n) => n > 1 ? `${n} ${info(k).pluriel}` : info(k).nom;
 const many = (k, n) => `${n} ${n > 1 ? info(k).pluriel : info(k).nom}`;          // « 6 pierres », « 1 or »
 /* Le nom d'une recette (ou d'une vente : « 6 bois → 1 or ») */
@@ -47,44 +47,48 @@ function fabriquer(b, r){
 function annuler(b, i){
   const q = queueOf(b), j = q[i];
   if(!j) return;
+  if(Object.entries(j.in).some(([k, v]) => placeFor(k) < v)){ toast("Fais de la place dans ton sac ou un coffre pour reprendre les ingrédients", 3000); return; }
   for(const [k, v] of Object.entries(j.in)) addOwned(k, v);       // ingrédients rendus
   q.splice(i, 1);
   chain(q); save(); renderHUD();
 }
-/* Ce qui est fini va dans la réserve (aussi ce qui s'est fini jeu fermé) ; un outil va dans le sac,
-   ou dans la réserve si le sac est plein */
+/* Ce qui est fini (aussi jeu fermé) va dans le sac, ou dans un coffre si le sac est plein ; l'or d'une vente
+   va dans la bourse. S'il n'y a de place nulle part, c'est prêt mais ça attend ici (et on le dit une fois). */
+let attente = false;
 function livrer(){
   const now = Date.now(), faits = [];
+  let bloque = false;
   for(const b of state.buildings){
     const q = b.atelier && b.atelier.queue;
     while(q && q.length && q[0].end <= now){
-      const j = q.shift();
-      if(ATELIERS[b.type].vente) j.n = gain(j.n, j.out);   // une vente : le bonus du Marché (+25 % d'or par niveau)
-      const inSac = OUTILS[j.out] ? sacAdd(j.out, j.n) : 0;
-      if(inSac) barreAuto(j.out);                      // un nouvel outil prend une case rapide libre
-      if(j.n > inSac) addOwned(j.out, j.n - inSac);
-      faits.push({b, j, inSac});
+      const j = q[0];
+      if(ATELIERS[b.type].vente && !j.bonus){ j.n = gain(j.n, j.out); j.bonus = true; }   // une vente : le bonus du Marché
+      const r = addOwned(j.out, j.n);
+      if(r.sac && utilisable(j.out)) barreAuto(j.out);     // un nouvel outil prend une case rapide libre
+      if(r.sac || r.coffre || r.bourse) faits.push({b, j, sac: r.sac, coffre: r.coffre, bourse: r.bourse || 0});
+      if(r.reste){ j.n = r.reste; bloque = true; break; }
+      q.shift();
     }
   }
+  if(bloque && !attente) toast("🗃️ Ton sac et tes coffres sont pleins : ce qui est prêt attend au plan de travail. Fabrique un coffre de réserve.", 4200);
+  attente = bloque;
   if(!faits.length) return false;
   save(); renderHUD();
   const parAtelier = new Map();                       // un message par plan de travail, quantités additionnées
   const add = (m, k, n) => { if(n > 0) m.set(k, (m.get(k) || 0) + n); };
-  let plein = false;
-  for(const {b, j, inSac} of faits){
+  for(const {b, j, sac, coffre, bourse} of faits){
     const a = ATELIERS[b.type];
-    if(!parAtelier.has(a)) parAtelier.set(a, {res: new Map(), sac: new Map()});
+    if(!parAtelier.has(a)) parAtelier.set(a, {sac: new Map(), coffre: new Map(), bourse: new Map()});
     const d = parAtelier.get(a);
-    add(d.sac, j.out, inSac); add(d.res, j.out, j.n - inSac);
-    if(OUTILS[j.out] && inSac < j.n) plein = true;
+    add(d.sac, j.out, sac); add(d.coffre, j.out, coffre); add(d.bourse, j.out, bourse);
   }
   for(const [a, d] of parAtelier){
     const list = m => [...m].map(([k, n]) => a.vente ? `${info(k).emoji} ${many(k, n)}` : label(k, n)).join(", ");
-    const res = list(d.res), sac = list(d.sac);
-    toast(a.vente ? `${a.emoji} Vendu : tu gagnes ${res}`
-      : res && sac ? `${a.emoji} C'est prêt : ${res} dans ta réserve, ${sac} dans ton sac`
+    const sac = list(d.sac), coffre = list(d.coffre);
+    toast(a.vente ? `${a.emoji} Vendu : tu gagnes ${list(d.bourse)}`
+      : sac && coffre ? `${a.emoji} C'est prêt : ${sac} dans ton sac, ${coffre} dans un coffre (sac plein)`
       : sac ? `${a.emoji} ${sac} : c'est prêt, dans ton sac`
-      : `${a.emoji} ${res} : c'est prêt, dans ta réserve${plein ? " (ton sac est plein)" : ""}`, 3200);
+      : `${a.emoji} ${coffre} : c'est prêt, dans un coffre (ton sac est plein)`, 3200);
   }
   return true;
 }
@@ -116,7 +120,7 @@ function fileHTML(b){
     const running = j.start <= now, pct = running ? Math.min(100, (now - j.start) / (j.end - j.start) * 100) : 0;
     return `<div class="job"><span class="job-name">${emojiOf(a, j)} ${nameOf(a, j)}</span>
       <span class="job-bar"><i style="width:${pct.toFixed(1)}%"></i></span>
-      <span class="job-time">${running ? duree(Math.max(0, (j.end - now) / 1000)) : "en attente"}</span>
+      <span class="job-time">${j.end <= now ? "prêt : fais de la place" : running ? duree(Math.max(0, (j.end - now) / 1000)) : "en attente"}</span>
       <button class="btn ghost job-x" data-annuler="${i}" aria-label="Annuler">✕</button></div>`;
   }).join("");
 }
@@ -127,7 +131,7 @@ function render(){
     <p class="muted" style="margin:0 0 6px">${B[b.type].nom} niveau ${b.lvl}. ${a.note ? a.note + " " : ""}${waiting
       ? `Ses ${a.titre ? a.titre.toLowerCase() : "recettes"} arrivent bientôt.`
       : a.vente ? "Ce que tu vends part tout de suite ; l'or arrive à la fin du temps, même jeu fermé."
-      : `Ce qui est fini va tout seul dans ta réserve${a.recettes.some(r => OUTILS[r.out]) ? " (les outils dans ton sac)" : ""}, même jeu fermé.`}</p>
+      : "Ce qui est fini va tout seul dans ton sac (ou dans un coffre de réserve s'il est plein), même jeu fermé."}</p>
     ${waiting ? "" : `<h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>`}
     <h3 style="margin:14px 0 2px">${a.titre || (a.vente ? "Ventes" : "Recettes")}</h3>` +
     a.recettes.map((r, i) => {
@@ -144,7 +148,7 @@ function recetteHTML(b, a, r, i, full){
   const why = locked ? `Niveau ${r.lvl}` : full ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-      <p>⏱ ${duree(r.t)}${a.vente ? "" : OUTILS[r.out] ? ` · tu en as : ${owned(r.out) + sacCount(r.out)}` : ` · en réserve : ${owned(r.out)}`}</p>
+      <p>⏱ ${duree(r.t)}${a.vente ? "" : ` · tu en as : ${owned(r.out)}`}</p>
       <div>${Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
     <button class="btn primary" data-fab="${i}" ${ok ? "" : "disabled"}>${why}</button></div>`;
 }
@@ -172,7 +176,7 @@ setInterval(() => {
   q.forEach((j, i) => {
     const running = j.start <= now;
     rows[i].querySelector(".job-bar i").style.width = (running ? Math.min(100, (now - j.start) / (j.end - j.start) * 100) : 0).toFixed(1) + "%";
-    rows[i].querySelector(".job-time").textContent = running ? duree(Math.max(0, (j.end - now) / 1000)) : "en attente";
+    rows[i].querySelector(".job-time").textContent = j.end <= now ? "prêt : fais de la place" : running ? duree(Math.max(0, (j.end - now) / 1000)) : "en attente";
   });
 }, 500);
 
