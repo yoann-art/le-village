@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Prompts des bâtiments</title>
-<!-- Les prompts Gemini des 20 bâtiments de la bible, à copier d'un toucher depuis le téléphone.
-     Même contenu que la fiche « Prompts Gemini : bâtiments » (doc Claude) : garder les deux d'accord. -->
+<title>Prompts Gemini</title>
+<!-- Les prompts Gemini du jeu, à copier d'un toucher depuis le téléphone, un onglet par famille.
+     Même contenu que les fiches « Prompts Gemini : bâtiments » et « Prompts Gemini : meubles » (docs Claude) :
+     garder la page et les fiches d'accord. -->
 <style>
 :root{
   --bg:#F6F1E7; --card:#FFFDF8; --ink:#3B2A1A; --muted:#7A6652; --line:#E6D9C3;
@@ -47,18 +48,18 @@ h2{font-size:20px;margin:24px 0 8px}
 .copy.ok{filter:brightness(1.1)}
 .check{display:flex;align-items:center;gap:8px;min-height:48px;cursor:pointer;color:var(--muted)}
 .check input{width:24px;height:24px;accent-color:var(--done)}
+.tabs{display:flex;gap:8px;margin:0 0 12px}
+.tab{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
 <main>
-  <h1>Prompts des bâtiments</h1>
-  <p class="lead">Un prompt par bâtiment de la bible, prêt pour Gemini. Chacun commence par la phrase de style de la bible, mot pour mot.</p>
-  <ol class="steps">
-    <li>Touche <b>Copier</b>, puis colle dans Gemini.</li>
-    <li>Vérifie l'image : un seul bâtiment, entier, fond blanc, vu de trois quarts, porte bien visible.</li>
-    <li>Enregistre-la sous le nom du bâtiment (par exemple scierie.png) et coche la case.</li>
-  </ol>
+  <h1>Prompts Gemini</h1>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <p class="lead" id="lead"></p>
+  <ol class="steps" id="steps"></ol>
   <div class="progress" id="progress" aria-live="polite"></div>
   <div id="list"></div>
 </main>
@@ -99,6 +100,49 @@ const FAMILIES = [
   ]}
 ];
 
+/* Meubles et plans de travail (fiche « Prompts Gemini : meubles ») ; id préfixés par m- */
+const MEUBLES = [
+  {name:"Meubles communs", note:"Ils se posent dans tous les bâtiments. Gabarit : petit (environ 1 P² au sol), moyen (2 P²), grand (4 P²).", items:[
+    {id:"m-chaise", name:"Chaise", size:"petit", line:"Une chaise en bois couleur miel, petit gabarit, assise carrée et dossier plein aux coins arrondis, pieds ronds en bois sombre."},
+    {id:"m-tabouret", name:"Tabouret", size:"petit", line:"Un tabouret rond en bois couleur miel, petit gabarit, assise épaisse et bombée, trois pieds ronds en bois sombre légèrement écartés."},
+    {id:"m-pot", name:"Pot de fleurs", size:"petit", line:"Un pot de fleurs en terre cuite rouge tuile, petit gabarit, rebord épais et arrondi, feuillage vert tendre en boule, petites fleurs rouges, jaunes et blanches."},
+    {id:"m-lanterne", name:"Lanterne sur pied", size:"petit", line:"Une lanterne sur pied en bois sombre, petit gabarit, haut poteau sur un socle carré, lanterne allumée d'une lumière dorée sous un petit toit arrondi."},
+    {id:"m-tonneau", name:"Tonneau", size:"petit", line:"Un tonneau en bois couleur miel, petit gabarit, ventre bombé, deux cerclages de métal gris, couvercle en bois sombre."},
+    {id:"m-statue", name:"Petite statue", size:"petit", line:"Une petite statue en pierre claire, petit gabarit, personnage rond et paisible aux formes lisses, sur un socle carré de pierre grise."},
+    {id:"m-coffre", name:"Coffre", size:"moyen", line:"Un coffre en bois couleur miel, gabarit moyen, couvercle bombé, deux cerclages de métal gris, serrure dorée sur le devant."},
+    {id:"m-banc", name:"Banc", size:"moyen", line:"Un banc en bois couleur miel, gabarit moyen, longue assise épaisse aux bouts arrondis, deux pieds pleins en bois sombre."},
+    {id:"m-etagere", name:"Étagère", size:"moyen", line:"Une étagère en bois couleur miel, gabarit moyen, quatre planches, livres colorés, cruche en terre cuite et petit coffret doré."},
+    {id:"m-petit-tapis", name:"Petit tapis", size:"moyen", line:"Un petit tapis rectangulaire rouge tuile, gabarit moyen, centre crème, bords doux, posé à plat sur le sol."},
+    {id:"m-table", name:"Table", size:"grand", line:"Une table en bois couleur miel, grand gabarit, plateau épais rectangulaire aux coins arrondis, quatre pieds ronds en bois sombre."},
+    {id:"m-grand-tapis", name:"Grand tapis", size:"grand", line:"Un grand tapis rectangulaire bleu ardoise, grand gabarit, large bordure, centre crème avec un médaillon doré, posé à plat sur le sol."}
+  ]},
+  {name:"Meubles de métier", note:"Ils se posent seulement dans certains bâtiments.", items:[
+    {id:"m-lit", name:"Lit (Chaumière)", size:"grand", line:"Un lit en bois couleur miel, grand gabarit, couverture bleu ardoise bien bordée, drap blanc replié, gros oreiller blanc, tête de lit en bois sombre."},
+    {id:"m-cheminee", name:"Cheminée (Chaumière, Taverne, Château)", size:"moyen", line:"Une cheminée en pierre claire aux angles arrondis, gabarit moyen, foyer sombre avec un feu orangé, tablette en bois couleur miel, hotte de pierre grise."}
+  ]},
+  {name:"Plans de travail", note:"Un par bâtiment, construit avec des ressources et posé où l'on veut dans sa pièce.", items:[
+    {id:"m-etabli", name:"Établi (Scierie)", size:"moyen", line:"Un établi de menuisier en bois couleur miel, gabarit moyen, plateau épais, étagère basse chargée de planches, étau en bois sombre, scie et pièce de bois posées dessus."},
+    {id:"m-atelier-deco", name:"Atelier de décoration (Chaumière)", size:"moyen", line:"Un atelier de décoration en bois couleur miel, gabarit moyen, table avec un petit métier à tisser aux fils colorés, rouleau de tissu rouge, étoffes pliées, pot de peinture."},
+    {id:"m-table-taille", name:"Table de taille (Carrière)", size:"moyen", line:"Une table de taille en pierre grise, gabarit moyen, épaisse dalle sur deux gros pieds de pierre, bloc de pierre claire en cours de taille, maillet en bois et ciseau en métal, éclats de pierre."},
+    {id:"m-comptoir", name:"Comptoir (Marché)", size:"grand", line:"Un comptoir de marchand, grand gabarit, façade rouge tuile à panneaux crème, plateau en bois couleur miel, balance dorée, cagette de pommes rouges, petite pile de pièces d'or."},
+    {id:"m-fourneau", name:"Fourneau (Taverne)", size:"moyen", line:"Un fourneau de cuisine en pierre claire aux formes arrondies, gabarit moyen, bouche de four voûtée aux braises orangées, plaque de cuisson avec une marmite en fonte, petite cheminée."},
+    {id:"m-enclume", name:"Enclume (Forge)", size:"petit", line:"Une enclume en métal gris foncé, petit gabarit, forme trapue aux bords adoucis, posée sur un gros billot de bois couleur miel, marteau posé contre le billot."},
+    {id:"m-trone", name:"Trône (Château)", size:"moyen", line:"Un trône en bois sombre aux formes arrondies, gabarit moyen, haut dossier et coussin rouges, ornements dorés, posé sur une petite estrade de pierre claire."}
+  ]}
+];
+/* Les onglets : une famille de prompts chacun */
+const CATS = {
+  batiments:{label:"Bâtiments", families:FAMILIES,
+    lead:"Un prompt par bâtiment de la bible, prêt pour Gemini. Chacun commence par la phrase de style de la bible, mot pour mot.",
+    steps:["Touche <b>Copier</b>, puis colle dans Gemini.", "Vérifie l'image : un seul bâtiment, entier, fond blanc, vu de trois quarts, porte bien visible.", "Enregistre-la sous le nom du bâtiment (par exemple scierie.png) et coche la case."]},
+  meubles:{label:"Meubles", families:MEUBLES,
+    lead:"Un prompt par meuble et par plan de travail, prêt pour Gemini. Chacun commence par la phrase de style de la bible, mot pour mot. L'image montre la couleur d'origine du meuble.",
+    steps:["Touche <b>Copier</b>, puis colle dans Gemini.", "Vérifie l'image : un seul meuble, entier, fond blanc, vu de trois quarts, le devant bien visible.", "Enregistre-la sous le nom du meuble (par exemple chaise.png) et coche la case."]}
+};
+const TAB_KEY = "le-village-prompts-onglet";
+let cat = "batiments";
+try{ const v = localStorage.getItem(TAB_KEY); if(CATS[v]) cat = v; }catch(_){}
+
 /* Cases cochées : gardées dans le navigateur du téléphone */
 const KEY = "le-village-prompts-faits";
 let done = {};
@@ -117,13 +161,20 @@ async function copy(text){
 }
 
 const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-const total = FAMILIES.reduce((n, f) => n + f.items.length, 0);
 function renderProgress(){
-  const n = FAMILIES.reduce((c, f) => c + f.items.filter(i => done[i.id]).length, 0);
+  const fams = CATS[cat].families;
+  const total = fams.reduce((n, f) => n + f.items.length, 0);
+  const n = fams.reduce((c, f) => c + f.items.filter(i => done[i.id]).length, 0);
   document.getElementById("progress").textContent = `${n} sur ${total} images générées`;
 }
 
-document.getElementById("list").innerHTML = FAMILIES.map(f => `
+function render(){
+const c = CATS[cat];
+document.getElementById("tabs").innerHTML = Object.entries(CATS).map(([k, v]) =>
+  `<button class="tab" type="button" role="tab" data-cat="${k}" aria-selected="${k === cat}">${v.label}</button>`).join("");
+document.getElementById("lead").textContent = c.lead;
+document.getElementById("steps").innerHTML = c.steps.map(t => `<li>${t}</li>`).join("");
+document.getElementById("list").innerHTML = c.families.map(f => `
   <h2>${f.name}</h2>${f.note ? `<p class="note">${f.note}</p>` : ""}
   ${f.items.map(i => `
     <section class="card${done[i.id] ? " is-done" : ""}" data-id="${i.id}">
@@ -134,9 +185,19 @@ document.getElementById("list").innerHTML = FAMILIES.map(f => `
         <label class="check"><input type="checkbox"${done[i.id] ? " checked" : ""}> Image générée</label>
       </div>
     </section>`).join("")}`).join("");
+renderProgress();
+}
+
+document.getElementById("tabs").addEventListener("click", e => {
+  const t = e.target.closest("[data-cat]");
+  if(!t || t.dataset.cat === cat) return;
+  cat = t.dataset.cat;
+  try{ localStorage.setItem(TAB_KEY, cat); }catch(_){}
+  render(); window.scrollTo(0, 0);
+});
 
 const byId = {};
-FAMILIES.forEach(f => f.items.forEach(i => { byId[i.id] = i; }));
+Object.values(CATS).forEach(c => c.families.forEach(f => f.items.forEach(i => { byId[i.id] = i; })));
 document.getElementById("list").addEventListener("click", async e => {
   const btn = e.target.closest(".copy");
   if(!btn) return;
@@ -153,7 +214,7 @@ document.getElementById("list").addEventListener("change", e => {
   card.classList.toggle("is-done", e.target.checked);
   saveDone(); renderProgress();
 });
-renderProgress();
+render();
 })();
 </script>
 </body>
