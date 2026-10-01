@@ -60,7 +60,7 @@ function enter(b){
     $("#btn-deco").hidden = false;
     /* Pas encore de plan de travail : on dit comment le construire */
     const a = ATELIERS[b.type];
-    if(a && !hasPlan(b)) setTimeout(() => toast(`${a.emoji} Pas encore ${a.le.startsWith("l'") ? "d'" + a.le.slice(2) : "de " + a.le.slice(3)} ici : construis-le dans « 🪑 Décorer », puis « Meubles »`, 4200), 400);
+    if(a && !hasPlan(b)) setTimeout(() => toast(`${a.emoji} Pas encore ${a.le.startsWith("l'") ? "d'" + a.le.slice(2) : "de " + a.le.slice(3)} ici : construis-${a.fem ? "la" : "le"} dans « 🪑 Décorer », puis « Meubles »`, 4200), 400);
   });
 }
 function exit(){

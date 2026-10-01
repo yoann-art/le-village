@@ -13,7 +13,8 @@ const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
-  etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, etabli:C.wood};
+  etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
+  etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red};
 
 const BUILD = {
   chaise(g, m){
@@ -102,6 +103,47 @@ const BUILD = {
     g.add(part(G.box, C.metal, .5, .02, .14, .2, .62, .12));                           // lame de scie
     g.add(part(G.box, C.light, .14, .06, .1, .52, .64, .12));                          // poignée
     g.add(part(G.box, C.light, .45, .08, .2, -.15, .65, -.18));                        // pièce de bois en cours
+  },
+  statue(g, m){
+    g.add(part(G.box, C.stone2, .5, .24, .5, 0, .12, 0));                             // socle
+    g.add(part(G.head, m, 1.2, 1.7, 1.2, 0, .6, 0));                                  // corps arrondi
+    g.add(part(G.head, m, .9, .9, .9, 0, 1.1, 0));                                    // tête
+  },
+  atelierDeco(g, m){
+    g.add(part(G.box, m, 1.6, .1, .75, 0, .55, 0));                                   // plateau
+    for(const [x,z] of [[-.7,-.28],[.7,-.28],[-.7,.28],[.7,.28]]) g.add(part(G.cyl, C.dark, .09, .5, .09, x, .25, z));
+    for(const x of [-.6, .6]) g.add(part(G.box, C.dark, .08, .75, .08, x, .975, -.3));   // petit métier à tisser : montants
+    g.add(part(G.box, C.dark, 1.3, .08, .08, 0, 1.33, -.3));                           // traverse
+    [C.red, C.yellow, C.blue, C.leaf, C.cream].forEach((c, i) => g.add(part(G.box, c, .06, .6, .03, -.4 + i * .2, 1, -.3)));   // fils tendus
+    const roll = part(G.cyl, C.red, .26, .7, .26, -.3, .74, .12);                      // rouleau de tissu
+    roll.rotation.z = Math.PI/2; g.add(roll);
+    g.add(part(G.box, C.blue, .36, .06, .28, .4, .63, .1));                            // tissus pliés
+    g.add(part(G.box, C.cream, .34, .06, .26, .4, .69, .1));
+    g.add(part(G.cyl, C.clay, .14, .14, .14, .15, .67, -.12));                          // pot de peinture
+  },
+  tableTaille(g, m){
+    g.add(part(G.box, m, 1.6, .16, .85, 0, .6, 0));                                   // dalle
+    for(const x of [-.55, .55]) g.add(part(G.box, m, .32, .52, .7, x, .26, 0));        // pieds en pierre
+    g.add(part(G.box, C.stone, .42, .38, .42, -.3, .87, 0));                            // bloc en cours de taille
+    g.add(part(G.box, C.metal, .04, .04, .3, .2, .7, .15));                             // ciseau
+    const head = part(G.cyl, C.wood, .16, .26, .16, .45, .76, -.05);                   // maillet
+    head.rotation.z = Math.PI/2; g.add(head);
+    g.add(part(G.box, C.light, .05, .05, .32, .45, .72, .12));
+    for(const [x,z] of [[.1,-.25],[-.05,.3],[.62,.28]]) g.add(part(G.dode, C.stone2, .1, .1, .1, x, .72, z));   // éclats
+  },
+  comptoir(g, m){
+    g.add(part(G.box, m, 2.1, .84, .72, 0, .42, 0));                                  // caisse du comptoir
+    g.add(part(G.box, C.wood, 2.2, .08, .85, 0, .88, 0));                               // plateau
+    for(const x of [-.7, 0, .7]) g.add(part(G.box, C.cream, .5, .5, .02, x, .45, .37)); // panneaux de façade
+    g.add(part(G.cyl, C.metal, .05, .5, .05, -.55, 1.17, -.1));                         // balance : pied, fléau, plateaux
+    g.add(part(G.box, C.metal, .7, .03, .03, -.55, 1.42, -.1));
+    for(const x of [-.85, -.25]){
+      g.add(part(G.cyl, C.metal, .01, .22, .01, x, 1.31, -.1));
+      g.add(part(G.cyl, C.gold, .26, .03, .26, x, 1.2, -.1));
+    }
+    g.add(part(G.box, C.wood, .5, .25, .4, .55, 1.045, -.05));                          // cagette de pommes
+    for(const [x,z] of [[.45,-.12],[.62,-.1],[.5,.04],[.66,.05]]) g.add(part(G.head, C.red, .45, .45, .45, x, 1.2, z));
+    for(let k = 0; k < 3; k++) g.add(part(G.cyl, C.gold, .14, .03, .14, .05, .935 + k * .03, .2));   // pièces empilées
   }
 };
 /* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine */

@@ -135,16 +135,16 @@ for(const g of Object.values(GAMES)) WHERE[g.res] = g.nom;
 function planHTML(b){
   const a = ATELIERS[b.type];
   if(!a) return "";
-  const m = MEUBLES[a.meuble], built = hasPlan(b), ok = !built && hasAll(a.cost);
+  const m = MEUBLES[a.meuble], built = hasPlan(b), ok = !built && hasAll(a.cost), e = a.fem ? "e" : "", pr = a.fem ? "la" : "le";
   const chips = Object.entries(a.cost).map(([k, v]) => `<span class="chip ${owned(k) >= v ? "" : "short"}">${RES[k].emoji} ${owned(k)}/${v}</span>`).join("");
   const missing = Object.entries(a.cost).filter(([k, v]) => owned(k) < v).map(([k]) => k);
   return `<h3 style="margin:10px 0 2px">Plan de travail</h3>
     <div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
       <div class="bt"><span class="bn">${m.nom}</span>
-        <p>${built ? "Déjà construit : touche-le dans la pièce pour le déplacer." : `Pour fabriquer ${a.fait}. Un seul par bâtiment.`}</p>
+        <p>${built ? `Déjà construit${e} : touche-${pr} dans la pièce pour ${pr} déplacer.` : `Pour ${a.pour}. Un seul par bâtiment.`}</p>
         ${built ? "" : `<div>${chips}</div>`}
-        ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} Le ${RES[k].nom} s'obtient avec « ${WHERE[k] || "les mini-jeux"} », dans Mini-jeux.`).join(" ")}</p>`}</div>
-      <button class="btn primary" data-meuble="${a.meuble}" ${ok ? "" : "disabled"}>${built ? "Construit" : "Construire"}</button></div>`;
+        ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} ${RES[k].le} s'obtient avec « ${WHERE[k] || "les mini-jeux"} », dans Mini-jeux.`).join(" ")}</p>`}</div>
+      <button class="btn primary" data-meuble="${a.meuble}" ${ok ? "" : "disabled"}>${built ? `Construit${e}` : "Construire"}</button></div>`;
 }
 $("#deco-cat").addEventListener("click", () => {
   const here = deco.b.type;
@@ -172,7 +172,7 @@ export function addMeuble(type){
   if(plan){
     for(const [k, v] of Object.entries(a.cost)) addOwned(k, -v);
     renderHUD();
-    toast(`${a.emoji} ${a.le[0].toUpperCase() + a.le.slice(1)} est construit : fais-le glisser où tu veux`, 3200);
+    toast(`${a.emoji} ${a.le[0].toUpperCase() + a.le.slice(1)} est construit${a.fem ? "e : fais-la" : " : fais-le"} glisser où tu veux`, 3200);
   }
   else if(craftable(type)) addOwned(type, -1);                         // pris dans la réserve
   items().push(it); addItemMesh(it);

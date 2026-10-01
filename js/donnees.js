@@ -1,9 +1,9 @@
 /* ================= Données du jeu =================
    Les chiffres qu'on règle : ressources, bâtiments, mini-jeux. */
 export const RES = {
-  bois:   {emoji:"🪵", nom:"bois"},
-  pierre: {emoji:"🪨", nom:"pierre"},
-  or:     {emoji:"🪙", nom:"or"}
+  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", le:"Le bois"},
+  pierre: {emoji:"🪨", nom:"pierre", pluriel:"pierres", le:"La pierre"},
+  or:     {emoji:"🪙", nom:"or", pluriel:"or", le:"L'or"}
 };
 /* size : côté du carré de cases dehors (en P) ; door : décalage de la porte sur la façade (en P, − vers la gauche) ;
    taille : taille de la pièce intérieure selon la bible (petite, moyenne, grande) */
@@ -27,6 +27,7 @@ export const MEUBLES = {
   pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
   lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5},
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
+  statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
   banc:     {nom:"Banc", emoji:"🛋️", gabarit:"moyen", w:1.6, d:.6},
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
@@ -37,19 +38,24 @@ export const MEUBLES = {
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
   /* Plans de travail (plan:true) : un par bâtiment, construit avec des ressources (ATELIERS, cost)
      depuis le haut du catalogue, posé où l'on veut dans sa pièce, jamais rangé */
-  etabli:   {nom:"Établi", emoji:"🪚", gabarit:"moyen", w:1.6, d:.8, plan:true}
+  etabli:   {nom:"Établi", emoji:"🪚", gabarit:"moyen", w:1.6, d:.8, plan:true},
+  atelierDeco:{nom:"Atelier de décoration", emoji:"🧵", gabarit:"moyen", w:1.6, d:.8, plan:true},
+  tableTaille:{nom:"Table de taille", emoji:"⛏️", gabarit:"moyen", w:1.6, d:.9, plan:true},
+  comptoir: {nom:"Comptoir", emoji:"⚖️", gabarit:"grand", w:2.2, d:.9, plan:true}
 };
 
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
 export const PRODUITS = {
-  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"}
+  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},
+  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱"}
 };
 /* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
-   construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le) et ses recettes.
+   construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le ; fem : nom féminin),
+   à quoi il sert (pour) et ses recettes. vente : le plan de travail vend au lieu de fabriquer (comptoir).
    Recette : ce qu'elle donne (out, n exemplaires), ses ingrédients (in), son temps en secondes (t)
    et le niveau du bâtiment qu'il faut (lvl). Chiffres à régler en jouant. */
 export const ATELIERS = {
-  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:10}, fait:"des planches et des meubles en bois", recettes:[
+  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:10}, pour:"fabriquer des planches et des meubles en bois", recettes:[
     {out:"planche", n:2, in:{bois:1}, t:5, lvl:1},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
@@ -59,11 +65,32 @@ export const ATELIERS = {
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"etagere", in:{planche:6}, t:90, lvl:2},
     {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
+  ]},
+  chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{bois:6, or:2},
+    pour:"fabriquer des pots de fleurs, des lanternes et des tapis", recettes:[
+    {out:"pot", in:{pierre:2}, t:20, lvl:1},
+    {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
+    /* Tapis : ingrédients provisoires (bois et or), remplacés par les fibres à l'étape 1.5 */
+    {out:"petitTapis", in:{bois:2, or:1}, t:40, lvl:1},
+    {out:"grandTapis", in:{bois:3, or:2}, t:60, lvl:2}
+  ]},
+  carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{bois:4, pierre:8},
+    pour:"tailler des blocs, des statues et des cheminées", recettes:[
+    {out:"bloc", n:2, in:{pierre:1}, t:5, lvl:1},
+    {out:"statue", in:{bloc:3}, t:40, lvl:1},
+    {out:"cheminee", in:{bloc:6, planche:2}, t:90, lvl:2}
+  ]},
+  marche:{nom:"Comptoir", le:"le comptoir", emoji:"⚖️", meuble:"comptoir", cost:{bois:8, pierre:4}, vente:true,
+    pour:"vendre ton surplus contre de l'or", recettes:[
+    {out:"or", in:{bois:6}, t:10, lvl:1},
+    {out:"or", in:{pierre:6}, t:10, lvl:1},
+    {out:"or", in:{planche:10}, t:10, lvl:1},
+    {out:"or", in:{bloc:10}, t:10, lvl:1}
   ]}
 };
-/* Pour chaque objet fabriqué : le bâtiment dont l'atelier le fabrique */
+/* Pour chaque objet fabriqué (meuble ou produit) : le bâtiment dont l'atelier le fabrique */
 export const FABRIQUE_A = {};
-for(const [b, a] of Object.entries(ATELIERS)) for(const r of a.recettes) FABRIQUE_A[r.out] = b;
+for(const [b, a] of Object.entries(ATELIERS)) for(const r of a.recettes) if(!RES[r.out]) FABRIQUE_A[r.out] = b;
 /* Palette gratuite : couleur d'un meuble, des murs ou du sol d'une pièce.
    (Plus tard : des couleurs à gagner, avec un cadenas — voir la Boîte à idées du plan de production.) */
 export const COULEURS = {
@@ -75,7 +102,7 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 export const GAMES = {
   bucheron:{nom:"Le Bûcheron", cat:"Adresse", color:"sinople", emoji:"🪓", res:"bois", gain:"du bois",
     rules:"Frappe quand le curseur passe dans la zone verte. Au centre doré, c'est un coup parfait. 8 coups."},
