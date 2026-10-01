@@ -16,6 +16,7 @@ import { player, R, placePlayer } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
+import { openAtelier } from "./ateliers.js";
 
 let deco = null;                     // la pièce qu'on décore : {b, room}
 let sel = null;                      // le meuble choisi
@@ -146,19 +147,30 @@ function planHTML(b){
         ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} ${RES[k].le} s'obtient avec « ${WHERE[k] || "les mini-jeux"} », dans Mini-jeux.`).join(" ")}</p>`}</div>
       <button class="btn primary" data-meuble="${a.meuble}" ${ok ? "" : "disabled"}>${built ? `Construit${e}` : "Construire"}</button></div>`;
 }
+/* « à l'établi », « au comptoir », « à la table de taille » */
+const aLe = a => a.le.startsWith("le ") ? "au " + a.le.slice(3) : "à " + a.le;
 $("#deco-cat").addEventListener("click", () => {
   const here = deco.b.type;
+  /* Réserve vide : on dit comment avoir des meubles (demande de Yo : tout semblait grisé sans raison) */
+  const empty = !MEUBLES_ORDER.some(t => craftable(t) && owned(t) > 0);
   openSheet(`<div class="sh-head"><h2 class="display">Meubles</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Ta réserve de meubles. Choisis-en un : il apparaît au milieu de la pièce.</p>` + planHTML(deco.b) +
+    <p class="muted" style="margin:0 0 6px">Ta réserve de meubles. Choisis-en un : il apparaît au milieu de la pièce.</p>` +
+    (empty ? `<p class="hint-box">Ta réserve est vide. Chaque meuble se fabrique au plan de travail d'un bâtiment : la chaise ${aLe(ATELIERS.scierie)} de la Scierie, le pot de fleurs ${aLe(ATELIERS.chaumiere)} de la Chaumière… Approche-toi du plan de travail, touche son bouton, puis « Fabriquer ». Le meuble arrive ici quand il est prêt.</p>` : "") +
+    planHTML(deco.b) +
     Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
       MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
         const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
         const where = m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}` : "Partout";
+        const fab = FABRIQUE_A[t], af = fab && ATELIERS[fab];
         const stock = !craftable(t) ? "Gratuit pour l'instant"
-          : n > 0 ? `${n} en réserve` : `À fabriquer : ${ATELIERS[FABRIQUE_A[t]].nom} (${B[FABRIQUE_A[t]].nom})`;
+          : n > 0 ? `${n} en réserve` : `Aucun en réserve. Se fabrique ${aLe(af)} (${B[fab].nom})`;
+        /* Pas en réserve, mais son plan de travail est ici : « Fabriquer » ouvre sa fiche */
+        const btn = ok ? `<button class="btn primary" data-meuble="${t}">Poser</button>`
+          : craftable(t) && n === 0 && fab === here && hasPlan(deco.b) ? `<button class="btn" data-atelier>Fabriquer</button>`
+          : `<button class="btn primary" disabled>Poser</button>`;
         return `<div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
           <div class="bt"><span class="bn">${m.nom}${craftable(t) && n > 0 ? ` × ${n}` : ""}</span><p>${stock}. ${m.flat ? "À plat, on marche dessus. " : ""}${where}</p></div>
-          <button class="btn primary" data-meuble="${t}" ${ok ? "" : "disabled"}>Poser</button></div>`;
+          ${btn}</div>`;
       }).join("")).join(""));
 });
 /* Choisi dans le catalogue (voir main.js) : le meuble apparaît à la place libre la plus proche du milieu */
@@ -217,6 +229,7 @@ $("#deco-room").addEventListener("click", () => {
     <h3 style="margin:4px 0 0">Sol</h3>${swatches("floor", d.floor)}`);
 });
 wrap.addEventListener("click", e => {
+  if(deco && e.target.closest("[data-atelier]")){ openAtelier(deco.b); return; }
   const btn = e.target.closest("[data-couleur]");
   if(!btn || !deco) return;
   const key = btn.dataset.couleur || undefined, target = btn.dataset.cible, d = deco.b.deco;

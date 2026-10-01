@@ -131,12 +131,13 @@ function render(){
         <button class="btn primary" data-fab="${i}" ${ok ? "" : "disabled"}>${why}</button></div>`;
     }).join(""));
 }
-btn.addEventListener("click", () => {
-  const place = currentPlace();
-  if(!place || !hasPlan(place.b)) return;
-  openFor = place.b;
+/* Ouvre la fiche du plan de travail d'un bâtiment (son bouton, ou « Fabriquer » dans le catalogue) */
+export function openAtelier(b){
+  if(!b || !hasPlan(b)) return;
+  openFor = b;
   render();
-});
+}
+btn.addEventListener("click", () => { const place = currentPlace(); if(place) openAtelier(place.b); });
 wrap.addEventListener("click", e => {
   if(!openFor) return;
   const fab = e.target.closest("[data-fab]"), ann = e.target.closest("[data-annuler]");
