@@ -6,17 +6,17 @@
    Le comptoir du Marché (vente) marche pareil : ce qu'on vend part, l'or arrive à la fin du temps.
    Une recette verrouillée (lock) est affichée avec sa raison, sans bouton (fourneau, enclume, trône). */
 import { $ } from "./outils.js";
-import { RES, B, MEUBLES, PRODUITS, ATELIERS } from "./donnees.js";
+import { RES, B, MEUBLES, PRODUITS, ATELIERS, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { owned, addOwned, hasAll, queueSlots } from "./regles.js";
+import { owned, addOwned, hasAll, queueSlots, sacAdd, sacCount } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
 
 /* ----- Noms et images de ce qu'on fabrique ou utilise ----- */
-const info = k => RES[k] ? RES[k]
-  : PRODUITS[k] ? PRODUITS[k] : {nom: MEUBLES[k].nom, pluriel: MEUBLES[k].nom, emoji: MEUBLES[k].emoji};
+const info = k => RES[k] ? RES[k] : PRODUITS[k] ? PRODUITS[k] : OUTILS[k] ? OUTILS[k]
+  : {nom: MEUBLES[k].nom, pluriel: MEUBLES[k].nom, emoji: MEUBLES[k].emoji};
 const label = (k, n) => n > 1 ? `${n} ${info(k).pluriel}` : info(k).nom;
 const many = (k, n) => `${n} ${n > 1 ? info(k).pluriel : info(k).nom}`;          // « 6 pierres », « 1 or »
 /* Le nom d'une recette (ou d'une vente : « 6 bois → 1 or ») */
@@ -50,29 +50,38 @@ function annuler(b, i){
   q.splice(i, 1);
   chain(q); save(); renderHUD();
 }
-/* Ce qui est fini va dans la réserve (aussi ce qui s'est fini jeu fermé) */
+/* Ce qui est fini va dans la réserve (aussi ce qui s'est fini jeu fermé) ; un outil va dans le sac,
+   ou dans la réserve si le sac est plein */
 function livrer(){
   const now = Date.now(), faits = [];
   for(const b of state.buildings){
     const q = b.atelier && b.atelier.queue;
     while(q && q.length && q[0].end <= now){
       const j = q.shift();
-      addOwned(j.out, j.n);
-      faits.push({b, j});
+      const inSac = OUTILS[j.out] ? sacAdd(j.out, j.n) : 0;
+      if(j.n > inSac) addOwned(j.out, j.n - inSac);
+      faits.push({b, j, inSac});
     }
   }
   if(!faits.length) return false;
   save(); renderHUD();
   const parAtelier = new Map();                       // un message par plan de travail, quantités additionnées
-  for(const {b, j} of faits){
+  const add = (m, k, n) => { if(n > 0) m.set(k, (m.get(k) || 0) + n); };
+  let plein = false;
+  for(const {b, j, inSac} of faits){
     const a = ATELIERS[b.type];
-    if(!parAtelier.has(a)) parAtelier.set(a, new Map());
-    const m = parAtelier.get(a);
-    m.set(j.out, (m.get(j.out) || 0) + j.n);
+    if(!parAtelier.has(a)) parAtelier.set(a, {res: new Map(), sac: new Map()});
+    const d = parAtelier.get(a);
+    add(d.sac, j.out, inSac); add(d.res, j.out, j.n - inSac);
+    if(OUTILS[j.out] && inSac < j.n) plein = true;
   }
-  for(const [a, m] of parAtelier){
-    const list = [...m].map(([k, n]) => a.vente ? `${info(k).emoji} ${many(k, n)}` : label(k, n)).join(", ");
-    toast(a.vente ? `${a.emoji} Vendu : tu gagnes ${list}` : `${a.emoji} ${list} : c'est prêt, dans ta réserve`, 3200);
+  for(const [a, d] of parAtelier){
+    const list = m => [...m].map(([k, n]) => a.vente ? `${info(k).emoji} ${many(k, n)}` : label(k, n)).join(", ");
+    const res = list(d.res), sac = list(d.sac);
+    toast(a.vente ? `${a.emoji} Vendu : tu gagnes ${res}`
+      : res && sac ? `${a.emoji} C'est prêt : ${res} dans ta réserve, ${sac} dans ton sac`
+      : sac ? `${a.emoji} ${sac} : c'est prêt, dans ton sac`
+      : `${a.emoji} ${res} : c'est prêt, dans ta réserve${plein ? " (ton sac est plein)" : ""}`, 3200);
   }
   return true;
 }
@@ -115,21 +124,26 @@ function render(){
     <p class="muted" style="margin:0 0 6px">${B[b.type].nom} niveau ${b.lvl}. ${a.note ? a.note + " " : ""}${waiting
       ? `Ses ${a.titre ? a.titre.toLowerCase() : "recettes"} arrivent bientôt.`
       : a.vente ? "Ce que tu vends part tout de suite ; l'or arrive à la fin du temps, même jeu fermé."
-      : "Ce qui est fini va tout seul dans ta réserve, même jeu fermé."}</p>
+      : `Ce qui est fini va tout seul dans ta réserve${a.recettes.some(r => OUTILS[r.out]) ? " (les outils dans ton sac)" : ""}, même jeu fermé.`}</p>
     ${waiting ? "" : `<h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>`}
     <h3 style="margin:14px 0 2px">${a.titre || (a.vente ? "Ventes" : "Recettes")}</h3>` +
     a.recettes.map((r, i) => {
-      if(r.lock) return `<div class="brow"><div class="be" aria-hidden="true">${r.emoji}</div>
-        <div class="bt"><span class="bn">${r.nom}</span><p>🔒 ${r.lock}</p></div>
-        <button class="btn primary" disabled>Bientôt</button></div>`;
-      const locked = b.lvl < r.lvl, ok = !locked && !full && hasAll(r.in);
-      const why = locked ? `Niveau ${r.lvl}` : full ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
-      return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
-        <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-          <p>⏱ ${duree(r.t)}${a.vente ? "" : ` · en réserve : ${owned(r.out)}`}</p>
-          <div>${Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
-        <button class="btn primary" data-fab="${i}" ${ok ? "" : "disabled"}>${why}</button></div>`;
+      /* Recettes rangées par catégorie (Matériaux, Outils, Meubles) quand elles en ont une */
+      const head = r.cat && r.cat !== (a.recettes[i - 1] || {}).cat ? `<h4 class="rec-cat">${r.cat}</h4>` : "";
+      return head + recetteHTML(b, a, r, i, full);
     }).join(""));
+}
+function recetteHTML(b, a, r, i, full){
+  if(r.lock) return `<div class="brow"><div class="be" aria-hidden="true">${r.emoji}</div>
+    <div class="bt"><span class="bn">${r.nom}</span><p>🔒 ${r.lock}</p></div>
+    <button class="btn primary" disabled>Bientôt</button></div>`;
+  const locked = b.lvl < r.lvl, ok = !locked && !full && hasAll(r.in);
+  const why = locked ? `Niveau ${r.lvl}` : full ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
+  return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
+    <div class="bt"><span class="bn">${nameOf(a, r)}</span>
+      <p>⏱ ${duree(r.t)}${a.vente ? "" : OUTILS[r.out] ? ` · tu en as : ${owned(r.out) + sacCount(r.out)}` : ` · en réserve : ${owned(r.out)}`}</p>
+      <div>${Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
+    <button class="btn primary" data-fab="${i}" ${ok ? "" : "disabled"}>${why}</button></div>`;
 }
 /* Ouvre la fiche du plan de travail d'un bâtiment (son bouton, ou « Fabriquer » dans le catalogue) */
 export function openAtelier(b){

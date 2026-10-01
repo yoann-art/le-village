@@ -51,6 +51,16 @@ export const MEUBLES = {
    et combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul) */
 export const SAC = {places:12, pile:30};
 
+/* Outils (étape 1.4) : rangés dans le sac, ils ne s'usent pas. Prévus en familles avec une force
+   (demande de Yo : des outils et des armes de plus en plus puissants au fil de la partie) ;
+   les versions en cuivre viendront à l'enclume, après l'étape 1.5. usage : à quoi il servira. */
+export const OUTILS = {
+  hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", emoji:"🪓", famille:"hache", force:1, usage:"Servira à couper les arbres."},
+  piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", emoji:"⛏️", famille:"pioche", force:1, usage:"Servira à casser les rochers."},
+  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Servira à pêcher."},
+  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."}
+};
+
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫"},
@@ -63,8 +73,13 @@ export const PRODUITS = {
    et le niveau du bâtiment qu'il faut (lvl). Chiffres à régler en jouant. */
 export const ATELIERS = {
   scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:10}, pour:"fabriquer des planches et des meubles en bois", recettes:[
-    {out:"planche", n:2, in:{bois:1}, t:5, lvl:1},
-    {out:"tabouret", in:{planche:2}, t:20, lvl:1},
+    {out:"planche", n:2, in:{bois:1}, t:5, lvl:1, cat:"Matériaux"},
+    /* Outils de départ ; canne à pêche : or provisoire, en attendant le fil des fibres (étape 1.5) */
+    {out:"hachePierre", in:{planche:3, pierre:2}, t:30, lvl:1, cat:"Outils"},
+    {out:"piochePierre", in:{planche:3, pierre:3}, t:30, lvl:1, cat:"Outils"},
+    {out:"canneBois", in:{planche:4, or:1}, t:40, lvl:1, cat:"Outils"},
+    {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
+    {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"banc", in:{planche:4}, t:40, lvl:1},
     {out:"coffre", in:{planche:4, or:1}, t:60, lvl:1},

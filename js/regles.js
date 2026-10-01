@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B } from "./donnees.js";
+import { RES, B, OUTILS, SAC } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -17,6 +17,17 @@ export function addOwned(k, n){
   else state.stock[k] = (state.stock[k] || 0) + n;
 }
 export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
+/* Le sac (state.sac = [{k, n}], au plus SAC.places emplacements) : un outil prend un emplacement
+   à lui seul, le reste s'empile jusqu'à SAC.pile. sacAdd renvoie combien sont entrés dans le sac. */
+export const sacPile = k => OUTILS[k] ? 1 : SAC.pile;
+export const sacCount = k => state.sac.reduce((c, it) => c + (it.k === k ? it.n : 0), 0);
+export function sacAdd(k, n){
+  const pile = sacPile(k);
+  let left = n;
+  for(const it of state.sac) if(it.k === k && it.n < pile && left > 0){ const m = Math.min(pile - it.n, left); it.n += m; left -= m; }
+  while(left > 0 && state.sac.length < SAC.places){ const m = Math.min(pile, left); state.sac.push({k, n: m}); left -= m; }
+  return n - left;
+}
 /* File d'attente d'un plan de travail : 3 places au niveau 1, une de plus par niveau */
 export const queueSlots = lvl => 2 + lvl;
 export const maxLvl = t => B[t].unique ? 1 : 3;

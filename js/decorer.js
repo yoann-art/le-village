@@ -166,7 +166,7 @@ $("#deco-cat").addEventListener("click", () => {
           : n > 0 ? `${n} en réserve` : `Aucun en réserve. Se fabrique ${aLe(af)} (${B[fab].nom})`;
         /* Pas en réserve, mais son plan de travail est ici : « Fabriquer » ouvre sa fiche */
         const btn = ok ? `<button class="btn primary" data-meuble="${t}">Poser</button>`
-          : craftable(t) && n === 0 && fab === here && hasPlan(deco.b) ? `<button class="btn" data-atelier>Fabriquer</button>`
+          : craftable(t) && n === 0 && fab === here && hasPlan(deco.b) ? `<button class="btn primary" data-atelier>Fabriquer</button>`
           : `<button class="btn primary" disabled>Poser</button>`;
         return `<div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
           <div class="bt"><span class="bn">${m.nom}${craftable(t) && n > 0 ? ` × ${n}` : ""}</span><p>${stock}. ${m.flat ? "À plat, on marche dessus. " : ""}${where}</p></div>
