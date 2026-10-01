@@ -3,6 +3,8 @@
    - par terre (morceau de bois, petit caillou) : « ✋ Ramasser », à la main (voir monde/sol.js) ;
    - un arbre adulte : « 🪓 Couper » ; l'outil du sac est pris en main tout seul ; chaque
      coup donne du bois, au dernier l'arbre tombe et donne une graine ;
+   - un rocher : « ⛏️ Miner » ; chaque coup de pioche donne de la pierre, au dernier il se brise
+     et ne revient jamais (ensuite, la pierre se trouve à la mine) ;
    - des herbes hautes : « ✋ Cueillir » (des fibres ; rases, elles repoussent) ; cueillies une 2e fois de suite :
      « ✋ Arracher » (des fibres et une graine ; elles ne repoussent pas) ;
    - un buisson de baies : « ✋ Cueillir les baies » (le buisson est vide) ; vide : « 💧 Arroser » (l'arrosoir ;
@@ -102,6 +104,7 @@ function actionOf(t){
   if(t.o === "tree")
     return g < 1 ? info(`🌱 Jeune arbre : adulte dans ${duree(growthLeft(t.i))}`)
       : {label: `🪓 Couper${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)};
+  if(t.o === "rock") return {label: `⛏️ Miner${h ? ` (${RECOLTE.rock.coups - h})` : ""}`, run: () => couper(t)};
   if(t.o === "herbe"){
     if(g < 1) return info(`🌱 Jeunes herbes : hautes dans ${duree(growthLeft(t.i))}`);
     return herbeLeft(t.i) > 0 ? {label: "✋ Arracher (+1 graine)", run: () => arracher(t)} : {label: "✋ Cueillir", run: () => cueillirHerbe(t)};
@@ -133,7 +136,7 @@ function ramasser(t){
   const d = SOL[solAt(t.i)], n = gain(d.n, d.res);
   if(!sacOk(d.res, n) || !pickUp(t.i)) return;
   sacAdd(d.res, n); renderHUD(); save();
-  toast(`${RES[d.res].emoji} +${n} ${RES[d.res].nom}`, 1200);
+  toast(`${RES[d.res].emoji} +${n} ${nomDe(d.res, n)}`, 1200);
 }
 
 /* ----- Cueillir ----- */
@@ -174,18 +177,19 @@ function remplir(){
   toast(`💧 Arrosoir rempli : ${max} arrosages`, 2000);
 }
 
-/* ----- Couper (un arbre, un buisson) ----- */
-const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé"};
+/* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
+const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé"};
+const IL_FAUT = {hache: "🪓 Il te faut une hache dans ton sac : fabrique-la", pioche: "⛏️ Il te faut une pioche dans ton sac : fabrique-la"};
 function couper(t){
   const R = RECOLTE[t.o], k = takeTool(R.outil);
-  if(!k){ toast(`🪓 Il te faut une hache dans ton sac : fabrique-la à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
+  if(!k){ toast(`${IL_FAUT[R.outil]} à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
   const n = R.res ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
   if(n){ if(!sacOk(R.res, n)) return; sacAdd(R.res, n); renderHUD(); }
   const h = (hits.get(t.i) || 0) + 1;
-  if(h < R.coups){ hits.set(t.i, h); anim = {i: t.i, t: 0, kind: "shake"}; if(n) toast(`${RES[R.res].emoji} +${n} ${RES[R.res].nom}`, 1200); }
+  if(h < R.coups){ hits.set(t.i, h); anim = {i: t.i, t: 0, kind: "shake"}; if(n) toast(`${RES[R.res].emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {
     hits.delete(t.i);
-    anim = {i: t.i, t: 0, kind: "fall", o: t.o, R, n, side: Math.sign(player.position.x - centerOf(t.x)) || 1};
+    anim = {i: t.i, t: 0, kind: t.o === "rock" ? "break" : "fall", o: t.o, R, n, side: Math.sign(player.position.x - centerOf(t.x)) || 1};
   }
   save();
 }
@@ -196,6 +200,11 @@ function animate(dt){
   if(anim.kind === "shake"){                          // il tremble sous le coup
     g.rotation.z = Math.sin(anim.t * 40) * .06 * Math.max(0, 1 - anim.t / .3);
     if(anim.t >= .3){ g.rotation.z = 0; anim = null; }
+  } else if(anim.kind === "break"){                   // le rocher se brise : il s'aplatit et disparaît
+    if(!anim.s) anim.s = g.scale.x;
+    const f = Math.max(0, 1 - anim.t / .45);
+    g.scale.set(anim.s * (1 + (1 - f) * .3), anim.s * f, anim.s * (1 + (1 - f) * .3));
+    if(anim.t >= .45) tombe();
   } else {                                            // il tombe, du côté opposé au personnage
     g.rotation.order = "ZYX";                         // la chute se fait dans le monde, pas selon l'arbre tourné
     g.rotation.z = anim.side * Math.min(1, anim.t / .6) ** 2 * 1.45;
@@ -206,8 +215,8 @@ function tombe(){
   const {i, o, R, n} = anim;
   anim = null;
   setObj(i, null);
-  const ou = giveSeed(R.graine); save();
-  toast(`${FIN[o]} : ${n ? `+${n} ${RES[R.res].nom}, ` : ""}+1 ${nomDe(R.graine, 1)} ${ou}`, 3200);
+  const ou = R.graine ? giveSeed(R.graine) : ""; save();
+  toast(`${FIN[o]} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", R.graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : ""].filter(Boolean).join(", ")}`, 3200);
 }
 
 /* ----- Planter ----- */
