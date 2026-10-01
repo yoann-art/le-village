@@ -50,6 +50,8 @@ button{font:inherit;color:inherit}
 .case{appearance:none;width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--hud);font-size:24px;line-height:1;cursor:pointer;touch-action:manipulation;padding:0;box-shadow:0 2px 0 rgba(0,0,0,.18)}
 .case.vide{border-style:dashed;color:var(--muted);font-size:22px;font-weight:700}
 .case.on{border-color:var(--sinople);background:var(--sinople)}
+.case{position:relative}
+.case .cn{position:absolute;right:3px;bottom:1px;font-size:12px;font-weight:700;color:var(--ink)}
 .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 3px 8px rgba(0,0,0,.25);pointer-events:none}
 .actions{position:absolute;left:14px;bottom:24px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 .act{border:0;border-radius:999px;min-height:50px;padding:0 18px;background:var(--hud);font-weight:700;font-size:17px;box-shadow:0 3px 0 rgba(0,0,0,.2);cursor:pointer;touch-action:manipulation;white-space:nowrap}
@@ -123,13 +125,6 @@ button.tile{font:inherit;padding:8px 6px;border:2px solid transparent}
 .upbox p{margin:0 0 4px}
 .crown{text-align:center;padding:8px 0}
 .crown h2{font-size:34px;margin:6px 0}
-.game-row{display:flex;gap:14px;align-items:center;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-left:6px solid var(--cat);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
-.game-row .gi{font-size:36px;line-height:1}
-.game-row .gt{display:flex;flex-direction:column;min-width:0}
-.game-row .tag{color:var(--cat);font-weight:700;font-size:14px}
-.game-row .gname{font-size:24px;line-height:1.1}
-.game-row .gdesc{color:var(--muted);font-size:15px}
-.game-row.locked{opacity:.6;cursor:default}
 .reset{margin-top:8px;background:none;border:0;color:var(--muted);text-decoration:underline;padding:8px 2px;cursor:pointer}
 
 .btn{appearance:none;border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;touch-action:manipulation}
@@ -138,39 +133,7 @@ button.tile{font:inherit;padding:8px 6px;border:2px solid transparent}
 .ghost{background:transparent;border:1px solid var(--line)}
 .big{font-size:20px;padding:16px 28px;min-width:210px}
 
-/* Écran de mini-jeu */
-.game{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.g-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
-.g-head h2{font-size:30px;margin:0;line-height:1}
-.g-head p{margin:2px 0 0;color:var(--muted);font-size:15px}
-.g-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;text-align:center;overflow:auto;max-width:520px;width:100%;margin:0 auto}
 .intro-emoji{font-size:76px;line-height:1}
-.rules{max-width:34ch;margin:0;font-size:18px}
-.bonus-line{margin:0;color:var(--sinople);font-weight:700}
-.gain{font-size:72px;line-height:1;margin:0;color:var(--or)}
-.stack{display:flex;flex-direction:column;gap:10px;align-items:center}
-.tree{font-size:104px;line-height:1}
-.tree.shake{animation:shake .32s}
-.meter{position:relative;width:100%;height:46px;background:var(--surface);border:3px solid var(--wood);border-radius:10px;overflow:hidden}
-.zone{position:absolute;top:0;bottom:0;background:var(--zone)}
-.perfect{position:absolute;top:0;bottom:0;left:33%;width:34%;background:var(--or)}
-.cursor{position:absolute;top:0;bottom:0;width:6px;margin-left:-3px;background:var(--ink);border-radius:3px}
-.feedback{font-size:32px;min-height:1.2em;margin:0;line-height:1.1}
-.count{color:var(--muted);margin:0}
-.qhead{display:flex;justify-content:space-between;width:min(100%,360px);font-size:28px;line-height:1}
-.timer{width:min(100%,360px);height:10px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
-.timer i{display:block;height:100%;width:100%;background:var(--or)}
-.holes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:min(100%,360px)}
-.hole{position:relative;aspect-ratio:1;border:0;border-radius:50%;background:var(--hole);box-shadow:inset 0 8px 14px rgba(0,0,0,.45);cursor:pointer;touch-action:manipulation;padding:0}
-.hole .em{display:block;font-size:46px;line-height:1;transform:scale(.3);opacity:0;transition:transform .1s,opacity .1s}
-.hole.up .em{transform:none;opacity:1}
-.float{position:absolute;left:50%;top:6%;transform:translateX(-50%);font-family:'Pirata One',Georgia,serif;font-size:26px;pointer-events:none;animation:float .65s forwards}
-.round{font-size:30px;margin:0;line-height:1}
-.status{font-size:20px;font-weight:700;margin:0;min-height:1.4em}
-.runes{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(100%,330px)}
-.rune{aspect-ratio:1;border:0;border-radius:20px;font-size:50px;background:var(--c);opacity:.45;transition:opacity .08s,transform .08s,box-shadow .08s;cursor:pointer;touch-action:manipulation}
-.rune.lit{opacity:1;transform:scale(1.06);box-shadow:0 0 0 5px var(--or)}
-.rune:disabled{cursor:default}
 
 .toast{position:fixed;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translate(-50%,-10px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;z-index:40;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -180,6 +143,4 @@ button.tile{font:inherit;padding:8px 6px;border:2px solid transparent}
 .fondu.on{opacity:1}
 
 @keyframes pop{40%{transform:scale(1.35)}}
-@keyframes shake{25%{transform:rotate(-7deg)}75%{transform:rotate(6deg)}}
-@keyframes float{to{transform:translate(-50%,-70%);opacity:0}}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}

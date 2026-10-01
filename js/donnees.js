@@ -1,17 +1,17 @@
 /* ================= Données du jeu =================
-   Les chiffres qu'on règle : ressources, bâtiments, mini-jeux. */
+   Les chiffres qu'on règle : ressources, bâtiments, meubles, plans de travail, outils, récolte. */
 export const RES = {
-  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", le:"Le bois"},
-  pierre: {emoji:"🪨", nom:"pierre", pluriel:"pierres", le:"La pierre"},
-  or:     {emoji:"🪙", nom:"or", pluriel:"or", le:"L'or"}
+  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", le:"Le bois", ou:"en coupant des arbres avec une hache"},
+  pierre: {emoji:"🪨", nom:"pierre", pluriel:"pierres", le:"La pierre", ou:"en minant des rochers avec une pioche"},
+  or:     {emoji:"🪙", nom:"or", pluriel:"or", le:"L'or", ou:"en vendant ton surplus au comptoir du Marché"}
 };
 /* size : côté du carré de cases dehors (en P) ; door : décalage de la porte sur la façade (en P, − vers la gauche) ;
    taille : taille de la pièce intérieure selon la bible (petite, moyenne, grande) */
 export const B = {
   chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:8, pierre:3}, stars:1, size:3, door:0, taille:"moyenne", desc:"Loge des villageois. Rapporte des étoiles."},
-  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:10, or:4}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois au Bûcheron, par niveau."},
-  carriere: {nom:"Carrière", emoji:"⛏️", cost:{bois:12, or:5}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre à la Carrière, par niveau."},
-  marche:   {nom:"Marché", emoji:"⚖️", cost:{bois:12, pierre:10}, stars:2, size:4, door:0, taille:"grande", bonus:{res:"or", pct:25}, desc:"+25 % d'or aux Runes, par niveau."},
+  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:10, or:4}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois en coupant les arbres, par niveau."},
+  carriere: {nom:"Carrière", emoji:"⛏️", cost:{bois:12, or:5}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre en minant les rochers, par niveau."},
+  marche:   {nom:"Marché", emoji:"⚖️", cost:{bois:12, pierre:10}, stars:2, size:4, door:0, taille:"grande", bonus:{res:"or", pct:25}, desc:"+25 % d'or aux ventes du comptoir, par niveau."},
   taverne:  {nom:"Taverne", emoji:"🍺", cost:{bois:18, pierre:12, or:10}, stars:3, size:4, door:0, taille:"grande", all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
   forge:    {nom:"Forge", emoji:"⚒️", cost:{pierre:22, or:8}, stars:3, size:3, door:-.4, taille:"moyenne", desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
   chateau:  {nom:"Château", emoji:"🏰", cost:{bois:45, pierre:60, or:40}, stars:10, unique:true, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."}
@@ -60,6 +60,20 @@ export const OUTILS = {
   piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", emoji:"⛏️", famille:"pioche", force:1, usage:"Servira à casser les rochers."},
   canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Servira à pêcher."},
   epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."}
+};
+
+/* Graines (étape 1.5) : un arbre abattu en donne une ; on la plante où l'on veut sur l'île.
+   plante : ce qui pousse ; pousse : temps pour devenir adulte, en secondes, avec l'horloge du téléphone
+   (à régler en jouant ; plus tard selon la météo et la saison, étape 1.10) */
+export const GRAINES = {
+  graineArbre:{nom:"Graine d'arbre", pluriel:"graines d'arbre", emoji:"🌰", plante:"tree", pousse:7200,
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre."}
+};
+/* Récolter sur l'île : l'outil qu'il faut (sa famille), le nombre de coups pour abattre, ce que donne
+   chaque coup avec un outil de force 1 (+1 par force en plus), et la graine du dernier coup.
+   Les bonus des bâtiments s'ajoutent (Scierie : +25 % de bois par niveau…). */
+export const RECOLTE = {
+  tree:{nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:2, graine:"graineArbre"}
 };
 
 /* Produits fabriqués qui ne sont pas des meubles (gardés dans la réserve) */
@@ -147,11 +161,5 @@ export const COULEURS = {
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
-export const GAMES = {
-  bucheron:{nom:"Le Bûcheron", cat:"Adresse", color:"sinople", emoji:"🪓", res:"bois", gain:"du bois",
-    rules:"Frappe quand le curseur passe dans la zone verte. Au centre doré, c'est un coup parfait. 8 coups."},
-  carriere:{nom:"La Carrière", cat:"Réflexes", color:"gueules", emoji:"⛏️", res:"pierre", gain:"de la pierre",
-    rules:"Touche les pierres avant qu'elles disparaissent. Une gemme vaut 3. Les chauves-souris te volent 2 pierres. 20 secondes."},
-  runes:{nom:"Les Runes", cat:"Mémoire", color:"azur", emoji:"🔮", res:"or", gain:"de l'or",
-    rules:"Regarde la suite de runes, puis reproduis-la. Elle s'allonge à chaque manche. Chaque manche réussie rapporte 2 pièces."}
-};
+/* Tout ce qui peut aller dans le sac ou la réserve : sa fiche (nom, emoji…) */
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || MEUBLES[k];

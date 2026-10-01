@@ -17,7 +17,7 @@ function endJoy(e){
   if(e.pointerId !== joyId) return;
   joyId = null; jv.x = jv.z = 0; knob.style.transform = "";
 }
-/* Remet le joystick au centre (quand un panneau ou un mini-jeu s'ouvre) */
+/* Remet le joystick au centre (quand un panneau s'ouvre) */
 export function resetJoy(){ jv.x = jv.z = 0; knob.style.transform = ""; }
 joy.addEventListener("pointerdown", e => { e.preventDefault(); joyId = e.pointerId; try{ joy.setPointerCapture(e.pointerId); }catch(_){} moveJoy(e); });
 joy.addEventListener("pointermove", e => { if(e.pointerId === joyId) moveJoy(e); });
@@ -26,9 +26,9 @@ joy.addEventListener("pointercancel", endJoy);
 
 export const keys = {};
 const KEYMAP = {ArrowUp:"u", KeyW:"u", KeyZ:"u", ArrowDown:"d", KeyS:"d", ArrowLeft:"l", KeyA:"l", KeyQ:"l", ArrowRight:"r", KeyD:"r"};
-const gameEl = $("#game"), wrap = $("#sheetWrap");
+const wrap = $("#sheetWrap");
 window.addEventListener("keydown", e => {
-  if(!gameEl.hidden || !wrap.hidden) return;
+  if(!wrap.hidden) return;
   if(KEYMAP[e.code]){ keys[KEYMAP[e.code]] = 1; e.preventDefault(); }
   else if(e.key === "+" || e.code === "NumpadAdd"){ setZoom(view.zoom / 1.15); saveZoom(); }
   else if(e.key === "-" || e.code === "NumpadSubtract"){ setZoom(view.zoom * 1.15); saveZoom(); }

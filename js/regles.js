@@ -21,6 +21,17 @@ export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >=
    à lui seul, le reste s'empile jusqu'à SAC.pile. sacAdd renvoie combien sont entrés dans le sac. */
 export const sacPile = k => OUTILS[k] ? 1 : SAC.pile;
 export const sacCount = k => state.sac.reduce((c, it) => c + (it.k === k ? it.n : 0), 0);
+/* Retire n objets k du sac (en commençant par la dernière pile) ; renvoie combien ont été retirés */
+export function sacTake(k, n){
+  let left = n;
+  for(let i = state.sac.length - 1; i >= 0 && left > 0; i--){
+    const it = state.sac[i];
+    if(it.k !== k) continue;
+    const m = Math.min(it.n, left); it.n -= m; left -= m;
+    if(!it.n) state.sac.splice(i, 1);
+  }
+  return n - left;
+}
 export function sacAdd(k, n){
   const pile = sacPile(k);
   let left = n;
@@ -39,6 +50,12 @@ export function upCost(t, lvl){
 export const canAfford = c => Object.entries(c).every(([r,v]) => state.res[r] >= v);
 export function pay(c){ for(const [r,v] of Object.entries(c)) state.res[r] -= v; }
 export const totalStars = () => state.buildings.reduce((s,b) => s + B[b.type].stars * b.lvl, 0);
+/* Ce que rapporte une récolte ou une vente avec les bonus des bâtiments : la part décimale devient
+   une chance d'en avoir un de plus (2 × 1,25 = 2,5 : 2 ou 3, moitié-moitié) */
+export function gain(base, r){
+  const g = base * mult(r);
+  return Math.floor(g) + (Math.random() < g % 1 ? 1 : 0);
+}
 export function mult(r){
   let m = 1;
   for(const b of state.buildings){
@@ -48,6 +65,5 @@ export function mult(r){
   }
   return m;
 }
-export const pct = r => Math.round((mult(r) - 1) * 100);
 export const costHTML = c => Object.entries(c).map(([r,v]) =>
   `<span class="chip ${state.res[r] >= v ? "" : "short"}">${RES[r].emoji} ${v}</span>`).join("");

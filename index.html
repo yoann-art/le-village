@@ -24,10 +24,10 @@
   <div class="actions" id="actions">
     <button class="act ctx" id="btn-ctx" hidden></button>
     <button class="act ctx" id="btn-plan" hidden></button>
+    <button class="act ctx" id="btn-act" hidden></button>
     <button class="act" id="btn-build">🔨 Construire</button>
     <button class="act" id="btn-deco" hidden>🪑 Décorer</button>
     <button class="act" id="btn-sac">🎒 Sac</button>
-    <button class="act" id="btn-games">🎲 Mini-jeux</button>
   </div>
   <div class="actions" id="place-actions" hidden>
     <button class="act primary" id="btn-place">Poser ici</button>
@@ -54,14 +54,6 @@
 <div class="sheet-wrap" id="sheetWrap" hidden>
   <div class="backdrop" data-close></div>
   <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
-</div>
-
-<div class="game" id="game" role="dialog" aria-modal="true" aria-labelledby="g-title" hidden>
-  <div class="g-head">
-    <div><h2 class="display" id="g-title"></h2><p id="g-sub"></p></div>
-    <button class="btn ghost" id="g-quit">Quitter</button>
-  </div>
-  <div class="g-stage" id="g-stage"></div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

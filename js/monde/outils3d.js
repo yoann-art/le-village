@@ -1,8 +1,9 @@
 /* ================= Outils en 3D =================
-   Le modèle de l'outil tenu en main, en formes simples (phase 1), un par famille d'outils.
+   Le modèle de l'outil tenu en main, en formes simples (phase 1), un par famille d'outils,
+   et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
 import { G, part } from "./formes.js";
-import { OUTILS } from "../donnees.js";
+import { OUTILS, GRAINES } from "../donnees.js";
 
 const C = {wood:0xB07A4A, dark:0x654028, stone:0x9EA3A8, metal:0x6F7884, cream:0xF4EFE6, red:0xC8643C};
 
@@ -30,10 +31,15 @@ const BUILD = {
     g.add(part(G.head, C.wood, .2, .2, .38, 0, .54, 0));                               // bout arrondi
   }
 };
-/* Le modèle d'un outil (une clé de OUTILS) */
+function graine(g){
+  g.add(part(G.head, C.cream, .6, .7, .6, 0, .08, 0));                                // sachet de toile
+  g.add(part(G.cyl, C.dark, .12, .04, .12, 0, .24, 0));                              // lien
+  g.add(part(G.head, 0x7A4E2A, .28, .3, .28, 0, .3, .02));                           // la graine qui dépasse
+}
+/* Le modèle d'un outil (une clé de OUTILS) ou d'une graine (une clé de GRAINES) */
 export function makeOutil(k){
   const g = new THREE.Group();
-  BUILD[OUTILS[k].famille](g);
+  if(GRAINES[k]) graine(g); else BUILD[OUTILS[k].famille](g);
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;
 }

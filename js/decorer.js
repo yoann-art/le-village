@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { RES, B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, GAMES } from "./donnees.js";
+import { RES, B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A } from "./donnees.js";
 import { owned, addOwned, hasAll } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -131,8 +131,6 @@ const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles m
 const craftable = type => !!FABRIQUE_A[type];
 /* Le plan de travail du bâtiment (établi de la Scierie…) : il se construit avec des ressources
    (demande de Yo, pas gratuit), puis se pose où l'on veut, comme un meuble. Un seul par bâtiment. */
-const WHERE = {};                       // ressource → mini-jeu qui la donne (bois : le Bûcheron…)
-for(const g of Object.values(GAMES)) WHERE[g.res] = g.nom;
 function planHTML(b){
   const a = ATELIERS[b.type];
   if(!a) return "";
@@ -144,7 +142,7 @@ function planHTML(b){
       <div class="bt"><span class="bn">${m.nom}</span>
         <p>${built ? `Déjà construit${e} : touche-${pr} dans la pièce pour ${pr} déplacer.` : `Pour ${a.pour}. Un seul par bâtiment.`}</p>
         ${built ? "" : `<div>${chips}</div>`}
-        ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} ${RES[k].le} s'obtient avec « ${WHERE[k] || "les mini-jeux"} », dans Mini-jeux.`).join(" ")}</p>`}</div>
+        ${built || ok ? "" : `<p>${missing.map(k => `${RES[k].emoji} ${RES[k].le} s'obtient ${RES[k].ou}.`).join(" ")}</p>`}</div>
       <button class="btn primary" data-meuble="${a.meuble}" ${ok ? "" : "disabled"}>${built ? `Construit${e}` : "Construire"}</button></div>`;
 }
 /* « à l'établi », « au comptoir », « à la table de taille » */

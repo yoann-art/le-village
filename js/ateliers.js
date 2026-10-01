@@ -8,7 +8,7 @@
 import { $ } from "./outils.js";
 import { RES, B, MEUBLES, PRODUITS, ATELIERS, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { owned, addOwned, hasAll, queueSlots, sacAdd, sacCount } from "./regles.js";
+import { owned, addOwned, hasAll, queueSlots, sacAdd, sacCount, gain } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
@@ -59,6 +59,7 @@ function livrer(){
     const q = b.atelier && b.atelier.queue;
     while(q && q.length && q[0].end <= now){
       const j = q.shift();
+      if(ATELIERS[b.type].vente) j.n = gain(j.n, j.out);   // une vente : le bonus du Marché (+25 % d'or par niveau)
       const inSac = OUTILS[j.out] ? sacAdd(j.out, j.n) : 0;
       if(inSac) barreAuto(j.out);                      // un nouvel outil prend une case rapide libre
       if(j.n > inSac) addOwned(j.out, j.n - inSac);

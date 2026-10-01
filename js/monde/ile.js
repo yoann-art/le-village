@@ -4,6 +4,7 @@ import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile } from "../regles.js";
+import { GRAINES } from "../donnees.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P */
 export const N = 40, H = N / 2;
@@ -55,6 +56,9 @@ state.buildings.forEach(b => {
   const [x, z] = doorTile(b.type, b.x, b.z);
   if(inb(x, z)) map.obj[idx(x, z)] = null;
 });
+/* Ce que le joueur a changé sur l'île (étape 1.5) : state.ile = {case: {o, plante?}} ; o = "tree", "rock"
+   ou null (enlevé) ; plante = l'heure où il a été planté (il pousse avec l'horloge du téléphone) */
+for(const [i, c] of Object.entries(state.ile)) map.obj[+i] = c.o;
 
 /* Terrain : dalle d'herbe ou de sable sur un socle de terre */
 {
@@ -81,21 +85,59 @@ const seabed = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90), mat(0x2F93AE)
 seabed.rotation.x = -Math.PI/2; seabed.position.y = -1.05;
 scene.add(water, seabed);
 
-/* Arbres (3 à 4 P de haut) et rochers (½ à 1 P) */
-map.obj.forEach((o,i) => {
-  if(!o) return;
-  const r = ((i*9301 + 49297) % 233280) / 233280;
+/* Arbres (3 à 4 P de haut) et rochers (½ à 1 P), un modèle par case */
+const POUSSE = {};                                   // ce qui pousse → temps pour devenir adulte (s)
+for(const g of Object.values(GRAINES)) POUSSE[g.plante] = g.pousse;
+/* Où en est ce qui a été planté : de 0 (graine plantée) à 1 (adulte) ; ce qui était là au départ est adulte */
+export function growth(i){
+  const c = state.ile[i];
+  if(!c || !c.plante || !POUSSE[c.o]) return 1;
+  return Math.min(1, (Date.now() - c.plante) / (POUSSE[c.o] * 1000));
+}
+/* Temps restant avant l'âge adulte, en secondes */
+export const growthLeft = i => { const c = state.ile[i]; return c && c.plante ? Math.max(0, POUSSE[c.o] * (1 - growth(i))) : 0; };
+/* Étape de pousse : 0 pousse, 1 jeune plant, 2 adulte */
+const stageOf = i => { const g = growth(i); return g < .5 ? 0 : g < 1 ? 1 : 2; };
+
+const meshes = new Map(), stages = new Map();
+function buildObj(i){
+  const o = map.obj[i], r = ((i*9301 + 49297) % 233280) / 233280;
   const g = new THREE.Group();
   if(o === "tree"){
-    g.add(part(G.trunk, 0x8A5A3B, 2.2,2.4,2.2, 0,.66,0));
-    g.add(part(G.leaf, r < .5 ? 0x3E9D50 : 0x479F46, 2,2,2, 0,1.95,0));
-    g.add(part(G.leaf2, 0x57B25C, 2,2,2, .1,2.75,.05));
-    g.scale.setScalar(.9 + r*.25);
+    const st = stageOf(i);
+    stages.set(i, st);
+    if(st === 0){                                    // une pousse
+      g.add(part(G.trunk, 0x8A5A3B, .6,.5,.6, 0,.14,0));
+      g.add(part(G.leaf2, 0x6CC46A, .9,.9,.9, 0,.42,0));
+    } else {
+      g.add(part(G.trunk, 0x8A5A3B, 2.2,2.4,2.2, 0,.66,0));
+      g.add(part(G.leaf, r < .5 ? 0x3E9D50 : 0x479F46, 2,2,2, 0,1.95,0));
+      g.add(part(G.leaf2, 0x57B25C, 2,2,2, .1,2.75,.05));
+      g.scale.setScalar((.9 + r*.25) * (st === 1 ? .5 : 1));   // jeune plant : moitié de la taille
+    }
   } else {
     g.add(part(G.dode, r < .5 ? 0x9EA3A8 : 0x8F959B, .9,.7,.9, 0,.25,0));
     g.scale.setScalar(.8 + r*.4);
   }
   g.rotation.y = r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
-  scene.add(g);
-});
+  scene.add(g); meshes.set(i, g);
+}
+/* Refait le modèle d'une case (après une coupe, une plantation, une pousse) */
+function refreshObj(i){
+  const old = meshes.get(i);
+  if(old){ scene.remove(old); meshes.delete(i); stages.delete(i); }
+  if(map.obj[i]) buildObj(i);
+}
+export const objMesh = i => meshes.get(i);
+/* Change ce qu'il y a sur une case et le garde dans la partie (plante : heure de plantation) */
+export function setObj(i, o, plante){
+  map.obj[i] = o;
+  state.ile[i] = plante ? {o, plante} : {o};
+  refreshObj(i);
+}
+map.obj.forEach((o, i) => { if(o) buildObj(i); });
+/* Ce qui a été planté grandit : on regarde régulièrement s'il a changé d'étape */
+setInterval(() => {
+  for(const [i, c] of Object.entries(state.ile)) if(c.plante && map.obj[+i] && stages.get(+i) !== stageOf(+i)) refreshObj(+i);
+}, 10000);

@@ -9,7 +9,7 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 ## Les documents de référence
 
 - `bible.pdf` : le plan de production complet, exporté depuis le document de suivi. La partie « Phase 0 » est la bible du jeu, validée par Yo : toutes les règles du monde y sont. En cas de doute, la bible fait foi. Ne jamais contredire une décision de la bible sans en parler d'abord à Yo. Elle reste sur le PC : le dépôt GitHub est public, les PDF n'y sont pas envoyés.
-- Le jeu : `index.html` à la racine, `css/style.css` et le code découpé dans `js/` (voir « Organisation du code »). Il contient l'île en 3D, le joystick, le placement de 7 bâtiments à 3 niveaux et 3 mini-jeux (Bûcheron, Carrière, Runes).
+- Le jeu : `index.html` à la racine, `css/style.css` et le code découpé dans `js/` (voir « Organisation du code »). Il contient l'île en 3D, le joystick, le placement de 7 bâtiments à 3 niveaux, les intérieurs décorables, les plans de travail, le sac, les outils et la récolte. Les 3 mini-jeux du prototype (Bûcheron, Carrière, Runes) ont été retirés le 1er octobre 2026 à la demande de Yo (dans l'historique git, dossier `js/minijeux/`, pour l'étape 1.11).
 - Fiche « Prompts Gemini : bâtiments » (doc Claude, https://claude.ai/artifact/Xw7sQ64LuC5DaXKm9vwEZE) : la phrase de style de la bible + une ligne par bâtiment, pour les 20 bâtiments, avec une case « Image générée ». Tailles des lieux de départ proposées, à valider par Yo. Quand Yo donne une image de référence, s'en servir pour construire le modèle en code. Fiche « Prompts Gemini : meubles » (doc Claude, https://claude.ai/artifact/Fw8RSs4zG5zCyTbG6ciJwU) : les 14 meubles et les 7 plans de travail, même forme (ligne de meuble de la bible : nom, matériau, gabarit, détail). Version pour le téléphone : `prompts.html` à la racine (https://yoann-art.github.io/le-village/prompts.html), un onglet par famille (Bâtiments, Meubles), un bouton Copier par prompt, cases cochées gardées sur l'appareil ; garder la page et les fiches d'accord. Décidé avec Yo le 1er octobre 2026 : une fiche de prompts par famille (faune et flore, personnage, intérieurs, véhicules…), faite au fur et à mesure, quand la famille arrive dans le jeu ; plus tard, une image par niveau pour les bâtiments.
 - `essais/scierie-essai.html` : l'essai validé de la Scierie, construite en code à partir de formes simples. C'est la référence de style pour tout le décor : formes arrondies, palette de la bible, ombrage toon commun à tous les modèles.
 
@@ -25,7 +25,7 @@ Yo, l'auteur du jeu, n'est pas développeur. Il travaille en français, pas à p
 - Toujours la dernière version : `sw.js` (service worker à la racine) redemande chaque fichier du site au serveur (`cache: "no-cache"`) ; `js/miseajour.js` l'enregistre et, quand on revient sur le jeu resté ouvert, recharge la page si le numéro de `js/version.js` en ligne a changé (une seule fois par version). Garder la ligne `export const VERSION = "…";` telle quelle : elle est lue par ce contrôle.
 - `js/donnees.js` : les chiffres réglables (ressources, bâtiments, mini-jeux). `js/regles.js` : coûts, niveaux, bonus. `js/sauvegarde.js` : partie gardée dans le navigateur (clé `le-village-v2-ile`, format v3 ; les parties v2 sont reprises avec leurs bâtiments remboursés).
 - `js/monde/` : la 3D. `formes.js` est la boîte à outils commune (matières, formes) : c'est là que viendra l'ombrage toon de la Scierie pour tous les modèles.
-- `js/minijeux/` : un fichier par mini-jeu, plus `minijeux.js` (menu, écran, récompense).
+- Récolte sur l'île : `js/recolte.js` (bouton d'action `#btn-act` devant un arbre : « Couper », coups, chute, graine ; une graine en main : « Planter » ; cadeau de départ d'une hache et d'une pioche, une fois, `state.cadeau`). Ce que le joueur a changé sur l'île : `state.ile = {case: {o, plante?}}`, appliqué sur la carte au chargement (`js/monde/ile.js` : un modèle par case, `setObj`, `growth`, étapes de pousse vérifiées toutes les 10 s). `GRAINES`, `RECOLTE` et `objet(k)` dans `donnees.js` ; `gain` (bonus des bâtiments, part décimale = chance), `sacTake` dans `regles.js`.
 
 ## Tester en local (notes de travail de Claude)
 
@@ -48,7 +48,15 @@ Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 
 
 Étape 1.2 (décorer l'intérieur) terminée et validée par Yo le 1er octobre 2026 (v1.2.4).
 
-En cours : étape 1.5, récolter sur l'île (plan proposé à Yo le 1er octobre 2026, en attente de son accord).
+En cours : étape 1.5, récolter, planter et la mine, plan validé par Yo le 1er octobre 2026 :
+- Décidé par Yo : les mini-jeux du prototype sont retirés pour l'instant (le geste avec qualité de la bible reviendra à l'étape 1.11) ; l'or vient des ventes au comptoir. Bonus des bâtiments déplacés : Scierie +25 % de bois en coupant, Carrière +25 % de pierre en minant, Marché +25 % d'or aux ventes, par niveau.
+- Devant un arbre, un rocher, des herbes, un buisson : un bouton d'action à gauche ; l'outil du sac (ou de la réserve) est pris en main tout seul.
+- Arbre : hache, 3 coups (2 bois par coup, +1 par force d'outil en plus), il tombe et disparaît, 1 graine d'arbre. Graine : en main, « Planter » sur une case d'herbe libre (pas devant une porte, jamais collée à un autre arbre) ; pousse, jeune plant, adulte en 2 h.
+- Rochers de l'île : pioche, 3 coups, pierre ; ils ne reviennent jamais. La mine : entrée sur l'île (lieu paisible à part, comme un intérieur), rochers renouvelés chaque jour (pierre, veines de cuivre…), on peut rapporter un rocher dans le sac pour le reposer sur l'île ; le cuivre ouvre les outils en cuivre de l'enclume. Minerais et cristaux rares : dans la grotte dangereuse (étape 1.8).
+- Herbes hautes : cueillir 1 fois = fibres, repoussent en 15 min ; 2 fois de suite = fibres + 1 graine, ne repoussent pas (graine → herbes en 30 min). Buisson de baies : cueillir = baies, buisson vide ; l'arroser (arrosoir, nouvel outil à l'établi) = baies de retour 1 h après ; hache, 2 coups = 1 graine (graine → buisson en 1 h). Les fibres remplacent les ingrédients provisoires des tapis et de la canne à pêche.
+- Plus tard (étape 1.10) : repousse et plantation selon la météo et la saison. Idée de Yo notée : des sons pour chaque action.
+- Cadeau de départ (pour ne pas bloquer une nouvelle partie : la hache se fabrique avec du bois) : une hache et une pioche en pierre, une fois, si on n'en a pas.
+- Morceaux : 1. couper et planter les arbres, sans les mini-jeux (v1.5.1) : fait, à valider par Yo ; 2. cueillir : herbes hautes, buissons de baies, arrosoir (v1.5.2) ; 3. miner les rochers de l'île (v1.5.3) ; 4. la mine (v1.5.4).
 
 Étape 1.4 (inventaire et outils) terminée et validée par Yo le 1er octobre 2026 (v1.4.3). Ce qui a été fait :
 - Écran « 🎒 Sac » (`js/sac.js`, bouton à gauche) à deux onglets : Sac (ce que le personnage porte, `state.sac = [{k, n}]`, 12 emplacements, piles de 30 : `SAC` dans `donnees.js` ; un outil prend un emplacement) et Réserve (tout ce que garde le village, sans limite).
@@ -100,5 +108,6 @@ En cours : étape 1.5, récolter sur l'île (plan proposé à Yo le 1er octobre 
 - Tout se mesure en P, la hauteur du personnage (trois têtes de haut). Une porte fait 1,5 P, un étage 2 P.
 - Placement des objets libre, avec un aimantage facultatif. Changé par Yo le 1er octobre 2026 pour les meubles : ils s'alignent toujours sur une grille de ½ P, sans aimant ni placement au centimètre.
 - Aucune jauge d'énergie, aucune limite qui bloque une longue session. Le temps réel rythme la journée sans jamais bloquer.
+- Une nouvelle partie ne doit jamais être bloquée : toujours vérifier qu'on peut obtenir la première hache, la première pioche, le premier bois, la première pierre et le premier or.
 - Le village est un refuge : le danger reste dehors, dans les zones sauvages et les grottes.
-- Les mini-jeux sont le geste d'une activité : courts, jamais bloquants (rater donne une qualité moindre, jamais rien) et automatisables une fois maîtrisés.
+- Les mini-jeux sont le geste d'une activité : courts, jamais bloquants (rater donne une qualité moindre, jamais rien) et automatisables une fois maîtrisés. (Mis de côté par Yo le 1er octobre 2026 : retour prévu à l'étape 1.11.)

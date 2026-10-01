@@ -1,16 +1,18 @@
 /* ================= Les cases rapides =================
-   Trois cases au-dessus du joystick (demande de Yo) : les outils à portée de main, sans ouvrir le sac.
+   Trois cases au-dessus du joystick (demande de Yo) : les outils (et les graines) à portée de main, sans ouvrir le sac.
    Toucher une case prend son outil en main ; la retoucher le lâche. Toucher une case vide, ou appuyer
    longtemps sur une case, ouvre le choix de son outil. Sur ordinateur : touches 1, 2 et 3.
    state.barre = [clé d'outil ou null, ×3] ; state.main = l'outil tenu. Une case ne garde qu'un outil du sac. */
 import { $ } from "./outils.js";
-import { OUTILS } from "./donnees.js";
+import { OUTILS, GRAINES, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacCount } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
 import { openSheet, closeSheet, toast, wrap } from "./interface.js";
 
 const bar = $("#barre");
+/* Ce qui se tient en main : un outil, ou une graine qu'on va planter */
+export const utilisable = k => !!(OUTILS[k] || GRAINES[k]);
 
 /* Prend un outil en main (une clé de OUTILS), ou vide la main (null) */
 export function hold(k){
@@ -19,7 +21,7 @@ export function hold(k){
 }
 export function toggleHold(k){
   if(state.main === k){ hold(null); toast("Mains libres"); }
-  else { hold(k); toast(`${OUTILS[k].emoji} ${OUTILS[k].nom} en main`); }
+  else { hold(k); toast(`${objet(k).emoji} ${objet(k).nom} en main`); }
 }
 /* Après un changement du sac : une case, ou la main, qui garde un outil sorti du sac se vide */
 export function syncBarre(){
@@ -29,13 +31,13 @@ export function syncBarre(){
 }
 /* Un outil arrive dans le sac : il prend la première case vide */
 export function barreAuto(k){
-  if(!OUTILS[k] || state.barre.includes(k)) return;
+  if(!utilisable(k) || state.barre.includes(k)) return;
   const i = state.barre.indexOf(null);
   if(i >= 0){ state.barre[i] = k; renderBarre(); }
 }
 export function renderBarre(){
   bar.innerHTML = state.barre.map((k, i) => k
-    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${OUTILS[k].nom}${state.main === k ? ", en main" : ""}">${OUTILS[k].emoji}</button>`
+    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}">${objet(k).emoji}${GRAINES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}</button>`
     : `<button class="case vide" data-case="${i}" aria-label="Case vide : choisir un outil">+</button>`).join("");
 }
 
@@ -43,11 +45,11 @@ export function renderBarre(){
 let chooseFor = 0;
 function chooser(i){
   chooseFor = i;
-  const tools = [...new Set(state.sac.map(it => it.k).filter(k => OUTILS[k]))];
+  const tools = [...new Set(state.sac.map(it => it.k).filter(utilisable))];
   openSheet(`<div class="sh-head"><h2 class="display">Case ${i + 1}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Choisis l'outil de cette case. Touche ensuite la case pour le prendre en main, et encore une fois pour le lâcher.</p>` +
-    (tools.length ? tools.map(k => `<div class="brow"><div class="be" aria-hidden="true">${OUTILS[k].emoji}</div>
-        <div class="bt"><span class="bn">${OUTILS[k].nom}</span><p>${OUTILS[k].usage}</p></div>
+    (tools.length ? tools.map(k => `<div class="brow"><div class="be" aria-hidden="true">${objet(k).emoji}</div>
+        <div class="bt"><span class="bn">${objet(k).nom}</span><p>${objet(k).usage}</p></div>
         <button class="btn primary" data-case-mettre="${k}" ${state.barre[i] === k ? "disabled" : ""}>${state.barre[i] === k ? "Déjà ici" : "Choisir"}</button></div>`).join("")
       : `<p class="hint-box">Ton sac n'a pas d'outil. Fabrique-les à l'établi de la Scierie : ils arrivent dans ton sac.</p>`) +
     (state.barre[i] ? `<button class="btn ghost" data-case-vider style="margin-top:10px">Vider la case</button>` : ""));
@@ -90,7 +92,7 @@ bar.addEventListener("click", e => {
 /* Sur ordinateur : 1, 2 et 3 */
 window.addEventListener("keydown", e => {
   const i = ["1", "2", "3"].indexOf(e.key);
-  if(i < 0 || !wrap.hidden || $("#joy").hidden || !$("#game").hidden || !state.barre[i]) return;
+  if(i < 0 || !wrap.hidden || $("#joy").hidden || !state.barre[i]) return;
   toggleHold(state.barre[i]);
 });
 
