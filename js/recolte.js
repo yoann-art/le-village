@@ -18,6 +18,7 @@
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
+import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, sacAdd, sacTake, sacPlace, gain, doorTile } from "./regles.js";
@@ -61,6 +62,10 @@ function target(){
     const [x, z] = dist ? frontTile(dist) : own;
     if(inb(x, z) && solAt(idx(x, z))) return {i: idx(x, z), x, z, sol: solAt(idx(x, z))};
   }
+  /* Une graine, un coffre ou un rocher en main : la case juste devant d'abord, si elle est libre */
+  const [fx, fz] = frontTile(.8);
+  if((GRAINES[state.main] || POSABLES[state.main]) && inb(fx, fz) && !map.obj[idx(fx, fz)] && !occ.has(idx(fx, fz)))
+    return {i: idx(fx, fz), x: fx, z: fz, o: null};
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
   for(const dist of [.8, 1.3]){
     const [x, z] = frontTile(dist);
@@ -144,9 +149,27 @@ function actionOf(t){
       : {label: "🪨 Poser le rocher", run: () => poser(t)};
   return null;
 }
+/* La case où l'on va planter ou poser (demande de Yo) : en surbrillance, jaune avec un contour blanc si c'est
+   possible, rouge sinon (le jaune se voit sur l'herbe comme sur le sable) */
+const fond = new THREE.MeshBasicMaterial({color: 0xFFE27A, transparent: true, opacity: .6, depthWrite: false});
+const bord = new THREE.MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: .95, depthWrite: false});
+const surbrillance = new THREE.Group();
+surbrillance.add(new THREE.Mesh(new THREE.PlaneGeometry(.92, .92), fond));
+const cadre = new THREE.Mesh(new THREE.RingGeometry(.6, .69, 4, 1), bord);
+cadre.rotation.z = Math.PI/4; cadre.position.z = .002; surbrillance.add(cadre);
+surbrillance.rotation.x = -Math.PI/2; surbrillance.visible = false; scene.add(surbrillance);
+function showCase(t){
+  const k = state.main, pose = t && !t.o && !t.sol && !t.eau && t.x !== undefined && (GRAINES[k] || POSABLES[k]);
+  if(!pose){ if(surbrillance.visible) surbrillance.visible = false; return; }
+  const ok = !(GRAINES[k] ? plantProblem(t, GRAINES[k].plante) : poseProblem(t.i));
+  fond.color.setHex(ok ? 0xFFE27A : 0xE4776C); bord.color.setHex(ok ? 0xFFFFFF : 0xFFD1CC);
+  surbrillance.position.set(centerOf(t.x), .03, centerOf(t.z));
+  surbrillance.visible = true;
+}
 export function updateRecolte(dt, active){
   if(anim) animate(dt);
   cur = active && !anim ? target() : null;
+  showCase(cur);
   act = cur && actionOf(cur);
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;
