@@ -53,6 +53,8 @@ function genMap(seed){
   return {type, obj};
 }
 export const map = genMap(state.seed);
+/* L'eau d'une case (étape 1.6, la pêche) : l'étang, au nord-est de la place du village, ou la mer */
+export const lieuEau = i => { const c = (N-1)/2; return Math.hypot(i % N - (c+8), Math.floor(i / N) - (c-7)) < 3.3 ? "etang" : "mer"; };
 /* Herbes hautes et buissons de baies (étape 1.5) : posés après coup, avec leur propre tirage, pour ne pas
    déplacer les arbres et les rochers des parties déjà commencées ; jamais sous un bâtiment déjà posé */
 {

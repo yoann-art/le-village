@@ -1,13 +1,14 @@
 /* ================= Vérification automatique =================
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
-   couper un arbre, entrer dans la mine. Lancée à chaque envoi sur GitHub par
+   couper un arbre, entrer dans la mine, pêcher. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B } from "../js/donnees.js";
+import { B, POISSONS, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, owned, sizeOf } from "../js/regles.js";
 import { map, idx, N, H, centerOf } from "../js/monde/ile.js";
+import { occ } from "../js/monde/batiments.js";
 import { player, placePlayer, updatePlayer, R } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -110,6 +111,26 @@ export async function verifier(){
     const n = Object.keys(state.mine.rocks).length;
     await sortir();
     return `${n} rochers aujourd'hui`;
+  });
+  await etape("Pêcher", async () => {
+    sacAdd("canneBois", 1); hold(null);
+    let t = null;
+    for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
+      const i = idx(x, z), s = idx(x, z + 1);
+      if(map.type[i] !== "water" && !map.obj[i] && !occ.has(i) && !state.sol[i] && map.type[s] === "water"){ t = [x, z]; break; }
+    }
+    if(!t) throw new Error("aucun bord de l'eau");
+    placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
+    if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    let k = 0;
+    while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+    if(k >= 400) throw new Error("le poisson ne mord jamais");
+    $("#btn-act").click();
+    const p = state.sac.find(it => POISSONS[it.k]);
+    if(!p) throw new Error("pas de poisson dans le sac");
+    frames(40);
+    return `${objet(p.k).nom.toLowerCase()}, mordu au bout de ${(k * .05).toFixed(1)} s`;
   });
   return {ok, erreurs};
 }

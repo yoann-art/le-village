@@ -25,6 +25,7 @@ const BUILD = {
     g.add(rod);
     g.add(part(G.cyl, C.dark, .09, .05, .09, 0, .02, .04));                            // moulinet
     g.add(part(G.cyl, C.cream, .008, .3, .008, 0, .7, .03));                           // fil
+    const bout = new THREE.Object3D(); bout.name = "bout"; bout.position.set(0, .84, 0); g.add(bout);   // le bout de la gaule : le fil de la pêche en part
   },
   arrosoir(g){
     g.add(part(G.cyl, C.wood, .28, .26, .28, 0, .02, .1));                            // le seau, tenu par son anse

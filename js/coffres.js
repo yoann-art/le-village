@@ -4,7 +4,7 @@
    (en main : « Poser le coffre »), et s'ouvre en s'en approchant (« Ouvrir le coffre »). On peut en avoir
    plusieurs pour trier. Tout s'y range, même les outils et les graines.
    state.coffres = [{id, i (la case), items: [{k, n}]}] ; sur la carte, la case porte o = "coffre" et l'id. */
-import { COFFRE, SAC, OUTILS, GRAINES, POSABLES, objet } from "./donnees.js";
+import { COFFRE, SAC, OUTILS, GRAINES, POSABLES, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { slotsAdd, slotsTake, sacAdd, sacTake, doorTile } from "./regles.js";
 import { map, inb, N, tileOf, setObj, setEtat } from "./monde/ile.js";
@@ -49,7 +49,7 @@ const slots = (list, cap, attr) => Array.from({length: cap}, (_, j) => {
   const it = list[j];
   if(!it) return `<div class="slot empty" aria-label="Emplacement vide"></div>`;
   const m = objet(it.k);
-  return `<button class="slot" ${attr}="${j}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${m.emoji}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}</button>`;
+  return `<button class="slot" ${attr}="${j}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${icone(it.k)}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}</button>`;
 }).join("");
 function render(){
   const co = open;

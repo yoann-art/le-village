@@ -60,6 +60,10 @@ button{font:inherit;color:inherit}
 .act.primary{background:var(--sinople);color:var(--on-sinople)}
 .act.ctx{background:#E2B24D;color:#1C2230}
 .act:disabled{opacity:.45;cursor:not-allowed}
+.act.ferrer{background:#E4574C;color:#fff;animation:ferrer .3s ease-in-out infinite alternate}
+@keyframes ferrer{to{transform:scale(1.1)}}
+.ico-poisson{width:1.35em;height:.85em;vertical-align:middle}
+.ico-poisson.legende{filter:drop-shadow(0 0 3px #F2C14E)}
 /* Barre du mode décoration */
 .deco-bar{position:absolute;left:10px;right:10px;bottom:30px;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px}
 .deco-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}

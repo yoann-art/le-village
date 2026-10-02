@@ -6,7 +6,7 @@
    Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
    on peut le prendre en main (outil, graine, coffre à poser). */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, SAC, COFFRE, objet } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, SAC, COFFRE, objet, icone } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
 import { openSheet, wrap } from "./interface.js";
@@ -23,10 +23,10 @@ function sacHTML(){
     const it = items[i];
     if(!it) return `<div class="slot empty" aria-label="Emplacement vide"></div>`;
     const m = info(it.k);
-    return `<button class="slot${pick === i ? " on" : ""}" data-slot="${i}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${m.emoji}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}${jauge(it.k)}</button>`;
+    return `<button class="slot${pick === i ? " on" : ""}" data-slot="${i}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${icone(it.k)}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}${jauge(it.k)}</button>`;
   }).join("");
   const it = typeof pick === "number" && items[pick];
-  const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${info(it.k).emoji}</span>
+  const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(it.k)}</span>
       <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}<p>Pour le ranger, ouvre un coffre de réserve.</p></div>
       ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button></div>` : ""}</div>`
     : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length ? "Touche un objet pour le choisir." : "Ce que tu récoltes et fabriques arrive ici."}</p>`;
@@ -39,7 +39,7 @@ function tiles(keys){
   const have = keys.filter(k => coffresCount(k) > 0);
   if(!have.length) return `<p class="muted" style="margin:2px 0 8px">Aucun.</p>`;
   return `<div class="res-grid">${have.map(k => { const m = info(k);
-    return `<div class="tile"><div class="te" aria-hidden="true">${m.emoji}</div><div class="tn">${coffresCount(k)}</div><div class="tl">${cap(m.nom)}</div></div>`; }).join("")}</div>`;
+    return `<div class="tile"><div class="te" aria-hidden="true">${icone(k)}</div><div class="tn">${coffresCount(k)}</div><div class="tl">${cap(m.nom)}</div></div>`; }).join("")}</div>`;
 }
 function coffresHTML(){
   const n = state.coffres.length;
@@ -49,6 +49,7 @@ function coffresHTML(){
     <h3 style="margin:8px 0 4px">Produits</h3>${tiles(Object.keys(PRODUITS))}
     <h3 style="margin:8px 0 4px">Outils</h3>${tiles([...Object.keys(OUTILS), ...Object.keys(POSABLES)])}
     <h3 style="margin:8px 0 4px">Graines</h3>${tiles(Object.keys(GRAINES))}
+    <h3 style="margin:8px 0 4px">Poissons</h3>${tiles(Object.keys(POISSONS))}
     <h3 style="margin:8px 0 4px">Meubles</h3>${tiles(MEUBLES_ORDER)}`;
 }
 

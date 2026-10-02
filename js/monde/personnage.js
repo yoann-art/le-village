@@ -33,6 +33,8 @@ export function holdTool(k){
   if(k){ held = makeOutil(k); hand.add(held); }
   hand.visible = !!k;
 }
+/* Penche la main (et l'outil) vers l'avant : rx en radians ; sans rien, la position normale (la pêche s'en sert) */
+export function pencheMain(rx){ hand.rotation.x = rx === undefined ? .35 : rx; }
 player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P
 scene.add(player);
 

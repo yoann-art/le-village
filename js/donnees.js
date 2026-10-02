@@ -75,7 +75,7 @@ export const POSABLES = {
 export const OUTILS = {
   hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", emoji:"🪓", famille:"hache", force:1, usage:"Servira à couper les arbres."},
   piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", emoji:"⛏️", famille:"pioche", force:1, usage:"Servira à casser les rochers."},
-  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Servira à pêcher."},
+  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
   epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."},
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
@@ -123,6 +123,55 @@ export const SOL = {
 export const SOL_RETOUR = 600;
 /* La mine : combien de rochers chaque jour, dont combien à veines de cuivre (à régler en jouant) */
 export const MINE = {rochers:10, cuivre:3};
+
+/* La pêche (étape 1.6, liste validée par Yo le 2 octobre 2026) : des espèces réelles de l'île, chacune avec
+   son lieu (« etang » ou « mer »), ses saisons, ses heures (voir HEURES) et sa rareté, selon la vraie
+   horloge du téléphone (hémisphère nord en attendant le choix de l'étape 1.10). À toute heure et en toute
+   saison, il reste au moins un poisson commun à chaque endroit. une : le poisson est féminin (« une perche ») ;
+   taille : de… à… en cm ; prix : en or au comptoir (étape 1.6, morceau 2) ; couleur et forme : son dessin. */
+const TOUTE = ["printemps", "ete", "automne", "hiver"];
+export const POISSONS = {
+  gardon:  {nom:"Gardon", pluriel:"gardons", lieu:"etang", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[10, 30], prix:1, couleur:0xB8C4CC},
+  perche:  {nom:"Perche", pluriel:"perches", une:true, lieu:"etang", rarete:"commun", saisons:["printemps", "ete", "automne"], heures:"jour", taille:[15, 40], prix:1, couleur:0x8DA35A},
+  carpe:   {nom:"Carpe", pluriel:"carpes", une:true, lieu:"etang", rarete:"peuCommun", saisons:["printemps", "ete", "automne"], heures:"toujours", taille:[30, 80], prix:3, couleur:0xB08A4A, forme:"rond"},
+  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86},
+  brochet: {nom:"Brochet", pluriel:"brochets", lieu:"etang", rarete:"rare", saisons:["automne", "hiver"], heures:"aubeSoir", taille:[50, 110], prix:8, couleur:0x6E7E4A, forme:"fin"},
+  anguille:{nom:"Anguille", pluriel:"anguilles", une:true, lieu:"etang", rarete:"rare", saisons:["ete", "automne"], heures:"nuit", taille:[40, 100], prix:8, couleur:0x5B5642, forme:"long"},
+  carpeOr: {nom:"Vieille Carpe d'or", pluriel:"Vieilles Carpes d'or", une:true, lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"aube", taille:[90, 130], prix:30, couleur:0xF2C14E, forme:"rond"},
+  sardine: {nom:"Sardine", pluriel:"sardines", une:true, lieu:"mer", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[12, 22], prix:1, couleur:0x9FB8D0, forme:"fin"},
+  maquereau:{nom:"Maquereau", pluriel:"maquereaux", lieu:"mer", rarete:"commun", saisons:["printemps", "ete"], heures:"toujours", taille:[25, 45], prix:1, couleur:0x4F7FA0, forme:"fin"},
+  bar:     {nom:"Bar", pluriel:"bars", lieu:"mer", rarete:"peuCommun", saisons:TOUTE, heures:"aubeSoir", taille:[35, 80], prix:3, couleur:0xA9B2B8},
+  dorade:  {nom:"Dorade", pluriel:"dorades", une:true, lieu:"mer", rarete:"peuCommun", saisons:["ete", "automne"], heures:"jour", taille:[25, 50], prix:3, couleur:0xC9B98A, forme:"rond"},
+  congre:  {nom:"Congre", pluriel:"congres", lieu:"mer", rarete:"rare", saisons:TOUTE, heures:"nuit", taille:[80, 180], prix:8, couleur:0x5A5A5E, forme:"long"},
+  thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", rarete:"rare", saisons:["ete"], heures:"jour", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond"}
+};
+/* Les moments de la journée, en heures du téléphone : [de, à[ */
+export const HEURES = {
+  toujours:{nom:"à toute heure", h:[[0, 24]]},
+  jour:{nom:"de jour (7 h – 19 h)", h:[[7, 19]]},
+  nuit:{nom:"la nuit (21 h – 5 h)", h:[[21, 24], [0, 5]]},
+  matinSoir:{nom:"le matin et le soir (5 h – 9 h, 17 h – 21 h)", h:[[5, 9], [17, 21]]},
+  aubeSoir:{nom:"à l'aube et le soir (5 h – 8 h, 18 h – 21 h)", h:[[5, 8], [18, 21]]},
+  aube:{nom:"à l'aube (5 h – 8 h)", h:[[5, 8]]}
+};
+export const SAISONS = {printemps:"printemps", ete:"été", automne:"automne", hiver:"hiver"};
+export const RARETES = {commun:"commun", peuCommun:"peu commun", rare:"rare", legendaire:"légendaire"};
+/* Le geste : attente avant la touche (de… à…, en secondes), le temps pour ferrer (fenetre), et la chance de
+   chaque rareté parmi les poissons présents (poids) ; à régler en jouant */
+export const PECHE = {attente:[3, 10], fenetre:1, poids:{commun:60, peuCommun:28, rare:10, legendaire:1}};
+/* Le dessin d'un poisson, pour le sac, les coffres et le carnet (à la place d'un emoji, pour les reconnaître) */
+const hex = c => "#" + c.toString(16).padStart(6, "0");
+const EN = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
+export const quandPoisson = p => `${p.saisons.length === 4 ? "toute l'année" : p.saisons.map(s => EN[s]).join(", ").replace(/, ([^,]*)$/, " et $1")}, ${HEURES[p.heures].nom}`;
+for(const p of Object.values(POISSONS)){
+  p.usage = `Poisson ${RARETES[p.rarete]} ${p.lieu === "mer" ? "de mer" : "de l'étang"} : ${quandPoisson(p)}. De ${p.taille[0]} à ${p.taille[1]} cm.`;
+  const ry = {long:3, fin:4.4, rond:7}[p.forme] || 5.6, rx = p.forme === "long" ? 13 : 11, a = Math.max(3, ry * .9), c = hex(p.couleur);
+  p.emoji = "🐟";
+  p.icone = `<svg class="ico-poisson${p.rarete === "legendaire" ? " legende" : ""}" viewBox="0 0 32 20" aria-hidden="true">` +
+    `<polygon points="${2 * rx - 1},10 31,${10 - a} 31,${10 + a}" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
+    `<ellipse cx="${rx + 1}" cy="10" rx="${rx}" ry="${ry}" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
+    `<circle cx="5.5" cy="${10 - ry * .3}" r="1.5" fill="#1C2230"/></svg>`;
+}
 
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */
 export const PRODUITS = {
@@ -215,4 +264,6 @@ export const COULEURS = {
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || MEUBLES[k];
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || MEUBLES[k];
+/* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
+export const icone = k => objet(k).icone || objet(k).emoji;

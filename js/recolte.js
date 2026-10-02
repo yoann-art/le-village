@@ -13,6 +13,7 @@
      (state.eau ; une jauge la montre dans sa case rapide et dans le sac) ;
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
      du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés ;
+   - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
    - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js) ;
    - dans la mine, ses rochers (voir monde/mine.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
@@ -31,6 +32,7 @@ import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
 import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
+import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -67,13 +69,14 @@ function target(){
   if((GRAINES[state.main] || POSABLES[state.main]) && inb(fx, fz) && !map.obj[idx(fx, fz)] && !occ.has(idx(fx, fz)))
     return {i: idx(fx, fz), x: fx, z: fz, o: null};
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
+  const canne = state.main ? OUTILS[state.main] && OUTILS[state.main].famille === "canne" : !!bestTool("canne");
   for(const dist of [.8, 1.3]){
     const [x, z] = frontTile(dist);
     if(!inb(x, z)) continue;
     const i = idx(x, z);
     if(occ.has(i)) return null;                       // un bâtiment : c'est son bouton à lui
     if(map.obj[i]) return {w: ILE, i, x, z, o: map.obj[i]};
-    if(arrosoir && map.type[i] === "water") return {i, x, z, eau: true};   // le bord de l'eau, l'arrosoir en main
+    if((arrosoir || canne) && map.type[i] === "water") return {i, x, z, eau: true, peche: !arrosoir};   // le bord de l'eau : l'arrosoir, ou la canne
   }
   const [x, z] = frontTile(.8);
   if((GRAINES[state.main] || POSABLES[state.main]) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
@@ -121,6 +124,7 @@ const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
+  if(t.peche) return {label: "🎣 Lancer", run: () => { if(takeTool("canne")) lancer(t); }};
   if(t.eau){ const max = OUTILS[state.main].eau;
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
@@ -168,9 +172,11 @@ function showCase(t){
 }
 export function updateRecolte(dt, active){
   if(anim) animate(dt);
-  cur = active && !anim ? target() : null;
+  updatePeche(dt, active);
+  cur = active && !anim && !enPeche() ? target() : null;
   showCase(cur);
-  act = cur && actionOf(cur);
+  act = enPeche() ? pecheAction() : cur && actionOf(cur);
+  btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;
   if(btn.hidden) btn.hidden = false;
