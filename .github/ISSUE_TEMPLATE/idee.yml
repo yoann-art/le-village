@@ -1,0 +1,12 @@
+name: "💡 Une idée"
+description: Une envie pour le jeu, notée en jouant (Claude la range ensuite dans la Boîte à idées)
+title: "💡 "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: Ton idée
+      description: Avec tes mots. Une image ou une capture d'écran peut aider.
+    validations:
+      required: true

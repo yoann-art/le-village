@@ -1,0 +1,22 @@
+name: "🐞 Un bug"
+description: Quelque chose ne marche pas comme prévu dans le jeu
+title: "🐞 "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: quoi
+    attributes:
+      label: Qu'est-ce qui ne va pas ?
+      description: Ce que tu as vu, avec tes mots. Tu peux ajouter une capture d'écran ici.
+    validations:
+      required: true
+  - type: textarea
+    id: avant
+    attributes:
+      label: Que faisais-tu juste avant ?
+      placeholder: "Par exemple : je posais un rocher près de l'eau"
+  - type: input
+    id: version
+    attributes:
+      label: Version (écrite en bas de l'écran)
+      placeholder: "v1.5.10"

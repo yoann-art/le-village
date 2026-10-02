@@ -1,2 +1,7 @@
 # La bible reste sur le PC : elle ne part pas sur GitHub (dépôt public)
 *.pdf
+
+# La vérification automatique : ce qu elle installe et produit, pas dans le dépôt
+node_modules/
+package-lock.json
+capture.png

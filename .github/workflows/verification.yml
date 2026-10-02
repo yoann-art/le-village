@@ -1,0 +1,36 @@
+# Vérification du jeu, à chaque envoi sur GitHub (gratuit pour un dépôt public).
+# Un robot ouvre le jeu dans un navigateur sans écran et joue les gestes de base (tests/verif-page.js).
+# Résultat : une coche verte (tout va bien) ou une croix rouge (quelque chose est cassé), dans l'onglet
+# « Actions » du dépôt ; une capture d'écran est gardée avec le résultat.
+name: Vérification du jeu
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Installer le navigateur de test
+        run: |
+          npm install --no-save playwright@1.47.2
+          npx playwright install --with-deps chromium
+      - name: Lancer le jeu et jouer les gestes de base
+        run: |
+          python3 -m http.server 8000 >/dev/null 2>&1 &
+          sleep 2
+          node tests/verif.mjs
+      - name: Garder la capture d'écran
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capture
+          path: capture.png
+          if-no-files-found: ignore
