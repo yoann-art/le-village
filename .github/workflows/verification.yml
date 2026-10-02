@@ -1,7 +1,8 @@
 # Vérification du jeu, à chaque envoi sur GitHub (gratuit pour un dépôt public).
 # Un robot ouvre le jeu dans un navigateur sans écran et joue les gestes de base (tests/verif-page.js).
 # Résultat : une coche verte (tout va bien) ou une croix rouge (quelque chose est cassé), dans l'onglet
-# « Actions » du dépôt ; une capture d'écran est gardée avec le résultat.
+# « Actions » du dépôt ; une capture d'écran est gardée avec le résultat. Le détail (gestes réussis ou erreurs)
+# est écrit en « annotations », lisibles sans compte : c'est là que Claude le lit, depuis le PC de Yo.
 name: Vérification du jeu
 
 on:
@@ -9,15 +10,18 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   verifier:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Installer le navigateur de test
         run: |
           npm install --no-save playwright@1.47.2

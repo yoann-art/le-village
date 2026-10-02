@@ -27,5 +27,13 @@ await browser.close();
 
 console.log(r.ok.join("\n"));
 const tout = [...erreurs, ...r.erreurs];
-if(tout.length){ console.log("\n" + tout.join("\n")); process.exit(1); }
+/* Sur GitHub, le résultat devient aussi une « annotation », lisible par tous sur un dépôt public :
+   c'est là que Claude le lit (tâche programmée « Surveiller la vérification du jeu ») */
+const note = (type, msg) => { if(process.env.GITHUB_ACTIONS) console.log(`::${type} title=Vérification du jeu::${msg.replace(/%/g, "%25").replace(/\r?\n/g, "%0A")}`); };
+if(tout.length){
+  console.log("\n" + tout.join("\n"));
+  for(const e of tout) note("error", e);
+  process.exit(1);
+}
+note("notice", `Tout va bien : ${r.ok.length} gestes réussis`);
 console.log("\nTout va bien : le jeu se charge et les gestes de base marchent.");

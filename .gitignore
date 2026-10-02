@@ -5,3 +5,6 @@
 node_modules/
 package-lock.json
 capture.png
+
+# Le suivi de la vérification par Claude (tâche programmée sur le PC de Yo)
+.claude/verif-suivi.txt
