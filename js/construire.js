@@ -84,7 +84,7 @@ function cancelPress(){ if(press){ clearTimeout(press.timer); press = null; } }
 function liftBuilding(){
   const b = state.buildings.find(v => v.id === press.id), pid = press.pid;
   press = null;
-  if(!b || placing || !outside()) return;
+  if(!b || B[b.type].fixe || placing || !outside()) return;           // la mine ne se déplace pas
   try{ if(navigator.vibrate) navigator.vibrate(30); }catch(_){}
   footprint(b.type, b.x, b.z).forEach(([x,z]) => occ.delete(idx(x,z)));
   setMeshVisible(b.id, false);
@@ -216,6 +216,11 @@ let detailId = null;
 function openDetail(b){
   detailId = b.id;
   const d = B[b.type], max = maxLvl(b.type);
+  if(d.fixe){                                          // la mine : rien à améliorer
+    openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
+      <p class="muted" style="margin:4px 0">${d.desc} Entre en marchant dans l'ouverture.</p>`);
+    return;
+  }
   let effect = "Rapporte des étoiles au village.";
   if(d.bonus) effect = `Bonus actuel : +${d.bonus.pct * b.lvl} % de ${RES[d.bonus.res].nom}.`;
   if(d.all) effect = `Bonus actuel : +${d.all * b.lvl} % sur toutes les récoltes.`;

@@ -5,18 +5,19 @@
 import { G, part } from "./formes.js";
 import { OUTILS, GRAINES, POSABLES } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
+import { rockMesh } from "./rochers.js";
 
 const C = {wood:0xB07A4A, dark:0x654028, stone:0x9EA3A8, metal:0x6F7884, cream:0xF4EFE6, red:0xC8643C};
 
 const BUILD = {
-  hache(g){
+  hache(g, o){
     g.add(part(G.cyl, C.wood, .05, .52, .05, 0, .12, 0));                             // manche
-    g.add(part(G.box, C.stone, .05, .14, .16, 0, .32, .08));                           // fer de la hache
+    g.add(part(G.box, o.tete || C.stone, .05, .14, .16, 0, .32, .08));                 // fer de la hache (pierre, cuivre…)
     g.add(part(G.cyl, C.dark, .07, .05, .07, 0, .36, 0));                              // ligature
   },
-  pioche(g){
+  pioche(g, o){
     g.add(part(G.cyl, C.wood, .05, .52, .05, 0, .12, 0));
-    const head = part(G.cyl, C.stone, .07, .38, .07, 0, .36, 0);                      // tête à deux pointes arrondies
+    const head = part(G.cyl, o.tete || C.stone, .07, .38, .07, 0, .36, 0);                      // tête à deux pointes arrondies
     head.rotation.x = Math.PI/2; g.add(head);
   },
   canne(g){
@@ -33,11 +34,11 @@ const BUILD = {
     const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
     anse.rotation.x = Math.PI/2; g.add(anse);
   },
-  arme(g){
+  arme(g, o){
     g.add(part(G.cyl, C.dark, .045, .14, .045, 0, 0, 0));                              // poignée
     g.add(part(G.box, C.dark, .06, .04, .2, 0, .08, 0));                               // garde
-    g.add(part(G.box, C.wood, .04, .44, .09, 0, .32, 0));                              // lame en bois
-    g.add(part(G.head, C.wood, .2, .2, .38, 0, .54, 0));                               // bout arrondi
+    g.add(part(G.box, o.tete || C.wood, .04, .44, .09, 0, .32, 0));                    // lame (bois, cuivre…)
+    g.add(part(G.head, o.tete || C.wood, .2, .2, .38, 0, .54, 0));                     // bout arrondi
   }
 };
 function graine(g){
@@ -49,8 +50,11 @@ function graine(g){
 export function makeOutil(k){
   const g = new THREE.Group();
   if(GRAINES[k]) graine(g);
-  else if(POSABLES[k]){ const c = makeMeuble("coffre"); c.scale.setScalar(.22); c.position.y = .05; g.add(c); return g; }   // un coffre à poser
-  else BUILD[OUTILS[k].famille](g);
+  else if(POSABLES[k]){                             // un coffre ou un rocher à poser
+    const c = POSABLES[k].pose === "coffre" ? makeMeuble("coffre") : rockMesh(POSABLES[k].pose, .5);
+    c.scale.multiplyScalar(POSABLES[k].pose === "coffre" ? .22 : .4); c.position.y = .05; g.add(c); return g;
+  }
+  else BUILD[OUTILS[k].famille](g, OUTILS[k]);
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;
 }

@@ -16,7 +16,7 @@ import { view } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
-import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos } from "./lieux.js";
+import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos, currentPlace } from "./lieux.js";
 import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
 import { updateRecolte } from "./recolte.js";
@@ -72,7 +72,7 @@ function tick(now){
     updateInteraction(dt);
   }
   updatePlan(isInside() && !decorating() && !lifting() && !isBusy());   // bouton du plan de travail, quand on est tout près
-  updateRecolte(dt, !isInside() && wrap.hidden && !isBusy() && !placing);   // couper, planter : le bouton d'action devant soi
+  updateRecolte(dt, (!isInside() || currentPlace().b.type === "mine") && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
   renderer.render(currentScene(), camera);
   if(dirty && now - lastSave > 2000){
     const p = islandPos();

@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, SAC, COFFRE, objet } from "./donnees.js";
+import { RES, B, OUTILS, POSABLES, SAC, COFFRE, objet } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -16,7 +16,7 @@ export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);
 const BOURSE = "or";
 /* Des emplacements (le sac, un coffre) : [{k, n}], au plus cap emplacements ; un outil prend un emplacement
    à lui seul, le reste s'empile jusqu'à SAC.pile */
-export const pileOf = k => OUTILS[k] ? 1 : SAC.pile;
+export const pileOf = k => OUTILS[k] || (POSABLES[k] && POSABLES[k].seul) ? 1 : SAC.pile;   // un outil, un rocher : seul dans son emplacement
 export const slotsCount = (list, k) => list.reduce((c, it) => c + (it.k === k ? it.n : 0), 0);
 /* Combien de k peuvent encore entrer */
 export function slotsPlace(list, cap, k){
@@ -67,7 +67,7 @@ export function addOwned(k, n){
 export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
 /* File d'attente d'un plan de travail : 3 places au niveau 1, une de plus par niveau */
 export const queueSlots = lvl => 2 + lvl;
-export const maxLvl = t => B[t].unique ? 1 : 3;
+export const maxLvl = t => B[t].unique || B[t].fixe ? 1 : 3;
 export function upCost(t, lvl){
   const c = {};
   for(const [r,v] of Object.entries(B[t].cost)) c[r] = Math.ceil(v * 1.5 * lvl);

@@ -86,10 +86,27 @@ const BUILD = {
     g.add(part(G.box, C.red, .6, .36, .03, .3, 3.5, .4));
   }
 };
+/* L'entrée de la mine (étape 1.5) : une colline de roche arrondie, une ouverture étayée de bois,
+   des rails qui en sortent et une lanterne ; pas de porte, on entre dans le noir */
+BUILD.mine = g => {
+  const f = frontOf("mine");
+  g.add(part(G.dode, 0x8E8578, 3.3, 2.3, 3, 0, .75, -.15));                         // la colline
+  g.add(part(G.dode, 0x7A7268, 1.6, 1.3, 1.5, -.9, 1.5, -.5));
+  g.add(part(G.dode, 0x9A9184, 1.2, 1, 1.2, 1, 1.35, -.3));
+  g.add(part(G.leaf, 0x5E9F4E, 1.1, .45, 1, -.5, 2.05, -.4));                        // de la mousse sur le dessus
+  g.add(part(G.leaf2, 0x6CB35A, 1, .5, 1, .8, 1.85, -.1));
+  g.add(part(G.box, 0x1A1410, 1.3, 1.45, .5, 0, .72, f - .2));                       // l'ouverture, dans le noir
+  g.add(part(G.cyl, 0x1A1410, 1.3, .5, 1.3, 0, 1.45, f - .2));
+  for(const x of [-.75, .75]) g.add(part(G.box, C.dark, .18, 1.75, .2, x, .87, f));   // l'étai de bois
+  g.add(part(G.box, C.dark, 1.75, .2, .24, 0, 1.75, f));
+  for(const x of [-.3, .3]) g.add(part(G.box, 0x6F7884, .06, .05, 1.1, x, .03, f + .2));   // les rails qui sortent
+  g.add(part(G.cyl, C.dark, .06, 1.3, .06, 1.15, .65, f + .15));                      // la lanterne
+  g.add(part(G.box, new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8}), .2, .24, .2, 1.15, 1.2, f + .15));
+};
 export function makeBuilding(type, lvl){
   const g = new THREE.Group();
   BUILD[type](g);
-  door(g, B[type].door, frontOf(type));
+  if(!B[type].fixe) door(g, B[type].door, frontOf(type));
   if(maxLvl(type) > 1 && lvl >= 2){
     const e = sizeOf(type) / 2 - .15;
     g.add(part(G.cyl, C.dark, .06, 2.8, .06, -e, 1.4, e));

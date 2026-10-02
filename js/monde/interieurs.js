@@ -9,6 +9,7 @@ import { P, G, part } from "./formes.js";
 import { roomSide } from "../regles.js";
 import { makeMeuble } from "./meubles.js";
 import { COULEURS } from "../donnees.js";
+import { makeMine } from "./mine.js";
 
 export const interior = new THREE.Scene();
 interior.background = new THREE.Color(0x1E1813);
@@ -19,7 +20,7 @@ lamp.position.set(-3, 9, 5);
 lamp.castShadow = true;
 lamp.shadow.mapSize.set(1024, 1024);
 lamp.shadow.bias = -0.0008;
-Object.assign(lamp.shadow.camera, {left:-8, right:8, top:8, bottom:-8, near:1, far:30});
+Object.assign(lamp.shadow.camera, {left:-10, right:10, top:10, bottom:-10, near:1, far:30});
 lamp.shadow.camera.updateProjectionMatrix();
 interior.add(lamp, lamp.target);
 
@@ -49,6 +50,13 @@ export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
+  if(b.type === "mine"){                             // la mine : une grotte, construite par mine.js
+    const m = makeMine();
+    room = m.group; floor.count = 0;
+    hemi.groundColor.setHex(m.ground); lamp.color.setHex(m.light); lamp.intensity = m.power;
+    interior.add(room); lamp.target.position.set(0, 0, 0);
+    return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk};
+  }
   const a = AMBIANCE[b.type], w = roomSide(b.type, b.lvl), d = w;
   /* Couleurs des murs et du sol : celles choisies par le joueur, sinon celles de l'ambiance */
   const deco = b.deco || {}, pick = key => COULEURS[key] && COULEURS[key].hex;

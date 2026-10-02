@@ -52,14 +52,15 @@ function enter(b){
     const room = buildRoom(b);
     inside = {b, room};
     interior.add(player);
-    /* Dans la pièce : entre les murs, en contournant les meubles */
-    setWalkable((x, z) => Math.abs(x) < room.w/2 && Math.abs(z) < room.d/2 && !meubleAt((b.deco && b.deco.items) || [], x, z));
+    /* Dans la pièce : entre les murs, en contournant les meubles (la mine a sa propre règle) */
+    setWalkable(room.walk || ((x, z) => Math.abs(x) < room.w/2 && Math.abs(z) < room.d/2 && !meubleAt((b.deco && b.deco.items) || [], x, z)));
     placePlayer(room.doorX, room.d/2 - R - .3, 0, -1);
     $("#btn-build").hidden = true;
     $("#btn-ctx").hidden = true;
-    $("#btn-deco").hidden = false;
+    $("#btn-deco").hidden = !!B[b.type].fixe;          // on ne décore pas la mine
     /* Pas encore de plan de travail : on dit comment le construire */
     const a = ATELIERS[b.type];
+    if(b.type === "mine") setTimeout(() => toast("⛰️ La mine : pioche en main, mine les rochers (pierre, cuivre) ; mains libres, prends un rocher pour le reposer sur ton île. Les rochers reviennent chaque jour.", 5200), 400);
     if(a && !hasPlan(b)) setTimeout(() => toast(`${a.emoji} Pas encore ${a.le.startsWith("l'") ? "d'" + a.le.slice(2) : "de " + a.le.slice(3)} ici : construis-${a.fem ? "la" : "le"} dans « 🪑 Décorer », puis « Meubles »`, 4200), 400);
   });
 }

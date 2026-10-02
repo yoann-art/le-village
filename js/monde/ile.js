@@ -6,6 +6,7 @@ import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
+import { rockMesh } from "./rochers.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026) */
 export const N = 56, H = N / 2;
@@ -160,10 +161,7 @@ function buildObj(i){
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre");
     c.scale.setScalar(.75); g.add(c);
-  } else {
-    g.add(part(G.dode, r < .5 ? 0x9EA3A8 : 0x8F959B, .9,.7,.9, 0,.25,0));
-    g.scale.setScalar(.8 + r*.4);
-  }
+  } else g.add(rockMesh(o, r));                      // un rocher, à veines de cuivre ou non
   g.rotation.y = o === "coffre" ? 0 : r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   scene.add(g); meshes.set(i, g);
