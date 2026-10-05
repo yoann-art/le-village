@@ -4,7 +4,8 @@
    La fabrication avance en temps réel, même jeu fermé ; ce qui est fini va tout seul dans le sac (ou dans un
    coffre de réserve si le sac est plein) ; s'il n'y a de place nulle part, c'est prêt mais ça attend ici.
    File d'un bâtiment : b.atelier.queue = [{out, n, in, t, start, end}], une recette après l'autre.
-   Le comptoir du Marché (vente) marche pareil : ce qu'on vend part, l'or arrive à la fin du temps.
+   Le comptoir du Marché (vente) : ce qu'on vend part tout de suite et l'or arrive aussitôt dans la bourse,
+   sans file d'attente (demande de Yo, v1.6.5) ; le bonus du Marché compte.
    Une recette verrouillée (lock) est affichée avec sa raison, sans bouton (fourneau, enclume, trône).
    Le comptoir vend aussi les poissons et les plats qu'on possède (étape 1.6) : un par un, ou tous d'un coup
    (sauf les légendaires) ; une recette peut demander un ingrédient « au choix » (un poisson : voir payer). */
@@ -49,11 +50,22 @@ function recettesDe(b){
   for(const k of aVendre) if(!(POISSONS[k] && POISSONS[k].rarete === "legendaire")) tous[k] = owned(k);
   const nb = Object.values(tous).reduce((n, v) => n + v, 0);
   if(nb > 1) list.push({key: "tout", cat, tout: true, nom: `Tous tes poissons et plats (${nb}), sauf les légendaires`, icone: "🐟",
-    out: "or", n: Object.entries(tous).reduce((s, [k, v]) => s + v * objet(k).prix, 0), in: tous, t: 10, lvl: 1});
-  for(const k of aVendre) list.push({key: "v:" + k, cat, out: "or", n: objet(k).prix, in: {[k]: 1}, t: 5, lvl: 1});
+    out: "or", n: Object.entries(tous).reduce((s, [k, v]) => s + v * objet(k).prix, 0), in: tous, lvl: 1});
+  for(const k of aVendre) list.push({key: "v:" + k, cat, out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   return list;
 }
+/* Vendre au comptoir : tout de suite (demande de Yo) ; l'or va dans la bourse, avec le bonus du Marché */
+function vendre(a, b, r){
+  if(r.lock || b.lvl < r.lvl || !hasAll(r.in)) return;
+  const pris = payer(r.in), n = gain(r.n || 1, r.out);
+  addOwned(r.out, n);
+  save(); renderHUD();
+  const nb = Object.values(pris).reduce((s, v) => s + v, 0);
+  const quoi = r.tout ? `${nb} poissons et plats` : Object.entries(pris).map(([k, v]) => many(k, v)).join(", ");
+  toast(`${a.emoji} Vendu : ${quoi}. Tu gagnes ${info(r.out).emoji} ${many(r.out, n)}`, 2600);
+}
 function fabriquer(b, r){
+  if(ATELIERS[b.type].vente){ vendre(ATELIERS[b.type], b, r); return; }
   const q = queueOf(b);
   if(r.lock || b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(r.in)) return;
   const pris = payer(r.in);                           // un poisson « au choix » : on note lequel, pour pouvoir le rendre
@@ -76,7 +88,7 @@ function livrer(){
   let bloque = false;
   for(const b of state.buildings){
     const q = b.atelier && b.atelier.queue;
-    while(q && q.length && q[0].end <= now){
+    while(q && q.length && (q[0].end <= now || ATELIERS[b.type].vente)){   // une vente d'avant la v1.6.5 : livrée tout de suite
       const j = q[0];
       if(ATELIERS[b.type].vente && !j.bonus){ j.n = gain(j.n, j.out); j.bonus = true; }   // une vente : le bonus du Marché
       const r = addOwned(j.out, j.n);
@@ -146,9 +158,9 @@ function render(){
   openSheet(`<div class="sh-head"><h2 class="display">${a.emoji} ${a.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">${B[b.type].nom} niveau ${b.lvl}. ${a.note ? a.note + " " : ""}${waiting
       ? `Ses ${a.titre ? a.titre.toLowerCase() : "recettes"} arrivent bientôt.`
-      : a.vente ? "Ce que tu vends part tout de suite ; l'or arrive à la fin du temps, même jeu fermé."
+      : a.vente ? "Ce que tu vends part tout de suite, et l'or arrive aussitôt dans ta bourse."
       : "Ce qui est fini va tout seul dans ton sac (ou dans un coffre de réserve s'il est plein), même jeu fermé."}</p>
-    ${waiting ? "" : `<h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>`}
+    ${waiting || a.vente ? "" : `<h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>`}
     <h3 style="margin:14px 0 2px">${a.titre || (a.vente ? "Ventes" : "Recettes")}</h3>` +
     recs.map((r, i) => {
       /* Recettes rangées par catégorie (Matériaux, Outils, Meubles) quand elles en ont une */
@@ -161,11 +173,12 @@ function recetteHTML(b, a, r, full){
   if(r.lock) return `<div class="brow"><div class="be" aria-hidden="true">${r.emoji}</div>
     <div class="bt"><span class="bn">${r.nom}</span><p>🔒 ${r.lock}</p></div>
     <button class="btn primary" disabled>Bientôt</button></div>`;
-  const locked = b.lvl < r.lvl, ok = !locked && !full && hasAll(r.in);
-  const why = locked ? `Niveau ${r.lvl}` : full ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
+  const plein = full && !a.vente;                     // le comptoir n'a pas de file : on vend tout de suite
+  const locked = b.lvl < r.lvl, ok = !locked && !plein && hasAll(r.in);
+  const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-      <p>⏱ ${duree(r.t)}${a.vente ? "" : ` · tu en as : ${owned(r.out)}`}</p>
+      ${a.vente ? "" : `<p>⏱ ${duree(r.t)} · tu en as : ${owned(r.out)}</p>`}
       <div>${r.tout ? "" : Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
     <button class="btn primary" data-fab="${r.key}" ${ok ? "" : "disabled"}>${r.tout ? "Tout vendre" : why}</button></div>`;
 }

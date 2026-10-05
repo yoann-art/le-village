@@ -267,10 +267,10 @@ export const ATELIERS = {
   ]},
   marche:{nom:"Comptoir", le:"le comptoir", emoji:"⚖️", meuble:"comptoir", cost:{planche:10, bloc:5}, vente:true,
     pour:"vendre ton surplus contre de l'or", recettes:[
-    {out:"or", in:{bois:6}, t:10, lvl:1, cat:"Matériaux"},
-    {out:"or", in:{pierre:6}, t:10, lvl:1, cat:"Matériaux"},
-    {out:"or", in:{planche:10}, t:10, lvl:1, cat:"Matériaux"},
-    {out:"or", in:{bloc:10}, t:10, lvl:1, cat:"Matériaux"}
+    {out:"or", in:{bois:6}, lvl:1, cat:"Matériaux"},          /* vendu tout de suite (demande de Yo, v1.6.5) */
+    {out:"or", in:{pierre:6}, lvl:1, cat:"Matériaux"},
+    {out:"or", in:{planche:10}, lvl:1, cat:"Matériaux"},
+    {out:"or", in:{bloc:10}, lvl:1, cat:"Matériaux"}
   ]},
   /* Plans de travail en attente : posés, recettes affichées mais verrouillées (lock = la raison),
      en attendant ce qu'il leur faut. note : une phrase de plus en haut de leur fiche. */

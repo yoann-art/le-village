@@ -2,7 +2,7 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé. Lancée à chaque envoi sur GitHub par
+   les ingrédients du poisson grillé, vendre au comptoir. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, objet } from "../js/donnees.js";
@@ -18,6 +18,7 @@ import { updateRecolte } from "../js/recolte.js";
 import { checkDoors, isInside, currentPlace } from "../js/lieux.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
+import { renderHUD } from "../js/interface.js";
 import { hold } from "../js/barre.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -183,6 +184,26 @@ export async function verifier(){
     if(!poisson || pris.thym !== 1) throw new Error(`pris : ${JSON.stringify(pris)}`);
     for(const [k, v] of Object.entries(pris)) addOwned(k, v);                   // rendus
     return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et un brin de thym`;
+  });
+  await etape("Vendre au comptoir, tout de suite", async () => {
+    /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
+    const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
+    state.buildings.push(marche);
+    try {
+      const poisson = state.sac.find(it => POISSONS[it.k]);
+      if(!poisson) throw new Error("pas de poisson à vendre");
+      const or = state.res.or, n = owned(poisson.k);
+      openAtelier(marche); await wait(200);
+      const b = $(`#sheet [data-fab='v:${poisson.k}']`);
+      if(!b) throw new Error("pas de ligne pour vendre ce poisson");
+      b.click();
+      if(owned(poisson.k) !== n - 1) throw new Error("le poisson n'est pas parti");
+      if(state.res.or <= or) throw new Error("pas d'or tout de suite");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+      return `+${state.res.or - or} or`;
+    } finally {
+      state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
+    }
   });
   return {ok, erreurs};
 }
