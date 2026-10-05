@@ -96,7 +96,11 @@ export const GRAINES = {
   graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
   graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
-    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : un buisson de baies y poussera."}
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : un buisson de baies y poussera."},
+  /* Le thym (étape 1.6, Grand Carnet : « Thym et sauge ») ; la durée de pousse est à régler en jouant */
+  graineThym:{nom:"Graine de thym", pluriel:"graines de thym", emoji:"🌱", plante:"thym", pousse:3600,
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10Q6 21 12 21Q18 21 18 10Z" fill="#EFE6D2" stroke="#8A6B4A" stroke-width="1.2"/><rect x="7" y="7.5" width="10" height="3" rx="1.5" fill="#8A6B4A"/><circle cx="12" cy="15" r="2.6" fill="#B79AD6"/></svg>',
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : du thym y poussera."}
 };
 /* Récolter sur l'île. Couper : l'outil qu'il faut (sa famille), le nombre de coups pour abattre, ce que
    donne chaque coup avec un outil de force 1 (+1 par force en plus) et la graine du dernier coup.
@@ -109,7 +113,10 @@ export const RECOLTE = {
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:2, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:2, prendre:"rocherCuivre"},
   herbe:  {nom:"les herbes hautes", cueille:"fibre", n:2, repousse:900, graine:"graineHerbe"},
-  buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600}
+  buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
+  /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
+     3 fois sur 4 (chance) ; il repousse sur place en 12 h (repousse) ; à régler en jouant */
+  thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi
@@ -206,7 +213,15 @@ export const PRODUITS = {
   bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱", aide:"Les blocs se taillent à la table de taille de la Carrière."},
   fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
   baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐", aide:"Les baies se cueillent sur les buissons de baies."},
-  cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."}
+  cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
+  /* Étape 1.6, d'après le Grand Carnet : le thym des prés de l'île, et le poisson grillé (un poisson + du thym, il soigne).
+     prix : en or au comptoir */
+  thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22V5M12 15l-5-5M12 12l5-5M12 18l4-3" stroke="#4E6B3A" stroke-width="1.6" fill="none" stroke-linecap="round"/><g fill="#7E9C66"><ellipse cx="8" cy="10.5" rx="2.4" ry="1.3"/><ellipse cx="16" cy="7.5" rx="2.4" ry="1.3"/><ellipse cx="15.5" cy="14.5" rx="2.2" ry="1.2"/><ellipse cx="10" cy="17" rx="2.2" ry="1.2"/></g><g fill="#B79AD6"><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.4"/><circle cx="17.5" cy="6" r="1.4"/></g></svg>',
+    usage:"Une herbe aromatique des prés de l'île, toute l'année. Pour la cuisine (le poisson grillé) et, plus tard, des potions douces."},
+  poissonGrille:{nom:"Poisson grillé", pluriel:"poissons grillés", emoji:"🍢", prix:3, aide:"Le poisson grillé se cuisine au fourneau de la Taverne : un poisson et un brin de thym.",
+    icone:'<svg class="ico-poisson" viewBox="0 0 32 20" aria-hidden="true"><polygon points="21,10 31,5 31,15" fill="#B9733A" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="12" cy="10" rx="11" ry="5.6" fill="#C98A4B" stroke="#1C2230" stroke-opacity=".35"/><path d="M8 5.5v9M12 4.5v11M16 5.5v9" stroke="#5A3418" stroke-width="1.4" stroke-linecap="round"/><circle cx="5.5" cy="8.3" r="1.5" fill="#1C2230"/><g fill="#7E9C66"><ellipse cx="19" cy="4" rx="2" ry="1"/><ellipse cx="21.5" cy="5.5" rx="1.8" ry=".9"/></g></svg>',
+    usage:"Il soigne : il servira dans la grotte (étape 1.8). Se cuisine au fourneau de la Taverne (un poisson et un brin de thym) ; se vend 3 or au comptoir."}
 };
 /* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
    construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le ; fem : nom féminin),
@@ -248,16 +263,17 @@ export const ATELIERS = {
   ]},
   marche:{nom:"Comptoir", le:"le comptoir", emoji:"⚖️", meuble:"comptoir", cost:{planche:10, bloc:5}, vente:true,
     pour:"vendre ton surplus contre de l'or", recettes:[
-    {out:"or", in:{bois:6}, t:10, lvl:1},
-    {out:"or", in:{pierre:6}, t:10, lvl:1},
-    {out:"or", in:{planche:10}, t:10, lvl:1},
-    {out:"or", in:{bloc:10}, t:10, lvl:1}
+    {out:"or", in:{bois:6}, t:10, lvl:1, cat:"Matériaux"},
+    {out:"or", in:{pierre:6}, t:10, lvl:1, cat:"Matériaux"},
+    {out:"or", in:{planche:10}, t:10, lvl:1, cat:"Matériaux"},
+    {out:"or", in:{bloc:10}, t:10, lvl:1, cat:"Matériaux"}
   ]},
   /* Plans de travail en attente : posés, recettes affichées mais verrouillées (lock = la raison),
      en attendant ce qu'il leur faut. note : une phrase de plus en haut de leur fiche. */
   taverne:{nom:"Fourneau", le:"le fourneau", emoji:"🍲", meuble:"fourneau", cost:{bloc:10, planche:5},
-    pour:"cuisiner des plats qui donnent des bonus", note:"Les recettes se découvriront en essayant des ingrédients.", recettes:[
-    {nom:"Poisson grillé", emoji:"🐟", lock:"Arrive avec la pêche"},
+    pour:"cuisiner des plats qui donnent des bonus", note:"Pour l'instant, le poisson grillé ; les autres plats se découvriront en essayant des ingrédients.", recettes:[
+    /* Le poisson grillé (Grand Carnet : un poisson + du thym) : « poisson » = n'importe lequel, sauf un légendaire (GROUPES) */
+    {out:"poissonGrille", in:{poisson:1, thym:1}, t:30, lvl:1},
     {nom:"Ragoût de gibier", emoji:"🍖", lock:"Arrive avec la chasse"},
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
@@ -291,6 +307,10 @@ export const COULEURS = {
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || MEUBLES[k];
+/* Des ingrédients « au choix » : poisson = n'importe quel poisson sauf un légendaire ; on prend d'abord les
+   moins précieux (membres, du moins cher au plus cher) */
+export const GROUPES = {poisson:{nom:"Poisson", pluriel:"poissons", emoji:"🐟", aide:"Un poisson, n'importe lequel (sauf un légendaire) : pêche à l'étang ou en mer avec une canne à pêche."}};
+export const membres = g => g === "poisson" ? Object.keys(POISSONS).filter(k => POISSONS[k].rarete !== "legendaire").sort((a, b) => POISSONS[a].prix - POISSONS[b].prix) : [];
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || GROUPES[k] || MEUBLES[k];
 /* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
 export const icone = k => objet(k).icone || objet(k).emoji;

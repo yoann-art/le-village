@@ -25,9 +25,13 @@ export function toast(msg, ms=2400){
 }
 export const wrap = $("#sheetWrap");
 const sheet = $("#sheet");
+/* Le panneau se cache un peu après sa fermeture (le temps qu'il descende) ; un panneau rouvert juste après
+   annule ce retard, sinon il serait caché aussitôt ouvert */
+let hideT = 0;
 export function openSheet(html){
+  clearTimeout(hideT);
   sheet.innerHTML = html; wrap.hidden = false;
   resetJoy();
   requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add("open")));
 }
-export function closeSheet(){ wrap.classList.remove("open"); setTimeout(() => { wrap.hidden = true; }, 220); }
+export function closeSheet(){ wrap.classList.remove("open"); clearTimeout(hideT); hideT = setTimeout(() => { wrap.hidden = true; }, 220); }

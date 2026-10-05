@@ -67,6 +67,18 @@ export const lieuEau = i => { const c = (N-1)/2; return Math.hypot(i % N - (c+8)
     else if(r < .085) map.obj[i] = "buisson";
   }
 }
+/* Le thym (étape 1.6, Grand Carnet : « Thym et sauge », herbes aromatiques des prés de l'île) : des touffes
+   basses aux fleurs mauves, posées après coup avec leur propre tirage ; on les traverse comme les herbes hautes */
+{
+  const rnd = mulberry32(state.seed * 11 + 5), c = (N-1)/2, sous = new Set();
+  state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
+  const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1;
+  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
+    const i = idx(x, z), r = rnd();
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || Math.hypot(x-c, z-c) < 9) continue;
+    if(r < .04) map.obj[i] = "thym";
+  }
+}
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
 state.buildings.forEach(b => {
   const [x, z] = doorTile(b.type, b.x, b.z);
@@ -120,6 +132,11 @@ export function herbeLeft(i){
   const c = state.ile[i];
   return c && c.coupe ? Math.max(0, RECOLTE.herbe.repousse - (Date.now() - c.coupe) / 1000) : 0;
 }
+/* Thym cueilli : il repousse sur place ; temps restant en secondes (0 = prêt à cueillir) */
+export function thymLeft(i){
+  const c = state.ile[i];
+  return c && c.coupe && map.obj[i] === "thym" ? Math.max(0, RECOLTE.thym.repousse - (Date.now() - c.coupe) / 1000) : 0;
+}
 /* Buisson : plein de baies, sauf s'il a été cueilli et que ses baies ne sont pas revenues (arrosé depuis assez longtemps) */
 export function baiesLeft(i){                         // -1 : vide, pas arrosé ; 0 : plein ; sinon secondes avant le retour
   const c = state.ile[i];
@@ -128,7 +145,7 @@ export function baiesLeft(i){                         // -1 : vide, pas arrosé 
   return Math.max(0, RECOLTE.buisson.retour - (Date.now() - c.arrose) / 1000);
 }
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
-const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "");
+const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "");
 
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
@@ -160,6 +177,13 @@ function buildObj(i){
       [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
         g.add(part(G.head, 0x4A5FC1, .32, .32, .32, x, y, z)));
     if(st < 2) g.scale.setScalar(st === 0 ? .4 : .7);
+  } else if(o === "thym"){                          // une touffe basse vert sombre, fleurie de mauve ; rase une fois cueillie
+    const st = stageOf(i), ras = thymLeft(i) > 0, h = ras ? .45 : .85;
+    [[0,0,.72],[.2,.1,.52],[-.19,.12,.54],[.06,-.2,.5],[-.14,-.14,.46]].forEach(([x, z, s], k) =>
+      g.add(part(G.leaf2, k % 2 ? 0x4F8A45 : 0x5F9C4F, s, s * h, s, x, .3 * s * h * .8, z)));
+    if(st === 2 && !ras) [[.12,.36,.06],[-.15,.32,.12],[.02,.4,-.15],[.22,.27,-.08],[-.06,.42,.02],[-.22,.25,-.1],[.1,.3,.2]].forEach(([x, y, z]) =>
+      g.add(part(G.head, 0xA77BD8, .24, .24, .24, x, y, z)));
+    if(st < 2) g.scale.setScalar(st === 0 ? .45 : .75);
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre");
     c.scale.setScalar(.75); g.add(c);

@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, POSABLES, SAC, COFFRE, objet } from "./donnees.js";
+import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -49,7 +49,7 @@ export const sacTake = (k, n) => slotsTake(state.sac, k, n);
 export const coffresCount = k => state.coffres.reduce((c, co) => c + slotsCount(co.items, k), 0);
 /* La place pour k dans le sac et tous les coffres */
 export const placeFor = k => k === BOURSE ? Infinity : sacPlace(k) + state.coffres.reduce((n, co) => n + slotsPlace(co.items, COFFRE.places, k), 0);
-export const owned = k => k === BOURSE ? state.res.or : sacCount(k) + coffresCount(k);
+export const owned = k => k === BOURSE ? state.res.or : GROUPES[k] ? membres(k).reduce((n, m) => n + owned(m), 0) : sacCount(k) + coffresCount(k);
 /* n > 0 : ajoute dans le sac, puis dans les coffres (renvoie {sac, coffre, reste} : ce qui n'a pas trouvé de place) ;
    n < 0 : retire du sac, puis des coffres */
 export function addOwned(k, n){
@@ -75,6 +75,21 @@ export function upCost(t, lvl){
 }
 export const canAfford = hasAll;
 export function pay(c){ for(const [r,v] of Object.entries(c)) addOwned(r, -v); }
+/* Paie des ingrédients et renvoie ce qui a vraiment été pris : un groupe (« un poisson ») prend d'abord les
+   moins précieux de ses membres ; on garde le détail pour rendre exactement les mêmes si on annule */
+export function payer(need){
+  const pris = {}, note = (k, n) => { pris[k] = (pris[k] || 0) + n; };
+  for(const [k, v] of Object.entries(need)){
+    if(!GROUPES[k]){ addOwned(k, -v); note(k, v); continue; }
+    let reste = v;
+    for(const m of membres(k)){
+      if(reste <= 0) break;
+      const n = Math.min(reste, owned(m));
+      if(n > 0){ addOwned(m, -n); note(m, n); reste -= n; }
+    }
+  }
+  return pris;
+}
 export const totalStars = () => state.buildings.reduce((s,b) => s + B[b.type].stars * b.lvl, 0);
 /* Ce que rapporte une récolte ou une vente avec les bonus des bâtiments : la part décimale devient
    une chance d'en avoir un de plus (2 × 1,25 = 2,5 : 2 ou 3, moitié-moitié) */

@@ -1,12 +1,14 @@
-/* ================= Le sac et les coffres =================
-   Le bouton « 🎒 Sac » ouvre un panneau à deux onglets :
+/* ================= Le sac, les coffres et le carnet =================
+   Le bouton « 🎒 Sac » ouvre un panneau à trois onglets :
    - Sac : ce que le personnage porte sur lui, en SAC.places emplacements (state.sac = [{k, n}]).
      Un outil prend un emplacement ; le reste s'empile jusqu'à SAC.pile. Tout ce qu'on récolte arrive ici.
    - Coffres : ce que contiennent tous les coffres de réserve du village, pour s'y retrouver.
+   - Carnet (étape 1.6, le carnet de collection de la bible) : sa première page, les poissons ; chaque espèce
+     prise, combien de fois et la plus grosse (state.carnet.poissons) ; les autres restent un « ? ».
    Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
    on peut le prendre en main (outil, graine, coffre à poser). */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, SAC, COFFRE, objet, icone } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, SAC, COFFRE, objet, icone, ouPoisson } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
 import { openSheet, wrap } from "./interface.js";
@@ -14,7 +16,8 @@ import { toggleHold, barreAuto, utilisable, jauge } from "./barre.js";
 
 const info = objet;
 const cap = t => t[0].toUpperCase() + t.slice(1);
-let tab = "sac";                      // onglet ouvert : "sac" ou "coffres"
+let tab = "sac";                      // onglet ouvert : "sac", "coffres" ou "carnet"
+let fiche = null;                     // le poisson choisi dans le carnet
 let pick = null;                      // l'emplacement du sac choisi
 
 function sacHTML(){
@@ -53,17 +56,41 @@ function coffresHTML(){
     <h3 style="margin:8px 0 4px">Meubles</h3>${tiles(MEUBLES_ORDER)}`;
 }
 
+/* ----- Le carnet : les poissons, rangés par endroit ----- */
+const ENDROITS = [
+  ["À l'étang", p => p.lieu === "etang"],
+  ["En mer, depuis la plage", p => p.lieu === "mer" && !p.depuis],
+  ["En mer, depuis le ponton", p => p.depuis === "ponton"],
+  ["Au large, en barque (bientôt)", p => p.depuis === "barque"]
+];
+function carnetHTML(){
+  const c = state.carnet.poissons, ks = Object.keys(POISSONS), pris = k => c[k] && c[k].n > 0;
+  const tuile = k => { const p = POISSONS[k], on = fiche === k ? " on" : "";
+    return pris(k)
+      ? `<button class="tile${on}${p.rarete === "legendaire" ? " legende" : ""}" data-carnet="${k}"><div class="te" aria-hidden="true">${icone(k)}</div><div class="tl">${p.nom}</div><div class="tn">${c[k].max} cm</div></button>`
+      : `<button class="tile inconnu${on}" data-carnet="${k}" aria-label="Poisson pas encore pêché"><div class="te" aria-hidden="true">?</div><div class="tl">???</div></button>`; };
+  const f = fiche && POISSONS[fiche];
+  const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche un poisson pour voir sa fiche.</p>`
+    : pris(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(fiche)}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>Pris ${c[fiche].n} fois · ton plus gros : ${c[fiche].max} cm</p></div></div>`
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore pêché</b><p>On le trouve ${ouPoisson(f)}. À toi de découvrir quand !</p></div></div>`;
+  return `<p class="muted" style="margin:0 0 8px">🎣 Poissons : ${ks.filter(pris).length} sur ${ks.length}. Chaque poisson pris s'inscrit ici, avec ton plus gros.</p>` + detail +
+    ENDROITS.map(([titre, test]) => `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => test(POISSONS[k])).map(tuile).join("")}</div>`).join("");
+}
+
+const TITRES = {sac: "🎒 Sac", coffres: "🗃️ Coffres", carnet: "📖 Carnet"};
 function render(){
-  openSheet(`<div class="sh-head"><h2 class="display">${tab === "sac" ? "🎒 Sac" : "🗃️ Coffres"}</h2><button class="btn ghost" data-close>Fermer</button></div>
+  openSheet(`<div class="sh-head"><h2 class="display">${TITRES[tab]}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <div class="sh-tabs" role="tablist">
       <button class="sh-tab" role="tab" data-sac-tab="sac" aria-selected="${tab === "sac"}">🎒 Sac</button>
       <button class="sh-tab" role="tab" data-sac-tab="coffres" aria-selected="${tab === "coffres"}">🗃️ Coffres</button>
-    </div>` + (tab === "sac" ? sacHTML() : coffresHTML()));
+      <button class="sh-tab" role="tab" data-sac-tab="carnet" aria-selected="${tab === "carnet"}">📖 Carnet</button>
+    </div>` + (tab === "sac" ? sacHTML() : tab === "coffres" ? coffresHTML() : carnetHTML()));
 }
 $("#btn-sac").addEventListener("click", () => { pick = null; render(); });
 wrap.addEventListener("click", e => {
-  const t = e.target.closest("[data-sac-tab]"), slot = e.target.closest("[data-slot]");
-  if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; render(); } return; }
+  const t = e.target.closest("[data-sac-tab]"), slot = e.target.closest("[data-slot]"), fi = e.target.closest("[data-carnet]");
+  if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; fiche = null; render(); } return; }
+  if(fi){ fiche = fiche === fi.dataset.carnet ? null : fi.dataset.carnet; render(); return; }
   if(slot){ const i = +slot.dataset.slot; pick = pick === i ? null : i; render(); return; }
   if(e.target.closest("[data-sac-main]") && typeof pick === "number" && state.sac[pick]){
     const k = state.sac[pick].k;

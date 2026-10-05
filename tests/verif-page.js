@@ -1,12 +1,13 @@
 /* ================= Vérification automatique =================
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
-   couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton). Lancée à chaque envoi sur GitHub par
+   couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
+   les ingrédients du poisson grillé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
-import { sacAdd, owned, sizeOf } from "../js/regles.js";
+import { sacAdd, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
@@ -86,7 +87,7 @@ export async function verifier(){
     $("#deco-done").click();
     if(!scierie.deco.items.some(it => it.type === "etabli")) throw new Error("l'établi n'est pas construit");
     openAtelier(scierie); await wait(200);
-    $("#sheet [data-fab='0']").click();
+    $("#sheet [data-fab='r0']").click();
     if(!scierie.atelier.queue.length) throw new Error("rien en fabrication");
     $("#sheetWrap [data-close]").click(); await wait(300);
     await sortir();
@@ -149,6 +150,36 @@ export async function verifier(){
     $("#btn-act").click(); frames(40);
     if(state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0) <= avant) throw new Error("pas de poisson dans le sac");
     return `${P.n} cases dans l'eau`;
+  });
+  await etape("Cueillir le thym", async () => {
+    hold(null);
+    const libre = j => map.type[j] !== "water" && !map.obj[j] && !occ.has(j) && !state.sol[j];
+    const i = map.obj.findIndex((o, j) => o === "thym" && libre(j + N));          // rien juste devant (vers le bas)
+    if(i < 0) throw new Error("pas de thym sur l'île");
+    placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); frames(2);   // debout dans la touffe
+    if(!$("#btn-act").textContent.includes("thym")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    const avant = owned("thym");
+    $("#btn-act").click();
+    if(owned("thym") <= avant) throw new Error("pas de thym dans le sac");
+    frames(2);
+    if(!$("#btn-act").textContent.includes("repousse")) throw new Error(`après la cueillette, le bouton dit « ${$("#btn-act").textContent} »`);
+    return `${map.obj.filter(o => o === "thym").length} touffes sur l'île`;
+  });
+  await etape("Le carnet de pêche", async () => {
+    $("#btn-sac").click(); await wait(300);
+    $("#sheet [data-sac-tab='carnet']").click(); await wait(200);
+    const txt = $("#sheet").textContent, m = txt.match(/Poissons : (\d+) sur (\d+)/);
+    if(!m) throw new Error("le carnet ne s'ouvre pas");
+    if(+m[1] < 1) throw new Error("aucun poisson inscrit au carnet");
+    $("#sheetWrap [data-close]").click(); await wait(300);
+    return `${m[1]} sur ${m[2]}`;
+  });
+  await etape("Les ingrédients du poisson grillé", async () => {
+    if(!hasAll({poisson: 1, thym: 1})) throw new Error("il manque un poisson ou du thym");
+    const pris = payer({poisson: 1, thym: 1}), poisson = Object.keys(pris).find(k => POISSONS[k]);
+    if(!poisson || pris.thym !== 1) throw new Error(`pris : ${JSON.stringify(pris)}`);
+    for(const [k, v] of Object.entries(pris)) addOwned(k, v);                   // rendus
+    return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et un brin de thym`;
   });
   return {ok, erreurs};
 }

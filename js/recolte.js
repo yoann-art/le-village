@@ -13,6 +13,7 @@
      (state.eau ; une jauge la montre dans sa case rapide et dans le sac) ;
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
      du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés ;
+   - du thym : « ✋ Cueillir le thym » (des brins, parfois sa graine ; il repousse sur place) ;
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
    - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js) ;
    - dans la mine, ses rochers (voir monde/mine.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
@@ -23,7 +24,7 @@ import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, sacAdd, sacTake, sacPlace, gain, doorTile } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
+import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
@@ -81,7 +82,8 @@ function target(){
   }
   const [x, z] = frontTile(.8);
   if((GRAINES[state.main] || POSABLES[state.main]) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
-  if(inb(...own) && map.obj[idx(...own)] === "herbe") return {w: ILE, i: idx(...own), x: own[0], z: own[1], o: "herbe"};
+  const ici = inb(...own) && map.obj[idx(...own)];
+  if(ici === "herbe" || ici === "thym") return {w: ILE, i: idx(...own), x: own[0], z: own[1], o: ici};
   return inb(x, z) ? {i: idx(x, z), x, z, o: null} : null;
 }
 
@@ -140,6 +142,11 @@ function actionOf(t){
   if(t.o === "herbe"){
     if(g < 1) return info(`🌱 Jeunes herbes : hautes dans ${duree(growthLeft(t.i))}`);
     return herbeLeft(t.i) > 0 ? {label: "✋ Arracher (+1 graine)", run: () => arracher(t)} : {label: "✋ Cueillir", run: () => cueillirHerbe(t)};
+  }
+  if(t.o === "thym"){
+    if(g < 1) return info(`🌱 Jeune thym : prêt dans ${duree(growthLeft(t.i))}`);
+    const r = thymLeft(t.i);
+    return r > 0 ? info(`🌿 Le thym repousse : encore ${duree(r)}`) : {label: "✋ Cueillir le thym", run: () => cueillirThym(t)};
   }
   if(t.o === "buisson"){
     if(g < 1) return info(`🌱 Jeune buisson : adulte dans ${duree(growthLeft(t.i))}`);
@@ -208,6 +215,16 @@ function arracher(t){
   setObj(t.i, null);
   const ou = giveSeed(R.graine); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}, +1 ${nomDe(R.graine, 1)} ${ou} : elles ne repousseront pas ici`, 3200);
+}
+/* Le thym (Grand Carnet) : la cueillette donne toujours ses brins, et parfois sa graine ; il repousse sur place */
+function cueillirThym(t){
+  const R = RECOLTE.thym;
+  if(!sacOk(R.cueille, R.n)) return;
+  sacAdd(R.cueille, R.n);
+  setEtat(t.i, {coupe: Date.now()});
+  const graine = Math.random() < R.chance, ou = graine ? giveSeed(R.graine) : "";
+  save();
+  toast(`🌿 +${R.n} ${nomDe(R.cueille, R.n)}${graine ? `, +1 ${nomDe(R.graine, 1)} ${ou}` : ""}. Il repousse ici dans ${duree(R.repousse)}`, 3200);
 }
 function cueillirBaies(t){
   const R = RECOLTE.buisson, n = gain(R.n, R.cueille);
@@ -292,7 +309,7 @@ function poser(t){
 }
 
 /* ----- Planter ----- */
-const DEVIENT = {tree: "un arbre adulte", herbe: "des herbes hautes", buisson: "un buisson de baies"};
+const DEVIENT = {tree: "un arbre adulte", herbe: "des herbes hautes", buisson: "un buisson de baies", thym: "du thym prêt à cueillir"};
 function planter(t){
   const k = state.main, gr = GRAINES[k];
   const why = plantProblem(t, gr.plante);

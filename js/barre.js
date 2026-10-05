@@ -4,7 +4,7 @@
    longtemps sur une case, ouvre le choix de son outil. Sur ordinateur : touches 1, 2 et 3.
    state.barre = [clé d'outil ou null, ×3] ; state.main = l'outil tenu. Une case ne garde qu'un outil du sac. */
 import { $ } from "./outils.js";
-import { OUTILS, GRAINES, POSABLES, objet } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacCount } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
@@ -40,7 +40,7 @@ export const jauge = k => OUTILS[k] && OUTILS[k].eau
   ? `<span class="jauge" aria-hidden="true"><i style="width:${Math.round(100 * Math.min(state.eau, OUTILS[k].eau) / OUTILS[k].eau)}%"></i></span>` : "";
 export function renderBarre(){
   bar.innerHTML = state.barre.map((k, i) => k
-    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}${OUTILS[k] && OUTILS[k].eau ? `, eau ${state.eau} sur ${OUTILS[k].eau}` : ""}">${objet(k).emoji}${GRAINES[k] || POSABLES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}${jauge(k)}</button>`
+    ? `<button class="case${state.main === k ? " on" : ""}" data-case="${i}" aria-label="${objet(k).nom}${state.main === k ? ", en main" : ""}${OUTILS[k] && OUTILS[k].eau ? `, eau ${state.eau} sur ${OUTILS[k].eau}` : ""}">${icone(k)}${GRAINES[k] || POSABLES[k] ? `<span class="cn">${sacCount(k)}</span>` : ""}${jauge(k)}</button>`
     : `<button class="case vide" data-case="${i}" aria-label="Case vide : choisir un outil">+</button>`).join("");
 }
 
@@ -51,7 +51,7 @@ function chooser(i){
   const tools = [...new Set(state.sac.map(it => it.k).filter(utilisable))];
   openSheet(`<div class="sh-head"><h2 class="display">Case ${i + 1}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Choisis l'outil de cette case. Touche ensuite la case pour le prendre en main, et encore une fois pour le lâcher.</p>` +
-    (tools.length ? tools.map(k => `<div class="brow"><div class="be" aria-hidden="true">${objet(k).emoji}</div>
+    (tools.length ? tools.map(k => `<div class="brow"><div class="be" aria-hidden="true">${icone(k)}</div>
         <div class="bt"><span class="bn">${objet(k).nom}</span><p>${objet(k).usage}</p></div>
         <button class="btn primary" data-case-mettre="${k}" ${state.barre[i] === k ? "disabled" : ""}>${state.barre[i] === k ? "Déjà ici" : "Choisir"}</button></div>`).join("")
       : `<p class="hint-box">Ton sac n'a pas d'outil. Fabrique-les à l'établi de la Scierie : ils arrivent dans ton sac.</p>`) +
