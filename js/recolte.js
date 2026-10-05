@@ -128,7 +128,7 @@ const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
-  if(t.peche) return {label: "🎣 Lancer", run: () => { if(takeTool("canne")) lancer(t); }};
+  if(t.peche) return {label: "🎣 Lancer", run: () => { if(takeTool("canne")) lancer(); }};
   if(t.eau){ const max = OUTILS[state.main].eau;
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
@@ -181,7 +181,7 @@ function showCase(t){
 }
 export function updateRecolte(dt, active){
   if(anim) animate(dt);
-  updatePeche(dt, active);
+  updatePeche(dt, active, !currentPlace());          // les ombres des poissons ne nagent que dehors
   cur = active && !anim && !enPeche() ? target() : null;
   showCase(cur);
   act = enPeche() ? pecheAction() : cur && actionOf(cur);

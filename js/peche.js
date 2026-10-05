@@ -1,45 +1,50 @@
 /* ================= La pêche (étape 1.6) =================
+   Des ombres de poissons nagent dans l'eau, près des bords (Grand Carnet : « le poisson se repère à son ombre
+   dans l'eau : plus elle est grosse, plus la prise est belle »). Chacune est un poisson du lieu (étang, mer ;
+   près du ponton, ceux du ponton), de l'heure, de la saison et de la météo (POISSONS, selon sa rareté), avec
+   sa taille : l'ombre est d'autant plus grosse.
    La canne en main (ou dans le sac, mains libres), face à la mer ou à l'étang : « 🎣 Lancer » (voir recolte.js).
-   Le bouchon part au bout du fil et flotte. On attend (PECHE.attente) : il frémit parfois pour rien, puis il
-   plonge : le téléphone vibre et le bouton devient « ❗ Ferrer ! » pendant PECHE.fenetre seconde.
-   - À temps : un poisson du lieu (étang, mer ; depuis la plage ou le ponton), de l'heure, de la saison et de la
-     météo (POISSONS, d'après le Grand Carnet, selon sa rareté) va dans le sac ; le personnage le montre
-     au-dessus de sa tête. Un légendaire ne se prend qu'une fois dans tout le jeu. Le carnet garde chaque espèce prise, combien, et
-     le plus gros (state.carnet.poissons = {k: {n, max}}).
-   - Trop tôt ou trop tard : il s'échappe (décidé par Yo) ; on relance aussitôt, rien n'est perdu.
+   Une ombre devant soi, à portée : le bouchon tombe juste devant elle ; sinon droit devant. Un poisson proche
+   du bouchon vient voir, le grignote (le bouchon frémit pour rien), puis mord : le téléphone vibre et le
+   bouton devient « ❗ Ferrer ! » pendant PECHE.fenetre seconde.
+   - À temps : ce poisson-là va dans le sac ; le personnage le montre au-dessus de sa tête. Un légendaire ne se
+     prend qu'une fois dans tout le jeu. Le carnet garde chaque espèce prise, combien, et le plus gros
+     (state.carnet.poissons = {k: {n, max}}).
+   - Trop tôt ou trop tard : il s'échappe (décidé par Yo) et son ombre s'enfuit ; on relance, rien n'est perdu.
    Bouger, lâcher la canne ou ouvrir un panneau remonte la ligne. Sac plein : on ne pêche pas. */
 import { scene } from "./monde/scene.js";
 import { G, part } from "./monde/formes.js";
 import { POISSONS, HEURES, PECHE, OUTILS, SAC } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
-import { map, idx, inb, tileOf, lieuEau } from "./monde/ile.js";
-import { eauLibre, surPonton } from "./monde/ponton.js";
-import { player, pencheMain, dir4 } from "./monde/personnage.js";
+import { idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
+import { eauLibre, pontonCases } from "./monde/ponton.js";
+import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
 
-/* ----- Quels poissons mordent ici et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
+/* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
 const SAISON = ["hiver", "hiver", "printemps", "printemps", "printemps", "ete", "ete", "ete", "automne", "automne", "automne", "hiver"];
 export const saisonDe = d => SAISON[d.getMonth()];
 /* La météo : elle arrive à l'étape 1.10 ; en attendant, il fait toujours beau (décidé par Yo) : l'anguille
    (pluie) et le Vieux Silure (orage) attendent la météo */
 export const meteo = () => "beau";
 const dejaPris = k => { const e = state.carnet.poissons[k]; return !!e && e.n > 0; };
-/* lieu : « etang » ou « mer » ; ponton : on pêche depuis le ponton (la barque viendra plus tard) */
+/* lieu : « etang » ou « mer » ; ponton : près du ponton (la barque viendra plus tard) */
 export function presents(lieu, ponton, d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60;
   return Object.keys(POISSONS).filter(k => { const p = POISSONS[k];
     return p.lieu === lieu && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
       && (!p.meteo || p.meteo === meteo()) && (!p.depuis || p.depuis === "ponton" && ponton)
-      && !(p.rarete === "legendaire" && dejaPris(k)); });
+      && !(p.rarete === "legendaire" && (dejaPris(k) || ombres.some(o => o.k === k))); });
 }
-/* Le poisson qui mord : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille
-   penche vers les petites (les gros sont plus rares) */
+/* Un poisson : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille penche
+   vers les petites (les gros sont plus rares). null s'il n'y a personne */
 function tirer(lieu, ponton){
   const par = {};
   presents(lieu, ponton).forEach(k => { const r = POISSONS[k].rarete; (par[r] = par[r] || []).push(k); });
   const rangs = Object.keys(par);
+  if(!rangs.length) return null;
   let x = Math.random() * rangs.reduce((n, r) => n + PECHE.poids[r], 0);
   const r = rangs.find(r => (x -= PECHE.poids[r]) < 0) || rangs[0];
   const k = par[r][Math.floor(Math.random() * par[r].length)], [a, b] = POISSONS[k].taille;
@@ -97,8 +102,131 @@ export function poissonMesh(k, cm){
   return g;
 }
 
+/* ----- Les ombres des poissons (morceau 3) -----
+   Une ombre : {k, cm, lieu, x, z, ang (où elle regarde), L (sa longueur), etat, t (son âge), vie, alpha, cible, pause, mesh}.
+   etat : « nage » (elle se promène), « approche » (elle vient au bouchon), « mord » (elle grignote, puis tire),
+   « fuit » (elle file et disparaît), « part » (elle s'efface doucement : son temps est fini). */
+const ombres = [];
+const ombresGroupe = new THREE.Group(); scene.add(ombresGroupe);
+const DISQUE = new THREE.CircleGeometry(.5, 20), QUEUE = new THREE.CircleGeometry(.5, 3);
+const FORMES = {long: .22, fin: .32, rond: .55, crustace: .6, calmar: .4};
+const enEau = (x, z) => { const a = tileOf(x), b = tileOf(z); return !inb(a, b) || eauLibre(idx(a, b)); };
+/* Près d'un bord (terre ou ponton à deux cases au plus) : on peut y lancer depuis la rive */
+function presDuBord(x, z){
+  for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++){ const a = x + dx, b = z + dz; if(inb(a, b) && !eauLibre(idx(a, b))) return true; }
+  return false;
+}
+const presDuPonton = (x, z) => [...pontonCases].some(j => Math.hypot(centerOf(j % N) - x, centerOf(Math.floor(j / N)) - z) < 2.2);
+function ajouterOmbre(k, cm, x, z, lieu){
+  const p = POISSONS[k], L = .45 + .9 * Math.min(1, cm / 160), W = L * (FORMES[p.forme] || .42);
+  const mat = new THREE.MeshBasicMaterial({color: 0x10303C, transparent: true, opacity: 0, depthWrite: false});
+  const mesh = new THREE.Group(), corps = new THREE.Mesh(DISQUE, mat);
+  corps.rotation.x = -Math.PI/2; corps.scale.set(L, W, 1); mesh.add(corps);
+  const pivot = new THREE.Group(); pivot.position.x = -L * .45; mesh.add(pivot);    // la queue, qui bat
+  const queue = new THREE.Mesh(QUEUE, mat); queue.rotation.x = -Math.PI/2; queue.scale.set(L * .32, W * 1.1, 1); queue.position.x = -L * .14; pivot.add(queue);
+  mesh.position.y = EAU + .035; mesh.renderOrder = 2;
+  ombresGroupe.add(mesh);
+  const o = {k, cm, lieu, x, z, ang: Math.random() * 6.28, L, etat: "nage", t: 0, vie: PECHE.ombres.vie[0] + Math.random() * (PECHE.ombres.vie[1] - PECHE.ombres.vie[0]),
+    alpha: 0, cible: null, pause: Math.random() * 2, mesh, mat, pivot, bat: 0};
+  ombres.push(o);
+  return o;
+}
+function retirer(o){ ombresGroupe.remove(o.mesh); o.mat.dispose(); ombres.splice(ombres.indexOf(o), 1); }
+function fuir(o){ if(!o || o.etat === "fuit") return; o.etat = "fuit"; const p = player.position; o.ang = Math.atan2(o.z - p.z, o.x - p.x) + (Math.random() - .5); }
+/* Une nouvelle ombre, sur une case d'eau près d'un bord, autour du personnage (pas trop près) */
+function pondre(){
+  const R = PECHE.ombres.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), cand = [];
+  for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
+    const d = Math.hypot(x - px, z - pz);
+    if(d < 2 || d > R || !inb(x, z) || !eauLibre(idx(x, z)) || !presDuBord(x, z)) continue;
+    cand.push(idx(x, z));
+  }
+  const nEtang = ombres.filter(o => o.lieu === "etang").length;
+  for(let essai = 0; essai < 6 && cand.length; essai++){
+    const i = cand[Math.floor(Math.random() * cand.length)], lieu = lieuEau(i);
+    if(lieu === "etang" && nEtang >= PECHE.ombres.etang) continue;
+    const x = centerOf(i % N) + (Math.random() - .5) * .6, z = centerOf(Math.floor(i / N)) + (Math.random() - .5) * .6;
+    if(ombres.some(o => Math.hypot(o.x - x, o.z - z) < 1.3)) continue;
+    const f = tirer(lieu, presDuPonton(x, z));
+    if(f) ajouterOmbre(f.k, f.cm, x, z, lieu);
+    return;
+  }
+}
+/* Pour la vérification automatique : une ombre à un endroit précis */
+export function lacherOmbre(x, z){
+  const i = idx(tileOf(x), tileOf(z)), f = tirer(lieuEau(i), presDuPonton(x, z));
+  if(!f) return null;
+  const o = ajouterOmbre(f.k, f.cm, x, z, lieuEau(i)); o.alpha = 1; o.pause = 99;
+  return o;
+}
+/* Tourne vers un angle, doucement */
+function tourne(o, but, dt, vite){ const d = Math.atan2(Math.sin(but - o.ang), Math.cos(but - o.ang)); o.ang += d * Math.min(1, dt * vite); return Math.abs(d); }
+function nager(o, dt){
+  o.t += dt;
+  let v = 0;                                          // sa vitesse (la queue bat plus vite quand elle nage)
+  if(o.etat === "fuit"){
+    v = 2.4; o.x += Math.cos(o.ang) * v * dt; o.z += Math.sin(o.ang) * v * dt;
+    o.alpha -= dt / .7; if(o.alpha <= 0){ retirer(o); return; }
+  } else if(o.etat === "part"){
+    v = .2; o.alpha -= dt; if(o.alpha <= 0){ retirer(o); return; }
+  } else if(o.etat === "approche" || o.etat === "mord"){
+    o.alpha = Math.min(1, o.alpha + dt);
+    const b = bouchon.position, dx = b.x - o.x, dz = b.z - o.z, d = Math.hypot(dx, dz) || 1;
+    tourne(o, Math.atan2(dz, dx), dt, 5);
+    if(o.etat === "approche"){
+      v = .6;
+      if(d > o.L / 2 + .06){ o.x += dx / d * v * dt; o.z += dz / d * v * dt; }
+      else { o.etat = "mord"; o.arrive = true; }
+    } else {                                          // il grignote : petits allers-retours, le nez au bouchon
+      const recul = o.grignote > 0 ? Math.sin(o.grignote * Math.PI) * .12 : 0;
+      o.x = b.x - dx / d * (o.L / 2 + .04 + recul); o.z = b.z - dz / d * (o.L / 2 + .04 + recul);
+      if(o.grignote > 0) o.grignote = Math.max(0, o.grignote - dt / .35);
+      v = .3;
+    }
+  } else {                                            // elle se promène, près de sa place
+    o.alpha = Math.min(1, o.alpha + dt);
+    if(o.t > o.vie){ o.etat = "part"; }
+    else if(o.pause > 0) o.pause -= dt;
+    else {
+      if(!o.cible){
+        for(let essai = 0; essai < 5 && !o.cible; essai++){
+          const a = Math.random() * 6.28, r = .6 + Math.random() * 1.4, x = o.x + Math.cos(a) * r, z = o.z + Math.sin(a) * r;
+          if(enEau(x, z) && presDuBord(tileOf(x), tileOf(z))) o.cible = {x, z};
+        }
+        if(!o.cible) o.pause = 1;
+      }
+      if(o.cible){
+        const dx = o.cible.x - o.x, dz = o.cible.z - o.z, d = Math.hypot(dx, dz);
+        const ecart = tourne(o, Math.atan2(dz, dx), dt, 3);
+        if(d < .1){ o.cible = null; o.pause = .6 + Math.random() * 2.2; }
+        else if(ecart < 1){
+          v = .3; const nx = o.x + dx / d * v * dt, nz = o.z + dz / d * v * dt;
+          if(enEau(nx, nz)){ o.x = nx; o.z = nz; } else { o.cible = null; o.pause = .5; }
+        }
+      }
+    }
+  }
+  o.bat += dt * (4 + v * 14);
+  o.mesh.position.x = o.x; o.mesh.position.z = o.z; o.mesh.rotation.y = -o.ang;
+  o.pivot.rotation.y = Math.sin(o.bat) * .35;
+  o.mat.opacity = .42 * Math.max(0, o.alpha);
+}
+let ponte = 0;
+function updateOmbres(dt, dehors){
+  ombresGroupe.visible = dehors;
+  if(!dehors) return;
+  const p = player.position, R = PECHE.ombres.rayon;
+  for(const o of [...ombres]){
+    const loin = Math.hypot(o.x - p.x, o.z - p.z) > R + 4;
+    if(loin && (!ligne || ligne.ombre !== o)){ retirer(o); continue; }
+    nager(o, dt);
+  }
+  ponte -= dt;
+  if(ponte <= 0){ ponte = 1.5; if(ombres.filter(o => o.etat !== "fuit" && o.etat !== "part").length < PECHE.ombres.max) pondre(); }
+}
+
 /* ----- La ligne en cours ----- */
-let ligne = null;          // {phase: "vol" | "attente" | "touche" | "montre", t, T, de, a, lieu, reste, frem, fremi, poisson}
+let ligne = null;          // {phase: "vol" | "attente" | "touche" | "montre", t, T, de, a, ombre, frem, fremi, reste, poisson}
 export const enPeche = () => !!ligne;
 const canneEnMain = () => state.main && OUTILS[state.main] && OUTILS[state.main].famille === "canne";
 const bouge = () => jv.x || jv.z || keys.u || keys.d || keys.l || keys.r;
@@ -112,44 +240,64 @@ function boutDeCanne(){
 }
 /* Le sac a-t-il la place pour un poisson ? (un emplacement libre, ou une pile de poissons pas pleine) */
 const sacOk = () => state.sac.length < SAC.places || state.sac.some(it => POISSONS[it.k] && it.n < SAC.pile);
-
-/* Lancer, face à l'eau (t : la case d'eau visée par recolte.js) */
-export function lancer(t){
-  if(ligne) return;
-  if(!sacOk()){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve avant de pêcher", 3400); return; }
-  /* Où tombe le bouchon : dans l'eau, droit devant, entre le bord et 2,2 P */
-  const d = dir4(), p = player.position;
+/* Où tombe le bouchon en lançant dans une direction (dx, dz) : dans l'eau, entre le bord et 2,2 P ; null sinon */
+function pointDevant(dx, dz){
+  const p = player.position;
   let s0 = null, s1 = null;
   for(let s = .5; s <= 3.01; s += .1){
-    const tx = tileOf(p.x + d.x * s), tz = tileOf(p.z + d.z * s);
-    if(!inb(tx, tz) || eauLibre(idx(tx, tz))){ if(s0 === null) s0 = s; s1 = s; }
+    if(enEau(p.x + dx * s, p.z + dz * s)){ if(s0 === null) s0 = s; s1 = s; }
     else if(s0 !== null) break;
   }
-  if(s0 === null) return;
-  /* Rien ne mord ici en ce moment (cela ne devrait pas arriver : la mer et l'étang ne sont jamais vides) */
-  const lieu = lieuEau(t.i), ponton = surPonton(p.x, p.z);
-  if(!presents(lieu, ponton).length){ toast("🎣 Rien ne mord ici en ce moment : essaie un autre endroit, ou reviens plus tard", 3000); return; }
+  if(s0 === null) return null;
   const s = Math.max(s0 + .15, Math.min(2.2, s1 - .15));
-  const reste = PECHE.attente[0] + Math.random() * (PECHE.attente[1] - PECHE.attente[0]);
-  /* De 0 à 3 frémissements pour rien, avant la vraie touche */
-  const frem = [];
-  for(let n = Math.floor(Math.random() * 4); n > 0; n--){ const f = .8 + Math.random() * (reste - 1.6); if(f > .8 && frem.every(g => Math.abs(g - f) > .7)) frem.push(f); }
-  ligne = {phase: "vol", t: 0, T: 0, de: boutDeCanne().clone(), a: new THREE.Vector3(p.x + d.x * s, EAU, p.z + d.z * s),
-    lieu, ponton, reste, frem: frem.sort((a, b) => a - b), fremi: -9};
+  return {x: p.x + dx * s, z: p.z + dz * s};
+}
+
+/* Lancer, face à l'eau (voir recolte.js) */
+export function lancer(){
+  if(ligne) return;
+  if(!sacOk()){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve avant de pêcher", 3400); return; }
+  /* Une ombre devant soi, à portée (dans un cône de 40°, entre 0,9 et 3,4 P) : le bouchon tombe juste devant elle */
+  const p = player.position, f = regard();
+  let vise = null, mieux = Infinity;
+  for(const o of ombres){
+    if(o.etat !== "nage") continue;
+    const dx = o.x - p.x, dz = o.z - p.z, d = Math.hypot(dx, dz), cos = (dx * f.x + dz * f.z) / d;
+    if(d < .9 || d > 3.4 || cos < .766) continue;
+    if(d * (2 - cos) < mieux){ mieux = d * (2 - cos); vise = o; }
+  }
+  let a = null;
+  if(vise){
+    const d = Math.hypot(vise.x - p.x, vise.z - p.z), s = Math.max(.8, d - vise.L / 2 - .35);
+    a = {x: p.x + (vise.x - p.x) / d * s, z: p.z + (vise.z - p.z) / d * s};
+    if(!enEau(a.x, a.z)) a = null;
+  }
+  if(!a){ const d = dir4(); a = pointDevant(f.x, f.z) || pointDevant(d.x, d.z); }
+  if(!a) return;
+  ligne = {phase: "vol", t: 0, T: 0, de: boutDeCanne().clone(), a: new THREE.Vector3(a.x, EAU, a.z), vise, ombre: null, frem: [], fremi: -9, reste: 0};
   bouchon.position.copy(ligne.de); bouchon.visible = true; fil.visible = true;
 }
-/* Remonter la ligne (un message si besoin) */
+/* Le poisson le plus proche du bouchon vient voir (celui qu'on visait d'abord) */
+function attirer(L){
+  const libre = o => o.etat === "nage" && Math.hypot(o.x - L.a.x, o.z - L.a.z) < PECHE.ombres.attire;
+  const o = L.vise && libre(L.vise) ? L.vise
+    : ombres.filter(libre).sort((m, n) => Math.hypot(m.x - L.a.x, m.z - L.a.z) - Math.hypot(n.x - L.a.x, n.z - L.a.z))[0];
+  if(o){ o.etat = "approche"; L.ombre = o; }
+}
+/* Remonter la ligne (un message si besoin) ; le poisson accroché, s'il y en a un, s'enfuit */
 function remonter(msg){
   if(ligne && ligne.poisson) scene.remove(ligne.poisson);
+  if(ligne && ligne.ombre && ombres.includes(ligne.ombre)) fuir(ligne.ombre);
   ligne = null;
   bouchon.visible = false; fil.visible = false;
   pencheMain();
-  if(msg) toast(msg, 2200);
+  if(msg) toast(msg, 2400);
 }
 function ferrer(){
-  const {k, cm} = tirer(ligne.lieu, ligne.ponton);
+  const o = ligne.ombre, {k, cm} = o;
   if(sacPlace(k) < 1){ remonter(`🎒 Ton sac est plein : tu relâches ${leNom(k)}`); return; }
   sacAdd(k, 1);
+  retirer(o); ligne.ombre = null;
   const c = state.carnet.poissons, e = c[k] || (c[k] = {n: 0, max: 0});
   const nouveau = !e.n, record = e.n > 0 && cm > e.max;
   e.n++; e.max = Math.max(e.max, cm);
@@ -173,31 +321,46 @@ export function pecheAction(){
   if(!ligne) return null;
   if(ligne.phase === "vol") return {label: "🎣 …", run: rien};
   if(ligne.phase === "attente") return {label: "🎣 Remonter la ligne", run: () => { if(ligne && ligne.phase === "attente")
-    remonter(ligne.T - ligne.fremi < .6 ? "🐟 Trop tôt : le poisson s'est méfié. Attends qu'il tire vraiment !" : "🎣 Ligne remontée"); }};
+    remonter(ligne.ombre ? "🐟 Trop tôt : le poisson s'est méfié. Attends que le bouchon plonge !" : "🎣 Ligne remontée"); }};
   if(ligne.phase === "touche") return {label: "❗ Ferrer !", run: () => { if(ligne && ligne.phase === "touche") ferrer(); }, alerte: true};
   return null;
 }
 
-/* À chaque image : le vol du bouchon, l'attente, la touche, le poisson montré */
+/* À chaque image : les ombres, le vol du bouchon, l'attente, la touche, le poisson montré.
+   actif : on peut pêcher (pas de panneau ouvert…) ; dehors : sur l'île (les ombres ne nagent que là) */
 const tmp = new THREE.Vector3(), creux = new THREE.Vector3();
-export function updatePeche(dt, actif){
+export function updatePeche(dt, actif, dehors){
   if(rondT < .7){ rondT += dt; const f = rondT / .7; rond.scale.setScalar(1 + f * 3); rondMat.opacity = .8 * (1 - f); if(f >= 1) rond.visible = false; }
+  updateOmbres(dt, dehors);
   if(!ligne) return;
-  if(!actif || bouge() || !canneEnMain()){ remonter(); return; }
+  if(!actif || !dehors || bouge() || !canneEnMain()){ remonter(); return; }
   ligne.t += dt; ligne.T += dt;
   const L = ligne;
   if(L.phase === "vol"){
     const u = Math.min(1, L.t / .45);
     pencheMain(u < .3 ? .35 - 1.1 * u / .3 : -.75 + 1.7 * (u - .3) / .7);           // la canne part en arrière, puis en avant
     bouchon.position.lerpVectors(L.de, L.a, u); bouchon.position.y += Math.sin(u * Math.PI) * .9;
-    if(u >= 1){ L.phase = "attente"; L.t = 0; remous(L.a.x, L.a.z); }
+    if(u >= 1){ L.phase = "attente"; L.t = 0; remous(L.a.x, L.a.z); attirer(L); }
   } else if(L.phase === "attente"){
     let y = EAU + .02 + Math.sin(L.T * 2.6) * .012;
-    if(L.frem.length && L.t >= L.frem[0]){ L.frem.shift(); L.fremi = L.T; vibre(25); }
+    if(!L.ombre){                                     // personne : un poisson qui passe près du bouchon viendra peut-être
+      if(Math.floor(L.t * 2) !== Math.floor((L.t - dt) * 2)) attirer(L);
+      if(L.t > 8 && !L.prevenu){ L.prevenu = true; toast("🎣 Aucun poisson n'approche : lance près d'une ombre dans l'eau", 3000); }
+    } else if(!ombres.includes(L.ombre)){ L.ombre = null; }
+    else if(L.ombre.etat === "mord"){
+      if(L.ombre.arrive){                             // il arrive au bouchon : de 0 à 3 grignotages, puis la touche
+        L.ombre.arrive = false;
+        const total = PECHE.morsure[0] + Math.random() * (PECHE.morsure[1] - PECHE.morsure[0]);
+        L.frem = [];
+        for(let n = Math.floor(Math.random() * 4); n > 0; n--){ const f = .5 + Math.random() * (total - 1); if(L.frem.every(g => Math.abs(g - f) > .6)) L.frem.push(L.t + f); }
+        L.frem.sort((a, b) => a - b); L.reste = L.t + total;
+      }
+      if(L.frem.length && L.t >= L.frem[0]){ L.frem.shift(); L.fremi = L.T; L.ombre.grignote = 1; vibre(25); }
+      if(L.t >= L.reste){ L.phase = "touche"; L.t = 0; vibre(300); remous(L.a.x, L.a.z); }
+    }
     const df = L.T - L.fremi;
-    if(df < .35) y -= Math.sin(df / .35 * Math.PI) * .05;                              // il frémit : un petit plongeon
+    if(df < .35) y -= Math.sin(df / .35 * Math.PI) * .05;                              // il grignote : un petit plongeon
     bouchon.position.set(L.a.x, y, L.a.z);
-    if(L.t >= L.reste){ L.phase = "touche"; L.t = 0; vibre(300); remous(L.a.x, L.a.z); }
   } else if(L.phase === "touche"){
     bouchon.position.set(L.a.x + Math.sin(L.T * 40) * .03, EAU - .12, L.a.z);            // il plonge et tire
     if(L.t >= PECHE.fenetre){ remonter("🐟 Trop tard : le poisson s'est échappé. Relance !"); return; }

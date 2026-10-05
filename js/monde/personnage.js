@@ -64,6 +64,8 @@ export function placePlayer(x, z, fx, fz){
 /* Déplacement : renvoie true si le joueur pousse le joystick (même contre un mur) */
 const SPEED = 3.4;
 let walkT = 0;
+/* La direction où regarde le personnage (vecteur de longueur 1 ; la pêche vise avec) */
+export const regard = () => ({x: facing.x, z: facing.z});
 export function dir4(){ return Math.abs(facing.x) > Math.abs(facing.z) ? {x:Math.sign(facing.x), z:0} : {x:0, z:Math.sign(facing.z) || 1}; }
 export function frontTile(dist){
   const d = dir4();

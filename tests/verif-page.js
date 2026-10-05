@@ -11,6 +11,7 @@ import { sacAdd, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js"
 import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
+import { lacherOmbre } from "../js/peche.js";
 import { player, placePlayer, updatePlayer, R } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -124,10 +125,11 @@ export async function verifier(){
     if(!t) throw new Error("aucun bord de l'eau");
     placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
     if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2)) throw new Error("pas d'ombre de poisson possible ici");   // une ombre devant soi
     $("#btn-act").click();
     let k = 0;
     while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
-    if(k >= 400) throw new Error("le poisson ne mord jamais");
+    if(k >= 400) throw new Error("le poisson ne mord jamais (il ne vient pas au bouchon)");
     $("#btn-act").click();
     const p = state.sac.find(it => POISSONS[it.k]);
     if(!p) throw new Error("pas de poisson dans le sac");
@@ -143,6 +145,7 @@ export async function verifier(){
     frames(2);
     if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
     const avant = state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0);
+    if(!lacherOmbre(player.position.x, player.position.z + 2)) throw new Error("pas d'ombre de poisson possible au bout du ponton");
     $("#btn-act").click();
     let k = 0;
     while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }

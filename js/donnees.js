@@ -183,9 +183,13 @@ export const HEURES = {
 export const SAISONS = {printemps:"printemps", ete:"été", automne:"automne", hiver:"hiver"};
 export const RARETES = {commun:"commun", peuCommun:"peu commun", rare:"rare", legendaire:"légendaire"};
 export const METEOS = {beau:"par beau temps", pluie:"sous la pluie", orage:"une nuit d'orage"};
-/* Le geste : attente avant la touche (de… à…, en secondes), le temps pour ferrer (fenetre), et la chance de
-   chaque rareté parmi les poissons présents (poids) ; à régler en jouant */
-export const PECHE = {attente:[3, 10], fenetre:1, poids:{commun:60, peuCommun:28, rare:10, legendaire:1}};
+/* Le geste : le temps entre l'arrivée du poisson au bouchon et la touche (morsure, de… à…, en secondes), le temps
+   pour ferrer (fenetre), et la chance de chaque rareté parmi les poissons présents (poids).
+   Les ombres (étape 1.6, morceau 3) : au plus max autour du personnage (dont etang à l'étang), dans un rayon de
+   rayon cases, près des bords ; chacune reste vie secondes (de… à…) ; un poisson à moins de attire P du bouchon
+   vient voir. À régler en jouant. */
+export const PECHE = {morsure:[1.5, 5], fenetre:1, poids:{commun:60, peuCommun:28, rare:10, legendaire:1},
+  ombres:{max:5, etang:2, rayon:8, vie:[45, 100], attire:2.5}};
 /* Où et quand on le trouve, en toutes lettres (le sac, le carnet) */
 const EN = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
 export const quandPoisson = p => [p.saisons.length === 4 ? "toute l'année" : p.saisons.map(s => EN[s]).join(", ").replace(/, ([^,]*)$/, " et $1"),
