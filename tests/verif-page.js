@@ -1,14 +1,15 @@
 /* ================= Vérification automatique =================
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
-   couper un arbre, entrer dans la mine, pêcher. Lancée à chaque envoi sur GitHub par
+   couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton). Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, owned, sizeOf } from "../js/regles.js";
-import { map, idx, N, H, centerOf } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
+import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { player, placePlayer, updatePlayer, R } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -117,7 +118,7 @@ export async function verifier(){
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
       const i = idx(x, z), s = idx(x, z + 1);
-      if(map.type[i] !== "water" && !map.obj[i] && !occ.has(i) && !state.sol[i] && map.type[s] === "water"){ t = [x, z]; break; }
+      if(map.type[i] !== "water" && i !== entreePonton && !map.obj[i] && !occ.has(i) && !state.sol[i] && eauLibre(s)){ t = [x, z]; break; }
     }
     if(!t) throw new Error("aucun bord de l'eau");
     placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
@@ -131,6 +132,23 @@ export async function verifier(){
     if(!p) throw new Error("pas de poisson dans le sac");
     frames(40);
     return `${objet(p.k).nom.toLowerCase()}, mordu au bout de ${(k * .05).toFixed(1)} s`;
+  });
+  await etape("Pêcher depuis le ponton", async () => {
+    const P = state.ponton;
+    if(!P) throw new Error("pas de ponton sur l'île");
+    placePlayer(centerOf(P.x), centerOf(P.z - 1), 0, 1);                       // sur la terre, face au ponton
+    keys.d = 1; for(let k = 0; k < 120; k++) updatePlayer(.016); keys.d = 0;   // marcher jusqu'au bout
+    if(tileOf(player.position.z) < P.z + P.n - 2) throw new Error("on ne marche pas sur le ponton");
+    frames(2);
+    if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
+    const avant = state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0);
+    $("#btn-act").click();
+    let k = 0;
+    while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+    if(k >= 400) throw new Error("rien ne mord au bout du ponton");
+    $("#btn-act").click(); frames(40);
+    if(state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0) <= avant) throw new Error("pas de poisson dans le sac");
+    return `${P.n} cases dans l'eau`;
   });
   return {ok, erreurs};
 }

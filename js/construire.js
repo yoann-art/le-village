@@ -9,6 +9,7 @@ import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars,
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, idx, inb, map, tileOf, setObj } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
+import { entreePonton } from "./monde/ponton.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
 import { renderHUD, toast, openSheet, closeSheet } from "./interface.js";
@@ -31,7 +32,7 @@ function anchorFor(type){
 /* Peut-on poser ici ? null si oui ; sinon « occupé » (terrain déjà pris), « perso » (le personnage
    est dessous) ou « porte » (sa porte serait bloquée, ou il bloquerait celle d'un autre bâtiment) */
 /* Une case libre pour bâtir : terre ferme, rien dessus (les herbes hautes, elles, s'en vont sous le bâtiment) */
-const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && (!map.obj[idx(x,z)] || map.obj[idx(x,z)] === "herbe") && !occ.has(idx(x,z));
+const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && (!map.obj[idx(x,z)] || map.obj[idx(x,z)] === "herbe") && !occ.has(idx(x,z)) && idx(x,z) !== entreePonton;   // le passage vers le ponton reste libre
 const clearHerbes = (type, ax, az) => [...footprint(type, ax, az), doorTile(type, ax, az)]
   .forEach(([x,z]) => { if(inb(x,z) && map.obj[idx(x,z)] === "herbe") setObj(idx(x,z), null); });   // rien ne pousse devant la porte
 function placeProblem(type, ax, az){

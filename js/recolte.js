@@ -28,6 +28,7 @@ import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock } from "./monde/mine.js";
+import { eauLibre, entreePonton } from "./monde/ponton.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
@@ -76,7 +77,7 @@ function target(){
     const i = idx(x, z);
     if(occ.has(i)) return null;                       // un bâtiment : c'est son bouton à lui
     if(map.obj[i]) return {w: ILE, i, x, z, o: map.obj[i]};
-    if((arrosoir || canne) && map.type[i] === "water") return {i, x, z, eau: true, peche: !arrosoir};   // le bord de l'eau : l'arrosoir, ou la canne
+    if((arrosoir || canne) && eauLibre(i)) return {i, x, z, eau: true, peche: !arrosoir};   // le bord de l'eau : l'arrosoir, ou la canne
   }
   const [x, z] = frontTile(.8);
   if((GRAINES[state.main] || POSABLES[state.main]) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
@@ -92,6 +93,7 @@ function plantProblem(t, plante){
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
   if(solAt(i)) return "Ramasse d'abord ce qui est par terre";
   if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
+  if(i === entreePonton) return "Le passage vers le ponton reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour planter devant toi";
   if(plante === "tree" && NEAR.some(([dx, dz]) => inb(t.x + dx, t.z + dz) && map.obj[idx(t.x + dx, t.z + dz)] === "tree"))
     return "Trop près d'un autre arbre : laisse une case entre les deux";

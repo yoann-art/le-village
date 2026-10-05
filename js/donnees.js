@@ -124,49 +124,76 @@ export const SOL_RETOUR = 600;
 /* La mine : combien de rochers chaque jour, dont combien à veines de cuivre (à régler en jouant) */
 export const MINE = {rochers:10, cuivre:3};
 
-/* La pêche (étape 1.6, liste validée par Yo le 2 octobre 2026) : des espèces réelles de l'île, chacune avec
-   son lieu (« etang » ou « mer »), ses saisons, ses heures (voir HEURES) et sa rareté, selon la vraie
-   horloge du téléphone (hémisphère nord en attendant le choix de l'étape 1.10). À toute heure et en toute
-   saison, il reste au moins un poisson commun à chaque endroit. une : le poisson est féminin (« une perche ») ;
-   taille : de… à… en cm ; prix : en or au comptoir (étape 1.6, morceau 2) ; couleur et forme : son dessin. */
+/* La pêche (étape 1.6) : les poissons de l'île d'après le Grand Carnet (pages « Les poissons », décision de Yo
+   le 5 octobre 2026), plus la truite, le congre et la Vieille Carpe d'or gardés par Yo, et quatre poissons du
+   ponton choisis par Claude (merlan, mulet, orphie, encornet ; demande de Yo : la mer n'est jamais vide).
+   Chacun : son lieu (« etang » ou « mer »), d'où on le pêche (depuis : « ponton », ou « barque » au large,
+   plus tard), ses saisons, ses heures (HEURES), sa météo s'il en a une (« beau », « pluie », « orage » : en
+   attendant la météo de l'étape 1.10, il fait toujours beau), sa rareté, sa particularité (note, du carnet),
+   sa taille (cm), son prix en or au comptoir (étape 1.6, morceau 2), sa couleur et sa forme (son dessin).
+   Un légendaire ne se prend qu'une fois dans tout le jeu (carnet). À toute heure et en toute saison, il reste
+   un poisson commun à l'étang (la perche) et en mer depuis la plage (maquereau, rouget, merlan…).
+   une : féminin (« une perche »). Vraie horloge du téléphone, hémisphère nord en attendant l'étape 1.10. */
 const TOUTE = ["printemps", "ete", "automne", "hiver"];
 export const POISSONS = {
-  gardon:  {nom:"Gardon", pluriel:"gardons", lieu:"etang", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[10, 30], prix:1, couleur:0xB8C4CC},
-  perche:  {nom:"Perche", pluriel:"perches", une:true, lieu:"etang", rarete:"commun", saisons:["printemps", "ete", "automne"], heures:"jour", taille:[15, 40], prix:1, couleur:0x8DA35A},
-  carpe:   {nom:"Carpe", pluriel:"carpes", une:true, lieu:"etang", rarete:"peuCommun", saisons:["printemps", "ete", "automne"], heures:"toujours", taille:[30, 80], prix:3, couleur:0xB08A4A, forme:"rond"},
-  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86},
-  brochet: {nom:"Brochet", pluriel:"brochets", lieu:"etang", rarete:"rare", saisons:["automne", "hiver"], heures:"aubeSoir", taille:[50, 110], prix:8, couleur:0x6E7E4A, forme:"fin"},
-  anguille:{nom:"Anguille", pluriel:"anguilles", une:true, lieu:"etang", rarete:"rare", saisons:["ete", "automne"], heures:"nuit", taille:[40, 100], prix:8, couleur:0x5B5642, forme:"long"},
-  carpeOr: {nom:"Vieille Carpe d'or", pluriel:"Vieilles Carpes d'or", une:true, lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"aube", taille:[90, 130], prix:30, couleur:0xF2C14E, forme:"rond"},
-  sardine: {nom:"Sardine", pluriel:"sardines", une:true, lieu:"mer", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[12, 22], prix:1, couleur:0x9FB8D0, forme:"fin"},
-  maquereau:{nom:"Maquereau", pluriel:"maquereaux", lieu:"mer", rarete:"commun", saisons:["printemps", "ete"], heures:"toujours", taille:[25, 45], prix:1, couleur:0x4F7FA0, forme:"fin"},
-  bar:     {nom:"Bar", pluriel:"bars", lieu:"mer", rarete:"peuCommun", saisons:TOUTE, heures:"aubeSoir", taille:[35, 80], prix:3, couleur:0xA9B2B8},
-  dorade:  {nom:"Dorade", pluriel:"dorades", une:true, lieu:"mer", rarete:"peuCommun", saisons:["ete", "automne"], heures:"jour", taille:[25, 50], prix:3, couleur:0xC9B98A, forme:"rond"},
-  congre:  {nom:"Congre", pluriel:"congres", lieu:"mer", rarete:"rare", saisons:TOUTE, heures:"nuit", taille:[80, 180], prix:8, couleur:0x5A5A5E, forme:"long"},
-  thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", rarete:"rare", saisons:["ete"], heures:"jour", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond"}
+  /* L'étang */
+  gardon:  {nom:"Gardon", pluriel:"gardons", lieu:"etang", rarete:"commun", saisons:TOUTE, heures:"jour", taille:[10, 30], prix:1, couleur:0xB8C4CC, note:"Le premier poisson qu'on attrape"},
+  perche:  {nom:"Perche", pluriel:"perches", une:true, lieu:"etang", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[15, 40], prix:1, couleur:0x8DA35A, note:"Rayée, des épines sur le dos"},
+  tanche:  {nom:"Tanche", pluriel:"tanches", une:true, lieu:"etang", rarete:"commun", saisons:["ete"], heures:"soir", taille:[20, 50], prix:1, couleur:0x9A9A3C, note:"Vert doré, elle aime la vase"},
+  carpe:   {nom:"Carpe", pluriel:"carpes", une:true, lieu:"etang", rarete:"commun", saisons:["printemps", "ete", "automne"], heures:"toujours", taille:[30, 80], prix:1, couleur:0xB08A4A, forme:"rond", note:"Grosse et patiente, elle tire fort"},
+  ecrevisse:{nom:"Écrevisse", pluriel:"écrevisses", une:true, lieu:"etang", rarete:"commun", saisons:["ete"], heures:"nuit", taille:[8, 15], prix:1, couleur:0xB5523B, forme:"crustace", note:"Elle pince quand on la décroche"},
+  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86, note:"Tachetée, elle remonte le courant"},
+  brochet: {nom:"Brochet", pluriel:"brochets", lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"aube", taille:[50, 110], prix:3, couleur:0x6E7E4A, forme:"fin", note:"Des dents pointues, il chasse les petits poissons"},
+  anguille:{nom:"Anguille", pluriel:"anguilles", une:true, lieu:"etang", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", meteo:"pluie", taille:[40, 100], prix:3, couleur:0x5B5642, forme:"long", note:"Elle glisse et se tortille"},
+  koi:     {nom:"Carpe koï", pluriel:"carpes koï", une:true, lieu:"etang", rarete:"rare", saisons:["printemps"], heures:"jour", meteo:"beau", taille:[30, 70], prix:8, couleur:0xF08A3C, forme:"rond", note:"Orange et blanche, splendide en bassin"},
+  carpeOr: {nom:"Vieille Carpe d'or", pluriel:"Vieilles Carpes d'or", une:true, lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"aube", taille:[90, 130], prix:30, couleur:0xF2C14E, forme:"rond", note:"Une carpe très ancienne, aux écailles d'or"},
+  silure:  {nom:"Vieux Silure", pluriel:"Vieux Silures", lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"nuit", meteo:"orage", taille:[180, 250], prix:30, couleur:0x4A4A3E, note:"Le plus vieux poisson de l'île, long comme une barque"},
+  /* La mer, depuis la plage */
+  maquereau:{nom:"Maquereau", pluriel:"maquereaux", lieu:"mer", rarete:"commun", saisons:["printemps", "ete"], heures:"toujours", taille:[25, 45], prix:1, couleur:0x4F7FA0, forme:"fin", note:"Rayé de bleu, très rapide"},
+  rouget:  {nom:"Rouget", pluriel:"rougets", lieu:"mer", rarete:"commun", saisons:["ete"], heures:"toujours", taille:[15, 35], prix:1, couleur:0xD9604A, note:"Rouge, avec des moustaches"},
+  merlan:  {nom:"Merlan", pluriel:"merlans", lieu:"mer", rarete:"commun", saisons:["automne", "hiver"], heures:"toujours", taille:[20, 40], prix:1, couleur:0xC2C8CF, forme:"fin", note:"Argenté, il aime les eaux froides"},
+  bar:     {nom:"Bar", pluriel:"bars", lieu:"mer", rarete:"peuCommun", saisons:TOUTE, heures:"aube", taille:[35, 80], prix:3, couleur:0xA9B2B8, note:"Argenté et combatif"},
+  dorade:  {nom:"Dorade", pluriel:"dorades", une:true, lieu:"mer", rarete:"peuCommun", saisons:["ete"], heures:"toujours", taille:[25, 50], prix:3, couleur:0xC9B98A, forme:"rond", note:"Un trait doré entre les yeux"},
+  sole:    {nom:"Sole", pluriel:"soles", une:true, lieu:"mer", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", taille:[25, 50], prix:3, couleur:0xA08B6A, forme:"rond", note:"Plate, cachée dans le sable"},
+  congre:  {nom:"Congre", pluriel:"congres", lieu:"mer", rarete:"rare", saisons:TOUTE, heures:"nuit", taille:[80, 180], prix:8, couleur:0x5A5A5E, forme:"long", note:"Long et puissant, il sort la nuit"},
+  /* La mer, depuis le ponton */
+  sardine: {nom:"Sardine", pluriel:"sardines", une:true, lieu:"mer", depuis:"ponton", rarete:"commun", saisons:["ete"], heures:"toujours", taille:[12, 22], prix:1, couleur:0x9FB8D0, forme:"fin", note:"Elle nage en bancs argentés"},
+  mulet:   {nom:"Mulet", pluriel:"mulets", lieu:"mer", depuis:"ponton", rarete:"commun", saisons:TOUTE, heures:"jour", taille:[30, 60], prix:1, couleur:0x8E9AA3, note:"Il tourne autour des pontons"},
+  orphie:  {nom:"Orphie", pluriel:"orphies", une:true, lieu:"mer", depuis:"ponton", rarete:"peuCommun", saisons:["printemps"], heures:"jour", taille:[40, 80], prix:3, couleur:0x5FA39B, forme:"long", note:"Un long bec pointu, et des arêtes vertes"},
+  encornet:{nom:"Encornet", pluriel:"encornets", lieu:"mer", depuis:"ponton", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"nuit", taille:[15, 40], prix:3, couleur:0xE8C2B4, forme:"calmar", note:"Il sort la nuit, attiré par la lumière"},
+  /* La mer, au large en barque (quand la barque arrivera) */
+  thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", depuis:"barque", rarete:"rare", saisons:["ete"], heures:"toujours", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond", note:"Énorme : il faut tenir longtemps"}
 };
 /* Les moments de la journée, en heures du téléphone : [de, à[ */
 export const HEURES = {
   toujours:{nom:"à toute heure", h:[[0, 24]]},
-  jour:{nom:"de jour (7 h – 19 h)", h:[[7, 19]]},
+  jour:{nom:"le jour (7 h – 19 h)", h:[[7, 19]]},
+  soir:{nom:"le soir (18 h – 21 h)", h:[[18, 21]]},
   nuit:{nom:"la nuit (21 h – 5 h)", h:[[21, 24], [0, 5]]},
-  matinSoir:{nom:"le matin et le soir (5 h – 9 h, 17 h – 21 h)", h:[[5, 9], [17, 21]]},
-  aubeSoir:{nom:"à l'aube et le soir (5 h – 8 h, 18 h – 21 h)", h:[[5, 8], [18, 21]]},
-  aube:{nom:"à l'aube (5 h – 8 h)", h:[[5, 8]]}
+  aube:{nom:"à l'aube (5 h – 8 h)", h:[[5, 8]]},
+  matinSoir:{nom:"le matin et le soir (5 h – 9 h, 17 h – 21 h)", h:[[5, 9], [17, 21]]}
 };
 export const SAISONS = {printemps:"printemps", ete:"été", automne:"automne", hiver:"hiver"};
 export const RARETES = {commun:"commun", peuCommun:"peu commun", rare:"rare", legendaire:"légendaire"};
+export const METEOS = {beau:"par beau temps", pluie:"sous la pluie", orage:"une nuit d'orage"};
 /* Le geste : attente avant la touche (de… à…, en secondes), le temps pour ferrer (fenetre), et la chance de
    chaque rareté parmi les poissons présents (poids) ; à régler en jouant */
 export const PECHE = {attente:[3, 10], fenetre:1, poids:{commun:60, peuCommun:28, rare:10, legendaire:1}};
-/* Le dessin d'un poisson, pour le sac, les coffres et le carnet (à la place d'un emoji, pour les reconnaître) */
-const hex = c => "#" + c.toString(16).padStart(6, "0");
+/* Où et quand on le trouve, en toutes lettres (le sac, le carnet) */
 const EN = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
-export const quandPoisson = p => `${p.saisons.length === 4 ? "toute l'année" : p.saisons.map(s => EN[s]).join(", ").replace(/, ([^,]*)$/, " et $1")}, ${HEURES[p.heures].nom}`;
+export const quandPoisson = p => [p.saisons.length === 4 ? "toute l'année" : p.saisons.map(s => EN[s]).join(", ").replace(/, ([^,]*)$/, " et $1"),
+  p.meteo === "orage" ? "" : HEURES[p.heures].nom, p.meteo ? METEOS[p.meteo] : ""].filter(Boolean).join(", ");
+export const ouPoisson = p => (p.lieu === "mer" ? "en mer" : "à l'étang") + (p.depuis === "ponton" ? ", depuis le ponton" : p.depuis === "barque" ? ", au large en barque" : "");
+/* Le dessin d'un poisson, pour le sac, les coffres et le carnet (à la place d'un emoji, pour les reconnaître) ;
+   l'écrevisse et l'encornet gardent leur emoji */
+const hex = c => "#" + c.toString(16).padStart(6, "0");
 for(const p of Object.values(POISSONS)){
-  p.usage = `Poisson ${RARETES[p.rarete]} ${p.lieu === "mer" ? "de mer" : "de l'étang"} : ${quandPoisson(p)}. De ${p.taille[0]} à ${p.taille[1]} cm.`;
+  const r = RARETES[p.rarete];
+  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${ouPoisson(p)} : ${quandPoisson(p)}. De ${p.taille[0]} à ${p.taille[1]} cm.` +
+    (p.rarete === "legendaire" ? " Une seule prise dans tout le jeu." : "");
+  p.emoji = p.forme === "crustace" ? "🦞" : p.forme === "calmar" ? "🦑" : "🐟";
+  if(p.forme === "crustace" || p.forme === "calmar") continue;
   const ry = {long:3, fin:4.4, rond:7}[p.forme] || 5.6, rx = p.forme === "long" ? 13 : 11, a = Math.max(3, ry * .9), c = hex(p.couleur);
-  p.emoji = "🐟";
   p.icone = `<svg class="ico-poisson${p.rarete === "legendaire" ? " legende" : ""}" viewBox="0 0 32 20" aria-hidden="true">` +
     `<polygon points="${2 * rx - 1},10 31,${10 - a} 31,${10 + a}" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
     `<ellipse cx="${rx + 1}" cy="10" rx="${rx}" ry="${ry}" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +

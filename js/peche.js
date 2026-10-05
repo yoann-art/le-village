@@ -2,8 +2,9 @@
    La canne en main (ou dans le sac, mains libres), face à la mer ou à l'étang : « 🎣 Lancer » (voir recolte.js).
    Le bouchon part au bout du fil et flotte. On attend (PECHE.attente) : il frémit parfois pour rien, puis il
    plonge : le téléphone vibre et le bouton devient « ❗ Ferrer ! » pendant PECHE.fenetre seconde.
-   - À temps : un poisson du lieu, de l'heure et de la saison du téléphone (POISSONS, selon sa rareté) va dans
-     le sac ; le personnage le montre au-dessus de sa tête. Le carnet garde chaque espèce prise, combien, et
+   - À temps : un poisson du lieu (étang, mer ; depuis la plage ou le ponton), de l'heure, de la saison et de la
+     météo (POISSONS, d'après le Grand Carnet, selon sa rareté) va dans le sac ; le personnage le montre
+     au-dessus de sa tête. Un légendaire ne se prend qu'une fois dans tout le jeu. Le carnet garde chaque espèce prise, combien, et
      le plus gros (state.carnet.poissons = {k: {n, max}}).
    - Trop tôt ou trop tard : il s'échappe (décidé par Yo) ; on relance aussitôt, rien n'est perdu.
    Bouger, lâcher la canne ou ouvrir un panneau remonte la ligne. Sac plein : on ne pêche pas. */
@@ -13,6 +14,7 @@ import { POISSONS, HEURES, PECHE, OUTILS, SAC } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
 import { map, idx, inb, tileOf, lieuEau } from "./monde/ile.js";
+import { eauLibre, surPonton } from "./monde/ponton.js";
 import { player, pencheMain, dir4 } from "./monde/personnage.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
@@ -20,23 +22,30 @@ import { toast } from "./interface.js";
 /* ----- Quels poissons mordent ici et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
 const SAISON = ["hiver", "hiver", "printemps", "printemps", "printemps", "ete", "ete", "ete", "automne", "automne", "automne", "hiver"];
 export const saisonDe = d => SAISON[d.getMonth()];
-export function presents(lieu, d = new Date()){
+/* La météo : elle arrive à l'étape 1.10 ; en attendant, il fait toujours beau (décidé par Yo) : l'anguille
+   (pluie) et le Vieux Silure (orage) attendent la météo */
+export const meteo = () => "beau";
+const dejaPris = k => { const e = state.carnet.poissons[k]; return !!e && e.n > 0; };
+/* lieu : « etang » ou « mer » ; ponton : on pêche depuis le ponton (la barque viendra plus tard) */
+export function presents(lieu, ponton, d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60;
   return Object.keys(POISSONS).filter(k => { const p = POISSONS[k];
-    return p.lieu === lieu && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b); });
+    return p.lieu === lieu && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
+      && (!p.meteo || p.meteo === meteo()) && (!p.depuis || p.depuis === "ponton" && ponton)
+      && !(p.rarete === "legendaire" && dejaPris(k)); });
 }
 /* Le poisson qui mord : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille
    penche vers les petites (les gros sont plus rares) */
-function tirer(lieu){
+function tirer(lieu, ponton){
   const par = {};
-  presents(lieu).forEach(k => { const r = POISSONS[k].rarete; (par[r] = par[r] || []).push(k); });
+  presents(lieu, ponton).forEach(k => { const r = POISSONS[k].rarete; (par[r] = par[r] || []).push(k); });
   const rangs = Object.keys(par);
   let x = Math.random() * rangs.reduce((n, r) => n + PECHE.poids[r], 0);
   const r = rangs.find(r => (x -= PECHE.poids[r]) < 0) || rangs[0];
   const k = par[r][Math.floor(Math.random() * par[r].length)], [a, b] = POISSONS[k].taille;
   return {k, cm: Math.round(a + (b - a) * Math.random() ** 1.6)};
 }
-const leNom = (k, maj) => { const p = POISSONS[k], s = p.rarete === "legendaire" ? `la ${p.nom}` : `${p.une ? "une" : "un"} ${p.nom.toLowerCase()}`;
+const leNom = (k, maj) => { const p = POISSONS[k], s = p.rarete === "legendaire" ? `${p.une ? "la" : "le"} ${p.nom}` : `${p.une ? "une" : "un"} ${p.nom.toLowerCase()}`;
   return maj ? s[0].toUpperCase() + s.slice(1) : s; };
 
 /* ----- Le bouchon, le fil, les ronds dans l'eau, le poisson montré ----- */
@@ -55,9 +64,29 @@ const rond = new THREE.Mesh(new THREE.RingGeometry(.1, .15, 24), rondMat);
 rond.rotation.x = -Math.PI/2; rond.visible = false; scene.add(rond);
 let rondT = 9;
 function remous(x, z){ rond.position.set(x, EAU + .03, z); rondT = 0; rond.visible = true; }
-/* Le modèle d'un poisson, de côté (style jouet) ; plus gros selon sa taille */
+/* Le modèle d'un poisson, de côté (style jouet) ; plus gros selon sa taille. L'écrevisse et l'encornet ont le leur */
+function crustace(g, c){
+  g.add(part(G.head, c, 1.2, .5, .7, 0, 0, 0));                                       // le corps
+  const queue = part(G.cone, c, .5, .3, .3, .36, -.02, 0); queue.rotation.z = Math.PI/2; g.add(queue);
+  for(const z of [-.12, .12]){
+    const bras = part(G.cyl, c, .05, .2, .05, -.32, .02, z * 1.2); bras.rotation.z = Math.PI/2.4; g.add(bras);
+    g.add(part(G.head, c, .55, .35, .4, -.44, .06, z * 1.5));                         // la pince
+    g.add(part(G.eye, 0x1C2230, 1.2, 1.2, 1.2, -.24, .1, z * .6));
+  }
+}
+function calmar(g, c){
+  const corps = part(G.cone, c, .38, .6, .38, .14, 0, 0); corps.rotation.z = -Math.PI/2; g.add(corps);   // le manteau, pointe en arrière
+  g.add(part(G.head, c, .75, .7, .7, -.2, 0, 0));                                     // la tête
+  for(let n = 0; n < 5; n++){ const t = part(G.cyl, c, .035, .3, .035, -.36, -.08 + n * .04, -.08 + n * .04); t.rotation.z = Math.PI/2; g.add(t); }
+  for(const z of [-.12, .12]) g.add(part(G.eye, 0x1C2230, 1.4, 1.4, 1.4, -.24, .06, z));
+}
 export function poissonMesh(k, cm){
   const p = POISSONS[k], g = new THREE.Group();
+  if(p.forme === "crustace" || p.forme === "calmar"){
+    (p.forme === "crustace" ? crustace : calmar)(g, p.couleur);
+    g.scale.setScalar(.8 + Math.min(1, cm / 40) * .5);
+    return g;
+  }
   const lx = p.forme === "long" ? 1.6 : 1.25, ly = lx * ({long: .25, fin: .4, rond: .72}[p.forme] || .52), demi = .24 * lx;
   const m = p.rarete === "legendaire" ? new THREE.MeshLambertMaterial({color: p.couleur, emissive: 0x6B4A00}) : p.couleur;
   g.add(part(G.head, m, lx, ly, .55, 0, 0, 0));                                       // le corps
@@ -93,17 +122,20 @@ export function lancer(t){
   let s0 = null, s1 = null;
   for(let s = .5; s <= 3.01; s += .1){
     const tx = tileOf(p.x + d.x * s), tz = tileOf(p.z + d.z * s);
-    if(!inb(tx, tz) || map.type[idx(tx, tz)] === "water"){ if(s0 === null) s0 = s; s1 = s; }
+    if(!inb(tx, tz) || eauLibre(idx(tx, tz))){ if(s0 === null) s0 = s; s1 = s; }
     else if(s0 !== null) break;
   }
   if(s0 === null) return;
+  /* Rien ne mord ici en ce moment (cela ne devrait pas arriver : la mer et l'étang ne sont jamais vides) */
+  const lieu = lieuEau(t.i), ponton = surPonton(p.x, p.z);
+  if(!presents(lieu, ponton).length){ toast("🎣 Rien ne mord ici en ce moment : essaie un autre endroit, ou reviens plus tard", 3000); return; }
   const s = Math.max(s0 + .15, Math.min(2.2, s1 - .15));
   const reste = PECHE.attente[0] + Math.random() * (PECHE.attente[1] - PECHE.attente[0]);
   /* De 0 à 3 frémissements pour rien, avant la vraie touche */
   const frem = [];
   for(let n = Math.floor(Math.random() * 4); n > 0; n--){ const f = .8 + Math.random() * (reste - 1.6); if(f > .8 && frem.every(g => Math.abs(g - f) > .7)) frem.push(f); }
   ligne = {phase: "vol", t: 0, T: 0, de: boutDeCanne().clone(), a: new THREE.Vector3(p.x + d.x * s, EAU, p.z + d.z * s),
-    lieu: lieuEau(t.i), reste, frem: frem.sort((a, b) => a - b), fremi: -9};
+    lieu, ponton, reste, frem: frem.sort((a, b) => a - b), fremi: -9};
   bouchon.position.copy(ligne.de); bouchon.visible = true; fil.visible = true;
 }
 /* Remonter la ligne (un message si besoin) */
@@ -115,7 +147,7 @@ function remonter(msg){
   if(msg) toast(msg, 2200);
 }
 function ferrer(){
-  const {k, cm} = tirer(ligne.lieu);
+  const {k, cm} = tirer(ligne.lieu, ligne.ponton);
   if(sacPlace(k) < 1){ remonter(`🎒 Ton sac est plein : tu relâches ${leNom(k)}`); return; }
   sacAdd(k, 1);
   const c = state.carnet.poissons, e = c[k] || (c[k] = {n: 0, max: 0});
@@ -129,7 +161,7 @@ function ferrer(){
   bouchon.visible = false; fil.visible = false;
   remous(ligne.a.x, ligne.a.z);
   const nom = `${leNom(k, true)} de ${cm} cm !`;
-  toast(POISSONS[k].rarete === "legendaire" ? `✨ ${nom} Un poisson légendaire, dans ton sac`
+  toast(POISSONS[k].rarete === "legendaire" ? `✨ ${nom} Un poisson légendaire, le seul de tout le jeu : dans ton sac`
     : nouveau ? `🐟 ${nom} Nouveau poisson pour ton carnet, dans ton sac`
     : record ? `🐟 ${nom} C'est ton record, dans ton sac`
     : `🐟 ${nom} Dans ton sac`, 3200);

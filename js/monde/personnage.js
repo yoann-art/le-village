@@ -7,6 +7,7 @@ import { occ } from "./batiments.js";
 import { state } from "../sauvegarde.js";
 import { jv, keys } from "../commandes.js";
 import { makeOutil } from "./outils3d.js";
+import { pontonCases } from "./ponton.js";
 
 export const player = new THREE.Group();
 const body = new THREE.Group();
@@ -38,13 +39,13 @@ export function pencheMain(rx){ hand.rotation.x = rx === undefined ? .35 : rx; }
 player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P
 scene.add(player);
 
-/* Où peut-on marcher ? Dehors, sur l'île ; dedans, dans la pièce (voir lieux.js) */
+/* Où peut-on marcher ? Dehors, sur l'île et sur le ponton ; dedans, dans la pièce (voir lieux.js) */
 export const R = .26;
 export function islandWalkable(wx, wz){
   const x = tileOf(wx), z = tileOf(wz);
   if(!inb(x,z)) return false;
   const i = idx(x,z);
-  return map.type[i] !== "water" && (!map.obj[i] || map.obj[i] === "herbe") && !occ.has(i);   // on traverse les herbes hautes
+  return (map.type[i] !== "water" || pontonCases.has(i)) && (!map.obj[i] || map.obj[i] === "herbe") && !occ.has(i);   // on traverse les herbes hautes
 }
 let walkable = islandWalkable;
 export function setWalkable(fn){ walkable = fn; }
