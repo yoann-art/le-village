@@ -2,7 +2,7 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir. Lancée à chaque envoi sur GitHub par
+   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte au filet. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, objet } from "../js/donnees.js";
@@ -12,6 +12,7 @@ import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
+import { lacherInsecte } from "../js/insectes.js";
 import { player, placePlayer, updatePlayer, R } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -184,6 +185,23 @@ export async function verifier(){
     if(!poisson || pris.thym !== 1) throw new Error(`pris : ${JSON.stringify(pris)}`);
     for(const [k, v] of Object.entries(pris)) addOwned(k, v);                   // rendus
     return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et un brin de thym`;
+  });
+  await etape("Attraper un insecte au filet", async () => {
+    sacAdd("filet", 1); hold(null);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);                   // immobile : on ne fait peur à personne
+    const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
+    const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1));
+    if(i < 0) throw new Error("pas de place libre");
+    placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
+    lacherInsecte("fourmi", player.position.x, player.position.z + .7, .03);
+    frames(2);
+    if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    const avant = owned("fourmi");
+    $("#btn-act").click();
+    if(owned("fourmi") <= avant) throw new Error("pas de fourmi dans le sac");
+    if(!state.carnet.insectes.fourmi) throw new Error("la fourmi n'est pas au carnet");
+    frames(40);
+    return "une fourmi, inscrite au carnet";
   });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */

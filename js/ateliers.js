@@ -10,7 +10,7 @@
    Le comptoir vend aussi les poissons et les plats qu'on possède (étape 1.6) : un par un, ou tous d'un coup
    (sauf les légendaires) ; une recette peut demander un ingrédient « au choix » (un poisson : voir payer). */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, objet, icone } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
@@ -42,14 +42,14 @@ function chain(q){
 }
 /* Les recettes d'un plan de travail (key : pour les retrouver au toucher) ; le comptoir y ajoute la vente des
    poissons et des plats qu'on possède, avec leur prix (POISSONS, PRODUITS) */
-const VENDABLES = () => [...Object.keys(POISSONS), "poissonGrille"];
+const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), "poissonGrille"];
 function recettesDe(b){
   const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i}));
   if(!a.vente) return list;
-  const cat = "Poissons et plats", aVendre = VENDABLES().filter(k => owned(k) > 0), tous = {};
+  const cat = "Poissons, insectes et plats", aVendre = VENDABLES().filter(k => owned(k) > 0), tous = {};
   for(const k of aVendre) if(!(POISSONS[k] && POISSONS[k].rarete === "legendaire")) tous[k] = owned(k);
   const nb = Object.values(tous).reduce((n, v) => n + v, 0);
-  if(nb > 1) list.push({key: "tout", cat, tout: true, nom: `Tous tes poissons et plats (${nb}), sauf les légendaires`, icone: "🐟",
+  if(nb > 1) list.push({key: "tout", cat, tout: true, nom: `Tous tes poissons, insectes et plats (${nb}), sauf les légendaires`, icone: "🐟",
     out: "or", n: Object.entries(tous).reduce((s, [k, v]) => s + v * objet(k).prix, 0), in: tous, lvl: 1});
   for(const k of aVendre) list.push({key: "v:" + k, cat, out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   return list;
@@ -61,7 +61,7 @@ function vendre(a, b, r){
   addOwned(r.out, n);
   save(); renderHUD();
   const nb = Object.values(pris).reduce((s, v) => s + v, 0);
-  const quoi = r.tout ? `${nb} poissons et plats` : Object.entries(pris).map(([k, v]) => many(k, v)).join(", ");
+  const quoi = r.tout ? `${nb} poissons, insectes et plats` : Object.entries(pris).map(([k, v]) => many(k, v)).join(", ");
   toast(`${a.emoji} Vendu : ${quoi}. Tu gagnes ${info(r.out).emoji} ${many(r.out, n)}`, 2600);
 }
 function fabriquer(b, r){
@@ -167,7 +167,7 @@ function render(){
       const head = r.cat && r.cat !== (recs[i - 1] || {}).cat ? `<h4 class="rec-cat">${r.cat}</h4>` : "";
       return head + recetteHTML(b, a, r, full);
     }).join("") +
-    (a.vente && !recs.some(r => r.cat === "Poissons et plats") ? `<h4 class="rec-cat">Poissons et plats</h4><p class="hint-box">Pêche à l'étang ou en mer : tes poissons (et tes plats) se vendront ici, chacun à son prix.</p>` : ""));
+    (a.vente && !recs.some(r => r.cat === "Poissons, insectes et plats") ? `<h4 class="rec-cat">Poissons, insectes et plats</h4><p class="hint-box">Pêche à l'étang ou en mer, attrape des insectes au filet : ils se vendront ici, chacun à son prix.</p>` : ""));
 }
 function recetteHTML(b, a, r, full){
   if(r.lock) return `<div class="brow"><div class="be" aria-hidden="true">${r.emoji}</div>

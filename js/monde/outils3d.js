@@ -27,6 +27,13 @@ const BUILD = {
     g.add(part(G.cyl, C.cream, .008, .3, .008, 0, .7, .03));                           // fil
     const bout = new THREE.Object3D(); bout.name = "bout"; bout.position.set(0, .84, 0); g.add(bout);   // le bout de la gaule : le fil de la pêche en part
   },
+  filet(g){
+    g.add(part(G.cyl, C.wood, .04, .7, .04, 0, .28, 0));                              // manche
+    const cercle = new THREE.Mesh(new THREE.TorusGeometry(.13, .015, 6, 16), new THREE.MeshLambertMaterial({color: C.dark}));
+    cercle.position.set(0, .7, 0); cercle.rotation.y = Math.PI/2; g.add(cercle);       // le cercle
+    const poche = part(G.cone, 0xF4EFE6, .26, .22, .26, 0, .7, .1);                   // la poche du filet
+    poche.rotation.x = -Math.PI/2; poche.material = new THREE.MeshLambertMaterial({color: 0xF4EFE6, transparent: true, opacity: .7}); g.add(poche);
+  },
   arrosoir(g){
     g.add(part(G.cyl, C.wood, .28, .26, .28, 0, .02, .1));                            // le seau, tenu par son anse
     g.add(part(G.cyl, C.dark, .3, .03, .3, 0, .15, .1));                              // cerclage

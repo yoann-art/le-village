@@ -47,6 +47,8 @@ export const surPonton = (wx, wz) => { const x = tileOf(wx), z = tileOf(wz); ret
 /* De l'eau où l'on pêche (pas le ponton lui-même) */
 export const eauLibre = i => map.type[i] === "water" && !pontonCases.has(i);
 
+/* Les lanternes allumées dehors (les papillons de nuit tournent autour : voir insectes.js) */
+export const lanternes = [];
 /* Le modèle : des planches sur des pieux, une borne au bout (style jouet, bois de la palette) */
 if(P){
   const g = new THREE.Group(), x0 = centerOf(P.x), z0 = centerOf(P.z) - .5;
@@ -61,5 +63,6 @@ if(P){
   g.add(part(G.cyl, 0x4A3826, .06, .9, .06, x0 - .38, .45, bout));
   const glow = new THREE.MeshLambertMaterial({color: 0xFFE3A3, emissive: 0xFFB347, emissiveIntensity: .7});
   const l = part(G.box, glow, .18, .22, .18, x0 - .38, .95, bout); l.castShadow = false; g.add(l);
+  lanternes.push({x: x0 - .38, y: .95, z: bout});
   scene.add(g);
 }

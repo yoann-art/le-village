@@ -61,6 +61,11 @@ export function placePlayer(x, z, fx, fz){
   player.rotation.y = Math.atan2(fx, fz);
 }
 
+/* L'allure du personnage : de 0 (immobile) à 1 (il court) ; « à pas de loup » sous ALLURE_DOUCE (étape 1.7 :
+   les insectes et les oiseaux ne fuient pas si on s'approche doucement, joystick poussé à moitié) */
+let allureNow = 0;
+export const ALLURE_DOUCE = .55;
+export const allure = () => allureNow;
 /* Déplacement : renvoie true si le joueur pousse le joystick (même contre un mur) */
 const SPEED = 3.4;
 let walkT = 0;
@@ -75,9 +80,10 @@ export function updatePlayer(dt){
   let ix = jv.x, iz = jv.z;
   if(!ix && !iz){
     ix = (keys.r||0) - (keys.l||0); iz = (keys.d||0) - (keys.u||0);
-    const l = Math.hypot(ix, iz); if(l){ ix /= l; iz /= l; }
+    const l = Math.hypot(ix, iz); if(l){ ix /= l * (keys.lent ? 2.5 : 1); iz /= l * (keys.lent ? 2.5 : 1); }   // Maj : à pas de loup
   }
   const mag = Math.min(1, Math.hypot(ix, iz));
+  allureNow = mag;
   if(mag > 0){
     const sp = SPEED * mag * dt, p = player.position, l = Math.hypot(ix, iz);
     const ux = ix / l, uz = iz / l;

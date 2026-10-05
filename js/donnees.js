@@ -76,6 +76,8 @@ export const OUTILS = {
   hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", emoji:"🪓", famille:"hache", force:1, usage:"Servira à couper les arbres."},
   piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", emoji:"⛏️", famille:"pioche", force:1, usage:"Servira à casser les rochers."},
   canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
+  /* Le filet (étape 1.7, Grand Carnet : « Établi, avec du lin » ; des fibres en attendant le lin) */
+  filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, usage:"Pour attraper les insectes (et bientôt les oiseaux) : approche à pas de loup, en poussant le joystick doucement, puis « Attraper »."},
   epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."},
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
@@ -178,6 +180,8 @@ export const HEURES = {
   soir:{nom:"le soir (18 h – 21 h)", h:[[18, 21]]},
   nuit:{nom:"la nuit (21 h – 5 h)", h:[[21, 24], [0, 5]]},
   aube:{nom:"à l'aube (5 h – 8 h)", h:[[5, 8]]},
+  matin:{nom:"le matin (5 h – 11 h)", h:[[5, 11]]},
+  apresMidi:{nom:"l'après-midi (13 h – 18 h)", h:[[13, 18]]},
   matinSoir:{nom:"le matin et le soir (5 h – 9 h, 17 h – 21 h)", h:[[5, 9], [17, 21]]}
 };
 export const SAISONS = {printemps:"printemps", ete:"été", automne:"automne", hiver:"hiver"};
@@ -211,6 +215,68 @@ for(const p of Object.values(POISSONS)){
     `<circle cx="5.5" cy="${10 - ry * .3}" r="1.5" fill="#1C2230"/></svg>`;
 }
 
+/* Les insectes de l'île (étape 1.7, morceau 1), d'après le Grand Carnet (page « Insectes », île revue avec Yo le
+   5 octobre 2026 : des petites bêtes toute l'année, certaines seulement à leur saison). On les attrape au filet,
+   en s'approchant à pas de loup. Chacun : où le trouver (ou : fleurs, herbes, arbres, sol, pierres, etang,
+   lanternes ; le premier compte pour le carnet), ses saisons, ses heures (HEURES), sa rareté, son comportement
+   (note, du carnet), son prix en or au comptoir, sa forme et ses couleurs (son dessin et son modèle).
+   bocal : il se prend au bocal (carnet), pas au filet. Sur l'île, aucun insecte n'est dangereux (carnet). */
+export const INSECTES = {
+  pieride:  {nom:"Piéride blanche", pluriel:"piérides blanches", une:true, ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"papillon", couleur:0xF4F2E8, c2:0x3A3A3A, note:"Elle volette de fleur en fleur"},
+  abeille:  {nom:"Abeille", pluriel:"abeilles", une:true, ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"bourdon", couleur:0xE8B73A, c2:0x3A2A1A, taille:.75, note:"Elle butine, puis repart vers sa ruche"},
+  bourdon:  {nom:"Bourdon", pluriel:"bourdons", ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"bourdon", couleur:0x2E2A26, c2:0xF0C83A, note:"Gros et velu, il bourdonne de fleur en fleur"},
+  coccinelle:{nom:"Coccinelle", pluriel:"coccinelles", une:true, ou:["fleurs", "arbres"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:1, forme:"coleo", couleur:0xD8392B, c2:0x1C1C1C, note:"Lente, facile à attraper ; l'hiver, blottie sous l'écorce"},
+  fourmi:   {nom:"Fourmi", pluriel:"fourmis", une:true, ou:["sol"], saisons:TOUTE, heures:"toujours", rarete:"commun", prix:1, forme:"fourmi", couleur:0x3A2A22, note:"Elle marche en file indienne"},
+  cloporte: {nom:"Cloporte", pluriel:"cloportes", ou:["pierres"], saisons:TOUTE, heures:"toujours", rarete:"commun", prix:1, forme:"cloporte", couleur:0x7A7F86, note:"Il se roule en boule quand on le touche"},
+  perceOreille:{nom:"Perce-oreille", pluriel:"perce-oreilles", ou:["pierres", "arbres"], saisons:TOUTE, heures:"nuit", rarete:"commun", prix:1, forme:"cloporte", couleur:0x6B3A22, note:"Deux pinces au bout du ventre"},
+  sauterelle:{nom:"Sauterelle", pluriel:"sauterelles", une:true, ou:["herbes"], saisons:["ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"sauteur", couleur:0x6FB04A, note:"Elle saute quand on approche"},
+  grillon:  {nom:"Grillon", pluriel:"grillons", ou:["herbes"], saisons:["ete", "automne"], heures:"soir", rarete:"commun", prix:1, forme:"sauteur", couleur:0x3A2A1A, note:"Il chante, et se tait si on approche"},
+  libellule:{nom:"Libellule", pluriel:"libellules", une:true, ou:["etang"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"libellule", couleur:0x3E8FD0, note:"Vol rapide ; elle se pose sur les roseaux"},
+  hanneton: {nom:"Hanneton", pluriel:"hannetons", ou:["arbres"], saisons:["printemps"], heures:"soir", rarete:"commun", prix:1, forme:"coleo", couleur:0x8A5A2A, note:"Vol maladroit et bourdonnant"},
+  punaise:  {nom:"Punaise verte", pluriel:"punaises vertes", une:true, ou:["arbres"], saisons:["automne", "hiver"], heures:"jour", rarete:"commun", prix:1, forme:"coleo", couleur:0x5E8E3A, note:"Elle brunit en automne et cherche un abri pour l'hiver"},
+  luciole:  {nom:"Luciole", pluriel:"lucioles", une:true, ou:["herbes"], saisons:["ete"], heures:"nuit", rarete:"peuCommun", prix:3, forme:"coleo", couleur:0x5A5A3A, c2:0xD8F05A, bocal:true, note:"Elle s'allume et s'éteint"},
+  paonDuJour:{nom:"Paon-du-jour", pluriel:"paons-du-jour", ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0xB8402E, c2:0x3E6FD0, note:"Grands yeux dessinés sur les ailes"},
+  machaon:  {nom:"Machaon", pluriel:"machaons", ou:["fleurs"], saisons:["printemps", "ete"], heures:"jour", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0xF0D040, c2:0x2A2A2A, taille:1.25, note:"Grand papillon jaune et noir"},
+  vulcain:  {nom:"Vulcain", pluriel:"vulcains", ou:["fleurs"], saisons:["ete", "automne"], heures:"jour", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0x2A2626, c2:0xE8732E, note:"Ailes noires barrées d'orange"},
+  citron:   {nom:"Citron", pluriel:"citrons", ou:["fleurs"], saisons:["hiver", "printemps"], heures:"jour", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0xF2E35A, c2:0xE8A33A, note:"Le premier papillon de l'année, jaune soufre"},
+  sphinx:   {nom:"Sphinx", pluriel:"sphinx", ou:["lanternes"], saisons:["ete"], heures:"nuit", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0x8A7A6A, c2:0xD86A8A, note:"Papillon de nuit attiré par la lumière"},
+  phalene:  {nom:"Phalène d'hiver", pluriel:"phalènes d'hiver", une:true, ou:["lanternes"], saisons:["hiver"], heures:"nuit", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0xB8B0A0, c2:0x8A8270, note:"Papillon de nuit qui vole même quand il gèle"},
+  cigale:   {nom:"Cigale", pluriel:"cigales", une:true, ou:["arbres"], saisons:["ete"], heures:"apresMidi", rarete:"peuCommun", prix:3, forme:"cigale", couleur:0x6A6A4A, note:"Elle chante fort et se cache dans l'écorce"},
+  mante:    {nom:"Mante religieuse", pluriel:"mantes religieuses", une:true, ou:["herbes"], saisons:["ete", "automne"], heures:"jour", rarete:"peuCommun", prix:3, forme:"mante", couleur:0x7FC05A, note:"Immobile, les pattes jointes"},
+  epeire:   {nom:"Épeire des jardins", pluriel:"épeires des jardins", une:true, ou:["arbres"], saisons:["ete", "automne"], heures:"matin", rarete:"peuCommun", prix:3, forme:"araignee", couleur:0xB0803A, c2:0xFFFFFF, note:"Une croix blanche sur le dos ; sa toile brille de rosée"},
+  grandPaon:{nom:"Grand Paon de nuit", pluriel:"Grands Paons de nuit", ou:["lanternes"], saisons:["printemps"], heures:"nuit", rarete:"rare", prix:8, forme:"papillon", couleur:0x9A8A7A, c2:0x3A2A2A, taille:1.6, note:"Le plus grand papillon d'Europe"}
+};
+export const OU_INSECTE = {fleurs:"sur les fleurs", herbes:"dans les herbes", arbres:"sur les arbres", sol:"au sol", pierres:"sous les pierres", etang:"au bord de l'étang", lanternes:"autour des lanternes"};
+/* Le dessin de chaque insecte (sac, coffres, carnet), selon sa forme, à ses couleurs */
+const ins = b => `<svg class="ico-insecte" viewBox="0 0 24 24" aria-hidden="true">${b}</svg>`, AILE = "#DDEFF7", NOIR = "#2A2A2A";
+const DESSIN = {
+  papillon: (c, d) => ins(`<ellipse cx="7.3" cy="8.5" rx="5" ry="4.6" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/><ellipse cx="16.7" cy="8.5" rx="5" ry="4.6" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/>` +
+    `<ellipse cx="8.4" cy="16" rx="3.7" ry="3.3" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/><ellipse cx="15.6" cy="16" rx="3.7" ry="3.3" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/>` +
+    `<circle cx="7.3" cy="8.5" r="1.7" fill="${d}"/><circle cx="16.7" cy="8.5" r="1.7" fill="${d}"/><rect x="11.2" y="5" width="1.6" height="15" rx=".8" fill="${NOIR}"/>`),
+  coleo: (c, d, glow) => ins(`<circle cx="12" cy="6.3" r="3" fill="${NOIR}"/><ellipse cx="12" cy="14" rx="6.5" ry="7" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/><path d="M12 7.5v13" stroke="#1C2230" stroke-opacity=".5"/>` +
+    (glow ? `<ellipse cx="12" cy="18.5" rx="4.2" ry="2.6" fill="${d}"/>` : d ? `<circle cx="9.3" cy="12" r="1.3" fill="${d}"/><circle cx="14.7" cy="12" r="1.3" fill="${d}"/><circle cx="9.8" cy="16.5" r="1.1" fill="${d}"/><circle cx="14.2" cy="16.5" r="1.1" fill="${d}"/>` : "")),
+  bourdon: (c, d) => ins(`<ellipse cx="7" cy="8" rx="4" ry="2.6" fill="${AILE}"/><ellipse cx="17" cy="8" rx="4" ry="2.6" fill="${AILE}"/><ellipse cx="12" cy="13.5" rx="5.5" ry="7" fill="${c}"/>` +
+    `<path d="M7 11.5h10M6.6 15h10.8M7.6 18.5h8.8" stroke="${d}" stroke-width="2"/>`),
+  fourmi: c => ins(`<circle cx="12" cy="5" r="2.5" fill="${c}"/><circle cx="12" cy="10.5" r="2.3" fill="${c}"/><ellipse cx="12" cy="17" rx="3.4" ry="4.2" fill="${c}"/>` +
+    `<path d="M9.5 10l-4-2M14.5 10l4-2M9.5 11.5l-4 2M14.5 11.5l4 2M10 13l-3 4M14 13l3 4" stroke="${c}" stroke-width="1.2"/>`),
+  sauteur: c => ins(`<ellipse cx="11" cy="12" rx="8" ry="3" fill="${c}"/><circle cx="3.8" cy="11" r="2.2" fill="${c}"/><path d="M13 14l5 5M16 13l5 4M9 14l-2 5" stroke="${c}" stroke-width="1.4"/><path d="M3 9L1 4M4.5 9L5 4" stroke="${NOIR}" stroke-width=".8"/>`),
+  libellule: c => ins(`<ellipse cx="7" cy="8" rx="5.5" ry="2" fill="${AILE}" transform="rotate(-15 7 8)"/><ellipse cx="17" cy="8" rx="5.5" ry="2" fill="${AILE}" transform="rotate(15 17 8)"/>` +
+    `<ellipse cx="7.5" cy="11.5" rx="5" ry="1.8" fill="${AILE}"/><ellipse cx="16.5" cy="11.5" rx="5" ry="1.8" fill="${AILE}"/><rect x="11" y="6" width="2" height="16" rx="1" fill="${c}"/><circle cx="12" cy="5" r="2" fill="${c}"/>`),
+  araignee: (c, d) => ins(`<path d="M12 12L3 6M12 12L2 11M12 12L3 16M12 12L5 21M12 12L21 6M12 12L22 11M12 12L21 16M12 12L19 21" stroke="#3A2A1A" stroke-width="1.2"/>` +
+    `<circle cx="12" cy="8.5" r="2.6" fill="${c}"/><circle cx="12" cy="14" r="4.5" fill="${c}"/><path d="M12 11.5v5M10 14h4" stroke="${d}" stroke-width="1.1"/>`),
+  cloporte: c => ins(`<ellipse cx="12" cy="12" rx="6" ry="8.5" fill="${c}"/><path d="M6.4 9h11.2M6 12h12M6.4 15h11.2M7.5 18h9" stroke="#1C2230" stroke-opacity=".45"/>`),
+  mante: c => ins(`<path d="M12 22V9" stroke="${c}" stroke-width="2.6" stroke-linecap="round"/><path d="M12 11l-4-4M8 7l-1 3M12 11l4-4M16 7l1 3M12 15l-5 4M12 15l5 4" stroke="${c}" stroke-width="1.4"/><path d="M10 6.5l2-2.5l2 2.5z" fill="${c}"/>`),
+  cigale: c => ins(`<ellipse cx="8" cy="13" rx="4.5" ry="8" fill="${AILE}" transform="rotate(12 8 13)"/><ellipse cx="16" cy="13" rx="4.5" ry="8" fill="${AILE}" transform="rotate(-12 16 13)"/><ellipse cx="12" cy="11" rx="3.6" ry="6" fill="${c}"/><circle cx="12" cy="5" r="2.6" fill="${c}"/>`)
+};
+const EMOJI_INSECTE = {papillon:"🦋", coleo:"🪲", bourdon:"🐝", fourmi:"🐜", sauteur:"🦗", libellule:"🦋", araignee:"🕷️", cloporte:"🪲", mante:"🦗", cigale:"🪲"};
+for(const [k, p] of Object.entries(INSECTES)){
+  const r = RARETES[p.rarete];
+  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${p.ou.map(o => OU_INSECTE[o]).join(" ou ")} : ${quandPoisson(p)}.` + (p.bocal ? " Elle se prend au bocal, pas au filet." : "");
+  p.emoji = k === "coccinelle" ? "🐞" : EMOJI_INSECTE[p.forme];
+  const c = hex(p.couleur), d = p.c2 !== undefined ? hex(p.c2) : null;
+  p.icone = DESSIN[p.forme](c, p.forme === "coleo" ? d : d || NOIR, p.bocal);
+}
+
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫", aide:"Les planches se fabriquent à l'établi de la Scierie."},
@@ -240,6 +306,7 @@ export const ATELIERS = {
     {out:"piochePierre", in:{planche:3, pierre:3}, t:30, lvl:1, cat:"Outils"},
     {out:"arrosoir", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"canneBois", in:{planche:4, fibre:3}, t:40, lvl:1, cat:"Outils"},
+    {out:"filet", in:{planche:2, fibre:4}, t:40, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
     {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
@@ -315,6 +382,6 @@ export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","st
    moins précieux (membres, du moins cher au plus cher) */
 export const GROUPES = {poisson:{nom:"Poisson", pluriel:"poissons", emoji:"🐟", aide:"Un poisson, n'importe lequel (sauf un légendaire) : pêche à l'étang ou en mer avec une canne à pêche."}};
 export const membres = g => g === "poisson" ? Object.keys(POISSONS).filter(k => POISSONS[k].rarete !== "legendaire").sort((a, b) => POISSONS[a].prix - POISSONS[b].prix) : [];
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || GROUPES[k] || MEUBLES[k];
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || GROUPES[k] || MEUBLES[k];
 /* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
 export const icone = k => objet(k).icone || objet(k).emoji;

@@ -28,12 +28,13 @@ export const keys = {};
 const KEYMAP = {ArrowUp:"u", KeyW:"u", KeyZ:"u", ArrowDown:"d", KeyS:"d", ArrowLeft:"l", KeyA:"l", KeyQ:"l", ArrowRight:"r", KeyD:"r"};
 const wrap = $("#sheetWrap");
 window.addEventListener("keydown", e => {
+  if(e.key === "Shift") keys.lent = 1;                // Maj : marcher à pas de loup, sur ordinateur
   if(!wrap.hidden) return;
   if(KEYMAP[e.code]){ keys[KEYMAP[e.code]] = 1; e.preventDefault(); }
   else if(e.key === "+" || e.code === "NumpadAdd"){ setZoom(view.zoom / 1.15); saveZoom(); }
   else if(e.key === "-" || e.code === "NumpadSubtract"){ setZoom(view.zoom * 1.15); saveZoom(); }
 });
-window.addEventListener("keyup", e => { if(KEYMAP[e.code]) keys[KEYMAP[e.code]] = 0; });
+window.addEventListener("keyup", e => { if(KEYMAP[e.code]) keys[KEYMAP[e.code]] = 0; if(e.key === "Shift") keys.lent = 0; });
 window.addEventListener("blur", () => { for(const k in keys) keys[k] = 0; });
 
 /* Zoom : pincer l'écran à deux doigts sur le téléphone ; molette ou touches + et − sur ordinateur.
