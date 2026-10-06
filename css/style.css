@@ -39,6 +39,9 @@ button{font:inherit;color:inherit}
 .rchip b{font-family:'Pirata One',Georgia,serif;font-weight:400;font-size:23px;line-height:1.1}
 .rchip.pop b{animation:pop .5s}
 .rchip.star b{color:var(--or)}
+/* Le vent, dans la Forêt profonde (la chasse, étape 1.7) : la flèche montre où il souffle */
+.vent{position:absolute;top:50px;right:10px;z-index:2;display:flex;align-items:center;gap:4px;background:var(--hud);border-radius:12px;padding:3px 9px;font-size:16px;box-shadow:0 2px 0 rgba(0,0,0,.12);pointer-events:none}
+.vent i{display:inline-block;font-style:normal;font-weight:700;color:var(--ink);transition:transform .5s}
 .goal-pill{position:absolute;top:50px;left:10px;z-index:2;background:var(--hud);border-radius:12px;padding:3px 10px;font-size:14px;box-shadow:0 2px 0 rgba(0,0,0,.12);pointer-events:none;max-width:calc(100% - 20px)}
 .goal-pill .ok{color:var(--sinople);font-weight:700}
 .place-hint{width:max-content;position:absolute;top:86px;left:50%;transform:translateX(-50%);z-index:2;background:var(--hud);border-radius:12px;padding:6px 14px;font-weight:700;text-align:center;box-shadow:0 2px 0 rgba(0,0,0,.14);max-width:calc(100% - 20px);pointer-events:none}

@@ -10,7 +10,7 @@
    on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
    est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
@@ -123,8 +123,25 @@ function carnetHTML(){
       <button class="sh-tab" role="tab" data-carnet-page="poissons" aria-selected="${page === "poissons"}">🐟 Poissons</button>
       <button class="sh-tab" role="tab" data-carnet-page="insectes" aria-selected="${page === "insectes"}">🦋 Insectes</button>
       <button class="sh-tab" role="tab" data-carnet-page="oiseaux" aria-selected="${page === "oiseaux"}">🐦 Oiseaux</button>
+      <button class="sh-tab" role="tab" data-carnet-page="gibier" aria-selected="${page === "gibier"}">🦌 Gibier</button>
     </div>`;
-  return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : poissonsHTML());
+  return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : page === "gibier" ? gibierHTML() : poissonsHTML());
+}
+/* Le gibier (étape 1.7, morceau 5) : chaque espèce chassée met son trophée au carnet (carnet) ; le Cerf blanc,
+   qui ne se chasse pas, s'y inscrit quand il a offert son bois d'argent */
+function gibierHTML(){
+  const c = state.carnet.gibier, ks = Object.keys(GIBIER).filter(k => k !== "cerfBlanc"), pris = k => c[k] && c[k].n > 0;
+  const tuile = k => { const p = GIBIER[k], on = fiche === k ? " on" : "";
+    return pris(k)
+      ? `<button class="tile${on}${k === "cerfBlanc" ? " legende" : ""}" data-carnet="${k}"><div class="te" aria-hidden="true">${p.emoji}</div><div class="tl">${p.nom}</div><div class="tn">${k === "cerfBlanc" ? "👑" : "🏆"}</div></button>`
+      : `<button class="tile inconnu${on}" data-carnet="${k}" aria-label="Pas encore chassé"><div class="te" aria-hidden="true">?</div><div class="tl">???</div></button>`; };
+  const f = fiche && GIBIER[fiche];
+  const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche une bête pour voir sa fiche.</p>`
+    : pris(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${f.emoji}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>${fiche === "cerfBlanc" ? "Suivi jusqu'au bout : son bois d'argent est à toi" : `Chassé${f.une ? "e" : ""} ${c[fiche].n} fois · 🏆 son trophée est au carnet`}</p></div></div>`
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>${fiche === "cerfBlanc" ? "Pas encore rencontré" : `Pas encore chassé${f.une ? "e" : ""}`}</b><p>On ${f.une ? "la" : "le"} trouve dans la Forêt profonde, ${OU_GIBIER[f.ou]}${fiche === "cerfBlanc" ? ", les nuits de pleine lune" : ""}. ${fiche === "cerfBlanc" ? "Il ne se chasse pas." : "À toi de découvrir quand !"}</p></div></div>`;
+  return `<p class="muted" style="margin:0 0 8px">🦌 Gibier : ${ks.filter(pris).length} sur ${ks.length}. Suis les traces, approche à pas de loup et sous le vent, puis tire à l'arc.</p>` + detail +
+    `<h3 style="margin:8px 0 4px">Dans la Forêt profonde</h3><div class="res-grid">${ks.map(tuile).join("")}</div>` +
+    `<h3 style="margin:8px 0 4px">👑 Le légendaire</h3><div class="res-grid">${tuile("cerfBlanc")}</div>`;
 }
 function poissonsHTML(){
   const c = state.carnet.poissons, ks = Object.keys(POISSONS), pris = k => c[k] && c[k].n > 0;

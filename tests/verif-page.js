@@ -5,10 +5,11 @@
    les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
+   chasser à l'arc (un chevreuil, approché sous le vent) et ramasser le présent du Cerf blanc,
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
@@ -17,6 +18,7 @@ import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
+import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
 import { foret, foretObj, W as WF, fcx, fcz } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
@@ -228,7 +230,10 @@ export async function verifier(){
     return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et un brin de thym`;
   });
   /* Faire de la place dans le sac de la partie d'essai (12 emplacements : il se remplit au fil des essais) */
-  const place = n => { for(const k of ["graineArbre", "graineThym", "fibre", "pierre", "bois", "planche"]) if(state.sac.length > 12 - n) state.sac = state.sac.filter(it => it.k !== k); };
+  const place = n => {
+    for(const k of ["graineArbre", "graineThym", "fibre", "pierre", "bois", "planche"]) if(state.sac.length > 12 - n) state.sac = state.sac.filter(it => it.k !== k);
+    while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => !OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }   // puis les prises des essais d'avant
+  };
   await etape("Attraper un insecte au filet", async () => {
     place(2);
     sacAdd("filet", 1); hold(null);
@@ -302,6 +307,33 @@ export async function verifier(){
     frames(40);
     await sortir();
     return `un phasme, un pic vert et ${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()}`;
+  });
+  await etape("Chasser à l'arc : un chevreuil, et le présent du Cerf blanc", async () => {
+    place(4);
+    pauseChasse(true);
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    sacAdd("arcIf", 1); sacAdd("fleche", 5); hold(null);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    frames(2);
+    if($("#vent").hidden) throw new Error("pas de flèche du vent dans la forêt");
+    /* un chevreuil à 2,5 P, du côté d'où vient le vent : il ne nous sent pas */
+    const p = player.position, w = vent(), avant = owned("viandeGibier");
+    lacherGibier("chevreuil", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
+    if(!$("#btn-act").textContent.includes("Tirer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas de gibier à portée)`);
+    $("#btn-act").click();
+    let k = 0;
+    while(!state.carnet.gibier.chevreuil && k < 60){ frames(1); k++; }
+    if(!state.carnet.gibier.chevreuil) throw new Error("le chevreuil n'est pas touché");
+    if(owned("viandeGibier") < avant + 2 || !owned("cuir")) throw new Error("pas de viande ni de cuir dans le sac");
+    if(owned("fleche") < 5) throw new Error("la flèche n'est pas reprise");
+    frames(40);
+    /* le présent du Cerf blanc, posé devant soi */
+    place(1); lacherCerfBlanc(true); frames(2);
+    if(!$("#btn-act").textContent.includes("bois d'argent")) throw new Error(`devant le présent du Cerf blanc, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(!owned("boisArgent") || !state.cerfBlanc) throw new Error("le bois d'argent n'est pas dans le sac");
+    await sortir();
+    return "un chevreuil (2 viandes, 1 cuir, la flèche reprise), puis le bois d'argent";
   });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */

@@ -42,6 +42,7 @@ import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
 import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
 import { updateInsectes, insecteAction, attrapeEnCours } from "./insectes.js";
 import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
+import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -222,9 +223,10 @@ export function updateRecolte(dt, active){
   updatePeche(dt, active, milieu);
   updateInsectes(dt, active, milieu);
   updateOiseaux(dt, active, milieu);
-  cur = active && !anim && !enPeche() && !attrapeEnCours() && !oiseauEnCours() ? target() : null;
+  updateChasse(dt, active, milieu);                   // le gibier : seulement dans la forêt
+  cur = active && !anim && !enPeche() && !attrapeEnCours() && !oiseauEnCours() && !tirEnCours() ? target() : null;
   showCase(cur);
-  const bete = active && !anim && milieu && (insecteAction() || oiseauAction());
+  const bete = active && !anim && milieu && (insecteAction() || oiseauAction() || chasseAction());
   act = enPeche() ? pecheAction() : bete || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }

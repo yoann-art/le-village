@@ -42,6 +42,12 @@ const BUILD = {
     const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
     anse.rotation.x = Math.PI/2; g.add(anse);
   },
+  arc(g){                                                                            // l'arc en if, tenu debout, et sa corde
+    const bois = new THREE.Mesh(new THREE.TorusGeometry(.34, .025, 6, 18, Math.PI * .8), new THREE.MeshLambertMaterial({color: 0xC8743C}));
+    bois.rotation.z = Math.PI * .6; bois.rotation.y = Math.PI/2; bois.position.set(0, .3, -.2); g.add(bois);
+    g.add(part(G.cyl, C.cream, .008, .64, .008, 0, .3, .02));                           // la corde
+    g.add(part(G.cyl, C.dark, .05, .1, .05, 0, .3, -.13));                              // la poignée
+  },
   arme(g, o){
     g.add(part(G.cyl, C.dark, .045, .14, .045, 0, 0, 0));                              // poignée
     g.add(part(G.box, C.dark, .06, .04, .2, 0, .08, 0));                               // garde

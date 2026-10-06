@@ -171,8 +171,9 @@ function ajouterRocher(i){
   m.position.set(fcx(i), 0, fcz(i)); m.rotation.y = i * 2.4;
   group.add(m); rochers.set(i, m);
 }
-/* Où l'on marche : le sol, le petit pont ; pas l'eau, ni les arbres ni les rochers (ceux qui sont coupés, si) */
-function walk(x, z){
+/* Où l'on marche : le sol, le petit pont ; pas l'eau, ni les arbres ni les rochers (ceux qui sont coupés, si).
+   Aussi pour le gibier (chasse.js) */
+export function walk(x, z){
   const i = ftile(x, z);
   if(i < 0) return false;
   const t = foret.type[i];

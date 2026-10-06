@@ -84,6 +84,8 @@ export const OUTILS = {
   /* Le filet (étape 1.7, Grand Carnet : « Établi, avec du lin » ; des fibres en attendant le lin) */
   filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, usage:"Pour attraper les insectes et les oiseaux : approche à pas de loup, en poussant le joystick doucement, puis « Attraper » ou « Lancer le filet »."},
   epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."},
+  /* La chasse (étape 1.7, morceau 5, carnet : « Arc et flèches | Établi, en bois d'if ») */
+  arcIf:       {nom:"Arc en if", pluriel:"arcs en if", emoji:"🏹", famille:"arc", force:1, usage:"Dans la Forêt profonde : suis les traces, approche le gibier à pas de loup et sous le vent, puis « Tirer ». Il lui faut des flèches."},
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
   hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", emoji:"🪓", famille:"hache", force:2, tete:0xC8743C, usage:"Coupe les arbres : un bois de plus à chaque coup."},
@@ -221,7 +223,9 @@ export const HEURES = {
   aube:{nom:"à l'aube (5 h – 8 h)", h:[[5, 8]]},
   matin:{nom:"le matin (5 h – 11 h)", h:[[5, 11]]},
   apresMidi:{nom:"l'après-midi (13 h – 18 h)", h:[[13, 18]]},
-  matinSoir:{nom:"le matin et le soir (5 h – 9 h, 17 h – 21 h)", h:[[5, 9], [17, 21]]}
+  matinSoir:{nom:"le matin et le soir (5 h – 9 h, 17 h – 21 h)", h:[[5, 9], [17, 21]]},
+  crepuscule:{nom:"au crépuscule (18 h – 21 h)", h:[[18, 21]]},
+  aubeCrepuscule:{nom:"à l'aube et au crépuscule (5 h – 8 h, 18 h – 21 h)", h:[[5, 8], [18, 21]]}
 };
 export const SAISONS = {printemps:"printemps", ete:"été", automne:"automne", hiver:"hiver"};
 export const RARETES = {commun:"commun", peuCommun:"peu commun", rare:"rare", legendaire:"légendaire"};
@@ -413,6 +417,30 @@ export const PRODUITS = {
     usage:"Des fleurs pour les potions (carnet). Elles se cueillent au printemps et en été."},
   baiesSureau:{nom:"Baies de sureau", pluriel:"baies de sureau", emoji:"🫐", prix:1, aide:"Les baies de sureau se cueillent en automne, sur les sureaux de la Forêt profonde.",
     usage:"Des baies noires pour les potions (carnet). Elles se cueillent en automne."},
+  /* La chasse (étape 1.7, morceau 5, carnet : « de la viande pour la cuisine, et du cuir, de la fourrure ou des
+     plumes pour l'équipement ») : les flèches, et ce que donne le gibier. En attendant le potager (le ragoût) et
+     l'équipement, tout se vend au comptoir (décidé par Yo) ; le bois d'argent du Cerf blanc ne se vend pas. */
+  fleche: {nom:"Flèche", pluriel:"flèches", emoji:"🏹", aide:"Les flèches se fabriquent à l'établi de la Scierie : 2 planches et 1 pierre pour 10 flèches.",
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20L19 5" stroke="#8A5A32" stroke-width="2" stroke-linecap="round"/><path d="M20.5 3.5l-1 5-4-4z" fill="#8E949C"/><path d="M4 20l-1-4 3 1zM4 20l4 1-1-3z" fill="#E4574C"/></svg>',
+    usage:"Pour l'arc : une flèche par tir. Un tir réussi te la rend ; ratée, elle se perd dans les bois."},
+  viandeGibier:{nom:"Viande de gibier", pluriel:"viandes de gibier", emoji:"🍖", prix:2, aide:"La viande de gibier se rapporte de la chasse, dans la Forêt profonde.",
+    usage:"Pour la cuisine : le ragoût de gibier viendra avec le potager (carottes, oignons). En attendant, elle se vend au comptoir."},
+  fourrureDouce:{nom:"Fourrure douce", pluriel:"fourrures douces", emoji:"🐇", prix:2, aide:"La fourrure douce vient du lapin de garenne, chassé dans les clairières de la Forêt profonde.",
+    usage:"La fourrure du lapin de garenne, pour l'équipement (plus tard)."},
+  fourrure: {nom:"Fourrure", pluriel:"fourrures", emoji:"🐇", prix:2, aide:"La fourrure vient du lièvre, chassé à la lisière de la Forêt profonde.",
+    usage:"La fourrure du lièvre, pour l'équipement (plus tard)."},
+  fourrureRousse:{nom:"Fourrure rousse", pluriel:"fourrures rousses", emoji:"🦊", prix:5, aide:"La fourrure rousse vient du renard, chassé la nuit à la lisière de la Forêt profonde.",
+    usage:"La fourrure du renard, pour l'équipement (plus tard)."},
+  plumesColorees:{nom:"Plumes colorées", pluriel:"plumes colorées", emoji:"🪶", prix:3, aide:"Les plumes colorées viennent du faisan, chassé à la lisière de la Forêt profonde.",
+    usage:"Les plumes du faisan, pour l'équipement et la décoration (plus tard)."},
+  plumes:   {nom:"Plumes", pluriel:"plumes", emoji:"🪶", prix:1, aide:"Les plumes viennent de la perdrix, chassée le matin à la lisière de la Forêt profonde.",
+    usage:"Les plumes de la perdrix, pour l'équipement (plus tard)."},
+  cuir:     {nom:"Cuir", pluriel:"cuirs", emoji:"🟤", prix:3, aide:"Le cuir vient du chevreuil et du cerf, chassés dans la Forêt profonde.",
+    usage:"Pour l'équipement et les armures (plus tard)."},
+  boisDeCerf:{nom:"Bois de cerf", pluriel:"bois de cerf", emoji:"🦌", prix:6, aide:"Les bois de cerf viennent du cerf, chassé en automne dans les grandes clairières de la Forêt profonde.",
+    usage:"Les bois du cerf, pour la décoration (plus tard)."},
+  boisArgent:{nom:"Bois d'argent", pluriel:"bois d'argent", emoji:"✨", aide:"Le bois d'argent est le présent du Cerf blanc, une seule fois dans tout le jeu.",
+    usage:"Le présent du Cerf blanc, qu'on a suivi jusqu'au bout une nuit de pleine lune. Un seul dans tout le jeu."},
   thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22V5M12 15l-5-5M12 12l5-5M12 18l4-3" stroke="#4E6B3A" stroke-width="1.6" fill="none" stroke-linecap="round"/><g fill="#7E9C66"><ellipse cx="8" cy="10.5" rx="2.4" ry="1.3"/><ellipse cx="16" cy="7.5" rx="2.4" ry="1.3"/><ellipse cx="15.5" cy="14.5" rx="2.2" ry="1.2"/><ellipse cx="10" cy="17" rx="2.2" ry="1.2"/></g><g fill="#B79AD6"><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.4"/><circle cx="17.5" cy="6" r="1.4"/></g></svg>',
     usage:"Une herbe aromatique des prés de l'île, toute l'année. Pour la cuisine (le poisson grillé) et, plus tard, des potions douces."},
@@ -434,6 +462,8 @@ export const ATELIERS = {
     {out:"arrosoir", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"canneBois", in:{planche:4, fibre:3}, t:40, lvl:1, cat:"Outils"},
     {out:"filet", in:{planche:2, fibre:4}, t:40, lvl:1, cat:"Outils"},
+    {out:"arcIf", in:{boisIf:3, fibre:4}, t:60, lvl:1, cat:"Outils"},
+    {out:"fleche", n:10, in:{planche:2, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
     {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
@@ -525,6 +555,30 @@ export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","st
    moins précieux (membres, du moins cher au plus cher) */
 export const GROUPES = {poisson:{nom:"Poisson", pluriel:"poissons", emoji:"🐟", aide:"Un poisson, n'importe lequel (sauf un légendaire) : pêche à l'étang ou en mer avec une canne à pêche."}};
 export const membres = g => g === "poisson" ? Object.keys(POISSONS).filter(k => POISSONS[k].rarete !== "legendaire").sort((a, b) => POISSONS[a].prix - POISSONS[b].prix) : [];
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k];
+/* Le gibier de la Forêt profonde (étape 1.7, morceau 5), d'après le Grand Carnet (« Le gibier », la Forêt
+   profonde : « le grand terrain de chasse, des clairières aux sous-bois ») : où le trouver (ou : clairieres,
+   grandesClairieres, lisiere, sousBois ; coeur pour le Cerf blanc), ses saisons, ses heures, sa rareté, son
+   comportement (note, du carnet), ce qu'il donne (donne), sa forme (lapin, oiseau, renard, cervide), ses couleurs
+   et sa taille. groupe : ils vont à plusieurs (la perdrix) ; ruse : il se méfie de plus loin (le renard) ; bois :
+   il porte des bois (le cerf). Le sanglier (dangereux, il charge) attend l'étape 1.8. Le Cerf blanc, légendaire,
+   ne se chasse pas : on le suit (voir chasse.js). */
+export const GIBIER = {
+  lapin:    {nom:"Lapin de garenne", pluriel:"lapins de garenne", ou:"clairieres", saisons:TOUTE, heures:"aube", rarete:"commun", forme:"lapin", couleur:0x9A8270, c2:0xF4F0E8, donne:{viandeGibier:1, fourrureDouce:1}, note:"Il détale en zigzag"},
+  lievre:   {nom:"Lièvre", pluriel:"lièvres", ou:"lisiere", saisons:TOUTE, heures:"crepuscule", rarete:"commun", forme:"lapin", couleur:0xA8865A, c2:0xF0E8DC, taille:1.3, longues:true, donne:{viandeGibier:1, fourrure:1}, note:"Il s'arrête pour écouter, puis file"},
+  faisan:   {nom:"Faisan", pluriel:"faisans", ou:"lisiere", saisons:TOUTE, heures:"jour", rarete:"commun", forme:"oiseau", couleur:0xB8642A, tete:0x2A5A3A, c2:0xD8302A, queue:2.2, taille:1.15, donne:{viandeGibier:1, plumesColorees:2}, note:"Il s'envole bruyamment"},
+  perdrix:  {nom:"Perdrix", pluriel:"perdrix", une:true, ou:"lisiere", saisons:TOUTE, heures:"matin", rarete:"commun", forme:"oiseau", couleur:0x9A8A78, tete:0xD8803A, c2:0x8A6A4A, queue:.8, taille:.85, groupe:true, donne:{viandeGibier:1, plumes:2}, note:"Elle court en petit groupe"},
+  renard:   {nom:"Renard", pluriel:"renards", ou:"lisiere", saisons:TOUTE, heures:"nuit", rarete:"peuCommun", forme:"renard", couleur:0xD8702A, c2:0xF4ECDC, ruse:true, donne:{fourrureRousse:1}, note:"Rusé, il tourne autour des appâts"},
+  chevreuil:{nom:"Chevreuil", pluriel:"chevreuils", ou:"sousBois", saisons:TOUTE, heures:"aubeCrepuscule", rarete:"peuCommun", forme:"cervide", couleur:0x9A6A44, c2:0xF0E8DC, donne:{viandeGibier:2, cuir:1}, note:"Il aboie quand il sent le danger"},
+  cerf:     {nom:"Cerf", pluriel:"cerfs", ou:"grandesClairieres", saisons:["automne"], heures:"toujours", rarete:"peuCommun", forme:"cervide", couleur:0x7A5034, c2:0xE8DCC8, taille:1.35, bois:true, donne:{viandeGibier:3, cuir:1, boisDeCerf:1}, note:"Il brame à la saison des amours"},
+  cerfBlanc:{nom:"Cerf blanc", pluriel:"cerfs blancs", ou:"coeur", saisons:TOUTE, heures:"nuit", lune:"pleine", rarete:"legendaire", forme:"cervide", couleur:0xF4F4F0, c2:0xFFFFFF, taille:1.45, bois:true, argent:true, donne:{boisArgent:1}, note:"Il ne se chasse pas : on le suit jusqu'au bout, et il offre un présent"}
+};
+export const OU_GIBIER = {clairieres:"dans les clairières", grandesClairieres:"dans les grandes clairières", lisiere:"à la lisière", sousBois:"dans le sous-bois", coeur:"au cœur de la forêt"};
+for(const [k, p] of Object.entries(GIBIER)){
+  const r = RARETES[p.rarete];
+  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, dans la Forêt profonde, ${OU_GIBIER[p.ou]} : ${quandPoisson(p)}. ` +
+    `${p.une ? "Elle" : "Il"} ${k === "cerfBlanc" ? "offre" : "donne"} : ${Object.entries(p.donne).map(([d, n]) => `${n} ${(n > 1 ? PRODUITS[d].pluriel : PRODUITS[d].nom).toLowerCase()}`).join(", ")}.`;
+  p.emoji = p.forme === "lapin" ? "🐇" : p.forme === "renard" ? "🦊" : p.forme === "oiseau" ? "🐦" : "🦌";
+}
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k] || GIBIER[k];
 /* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
 export const icone = k => objet(k).icone || objet(k).emoji;
