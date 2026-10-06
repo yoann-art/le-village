@@ -68,7 +68,10 @@ export const POSABLES = {
   rocherCuivre:{nom:"Rocher à veines de cuivre", pluriel:"rochers à veines de cuivre", emoji:"🟤", pose:"rockCuivre", seul:true,
     usage:"Un rocher à veines de cuivre rapporté de la mine : pose-le sur ton île, puis mine-le pour son cuivre."},
   coffreReserve:{nom:"Coffre de réserve", pluriel:"coffres de réserve", emoji:"🗃️", pose:"coffre",
-    usage:"Prends-le en main, puis touche « Poser le coffre » devant une case libre du village. On y range ce qu'on veut."}
+    usage:"Prends-le en main, puis touche « Poser le coffre » devant une case libre du village. On y range ce qu'on veut."},
+  /* Demande de Yo (v1.7.8) : un coffre plein se déplace avec ce qu'il contient (comme la boîte de Shulker de Minecraft) */
+  coffrePlein:{nom:"Coffre rempli", pluriel:"coffres remplis", emoji:"🗃️", pose:"coffre", seul:true,
+    usage:"Un coffre déplacé avec tout ce qu'il contient : prends-le en main et touche « Poser le coffre » devant une case libre, ou range-le dans un autre coffre."}
 };
 
 /* Outils (étape 1.4) : rangés dans le sac, ils ne s'usent pas. Prévus en familles avec une force

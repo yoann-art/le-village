@@ -6,20 +6,29 @@
    Demande de Yo (v1.7.7) : toucher un objet le choisit et montre sa fiche, sans le déplacer ; on choisit ensuite
    d'en ranger (ou d'en prendre) tout ou un seul, comme le petit menu d'Animal Crossing. « Compléter les piles »
    (l'idée de Stardew Valley) range seulement ce que le coffre a déjà : pratique pour trier avec plusieurs coffres.
+   Demande de Yo (v1.7.8) : « Déplacer le coffre », même plein. Il arrive en main avec tout ce qu'il contient
+   (« coffre rempli », POSABLES.coffrePlein = {k, n: 1, id, items}), se repose ailleurs (il garde son nom), ou se
+   range dans le sac ou dans un autre coffre.
    state.coffres = [{id, i (la case), items: [{k, n}]}] ; sur la carte, la case porte o = "coffre" et l'id. */
 import { COFFRE, SAC, OUTILS, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { slotsAdd, slotsPlace, sacAdd, sacPlace, sacTake, doorTile } from "./regles.js";
+import { slotsAdd, slotsPlace, sacAdd, sacPlace, sacTake, sacPut, sacTakeObj, doorTile } from "./regles.js";
 import { map, inb, N, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { entrees } from "./monde/ponton.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
-import { syncBarre, barreAuto, utilisable, jauge } from "./barre.js";
+import { syncBarre, barreAuto, utilisable, jauge, enCase, hold } from "./barre.js";
 
 const coffreOf = id => state.coffres.find(c => c.id === id);
 const nomCoffre = co => `Coffre ${state.coffres.indexOf(co) + 1}`;
 const nomDe = (k, n) => (n > 1 && objet(k).pluriel || objet(k).nom).toLowerCase();
+/* Ce que contient un coffre rempli, en une ligne */
+export function contenu(it){
+  const n = {};
+  for(const c of it.items) n[c.k] = (n[c.k] || 0) + c.n;
+  return Object.entries(n).map(([k, v]) => `${v} ${nomDe(k, v)}`).join(", ");
+}
 
 /* Une case où poser un coffre : terre ferme, rien dessus, pas un bâtiment ni la case d'une porte, pas sous le personnage */
 export function poseProblem(i){
@@ -32,10 +41,13 @@ export function poseProblem(i){
   if(tileOf(player.position.x) === x && tileOf(player.position.z) === z) return "Recule d'un pas pour le poser devant toi";
   return null;
 }
-function newCoffre(i){
-  state.coffreId = (state.coffreId || 0) + 1;
-  const co = {id: state.coffreId, i, items: []};
+/* Un coffre posé ; un coffre rempli garde ce qu'il contient, et son nom (son numéro) si personne ne l'a pris */
+function newCoffre(i, plein){
+  let id = plein && plein.id;
+  if(!id || state.coffres.some(c => c.id === id)){ state.coffreId = (state.coffreId || 0) + 1; id = state.coffreId; }
+  const co = {id, i, items: plein ? plein.items : []};
   state.coffres.push(co);
+  state.coffres.sort((a, b) => a.id - b.id);
   setObj(i, "coffre"); setEtat(i, {id: co.id});
   return co;
 }
@@ -43,10 +55,11 @@ function newCoffre(i){
 export function poserCoffre(i){
   const why = poseProblem(i);
   if(why){ toast(why); return; }
-  if(!sacTake(state.main, 1)) return;
-  const co = newCoffre(i);
+  const plein = state.main === "coffrePlein" ? sacTakeObj(state.main) : null;
+  if(!plein && !sacTake(state.main, 1)) return;
+  const co = newCoffre(i, plein);
   syncBarre(); save();
-  toast(`🗃️ ${nomCoffre(co)} posé : approche-toi et touche « Ouvrir le coffre » pour y ranger tes affaires`, 3600);
+  toast(plein ? `🗃️ ${nomCoffre(co)} posé, avec tout ce qu'il contient` : `🗃️ ${nomCoffre(co)} posé : approche-toi et touche « Ouvrir le coffre » pour y ranger tes affaires`, 3600);
 }
 
 /* ----- L'écran d'un coffre : toucher un objet le choisit (sa fiche), puis on choisit de le déplacer ----- */
@@ -64,7 +77,8 @@ function ficheHTML(){
   if(!sel) return `<p class="muted" style="margin:0;font-size:14px">Touche un objet pour voir sa fiche, puis choisis de le ranger ou de le prendre.</p>`;
   const it = sel.it, m = objet(it.k), prendre = sel.ou === "coffre";
   const ou = prendre ? "Dans le coffre" : sel.ou === "case" ? `Dans ta case rapide ${state.barre.indexOf(it) + 1}` : "Dans ton sac";
-  const place = Math.min(it.n, prendre ? sacPlace(it.k) : slotsPlace(open.items, COFFRE.places, it.k));
+  const place = it.items ? (prendre ? state.sac.length < SAC.places || state.barre.includes(null) : open.items.length < COFFRE.places) ? 1 : 0
+    : Math.min(it.n, prendre ? sacPlace(it.k) : slotsPlace(open.items, COFFRE.places, it.k));
   const verbe = prendre ? "Prendre" : "Ranger";
   const boutons = !place ? `<button class="btn" disabled>${prendre ? "Ton sac est plein" : "Le coffre est plein"}</button>`
     : it.n === 1 ? `<button class="btn primary" data-co-bouge="1">${verbe}</button>`
@@ -72,7 +86,7 @@ function ficheHTML(){
        <button class="btn ghost" data-co-bouge="1">${verbe} 1</button>`;
   return `<div class="cf-top"><span class="pe" aria-hidden="true">${icone(it.k)}</span>
       <div><b>${it.n > 1 ? it.n + " × " : ""}${m.nom}</b><p>${ou}${m.prix ? ` · au comptoir : ${m.prix} or` : ""}</p></div></div>
-    ${OUTILS[it.k] && OUTILS[it.k].eau ? `<p class="cf-txt">💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${m.usage || m.aide ? `<p class="cf-txt">${m.usage || m.aide}</p>` : ""}
+    ${it.items ? `<p class="cf-txt">Contient : ${contenu(it)}</p>` : ""}${OUTILS[it.k] && OUTILS[it.k].eau ? `<p class="cf-txt">💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${m.usage || m.aide ? `<p class="cf-txt">${m.usage || m.aide}</p>` : ""}
     <div class="co-btns">${boutons}</div>`;
 }
 function render(){
@@ -90,7 +104,7 @@ function render(){
     <div class="sac-grid co">${grille("sac", SAC.places)}</div>
     <h3 style="margin:8px 0 6px">Tes cases rapides</h3>
     <div class="sac-grid co">${grille("case", SAC.cases)}</div>
-    ${co.items.length ? "" : `<button class="btn ghost" data-co-reprendre style="margin-top:6px">Reprendre le coffre (il est vide)</button>`}
+    <button class="btn ghost" data-co-deplacer style="margin-top:10px;width:100%">🗃️ Déplacer le coffre${co.items.length ? ", avec ce qu'il contient" : ""}</button>
     <div class="co-fiche">${ficheHTML()}</div>`);
 }
 export function openCoffre(id){ open = coffreOf(id); sel = null; if(open) render(); }
@@ -103,12 +117,18 @@ function oter(ou, it, n){
 }
 /* Range dans le coffre n objets d'un emplacement du sac ou d'une case (autant qu'il y a de place) */
 function ranger(ou, it, n){
+  if(it.items){                                      // un coffre rempli : tout entier, dans un emplacement à lui
+    if(open.items.length >= COFFRE.places) return 0;
+    open.items.push(it); oter(ou, it, 1);
+    return 1;
+  }
   const m = slotsAdd(open.items, COFFRE.places, it.k, Math.min(n, it.n));
   if(m) oter(ou, it, m);
   return m;
 }
 /* Prend n objets d'un emplacement du coffre : sur soi (un outil prend une case rapide libre) */
 function prendre(it, n){
+  if(it.items){ if(!sacPut(it)) return 0; oter("coffre", it, 1); barreAuto(it.k); return 1; }
   const m = sacAdd(it.k, Math.min(n, it.n));
   if(m){ oter("coffre", it, m); if(utilisable(it.k)) barreAuto(it.k); }
   return m;
@@ -117,7 +137,7 @@ function prendre(it, n){
 function rangerSac(seulementPiles){
   let n = 0, plein = false;
   for(const it of [...state.sac].reverse()){
-    if(seulementPiles && !open.items.some(c => c.k === it.k)) continue;
+    if(seulementPiles && (it.items || !open.items.some(c => c.k === it.k))) continue;
     const a = it.n, m = ranger("sac", it, a);
     n += m; if(m < a) plein = true;
   }
@@ -140,14 +160,18 @@ wrap.addEventListener("click", e => {
   } else if(e.target.closest("[data-co-tout]") || e.target.closest("[data-co-piles]")){
     const piles = !!e.target.closest("[data-co-piles]"), {n, plein} = rangerSac(piles);
     toast(plein ? "Le coffre est plein : il en reste dans ton sac" : n ? (piles ? "Piles complétées" : "Tout est rangé") : "Rien à ranger", 1800);
-  } else if(e.target.closest("[data-co-reprendre]")){
-    if(open.items.length) return;
-    if(!sacAdd("coffreReserve", 1)){ toast("Ton sac est plein"); return; }
-    setObj(open.i, null);
-    state.coffres.splice(state.coffres.indexOf(open), 1);
-    barreAuto("coffreReserve"); syncBarre(); save(); renderHUD();
-    open = null; closeSheet();
-    toast("🗃️ Coffre repris dans ton sac");
+  } else if(e.target.closest("[data-co-deplacer]")){
+    /* Déplacer le coffre : vide, il redevient un coffre de réserve ; plein, un coffre rempli qui garde tout */
+    const co = open, plein = co.items.length ? {k: "coffrePlein", n: 1, id: co.id, items: co.items} : null, k = plein ? plein.k : "coffreReserve";
+    if(plein ? !sacPut(plein) : !sacAdd(k, 1)){ toast("Ton sac et tes cases rapides sont pleins : fais de la place pour emporter le coffre", 3200); return; }
+    const nom = nomCoffre(co);
+    setObj(co.i, null);
+    state.coffres.splice(state.coffres.indexOf(co), 1);
+    if(plein) enCase(plein); else barreAuto(k);
+    hold(k); renderHUD();
+    open = null; sel = null; closeSheet();
+    toast(plein ? `🗃️ ${nom} en main, avec tout ce qu'il contient : pose-le où tu veux (« Poser le coffre »), ou range-le dans un autre coffre`
+      : `🗃️ ${nom} en main : pose-le où tu veux (« Poser le coffre »)`, 4200);
     return;
   } else return;
   syncBarre(); save(); renderHUD(); render();

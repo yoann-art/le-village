@@ -41,6 +41,15 @@ export function barreAuto(k){
   state.barre[i] = state.sac.splice(j, 1)[0];
   renderBarre();
 }
+/* Met en case ce coffre rempli précis (celui qu'on va poser) : si un autre est déjà en case, ils échangent leur place */
+export function enCase(it){
+  const s = state.sac.indexOf(it);
+  if(s < 0) return;
+  const c = dansCase(it.k), libre = state.barre.indexOf(null);
+  if(c >= 0){ state.sac[s] = state.barre[c]; state.barre[c] = it; }
+  else if(libre >= 0){ state.sac.splice(s, 1); state.barre[libre] = it; }
+  renderBarre();
+}
 /* Remet le contenu d'une case dans le sac ; false s'il n'y a pas la place */
 export function auSac(it){
   if(it.items || pileOf(it.k) === 1){ if(state.sac.length >= SAC.places) return false; state.sac.push(it); return true; }

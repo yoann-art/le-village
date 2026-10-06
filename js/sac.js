@@ -14,7 +14,8 @@ import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSE
 import { state, save } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
-import { toggleHold, hold, barreAuto, utilisable, jauge, dansCase, auSac, renderBarre } from "./barre.js";
+import { toggleHold, hold, barreAuto, utilisable, jauge, dansCase, auSac, renderBarre, enCase } from "./barre.js";
+import { contenu } from "./coffres.js";
 
 const info = objet;
 const cap = t => t[0].toUpperCase() + t.slice(1);
@@ -33,10 +34,10 @@ function grille(list, places, ou){
   }).join("");
 }
 function sacHTML(){
-  const items = state.sac, it = choisi(), enCase = pick && pick.ou === "case";
+  const items = state.sac, it = choisi(), enUneCase = pick && pick.ou === "case";
   const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(it.k)}</span>
-      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${enCase ? `<p>Dans la case rapide ${pick.j + 1}</p>` : ""}${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
-      ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>${enCase ? `<button class="btn ghost" data-sac-remettre>Remettre dans le sac</button>` : ""}</div>` : ""}</div>`
+      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${enUneCase ? `<p>Dans la case rapide ${pick.j + 1}</p>` : ""}${it.items ? `<p>Contient : ${contenu(it)}</p>` : ""}${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
+      ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>${enUneCase ? `<button class="btn ghost" data-sac-remettre>Remettre dans le sac</button>` : ""}</div>` : ""}</div>`
     : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length || state.barre.some(Boolean) ? "Touche un objet pour le choisir." : "Ce que tu récoltes et fabriques arrive ici."}</p>`;
   return `<p class="muted" style="margin:0 0 8px">Ce que tu portes sur toi : ${items.length} emplacement${items.length > 1 ? "s" : ""} pris sur ${SAC.places}.
     Ce que tu récoltes et fabriques arrive ici ; quand il est plein, range tes affaires dans un coffre de réserve.</p>
@@ -155,7 +156,7 @@ wrap.addEventListener("click", e => {
   const it = choisi();
   if(!it) return;
   if(e.target.closest("[data-sac-main]")){
-    barreAuto(it.k);                                   // pris en main : il sort du sac, dans une case libre
+    if(it.items) enCase(it); else barreAuto(it.k);     // pris en main : il sort du sac, dans une case libre
     const c = dansCase(it.k);
     if(c >= 0) pick = {ou: "case", j: c};
     toggleHold(it.k); render();

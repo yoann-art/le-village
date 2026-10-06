@@ -3,6 +3,7 @@
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
+   ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
@@ -22,6 +23,7 @@ import { updateRecolte } from "../js/recolte.js";
 import { checkDoors, isInside, currentPlace } from "../js/lieux.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
+import { openCoffre, poserCoffre, poseProblem } from "../js/coffres.js";
 import { renderHUD } from "../js/interface.js";
 import { hold, mettreEnCase } from "../js/barre.js";
 
@@ -276,6 +278,33 @@ export async function verifier(){
     } finally {
       state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
     }
+  });
+  await etape("Les coffres : ranger, déplacer un coffre plein, un coffre dans un coffre", async () => {
+    const clic = s => { const b = $(s); if(!b) throw new Error(`pas de bouton ${s}`); b.click(); };
+    const libre = () => { const px = tileOf(player.position.x), pz = tileOf(player.position.z);
+      for(let d = 1; d < 8; d++) for(let dx = -d; dx <= d; dx++) for(const dz of [-d, d]){ const i = idx(px + dx, pz + dz); if(!poseProblem(i)) return i; }
+      throw new Error("pas de place pour poser un coffre"); };
+    sacAdd("coffreReserve", 2); sacAdd("bois", 5); hold("coffreReserve");
+    poserCoffre(libre()); poserCoffre(libre());
+    if(state.coffres.length < 2) throw new Error("les coffres ne sont pas posés");
+    const [a, b] = state.coffres.slice(-2), bois = owned("bois");
+    openCoffre(a.id); await wait(200);
+    clic(`[data-co="sac:${state.sac.findIndex(it => it.k === "bois")}"]`);
+    if(!$(".co-fiche [data-co-bouge]")) throw new Error("toucher un objet n'ouvre pas sa fiche");
+    if(a.items.length) throw new Error("toucher un objet l'a rangé tout de suite");
+    clic(".co-fiche [data-co-bouge]");
+    if(!a.items.some(it => it.k === "bois")) throw new Error("le bois n'est pas rangé");
+    clic("[data-co-deplacer]"); await wait(300);
+    if(state.coffres.includes(a) || state.main !== "coffrePlein") throw new Error("le coffre plein n'est pas en main");
+    openCoffre(b.id); await wait(200);
+    const c = state.barre.findIndex(it => it && it.k === "coffrePlein");          // en main : dans une case, ou dans le sac si elles sont prises
+    clic(c >= 0 ? `[data-co="case:${c}"]` : `[data-co="sac:${state.sac.findIndex(it => it.k === "coffrePlein")}"]`);
+    clic(".co-fiche [data-co-bouge]");
+    const range = b.items.find(it => it.k === "coffrePlein");
+    if(!range || !range.items.some(it => it.k === "bois")) throw new Error("le coffre plein n'est pas rangé dans l'autre, avec son bois");
+    if(owned("bois") !== bois) throw new Error(`le bois ne compte plus (${owned("bois")} au lieu de ${bois})`);
+    $("#sheetWrap [data-close]").click(); await wait(300);
+    return `un coffre rempli (${range.items.length} emplacement) rangé dans un autre`;
   });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */

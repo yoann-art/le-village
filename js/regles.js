@@ -13,7 +13,9 @@ export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);
 /* Ce qu'on possède (demande de Yo) : l'or dans la bourse (state.res.or) ; tout le reste sur soi et dans les
    coffres de réserve posés au village (state.coffres[].items). Sur soi : le sac (state.sac) et les trois cases
    rapides (state.barre, une pile chacune ; demande de Yo, v1.7.6 : ce qu'on met dans une case sort du sac).
-   On fabrique et on construit avec tout ça ensemble ; la récolte arrive sur soi, et on range soi-même dans un coffre. */
+   On fabrique et on construit avec tout ça ensemble ; la récolte arrive sur soi, et on range soi-même dans un coffre.
+   Un coffre déplacé garde ce qu'il contient (demande de Yo, v1.7.8) : {k: "coffrePlein", n: 1, id, items} ; il se
+   porte, se range dans un autre coffre ; ce qu'il contient compte aussi pour fabriquer (décidé par Yo). */
 const BOURSE = "or";
 /* Des emplacements (le sac, un coffre) : [{k, n}], au plus cap emplacements ; un outil prend un emplacement
    à lui seul, le reste s'empile jusqu'à SAC.pile */
@@ -64,7 +66,33 @@ export function sacTake(k, n){
   });
   return n - left + slotsTake(state.sac, k, left);
 }
-export const coffresCount = k => state.coffres.reduce((c, co) => c + slotsCount(co.items, k), 0);
+/* Met sur soi un objet qui ne s'empile pas (un coffre rempli) : dans le sac, sinon dans une case libre */
+export function sacPut(it){
+  if(state.sac.length < SAC.places){ state.sac.push(it); return true; }
+  const c = state.barre.indexOf(null);
+  if(c < 0) return false;
+  state.barre[c] = it;
+  return true;
+}
+/* Retire de soi un coffre rempli (celui qu'on pose) : celui de la case rapide, sinon le dernier du sac */
+export function sacTakeObj(k){
+  const c = state.barre.findIndex(it => it && it.k === k);
+  if(c >= 0){ const it = state.barre[c]; state.barre[c] = null; return it; }
+  const s = state.sac.map(it => it.k).lastIndexOf(k);
+  return s >= 0 ? state.sac.splice(s, 1)[0] : null;
+}
+/* Les listes des coffres : les coffres posés, puis ce que contiennent les coffres remplis (portés ou rangés) */
+const dedans = list => list.flatMap(it => it && it.items ? [it.items, ...dedans(it.items)] : []);
+function listesCoffres(){
+  const poses = state.coffres.map(co => co.items);
+  return [...poses, ...dedans([...porte(), ...poses.flat()])];
+}
+/* Un coffre rempli qu'on a vidé (en fabriquant avec ce qu'il contenait) redevient un coffre vide */
+function videsRemplis(){
+  for(const l of [state.sac, state.barre, ...listesCoffres()]) for(const it of l)
+    if(it && it.items && !it.items.length){ it.k = "coffreReserve"; delete it.items; delete it.id; }
+}
+export const coffresCount = k => listesCoffres().reduce((c, l) => c + slotsCount(l, k), 0);
 /* La place pour k dans le sac et tous les coffres */
 export const placeFor = k => k === BOURSE ? Infinity : sacPlace(k) + state.coffres.reduce((n, co) => n + slotsPlace(co.items, COFFRE.places, k), 0);
 export const owned = k => k === BOURSE ? state.res.or : GROUPES[k] ? membres(k).reduce((n, m) => n + owned(m), 0) : sacCount(k) + coffresCount(k);
@@ -74,8 +102,9 @@ export function addOwned(k, n){
   if(k === BOURSE){ state.res.or += n; return {sac: 0, coffre: 0, reste: 0, bourse: n}; }
   if(n < 0){                                         // le sac, puis les coffres, et les cases rapides en dernier
     let left = -n - slotsTake(state.sac, k, -n);
-    for(const co of state.coffres){ if(left <= 0) break; left -= slotsTake(co.items, k, left); }
+    for(const l of listesCoffres()){ if(left <= 0) break; left -= slotsTake(l, k, left); }
     if(left > 0) sacTake(k, left);
+    videsRemplis();
     return {sac: 0, coffre: 0, reste: 0};
   }
   const sac = sacAdd(k, n);
