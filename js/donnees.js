@@ -102,6 +102,20 @@ export const GRAINES = {
   graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : un buisson de baies y poussera."},
   /* Le thym (étape 1.6, Grand Carnet : « Thym et sauge ») ; la durée de pousse est à régler en jouant */
+  /* Les graines des arbres de la Forêt profonde (étape 1.7, Grand Carnet : « abattre un arbre peut donner sa graine,
+     à replanter sur l'île ») ; sur l'île, l'arbre pousse en temps réel (pousse en secondes, à régler en jouant) */
+  graineCharme:{nom:"Graine de charme", pluriel:"graines de charme", emoji:"🌰", plante:"charme", pousse:7200, sachet:0x4A9A4C,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un charme y poussera (jamais collé à un autre arbre)."},
+  graineFrene: {nom:"Graine de frêne", pluriel:"graines de frêne", emoji:"🌰", plante:"frene", pousse:7200, sachet:0x6FBA64,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un frêne y poussera (jamais collé à un autre arbre)."},
+  graineSureau:{nom:"Graine de sureau", pluriel:"graines de sureau", emoji:"🌰", plante:"sureau", pousse:7200, sachet:0x3A2A40,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un sureau y poussera."},
+  graineIf:    {nom:"Graine d'if", pluriel:"graines d'if", emoji:"🌰", plante:"if", pousse:21600, sachet:0x2E6A40,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un if y poussera (jamais collé à un autre arbre)."},
+  graineHoux:  {nom:"Graine de houx", pluriel:"graines de houx", emoji:"🌰", plante:"houx", pousse:21600, sachet:0xD8342A,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un houx y poussera."},
+  graineChene: {nom:"Gland de chêne séculaire", pluriel:"glands de chêne séculaire", emoji:"🌰", plante:"chene", pousse:86400, sachet:0x6A5440,
+    usage:"Prends-le en main, puis « Planter » devant une case d'herbe libre : un chêne séculaire y poussera, en un jour (jamais collé à un autre arbre)."},
   graineThym:{nom:"Graine de thym", pluriel:"graines de thym", emoji:"🌱", plante:"thym", pousse:3600,
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10Q6 21 12 21Q18 21 18 10Z" fill="#EFE6D2" stroke="#8A6B4A" stroke-width="1.2"/><rect x="7" y="7.5" width="10" height="3" rx="1.5" fill="#8A6B4A"/><circle cx="12" cy="15" r="2.6" fill="#B79AD6"/></svg>',
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : du thym y poussera."}
@@ -121,15 +135,17 @@ export const RECOLTE = {
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
      3 fois sur 4 (chance) ; il repousse sur place en 12 h (repousse) ; à régler en jouant */
   thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75},
-  /* Les arbres de la Forêt profonde (étape 1.7, d'après le Grand Carnet) : on les coupe à la hache ; ils repoussent
-     sur place (carnet : commun 1 jour, peu commun 3 jours, rare 1 semaine ; repousse en secondes). Leurs graines
-     viendront avec les essences de l'île. Le Grand Chêne millénaire, lui, ne s'abat pas. */
-  charme: {nom:"le charme", outil:"hache", coups:3, res:"bois", parCoup:2, repousse:86400},
-  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"bois", parCoup:2, repousse:86400},
-  sureau: {nom:"le sureau", outil:"hache", coups:2, res:"bois", parCoup:1, repousse:86400},
-  if:     {nom:"l'if", outil:"hache", coups:3, res:"boisIf", parCoup:1, repousse:259200},
-  houx:   {nom:"le houx", outil:"hache", coups:2, res:"bois", parCoup:1, repousse:259200},
-  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"bois", parCoup:3, repousse:604800}
+  /* Les arbres de la Forêt profonde (étape 1.7, d'après le Grand Carnet) : on les coupe à la hache ; chacun donne son
+     bois (res) et sa graine selon sa rareté (chance : commun 3 fois sur 4, peu commun 1 fois sur 2, rare 1 fois sur 5) ;
+     dans la forêt, ils repoussent sur place (repousse en secondes : 1 jour, 3 jours, 1 semaine) ; sur l'île, ils
+     tombent et disparaissent. Le houx et le sureau n'ont pas de bois : on cueille leurs baies ou leurs fleurs (n),
+     qui reviennent (retour, en secondes). Le Grand Chêne millénaire, lui, ne s'abat pas. */
+  charme: {nom:"le charme", outil:"hache", coups:3, res:"boisCharme", parCoup:2, graine:"graineCharme", chance:.75, repousse:86400},
+  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"boisFrene", parCoup:2, graine:"graineFrene", chance:.75, repousse:86400},
+  sureau: {nom:"le sureau", outil:"hache", coups:2, parCoup:0, graine:"graineSureau", chance:.75, repousse:86400, n:3, retour:43200},
+  if:     {nom:"l'if", outil:"hache", coups:3, res:"boisIf", parCoup:1, graine:"graineIf", chance:.5, repousse:259200},
+  houx:   {nom:"le houx", outil:"hache", coups:2, parCoup:0, graine:"graineHoux", chance:.5, repousse:259200, n:2, retour:43200},
+  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:3, graine:"graineChene", chance:.2, repousse:604800}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi
@@ -336,10 +352,23 @@ export const PRODUITS = {
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
   /* Étape 1.6, d'après le Grand Carnet : le thym des prés de l'île, et le poisson grillé (un poisson + du thym, il soigne).
      prix : en or au comptoir */
-  /* Le bois d'if (carnet : « bois souple pour les arcs »), coupé sur les ifs de la Forêt profonde (étape 1.7) */
-  boisIf: {nom:"Bois d'if", pluriel:"bois d'if", emoji:"🪵", aide:"Le bois d'if se coupe sur les ifs de la Forêt profonde (les sapins sombres).",
-    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="5" fill="#C8743C" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="18" cy="12" rx="3" ry="5" fill="#E8A060"/><ellipse cx="18" cy="12" rx="1.6" ry="2.8" fill="#C8743C"/></svg>',
-    usage:"Un bois souple, orange cuivré : pour les arcs (carnet). Il se coupe sur les ifs de la Forêt profonde."},
+  /* Les bois de la Forêt profonde (étape 1.7, demande de Yo : chaque essence donne son bois, comme le dit le Grand
+     Carnet ; « chaque bois garde sa teinte dans les objets qu'on en fabrique »). bois : sa couleur. prix : en or */
+  boisCharme:{nom:"Bois de charme", pluriel:"bois de charme", emoji:"🪵", bois:0xC8C2B8, prix:1, aide:"Le bois de charme se coupe sur les charmes de la Forêt profonde.",
+    usage:"Gris perle. Un bois très dur, pour les manches d'outils (carnet). Il se coupe sur les charmes de la Forêt profonde."},
+  boisFrene: {nom:"Bois de frêne", pluriel:"bois de frêne", emoji:"🪵", bois:0xE6D2A0, prix:1, aide:"Le bois de frêne se coupe sur les frênes de la Forêt profonde.",
+    usage:"Blond clair. Un bois solide et souple, pour les lances (carnet). Il se coupe sur les frênes de la Forêt profonde."},
+  boisIf:    {nom:"Bois d'if", pluriel:"bois d'if", emoji:"🪵", bois:0xC8743C, prix:2, aide:"Le bois d'if se coupe sur les ifs de la Forêt profonde (les arbres sombres et pointus).",
+    usage:"Orange cuivré. Un bois souple, pour les arcs (carnet). Il se coupe sur les ifs de la Forêt profonde."},
+  boisChene: {nom:"Bois de chêne séculaire", pluriel:"bois de chêne séculaire", emoji:"🪵", bois:0x5E4028, prix:3, aide:"Le bois de chêne séculaire se coupe sur les chênes géants de la Forêt profonde.",
+    usage:"Brun profond. Un bois dur (carnet), tiré des géants couverts de mousse de la Forêt profonde."},
+  /* Le houx et le sureau n'ont pas de bois (carnet) : on cueille leurs baies et leurs fleurs */
+  baiesHoux:  {nom:"Baies de houx", pluriel:"baies de houx", emoji:"🔴", prix:1, aide:"Les baies de houx se cueillent en automne et en hiver, sur les houx de la Forêt profonde.",
+    usage:"Des baies rouges et des feuilles piquantes (carnet). Elles se cueillent en automne et en hiver."},
+  fleursSureau:{nom:"Fleurs de sureau", pluriel:"fleurs de sureau", emoji:"🌼", prix:1, aide:"Les fleurs de sureau se cueillent au printemps et en été, sur les sureaux de la Forêt profonde.",
+    usage:"Des fleurs pour les potions (carnet). Elles se cueillent au printemps et en été."},
+  baiesSureau:{nom:"Baies de sureau", pluriel:"baies de sureau", emoji:"🫐", prix:1, aide:"Les baies de sureau se cueillent en automne, sur les sureaux de la Forêt profonde.",
+    usage:"Des baies noires pour les potions (carnet). Elles se cueillent en automne."},
   thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22V5M12 15l-5-5M12 12l5-5M12 18l4-3" stroke="#4E6B3A" stroke-width="1.6" fill="none" stroke-linecap="round"/><g fill="#7E9C66"><ellipse cx="8" cy="10.5" rx="2.4" ry="1.3"/><ellipse cx="16" cy="7.5" rx="2.4" ry="1.3"/><ellipse cx="15.5" cy="14.5" rx="2.2" ry="1.2"/><ellipse cx="10" cy="17" rx="2.2" ry="1.2"/></g><g fill="#B79AD6"><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.4"/><circle cx="17.5" cy="6" r="1.4"/></g></svg>',
     usage:"Une herbe aromatique des prés de l'île, toute l'année. Pour la cuisine (le poisson grillé) et, plus tard, des potions douces."},
@@ -432,6 +461,22 @@ export const COULEURS = {
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
+/* Les dessins des bois, des graines, des baies et des fleurs de la forêt */
+{
+  const c = v => "#" + v.toString(16).padStart(6, "0");
+  for(const p of Object.values(PRODUITS)) if(p.bois !== undefined)
+    p.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="5" fill="${c(p.bois)}" stroke="#1C2230" stroke-opacity=".4"/>` +
+      `<ellipse cx="18" cy="12" rx="3" ry="5" fill="#F4E8D0" stroke="#1C2230" stroke-opacity=".3"/><ellipse cx="18" cy="12" rx="1.5" ry="2.6" fill="${c(p.bois)}"/></svg>`;
+  for(const g of Object.values(GRAINES)) if(g.sachet !== undefined)
+    g.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10Q6 21 12 21Q18 21 18 10Z" fill="#EFE6D2" stroke="#8A6B4A" stroke-width="1.2"/>` +
+      `<rect x="7" y="7.5" width="10" height="3" rx="1.5" fill="#8A6B4A"/><circle cx="12" cy="15" r="3" fill="${c(g.sachet)}"/></svg>`;
+  const grappe = col => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v6M12 6l5-2" stroke="#4E6B3A" stroke-width="1.5" fill="none"/>` +
+    [[9, 12], [15, 12], [12, 16], [7.5, 17], [16.5, 17], [12, 21]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3" fill="${col}" stroke="#1C2230" stroke-opacity=".35"/>`).join("") + `</svg>`;
+  PRODUITS.baiesHoux.icone = grappe("#D8342A");
+  PRODUITS.baiesSureau.icone = grappe("#3A2A40");
+  PRODUITS.fleursSureau.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">` +
+    [[12, 6], [7, 10], [17, 10], [9, 15], [15, 15], [12, 19]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.2" fill="#F8F4E8" stroke="#C8B878"/><circle cx="${x}" cy="${y}" r=".9" fill="#E8C84A"/>`).join("") + `</svg>`;
+}
 /* Des ingrédients « au choix » : poisson = n'importe quel poisson sauf un légendaire ; on prend d'abord les
    moins précieux (membres, du moins cher au plus cher) */
 export const GROUPES = {poisson:{nom:"Poisson", pluriel:"poissons", emoji:"🐟", aide:"Un poisson, n'importe lequel (sauf un légendaire) : pêche à l'étang ou en mer avec une canne à pêche."}};

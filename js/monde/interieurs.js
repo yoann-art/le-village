@@ -53,12 +53,12 @@ export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
-  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); lampeSur(0, 0);
+  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0);
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
     const m = makeForet();
     room = m.group; floor.count = 0;
     interior.background.setHex(m.fond); interior.fog = new THREE.Fog(m.fond, m.brume[0], m.brume[1]);
-    hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); lamp.color.setHex(m.light); lamp.intensity = m.power;
+    hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
     interior.add(room); lampeSur(0, D_FORET / 2);
     return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk};
   }

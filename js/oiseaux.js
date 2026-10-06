@@ -15,6 +15,7 @@ import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, sizeOf } from "./regles.js";
 import { map, idx, inb, H, tileOf, centerOf, growth, lieuEau } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
+import { ARBRES } from "./monde/essences.js";
 import { pontonCases, eauLibre } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe } from "./peche.js";
@@ -84,7 +85,7 @@ function places(ou){
     const i = idx(x, z), o = map.obj[i], cx = centerOf(x), cz = centerOf(z), a = Math.random() * 6.28;
     const solLibre = map.type[i] !== "water" && (!o || o === "herbe" || o === "thym") && !occ.has(i);
     if(ou === "sol" && map.type[i] === "grass" && solLibre) out.push({x: cx, y: 0, z: cz});
-    else if(ou === "arbres" && o === "tree" && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .75, y: 2.25, z: cz + Math.sin(a) * .75, perche: true});
+    else if(ou === "arbres" && ARBRES.has(o) && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .75, y: 2.25, z: cz + Math.sin(a) * .75, perche: true});
     else if(ou === "buissons" && o === "buisson" && growth(i) >= 1) out.push({x: cx, y: .85, z: cz, perche: true});
     else if(ou === "plage" && (map.type[i] === "sand" && solLibre && bord(x, z, j => eauLibre(j) && lieuEau(j) === "mer") || pontonCases.has(i))) out.push({x: cx, y: 0, z: cz});
     else if(ou === "etang" && solLibre && bord(x, z, j => map.type[j] === "water" && lieuEau(j) === "etang")) out.push({x: cx, y: 0, z: cz});

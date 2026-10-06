@@ -132,17 +132,17 @@ export async function verifier(){
     let t = null;
     for(let z = 33; z > 19 && !t; z--) for(const [x, dx] of [[16, -1], [19, 1]]){
       const i = z * WF + x, o = foretObj(i);
-      if(o && RECOLTE[o] && RECOLTE[o].outil === "hache"){ t = {i, dx}; break; }
+      if(o && RECOLTE[o] && RECOLTE[o].res){ t = {i, dx}; break; }   // un arbre qui donne du bois
     }
     if(!t) throw new Error("aucun arbre au bord du sentier");
     if(!owned("hachePierre")) sacAdd("hachePierre", 1);
     placePlayer(fcx(t.i) - t.dx, fcz(t.i), t.dx, 0);
-    const avant = owned("bois") + owned("boisIf"), sorte = foretObj(t.i);
+    const sorte = foretObj(t.i), bois = RECOLTE[sorte].res, avant = owned(bois);
     for(let k = 0; k < RECOLTE[sorte].coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
     if(foretObj(t.i)) throw new Error(`${RECOLTE[sorte].nom} est toujours là (le bouton dit « ${$("#btn-act").textContent} »)`);
-    if(owned("bois") + owned("boisIf") <= avant) throw new Error("pas de bois gagné");
+    if(owned(bois) <= avant) throw new Error(`pas de ${objet(bois).nom.toLowerCase()} gagné`);
     await sortir();
-    return `${RECOLTE[sorte].nom} coupé, +${owned("bois") + owned("boisIf") - avant} bois`;
+    return `${RECOLTE[sorte].nom} coupé, +${owned(bois) - avant} ${objet(bois).nom.toLowerCase()}`;
   });
   await etape("Pêcher", async () => {
     sacAdd("canneBois", 1); hold(null);

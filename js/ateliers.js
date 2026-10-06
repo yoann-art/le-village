@@ -42,6 +42,7 @@ function chain(q){
 }
 /* Les recettes d'un plan de travail (key : pour les retrouver au toucher) ; le comptoir y ajoute la vente des
    poissons et des plats qu'on possède, avec leur prix (POISSONS, PRODUITS) */
+const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 function recettesDe(b){
   const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i}));
@@ -52,6 +53,8 @@ function recettesDe(b){
   if(nb > 1) list.push({key: "tout", cat, tout: true, nom: `Toutes tes prises et tes plats (${nb}), sauf les légendaires`, icone: "🐟",
     out: "or", n: Object.entries(tous).reduce((s, [k, v]) => s + v * objet(k).prix, 0), in: tous, lvl: 1});
   for(const k of aVendre) list.push({key: "v:" + k, cat, out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
+  /* les bois et la cueillette de la Forêt profonde (pas dans « Tout vendre » : on les garde souvent) */
+  for(const k of FORET_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La Forêt profonde", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   return list;
 }
 /* Vendre au comptoir : tout de suite (demande de Yo) ; l'or va dans la bourse, avec le bonus du Marché */

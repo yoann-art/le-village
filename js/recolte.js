@@ -27,13 +27,14 @@ import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, sacAdd, sacTake, sacPlace, gain, doorTile } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
+import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
+import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
-import { foretObj, foretMesh, setForetObj, ftile, W as W_FORET } from "./monde/foret.js";
+import { foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
@@ -116,7 +117,7 @@ function plantProblem(t, plante){
   if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
   if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour planter devant toi";
-  if(plante === "tree" && NEAR.some(([dx, dz]) => inb(t.x + dx, t.z + dz) && map.obj[idx(t.x + dx, t.z + dz)] === "tree"))
+  if(ARBRES.has(plante) && NEAR.some(([dx, dz]) => inb(t.x + dx, t.z + dz) && ARBRES.has(map.obj[idx(t.x + dx, t.z + dz)])))
     return "Trop près d'un autre arbre : laisse une case entre les deux";
   return null;
 }
@@ -152,10 +153,19 @@ function actionOf(t){
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
   const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
-  if(t.w === FORET){                                  // la Forêt profonde : ses arbres se coupent, le Grand Chêne non
-    if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
-    const R = RECOLTE[t.o];
-    if(R && R.outil === "hache") return {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
+  if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
+  /* Les arbres de la forêt (dans la forêt, ou plantés sur l'île) : chacun son bois et sa graine ; le houx et le
+     sureau se cueillent (baies, fleurs), et se coupent hache en main */
+  if(ESSENCES.includes(t.o)){
+    const R = RECOLTE[t.o], nom = R.nom.replace(/^(le |l')/, "");
+    if(g < 1) return info(`🌱 Jeune ${nom} : adulte dans ${duree(growthLeft(t.i))}`);
+    if(FRUITS[t.o] && tenu !== "hache"){
+      const reste = t.w === FORET ? foretFruitsLeft(t.i) : fruitsLeft(t.i), k = cueilletteDe(t.o);
+      if(!k) return info(`🌿 ${nom[0].toUpperCase() + nom.slice(1)} : rien à cueillir en cette saison (la hache le coupe)`);
+      if(reste > 0) return info(`🌿 ${objet(k).nom} : de retour dans ${duree(reste)}`);
+      return {label: `✋ Cueillir : ${objet(k).nom.toLowerCase()}`, run: () => cueillirFruits(t, k)};
+    }
+    return {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
   }
   if(t.o === "tree")
     return g < 1 ? info(`🌱 Jeune arbre : adulte dans ${duree(growthLeft(t.i))}`)
@@ -228,6 +238,15 @@ function ramasser(t){
 }
 
 /* ----- Cueillir ----- */
+/* Les baies du houx, les fleurs ou les baies du sureau (étape 1.7) : elles reviennent (RECOLTE.retour) */
+function cueillirFruits(t, k){
+  const R = RECOLTE[t.o];
+  if(!sacOk(k, R.n)) return;
+  sacAdd(k, R.n);
+  if(t.w === FORET) cueillirForet(t.i); else setEtat(t.i, {cueilli: Date.now()});
+  save();
+  toast(`${objet(k).emoji} +${R.n} ${nomDe(k, R.n)}. Elles reviennent dans ${duree(R.retour)}`, 3000);
+}
 function cueillirHerbe(t){
   const R = RECOLTE.herbe, n = gain(R.n, R.cueille);
   if(!sacOk(R.cueille, n)) return;
@@ -313,8 +332,10 @@ function tombe(){
   const {w, i, o, R, n} = anim;
   anim = null;
   w.set(i, null);
-  const ou = R.graine ? giveSeed(R.graine) : ""; save();
-  toast(`${FIN[o] || "🌳 L'arbre est tombé"} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", R.graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : ""].filter(Boolean).join(", ")}`, 3200);
+  /* sa graine : toujours pour l'arbre de l'île ; selon sa rareté pour ceux de la forêt (carnet : chance) */
+  const graine = R.graine && (R.chance === undefined || Math.random() < R.chance);
+  const ou = graine ? giveSeed(R.graine) : ""; save();
+  toast(`${FIN[o] || "🌳 L'arbre est tombé"} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : ""].filter(Boolean).join(", ")}`, 3600);
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */
@@ -344,5 +365,5 @@ function planter(t){
   if(!sacTake(k, 1)) return;
   setObj(t.i, gr.plante, Date.now());
   syncBarre(); save();
-  toast(`🌱 ${gr.nom} plantée : ${DEVIENT[gr.plante]} dans ${duree(gr.pousse)}`, 3000);
+  toast(`🌱 ${gr.nom} planté${gr.nom.startsWith("Gland") ? "" : "e"} : ${DEVIENT[gr.plante] || RECOLTE[gr.plante].nom.replace(/^le /, "un ").replace(/^l'/, "un ") + " adulte"} dans ${duree(gr.pousse)}`, 3000);
 }

@@ -15,6 +15,7 @@ import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
+import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe } from "./peche.js";
@@ -97,7 +98,7 @@ function places(ou){
     const i = idx(x, z), o = map.obj[i], cx = centerOf(x), cz = centerOf(z), a = Math.random() * 6.28;
     if(ou === "fleurs" && (o === "thym" && !thymLeft(i) || o === "buisson") && growth(i) >= 1) out.push({x: cx, y: o === "thym" ? .35 : .65, z: cz});
     else if(ou === "herbes" && o === "herbe") out.push({x: cx, y: .15, z: cz});
-    else if(ou === "arbres" && o === "tree" && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .3, y: .45 + Math.random() * .5, z: cz + Math.sin(a) * .3, tronc: true});
+    else if(ou === "arbres" && ARBRES.has(o) && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .3, y: .45 + Math.random() * .5, z: cz + Math.sin(a) * .3, tronc: true});
     else if(ou === "sol" && map.type[i] === "grass" && !o && !occ.has(i)) out.push({x: cx, y: .03, z: cz});
     else if(ou === "pierres" && (o === "rock" || o === "rockCuivre")) out.push({x: cx + Math.cos(a) * .5, y: .03, z: cz + Math.sin(a) * .5});
     else if(ou === "etang" && map.type[i] === "water" && lieuEau(i) === "etang") out.push({x: cx, y: .45, z: cz});

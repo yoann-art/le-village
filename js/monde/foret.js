@@ -5,9 +5,11 @@
    posé une fois ici. Dedans (la scène des intérieurs, comme la mine) : une forêt de W × D cases, la même pour
    tout le monde (tirage fixe) : un sentier du sud (l'entrée) au cœur de la forêt au nord, où se dresse le Grand
    Chêne millénaire ; des clairières ; un ruisseau qu'un petit pont enjambe ; partout ailleurs, le sous-bois serré.
-   Ses arbres (d'après le carnet) : charme, frêne, sureau (communs), if, houx (peu communs), chêne séculaire (rare).
-   On les coupe à la hache (voir recolte.js) ; ils repoussent sur place, en temps réel (RECOLTE : 1 jour, 3 jours,
-   1 semaine) : state.foret.coupes = {case: heure de la coupe}. Paisible pour l'instant : les loups et la grotte
+   Ses arbres (d'après le carnet, modèles dans essences.js) : charme, frêne, sureau (communs), if, houx (peu communs),
+   chêne séculaire (rare). On les coupe à la hache (voir recolte.js) : chacun donne son bois (carnet) et parfois sa
+   graine ; ils repoussent sur place, en temps réel (RECOLTE : 1 jour, 3 jours, 1 semaine) : state.foret.coupes =
+   {case: heure de la coupe}. Le houx et le sureau n'ont pas de bois (carnet) : on cueille leurs baies ou leurs
+   fleurs (state.foret.cueillis), qui reviennent. Paisible pour l'instant : les loups et la grotte
    viendront à l'étape 1.8, le gibier au morceau 4.
    Les arbres sont dessinés « en série » (un modèle répété par sorte d'arbre), pour un téléphone modeste ; un arbre
    qu'on coupe devient un modèle à lui, le temps de trembler et de tomber. */
@@ -18,7 +20,7 @@ import { map, idx, inb, setObj } from "./ile.js";
 import { occ, footprint, placeMesh } from "./batiments.js";
 import { pontForet } from "./ponton.js";
 import { rockMesh } from "./rochers.js";
-import { saisonDe } from "../peche.js";
+import { essences, TAILLE, arbreModele, FRUITS, fruitsDeSaison } from "./essences.js";
 
 export const W = 36, D = 36;
 const cx = x => x - W/2 + .5, cz = z => z - D/2 + .5;
@@ -72,26 +74,16 @@ export function foretObj(i){
 }
 
 /* ----- Les modèles des arbres, en série ----- */
-const AUTOMNE = () => saisonDe(new Date()) === "automne";
-function essences(){
-  const automne = AUTOMNE(), fleurs = ["printemps", "ete"].includes(saisonDe(new Date()));
-  return {
-    charme: [[G.cyl, 0x7A6A5A, [.32, 2.6, .32], [0, 1.3, 0]], [G.leaf, automne ? 0xC89A3A : 0x3A7E3E, [2.3, 2.1, 2.3], [0, 2.9, 0]], [G.leaf2, automne ? 0xD8B04A : 0x4A8E48, [2.2, 2, 2.2], [.1, 3.75, .05]]],
-    frene:  [[G.cyl, 0x8A7A62, [.28, 2.8, .28], [0, 1.4, 0]], [G.leaf, automne ? 0x8AA048 : 0x4E9A4A, [2, 1.9, 2], [0, 3.1, 0]], [G.leaf2, 0x5FAA55, [1.8, 1.7, 1.8], [-.1, 3.85, .1]]],
-    if:     [[G.cyl, 0x8A4A2A, [.3, 1.2, .3], [0, .6, 0]], [G.cone, 0x1F4A2E, [1.9, 3, 1.9], [0, 2.4, 0]], [G.cone, 0x24552F, [1.3, 1.8, 1.3], [0, 3.6, 0]]],
-    houx:   [[G.leaf, 0x2A5A32, [1.5, 1.35, 1.5], [0, .7, 0]], [G.head, 0xC8302A, [.4, .4, .4], [.35, 1.05, .3]], [G.head, 0xC8302A, [.35, .35, .35], [-.3, .95, .35]]],
-    sureau: [[G.cyl, 0x8A7A62, [.2, 1, .2], [0, .5, 0]], [G.leaf, 0x5A8E4A, [1.6, 1.4, 1.6], [0, 1.4, 0]], [G.head, fleurs ? 0xF4F0E0 : 0x2A2030, [.55, .45, .55], [.3, 1.9, .2]]],
-    chene:  [[G.cyl, 0x5A4632, [.75, 2.4, .75], [0, 1.2, 0]], [G.leaf, automne ? 0x9A7A3A : 0x2E6A34, [3.4, 2.7, 3.4], [0, 3.2, 0]], [G.leaf2, 0x3A7A3A, [2.5, 2.1, 2.5], [.6, 4.2, -.3]]]
-  };
+/* ----- Les fruits du houx et du sureau : cueillis, ils reviennent (RECOLTE.retour, en secondes) ----- */
+const cueillis = () => (state.foret = state.foret || {coupes: {}}).cueillis || (state.foret.cueillis = {});
+export function foretFruitsLeft(i){
+  const c = cueillis()[i], sp = foret.obj[i];
+  if(c === undefined) return 0;
+  const reste = RECOLTE[sp].retour - (Date.now() - c) / 1000;
+  if(reste <= 0){ delete cueillis()[i]; return 0; }
+  return reste;
 }
-const TAILLE = sp => sp === "chene" ? 1.35 : sp === "houx" || sp === "sureau" ? .95 : 1.1;
-/* Un arbre à lui (celui qu'on coupe) */
-function arbreSeul(sp, r){
-  const g = new THREE.Group();
-  for(const [geo, col, s, p] of essences()[sp]) g.add(part(geo, col, ...s, ...p));
-  g.scale.setScalar(TAILLE(sp) * (.88 + r * .24));
-  return g;
-}
+export function cueillirForet(i){ cueillis()[i] = Date.now(); montrerArbre(i, true); save(); }
 
 /* ----- La forêt dans la scène des intérieurs (construite en entrant) ----- */
 let group = null, series = null;                          // series : {essence: [{mesh, local}], ...} ; index de chaque arbre
@@ -106,7 +98,11 @@ function matriceArbre(i, local){
 function montrerArbre(i, oui){
   const sp = foret.obj[i], at = indexDe.get(i);
   if(at === undefined) return;
-  for(const p of series[sp]){ p.mesh.setMatrixAt(at, oui ? matriceArbre(i, p.local.clone()) : ZERO); p.mesh.instanceMatrix.needsUpdate = true; }
+  const sansFruits = FRUITS[sp] && (!fruitsDeSaison(sp) || foretFruitsLeft(i) > 0);
+  series[sp].forEach((p, k) => {
+    const voir = oui && !(sansFruits && FRUITS[sp].includes(k));
+    p.mesh.setMatrixAt(at, voir ? matriceArbre(i, p.local.clone()) : ZERO); p.mesh.instanceMatrix.needsUpdate = true;
+  });
 }
 export function makeForet(){
   group = new THREE.Group(); indexDe.clear(); seuls.clear(); rochers.clear();
@@ -114,7 +110,7 @@ export function makeForet(){
   const sols = [];
   for(let i = 0; i < W * D; i++) if(foret.type[i] !== "eau") sols.push(i);
   const sol = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), new THREE.MeshLambertMaterial({color: 0xffffff}), sols.length), col = new THREE.Color();
-  const COUL = {mousse: [0x3E6B34, 0x45713A], herbe: [0x6FA852, 0x76AF58], sentier: [0x8A6E4A, 0x92764F], pont: [0xA97A4F, 0x9A6E46]};
+  const COUL = {mousse: [0x5A9248, 0x62984E], herbe: [0x7DBA5C, 0x85C062], sentier: [0xA88A5E, 0xB09264], pont: [0xB88A5A, 0xA97A4F]};
   sols.forEach((i, k) => { const x = i % W, z = Math.floor(i / W); m4.makeTranslation(cx(x), -.1, cz(z)); sol.setMatrixAt(k, m4); sol.setColorAt(k, col.setHex(COUL[foret.type[i]][(x + z) % 2])); });
   sol.instanceColor.needsUpdate = true; sol.receiveShadow = true; group.add(sol);
   /* l'eau du ruisseau, sous le sol */
@@ -152,7 +148,8 @@ export function makeForet(){
   gc.position.set(x0, 0, z0); group.add(gc);
   /* la sortie : des planches au bout du sentier, au sud */
   group.add(part(G.box, 0x8A5A3B, 2, .03, .6, 0, .015, D/2 - .3));
-  return {group, w: W, d: D, doorX: 0, light: 0xFFF0D0, power: .8, ground: 0x2E4A2A, sky: 0xDDEFD8, fond: 0x22402E, brume: [16, 34], walk};
+  /* clair et doux (demande de Yo : la forêt était trop sombre, et on n'a pas encore de torche) */
+  return {group, w: W, d: D, doorX: 0, light: 0xFFF6E0, power: .95, ground: 0x6A8A5A, sky: 0xF0FAE8, hemi: .85, fond: 0x9CC4A8, brume: [24, 52], walk};
 }
 function ajouterRocher(i){
   if(!foretObj(i)) return;
@@ -173,7 +170,7 @@ export function foretMesh(i){
   if(seuls.has(i)) return seuls.get(i);
   const sp = foretObj(i);
   if(!sp || !series || !series[sp]) return null;
-  const r = foret.r[i], g = arbreSeul(sp, r);
+  const r = foret.r[i], g = arbreModele(sp, r, FRUITS[sp] ? fruitsDeSaison(sp) && !foretFruitsLeft(i) : true);
   g.position.set(fcx(i) + (r - .5) * .3, 0, fcz(i) + (r - .5) * .3); g.rotation.y = r * 6.28;
   group.add(g); seuls.set(i, g);
   montrerArbre(i, false);
@@ -194,6 +191,7 @@ setInterval(() => {
     const i = +k;
     if(foretObj(i)){ if(foret.obj[i] === "rock") ajouterRocher(i); else montrerArbre(i, true); }
   }
+  for(const k of Object.keys(cueillis())) if(!foretFruitsLeft(+k) && !seuls.has(+k)) montrerArbre(+k, !!foretObj(+k));
 }, 15000);
 
 /* ----- L'orée sur l'île, posée une fois au bout du pont du nord ----- */

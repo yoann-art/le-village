@@ -7,6 +7,7 @@ import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
+import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026) */
 export const N = 56, H = N / 2;
@@ -133,6 +134,12 @@ export function herbeLeft(i){
   return c && c.coupe ? Math.max(0, RECOLTE.herbe.repousse - (Date.now() - c.coupe) / 1000) : 0;
 }
 /* Thym cueilli : il repousse sur place ; temps restant en secondes (0 = prêt à cueillir) */
+/* Le houx et le sureau plantés sur l'île (étape 1.7) : leurs baies ou leurs fleurs cueillies reviennent
+   (RECOLTE.retour) ; temps restant en secondes (0 = prêtes, si c'est leur saison) */
+export function fruitsLeft(i){
+  const c = state.ile[i], o = map.obj[i];
+  return c && c.cueilli && FRUITS[o] ? Math.max(0, RECOLTE[o].retour - (Date.now() - c.cueilli) / 1000) : 0;
+}
 export function thymLeft(i){
   const c = state.ile[i];
   return c && c.coupe && map.obj[i] === "thym" ? Math.max(0, RECOLTE.thym.repousse - (Date.now() - c.coupe) / 1000) : 0;
@@ -145,7 +152,7 @@ export function baiesLeft(i){                         // -1 : vide, pas arrosé 
   return Math.max(0, RECOLTE.buisson.retour - (Date.now() - c.arrose) / 1000);
 }
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
-const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "");
+const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "");
 
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
@@ -177,6 +184,10 @@ function buildObj(i){
       [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
         g.add(part(G.head, 0x4A5FC1, .32, .32, .32, x, y, z)));
     if(st < 2) g.scale.setScalar(st === 0 ? .4 : .7);
+  } else if(ESSENCES.includes(o)){                  // un arbre de la forêt, planté avec sa graine : pousse, jeune plant, adulte
+    const st = stageOf(i), m = arbreModele(o, r, st === 2 && (!FRUITS[o] || fruitsDeSaison(o) && !fruitsLeft(i)));
+    if(st < 2) m.scale.multiplyScalar(st === 0 ? .3 : .6);
+    g.add(m);
   } else if(o === "thym"){                          // une touffe basse vert sombre, fleurie de mauve ; rase une fois cueillie
     const st = stageOf(i), ras = thymLeft(i) > 0, h = ras ? .45 : .85;
     [[0,0,.72],[.2,.1,.52],[-.19,.12,.54],[.06,-.2,.5],[-.14,-.14,.46]].forEach(([x, z, s], k) =>
