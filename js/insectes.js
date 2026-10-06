@@ -238,13 +238,17 @@ function attraper(b){
 /* Le bouton d'action pour la bête à portée (recolte.js l'affiche, avant le reste) */
 export function insecteAction(){
   if(montre) return {label: "🥅 …", run: () => {}};
+  if(!filetDuSac()) return null;                      // sans filet, on ne prend pas la place des autres actions (pêcher, couper…)
   const b = aPortee();
   if(!b) return null;
   return {label: `🥅 Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, run: () => { if(b.etat === "vit" && betes.includes(b)) attraper(b); }};
 }
 
 /* À chaque image (recolte.js) ; dehors : sur l'île */
-let ponte = 0;
+let ponte = 0, enPause = false;
+/* Pour la vérification automatique : plus de nouvelles bêtes, et celles qui sont là s'en vont (pour qu'un papillon
+   de passage ne prenne pas la place du bouton qu'on essaie) */
+export function pauseInsectes(oui){ enPause = oui; if(oui) for(const b of [...betes]) retirer(b); }
 export function updateInsectes(dt, actif, dehors){
   groupe.visible = dehors;
   if(montre){
@@ -263,5 +267,6 @@ export function updateInsectes(dt, actif, dehors){
     vivre(b, dt);
   }
   ponte -= dt;
+  if(enPause) return;
   if(ponte <= 0){ ponte = 1.5; if(betes.filter(b => b.etat === "vit").length < INSECTE.max) pondre(); }
 }

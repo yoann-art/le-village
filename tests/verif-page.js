@@ -2,7 +2,7 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte au filet. Lancée à chaque envoi sur GitHub par
+   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte au filet, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, objet } from "../js/donnees.js";
@@ -12,8 +12,8 @@ import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
-import { lacherInsecte } from "../js/insectes.js";
-import { player, placePlayer, updatePlayer, R } from "../js/monde/personnage.js";
+import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
+import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { checkDoors, isInside, currentPlace } from "../js/lieux.js";
@@ -26,17 +26,19 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => document.querySelector(s);
 const frames = (n, dt = .05) => { for(let k = 0; k < n; k++) updateRecolte(dt, true); };
 /* Se placer devant la porte d'un bâtiment, et entrer (ou sortir en repassant le paillasson) */
+/* Attendre qu'un changement de lieu soit vraiment fini (le jeu peut être lent sur la machine de GitHub) */
+async function attendre(test, ms = 6000){ const t0 = performance.now(); while(!test() && performance.now() - t0 < ms) await wait(100); await wait(300); return test(); }
 async function entrer(b){
   const s = sizeOf(b.type);
   placePlayer(b.x - H + s/2 + B[b.type].door, b.z - H + s + R, 0, -1);
-  checkDoors(true); await wait(1000);
-  if(!isInside() || currentPlace().b !== b) throw new Error(`on n'est pas entré dans ${B[b.type].nom}`);
+  checkDoors(true);
+  if(!await attendre(() => isInside() && currentPlace().b === b)) throw new Error(`on n'est pas entré dans ${B[b.type].nom}`);
 }
 async function sortir(){
   const room = currentPlace().room;
   placePlayer(room.doorX, room.d/2 - R - .03, 0, 1);
-  checkDoors(true); await wait(1000);
-  if(isInside()) throw new Error("on n'est pas ressorti");
+  checkDoors(true);
+  if(!await attendre(() => !isInside())) throw new Error("on n'est pas ressorti");
 }
 
 export async function verifier(){
@@ -46,6 +48,7 @@ export async function verifier(){
     catch(e){ erreurs.push(`✗ ${nom} : ${e.message}`); }
   }
   if(state.buildings.some(b => b.type !== "mine")) return {ok, erreurs: ["✗ Partie déjà commencée : la vérification ne tourne que sur une partie neuve"]};
+  pauseInsectes(true);                                 // les insectes de passage ne prennent pas la place des boutons essayés
 
   await etape("La partie neuve", async () => {
     if(state.v !== 4) throw new Error(`format de sauvegarde ${state.v}`);
@@ -223,5 +226,18 @@ export async function verifier(){
       state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
     }
   });
+  await etape("Jamais coincé", async () => {
+    /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */
+    const b = state.buildings.find(b => b.type === "scierie");
+    if(!b) throw new Error("pas de Scierie");
+    const s = sizeOf(b.type);
+    placePlayer(b.x - H + s/2, b.z - H + s/2, 0, 1);
+    updatePlayer(.016);
+    const p = player.position;
+    if(!islandWalkable(p.x, p.z)) throw new Error("le personnage reste coincé dans le bâtiment");
+    keys.d = 1; for(let k = 0; k < 10; k++) updatePlayer(.016); keys.d = 0; updatePlayer(.016);
+    return "il glisse hors du bâtiment";
+  });
+  pauseInsectes(false);
   return {ok, erreurs};
 }

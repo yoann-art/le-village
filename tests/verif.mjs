@@ -2,11 +2,14 @@
    Utilisé par GitHub à chaque envoi (.github/workflows/verification.yml) : ouvre le jeu dans un navigateur
    sans écran, à la taille d'un téléphone, attend qu'il soit chargé, joue les gestes de tests/verif-page.js,
    note toute erreur du jeu, garde une capture d'écran (capture.png), et s'arrête en erreur si quelque chose
-   ne va pas (croix rouge sur GitHub). Le jeu doit être servi sur http://localhost:8000. */
+   ne va pas (croix rouge sur GitHub). Le jeu doit être servi sur http://localhost:8000.
+   Sur le PC (pour refaire une vérification de GitHub, où le jeu tourne vraiment pendant l'essai) :
+   npm install --no-save playwright@1.47.2, puis NAVIGATEUR=msedge node tests/verif.mjs (le serveur « jeu » lancé). */
 import { chromium } from "playwright";
 
 const erreurs = [];
-const browser = await chromium.launch({args: ["--enable-unsafe-swiftshader"]});
+/* Sur GitHub : le Chromium de Playwright. Sur le PC de Yo, son Chromium ne démarre pas : NAVIGATEUR=msedge prend Edge */
+const browser = await chromium.launch({args: ["--enable-unsafe-swiftshader"], ...(process.env.NAVIGATEUR ? {channel: process.env.NAVIGATEUR} : {})});
 const page = await browser.newPage({viewport: {width: 375, height: 812}});
 page.on("pageerror", e => erreurs.push(`✗ Erreur du jeu : ${e.message}`));
 page.on("console", m => {

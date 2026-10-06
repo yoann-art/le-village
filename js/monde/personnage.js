@@ -50,8 +50,22 @@ export function islandWalkable(wx, wz){
 let walkable = islandWalkable;
 export function setWalkable(fn){ walkable = fn; }
 const free = (wx, wz) => walkable(wx-R, wz-R) && walkable(wx+R, wz-R) && walkable(wx-R, wz+R) && walkable(wx+R, wz+R);
+/* Ne jamais rester coincé (bugs de Yo, 6 octobre 2026 : un arbre planté contre le personnage, une partie rouverte
+   dans un bâtiment) : s'il se retrouve dans un obstacle, il glisse jusqu'à la place libre la plus proche */
+export function degager(){
+  const p = player.position;
+  if(free(p.x, p.z)) return false;
+  for(let r = .1; r <= 8; r += .1){
+    const n = Math.max(8, Math.round(r * 12));
+    for(let k = 0; k < n; k++){
+      const a = k / n * Math.PI * 2, x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+      if(free(x, z)){ p.x = x; p.z = z; return true; }
+    }
+  }
+  return false;
+}
 player.position.set(state.player.x, 0, state.player.z);
-if(!free(player.position.x, player.position.z)) player.position.set(.5, 0, .5);
+degager();
 const facing = {x:0, z:1};
 
 /* Pose le personnage à un endroit, tourné dans une direction (entrée et sortie des bâtiments) */
@@ -77,6 +91,7 @@ export function frontTile(dist){
   return [tileOf(player.position.x + d.x*dist), tileOf(player.position.z + d.z*dist)];
 }
 export function updatePlayer(dt){
+  degager();                                          // coincé (un arbre planté, un bâtiment, un meuble posé dessus) : il se dégage
   let ix = jv.x, iz = jv.z;
   if(!ix && !iz){
     ix = (keys.r||0) - (keys.l||0); iz = (keys.d||0) - (keys.u||0);
