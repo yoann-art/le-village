@@ -10,6 +10,7 @@ import { roomSide } from "../regles.js";
 import { makeMeuble } from "./meubles.js";
 import { COULEURS } from "../donnees.js";
 import { makeMine } from "./mine.js";
+import { makeForet } from "./foret.js";
 
 export const interior = new THREE.Scene();
 interior.background = new THREE.Color(0x1E1813);
@@ -36,7 +37,7 @@ const AMBIANCE = {
   chateau:  {floor:[0xB8B4AC, 0xAAA69E], wall:0xA7A9AD, beam:0x8E9195, banner:0xA9322A, light:0xFFF4E0, power:.6} // solennel, bannières, pierre
 };
 
-const MUR = 2 * P, EP = .2;                    // hauteur et épaisseur des murs
+const MUR = 2 * P, EP = .2, D_FORET = 36;                    // hauteur et épaisseur des murs
 const SILL = 0x654028, MAT = 0xA9322A, GOLD = 0xE2B24D;
 
 /* Sol : un carreau par case (jusqu'à 12 × 12 P) */
@@ -46,10 +47,21 @@ interior.add(floor);
 
 let room = null;
 const itemMeshes = new Map();                    // meubles de la pièce : id → modèle
+/* La lumière suit le personnage dans un grand lieu (la forêt), pour que les ombres l'accompagnent */
+export function lampeSur(x, z){ lamp.position.set(x - 3, 9, z + 5); lamp.target.position.set(x, 0, z); }
 export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
+  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); lampeSur(0, 0);
+  if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
+    const m = makeForet();
+    room = m.group; floor.count = 0;
+    interior.background.setHex(m.fond); interior.fog = new THREE.Fog(m.fond, m.brume[0], m.brume[1]);
+    hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); lamp.color.setHex(m.light); lamp.intensity = m.power;
+    interior.add(room); lampeSur(0, D_FORET / 2);
+    return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk};
+  }
   if(b.type === "mine"){                             // la mine : une grotte, construite par mine.js
     const m = makeMine();
     room = m.group; floor.count = 0;

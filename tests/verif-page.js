@@ -2,10 +2,11 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
+   ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
@@ -14,6 +15,7 @@ import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
+import { foretObj, W as WF, fcx, fcz } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -48,7 +50,7 @@ export async function verifier(){
     try { const r = await fn(); ok.push(`✓ ${nom}${r ? " : " + r : ""}`); }
     catch(e){ erreurs.push(`✗ ${nom} : ${e.message}`); }
   }
-  if(state.buildings.some(b => b.type !== "mine")) return {ok, erreurs: ["✗ Partie déjà commencée : la vérification ne tourne que sur une partie neuve"]};
+  if(state.buildings.some(b => !B[b.type].fixe)) return {ok, erreurs: ["✗ Partie déjà commencée : la vérification ne tourne que sur une partie neuve"]};
   pauseInsectes(true); pauseOiseaux(true);             // les insectes et les oiseaux de passage ne prennent pas la place des boutons essayés
 
   await etape("La partie neuve", async () => {
@@ -120,6 +122,27 @@ export async function verifier(){
     const n = Object.keys(state.mine.rocks).length;
     await sortir();
     return `${n} rochers aujourd'hui`;
+  });
+  await etape("La Forêt profonde : y aller, couper un arbre, revenir", async () => {
+    const b = state.buildings.find(b => b.type === "foret");
+    if(!b) throw new Error("pas d'orée de la forêt sur l'île");
+    await entrer(b);
+    if(currentPlace().room.w < 30) throw new Error("la forêt n'est pas construite");
+    /* un arbre au bord du grand sentier (colonnes 17 et 18), qu'on coupe depuis le sentier */
+    let t = null;
+    for(let z = 33; z > 19 && !t; z--) for(const [x, dx] of [[16, -1], [19, 1]]){
+      const i = z * WF + x, o = foretObj(i);
+      if(o && RECOLTE[o] && RECOLTE[o].outil === "hache"){ t = {i, dx}; break; }
+    }
+    if(!t) throw new Error("aucun arbre au bord du sentier");
+    if(!owned("hachePierre")) sacAdd("hachePierre", 1);
+    placePlayer(fcx(t.i) - t.dx, fcz(t.i), t.dx, 0);
+    const avant = owned("bois") + owned("boisIf"), sorte = foretObj(t.i);
+    for(let k = 0; k < RECOLTE[sorte].coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
+    if(foretObj(t.i)) throw new Error(`${RECOLTE[sorte].nom} est toujours là (le bouton dit « ${$("#btn-act").textContent} »)`);
+    if(owned("bois") + owned("boisIf") <= avant) throw new Error("pas de bois gagné");
+    await sortir();
+    return `${RECOLTE[sorte].nom} coupé, +${owned("bois") + owned("boisIf") - avant} bois`;
   });
   await etape("Pêcher", async () => {
     sacAdd("canneBois", 1); hold(null);

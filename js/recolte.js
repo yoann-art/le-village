@@ -18,7 +18,8 @@
      « 🥅 Lancer le filet » (voir oiseaux.js) ;
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
    - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js) ;
-   - dans la mine, ses rochers (voir monde/mine.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
+   - dans la mine, ses rochers (voir monde/mine.js) ; dans la Forêt profonde, ses arbres et ses rochers, qui
+     repoussent (voir monde/foret.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
@@ -31,7 +32,8 @@ import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock } from "./monde/mine.js";
-import { eauLibre, entreePonton } from "./monde/ponton.js";
+import { eauLibre, entrees } from "./monde/ponton.js";
+import { foretObj, foretMesh, setForetObj, ftile, W as W_FORET } from "./monde/foret.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
@@ -52,6 +54,18 @@ function sacOk(k, n){ if(sacPlace(k) >= n) return true; toast(PLEIN, 3600); retu
 const ILE = {obj: i => map.obj[i], mesh: objMesh, set: (i, o) => setObj(i, o), cx: x => centerOf(x)};
 const MINE = {obj: mineRock, mesh: mineRockMesh, set: setMineRock, cx: () => 0};
 const inMine = () => { const p = currentPlace(); return !!p && p.b.type === "mine"; };
+const FORET = {obj: foretObj, mesh: foretMesh, set: setForetObj, cx: x => x - W_FORET/2 + .5};
+const inForet = () => { const p = currentPlace(); return !!p && p.b.type === "foret"; };
+/* Dans la forêt : l'arbre ou le rocher juste devant */
+function targetForet(){
+  const d = dir4(), p = player.position;
+  for(const dist of [.8, 1.3]){
+    const i = ftile(p.x + d.x * dist, p.z + d.z * dist);
+    const o = i >= 0 && foretObj(i);
+    if(o) return {w: FORET, i, x: i % W_FORET, z: Math.floor(i / W_FORET), o};
+  }
+  return null;
+}
 /* Dans la mine : le rocher juste devant */
 function targetMine(){
   const d = dir4(), p = player.position;
@@ -65,6 +79,7 @@ function targetMine(){
    (pour planter, poser), ou les herbes hautes où il se tient (on les traverse) */
 function target(){
   if(inMine()) return targetMine();
+  if(inForet()) return targetForet();
   const own = [tileOf(player.position.x), tileOf(player.position.z)];
   for(const dist of [0, .8]){
     const [x, z] = dist ? frontTile(dist) : own;
@@ -99,7 +114,7 @@ function plantProblem(t, plante){
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
   if(solAt(i)) return "Ramasse d'abord ce qui est par terre";
   if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
-  if(i === entreePonton) return "Le passage vers le ponton reste libre";
+  if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour planter devant toi";
   if(plante === "tree" && NEAR.some(([dx, dz]) => inb(t.x + dx, t.z + dz) && map.obj[idx(t.x + dx, t.z + dz)] === "tree"))
     return "Trop près d'un autre arbre : laisse une case entre les deux";
@@ -127,7 +142,7 @@ function giveSeed(k){
 /* ----- Le bouton d'action : son texte, et ce qu'il fait ----- */
 let cur = null, act = null, anim = null;              // ce qu'on vise ; son action {label, run} ; l'animation {i, t, kind}
 const hits = new Map();                               // coups déjà donnés à chaque arbre, buisson ou rocher
-const hk = t => (t.w === MINE ? "m" : "") + t.i;
+const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : "") + t.i;
 const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
@@ -137,6 +152,11 @@ function actionOf(t){
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
   const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
+  if(t.w === FORET){                                  // la Forêt profonde : ses arbres se coupent, le Grand Chêne non
+    if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
+    const R = RECOLTE[t.o];
+    if(R && R.outil === "hache") return {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
+  }
   if(t.o === "tree")
     return g < 1 ? info(`🌱 Jeune arbre : adulte dans ${duree(growthLeft(t.i))}`)
       : {label: `🪓 Couper${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)};
@@ -294,7 +314,7 @@ function tombe(){
   anim = null;
   w.set(i, null);
   const ou = R.graine ? giveSeed(R.graine) : ""; save();
-  toast(`${FIN[o]} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", R.graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : ""].filter(Boolean).join(", ")}`, 3200);
+  toast(`${FIN[o] || "🌳 L'arbre est tombé"} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", R.graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : ""].filter(Boolean).join(", ")}`, 3200);
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */

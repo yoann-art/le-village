@@ -103,6 +103,22 @@ BUILD.mine = g => {
   g.add(part(G.cyl, C.dark, .06, 1.3, .06, 1.15, .65, f + .15));                      // la lanterne
   g.add(part(G.box, new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8}), .2, .24, .2, 1.15, 1.2, f + .15));
 };
+/* L'orée de la Forêt profonde (étape 1.7), au bout du pont : un bout de terre moussue sur l'eau, de grands arbres
+   sombres et une arche de bois ; on passe dessous pour entrer dans la forêt */
+BUILD.foret = g => {
+  const f = frontOf("foret");
+  g.add(part(G.box, 0x3E6B34, 3, .3, 3, 0, -.13, 0));                               // la terre moussue
+  for(const [x, z, s] of [[-1.05, -.6, 1.15], [1.05, -.5, 1.05], [0, -1.15, 1.3], [-1.2, .55, .8], [1.2, .6, .85]]){
+    g.add(part(G.trunk, 0x5A4632, 2.4 * s, 2.8 * s, 2.4 * s, x, .75 * s, z));
+    g.add(part(G.leaf, 0x2E6A34, 2.3 * s, 2.3 * s, 2.3 * s, x, 2.2 * s, z));
+    g.add(part(G.leaf2, 0x3A7A3A, 2.2 * s, 2 * s, 2.2 * s, x + .1, 2.9 * s, z));
+  }
+  for(const x of [-.62, .62]) g.add(part(G.cyl, 0x6B4A2F, .18, 1.9, .18, x, .95, f - .05));   // l'arche
+  g.add(part(G.box, 0x6B4A2F, 1.6, .2, .24, 0, 1.95, f - .05));
+  g.add(part(G.box, 0xE8D9B8, .9, .3, .04, 0, 1.62, f + .08));                          // l'écriteau
+  g.add(part(G.leaf2, 0x4E8A44, 1, .5, .5, -.6, 2.05, f - .05));                       // du lierre sur l'arche
+  g.add(part(G.leaf2, 0x4E8A44, .8, .45, .45, .55, 2.1, f - .05));
+};
 export function makeBuilding(type, lvl){
   const g = new THREE.Group();
   BUILD[type](g);

@@ -19,7 +19,9 @@ export const B = {
   forge:    {nom:"Forge", emoji:"⚒️", cost:{bloc:30, cuivre:15, or:20}, stars:3, size:3, door:-.4, taille:"moyenne", desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
   chateau:  {nom:"Château", emoji:"🏰", cost:{bloc:60, planche:40, cuivre:30, or:80}, stars:10, unique:true, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."},
   /* La mine (étape 1.5, demande de Yo : on y entre) : posée une fois sur l'île, ni construite, ni déplacée, ni améliorée */
-  mine:     {nom:"Mine", emoji:"⛰️", cost:{}, stars:0, size:3, door:0, taille:"mine", fixe:true, desc:"L'entrée de la mine. Dedans, des rochers de pierre et de cuivre, qui reviennent chaque jour."}
+  mine:     {nom:"Mine", emoji:"⛰️", cost:{}, stars:0, size:3, door:0, taille:"mine", fixe:true, desc:"L'entrée de la mine. Dedans, des rochers de pierre et de cuivre, qui reviennent chaque jour."},
+  /* L'orée de la Forêt profonde (étape 1.7), au bout du pont du nord de l'île : on y entre à pied (voir monde/foret.js) */
+  foret:    {nom:"Forêt profonde", emoji:"🌲", cost:{}, stars:0, size:3, door:0, taille:"foret", fixe:true, desc:"L'orée de la Forêt profonde, la première zone sauvage. Dedans, de grands arbres qui repoussent, des clairières, un ruisseau ; le gibier arrive bientôt."}
 };
 export const ORDER = ["scierie","chaumiere","carriere","marche","taverne","forge","chateau"];
 /* Meubles du catalogue : gabarit de la bible (petit ≈ 1 P², moyen ≈ 2 P², grand ≈ 4 P²),
@@ -118,7 +120,16 @@ export const RECOLTE = {
   buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
      3 fois sur 4 (chance) ; il repousse sur place en 12 h (repousse) ; à régler en jouant */
-  thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75}
+  thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75},
+  /* Les arbres de la Forêt profonde (étape 1.7, d'après le Grand Carnet) : on les coupe à la hache ; ils repoussent
+     sur place (carnet : commun 1 jour, peu commun 3 jours, rare 1 semaine ; repousse en secondes). Leurs graines
+     viendront avec les essences de l'île. Le Grand Chêne millénaire, lui, ne s'abat pas. */
+  charme: {nom:"le charme", outil:"hache", coups:3, res:"bois", parCoup:2, repousse:86400},
+  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"bois", parCoup:2, repousse:86400},
+  sureau: {nom:"le sureau", outil:"hache", coups:2, res:"bois", parCoup:1, repousse:86400},
+  if:     {nom:"l'if", outil:"hache", coups:3, res:"boisIf", parCoup:1, repousse:259200},
+  houx:   {nom:"le houx", outil:"hache", coups:2, res:"bois", parCoup:1, repousse:259200},
+  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"bois", parCoup:3, repousse:604800}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi
@@ -325,6 +336,10 @@ export const PRODUITS = {
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
   /* Étape 1.6, d'après le Grand Carnet : le thym des prés de l'île, et le poisson grillé (un poisson + du thym, il soigne).
      prix : en or au comptoir */
+  /* Le bois d'if (carnet : « bois souple pour les arcs »), coupé sur les ifs de la Forêt profonde (étape 1.7) */
+  boisIf: {nom:"Bois d'if", pluriel:"bois d'if", emoji:"🪵", aide:"Le bois d'if se coupe sur les ifs de la Forêt profonde (les sapins sombres).",
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="5" fill="#C8743C" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="18" cy="12" rx="3" ry="5" fill="#E8A060"/><ellipse cx="18" cy="12" rx="1.6" ry="2.8" fill="#C8743C"/></svg>',
+    usage:"Un bois souple, orange cuivré : pour les arcs (carnet). Il se coupe sur les ifs de la Forêt profonde."},
   thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22V5M12 15l-5-5M12 12l5-5M12 18l4-3" stroke="#4E6B3A" stroke-width="1.6" fill="none" stroke-linecap="round"/><g fill="#7E9C66"><ellipse cx="8" cy="10.5" rx="2.4" ry="1.3"/><ellipse cx="16" cy="7.5" rx="2.4" ry="1.3"/><ellipse cx="15.5" cy="14.5" rx="2.2" ry="1.2"/><ellipse cx="10" cy="17" rx="2.2" ry="1.2"/></g><g fill="#B79AD6"><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.4"/><circle cx="17.5" cy="6" r="1.4"/></g></svg>',
     usage:"Une herbe aromatique des prés de l'île, toute l'année. Pour la cuisine (le poisson grillé) et, plus tard, des potions douces."},

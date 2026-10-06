@@ -9,7 +9,7 @@ import { state, save } from "./sauvegarde.js";
 import { slotsAdd, slotsTake, sacAdd, sacTake, doorTile } from "./regles.js";
 import { map, inb, N, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
-import { entreePonton } from "./monde/ponton.js";
+import { entrees } from "./monde/ponton.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
 import { syncBarre, barreAuto } from "./barre.js";
@@ -24,7 +24,7 @@ export function poseProblem(i){
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
   if(state.sol && state.sol[i]) return "Ramasse d'abord ce qui est par terre";
   if(state.buildings.some(b => { const [dx, dz] = doorTile(b.type, b.x, b.z); return dx === x && dz === z; })) return "La case devant une porte reste libre";
-  if(i === entreePonton) return "Le passage vers le ponton reste libre";
+  if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === x && tileOf(player.position.z) === z) return "Recule d'un pas pour le poser devant toi";
   return null;
 }

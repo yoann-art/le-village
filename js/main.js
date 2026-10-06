@@ -7,6 +7,7 @@ import "./miseajour.js";
 import "./verification.js";
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
+import { B } from "./donnees.js";
 import { renderer, camera, sun, D, distanceFor, setDistance } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
@@ -19,6 +20,7 @@ import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, p
 import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, islandPos, currentPlace } from "./lieux.js";
 import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
+import { lampeSur } from "./monde/interieurs.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
 import "./barre.js";
@@ -58,13 +60,15 @@ function tick(now){
   if(pushing) dirty = true;
   checkDoors(pushing);
   const dv = decoView();
-  setDistance(distanceFor(dv ? dv.width : isInside() ? VIEW_IN : VIEW_OUT) * view.zoom);
+  const foret = isInside() && currentPlace().b.type === "foret";                // la forêt se voit comme dehors, en grand
+  setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
   if(takeJump()) camT.copy(target);
   else camT.lerp(target, 1 - Math.pow(.0005, dt));
   camera.position.copy(camT).addScaledVector(OFF, D);
   camera.lookAt(camT.x, .4, camT.z);
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
+  if(foret) lampeSur(camT.x, camT.z);
   if(!isInside()){
     sun.position.set(camT.x + 6, 16, camT.z + 5);
     sun.target.position.copy(camT);
@@ -72,7 +76,7 @@ function tick(now){
     updateInteraction(dt);
   }
   updatePlan(isInside() && !decorating() && !lifting() && !isBusy());   // bouton du plan de travail, quand on est tout près
-  updateRecolte(dt, (!isInside() || currentPlace().b.type === "mine") && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
+  updateRecolte(dt, (!isInside() || ["mine", "foret"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
   renderer.render(currentScene(), camera);
   if(dirty && now - lastSave > 2000){
     const p = islandPos();
@@ -88,5 +92,5 @@ renderHUD();
 requestAnimationFrame(tick);
 setTimeout(() => {
   if(migrationMsg) toast(migrationMsg, 4200);
-  else if(!state.buildings.length) toast("Ramasse les morceaux de bois et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
+  else if(!state.buildings.some(b => !B[b.type].fixe)) toast("Ramasse les morceaux de bois et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
 }, 700);

@@ -72,10 +72,10 @@ export const lieuEau = i => { const c = (N-1)/2; return Math.hypot(i % N - (c+8)
 {
   const rnd = mulberry32(state.seed * 11 + 5), c = (N-1)/2, sous = new Set();
   state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
-  const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1;
+  const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1, F = state.pontForet, entreeF = F ? idx(F.x, F.z + 1) : -1;
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z), r = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || Math.hypot(x-c, z-c) < 9) continue;
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || i === entreeF || Math.hypot(x-c, z-c) < 9) continue;
     if(r < .04) map.obj[i] = "thym";
   }
 }
