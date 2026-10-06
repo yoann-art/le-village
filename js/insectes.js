@@ -12,7 +12,7 @@ import { scene } from "./monde/scene.js";
 import { G, part } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sacAdd, sacPlace } from "./regles.js";
+import { sacAdd, sacPlace, porte } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
@@ -213,7 +213,7 @@ function vivre(b, dt){
 /* ----- Attraper ----- */
 let montre = null;                 // la bête attrapée, montrée au-dessus de la tête : {mesh, t}
 export const attrapeEnCours = () => !!montre;
-const filetDuSac = () => state.sac.some(it => OUTILS[it.k] && OUTILS[it.k].famille === "filet") ? state.sac.find(it => OUTILS[it.k] && OUTILS[it.k].famille === "filet").k : null;
+const filetDuSac = () => { const it = porte().find(it => OUTILS[it.k] && OUTILS[it.k].famille === "filet"); return it ? it.k : null; };
 /* La bête la plus proche, à portée de filet */
 function aPortee(){
   const p = player.position;

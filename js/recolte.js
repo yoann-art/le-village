@@ -26,7 +26,7 @@ import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { addOwned, sacAdd, sacTake, sacPlace, gain, doorTile } from "./regles.js";
+import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ } from "./monde/batiments.js";
@@ -122,9 +122,9 @@ function plantProblem(t, plante){
   return null;
 }
 
-/* Le meilleur outil d'une famille dans le sac (le plus fort) */
+/* Le meilleur outil d'une famille sur soi, dans le sac ou une case rapide (le plus fort) */
 function bestTool(famille){
-  return state.sac.map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === famille).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
+  return porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === famille).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
 }
 /* Prend en main l'outil d'une famille (celui qu'on tient, ou le meilleur) ; null s'il n'y en a pas */
 function takeTool(famille){

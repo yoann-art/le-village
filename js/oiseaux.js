@@ -12,7 +12,7 @@ import { scene } from "./monde/scene.js";
 import { G, part } from "./monde/formes.js";
 import { OISEAUX, HEURES, PECHE, OUTILS, B } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sacAdd, sacPlace, sizeOf } from "./regles.js";
+import { sacAdd, sacPlace, sizeOf, porte } from "./regles.js";
 import { map, idx, inb, H, tileOf, centerOf, growth, lieuEau } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
@@ -181,7 +181,7 @@ function vivre(o, dt){
 /* ----- Lancer le filet ----- */
 let montre = null;
 export const oiseauEnCours = () => !!montre;
-const filetDuSac = () => { const it = state.sac.find(it => OUTILS[it.k] && OUTILS[it.k].famille === "filet"); return it ? it.k : null; };
+const filetDuSac = () => { const it = porte().find(it => OUTILS[it.k] && OUTILS[it.k].famille === "filet"); return it ? it.k : null; };
 function aPortee(){
   const p = player.position;
   let mieux = null, md = OISEAU.portee;

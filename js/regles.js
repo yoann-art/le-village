@@ -10,9 +10,10 @@ export const doorTile = (t, x, z) => [x + Math.floor(sizeOf(t)/2 + (B[t].door ||
 const ROOM = {petite:4, moyenne:6, grande:8};
 export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);
 
-/* Ce qu'on possède (demande de Yo) : l'or dans la bourse (state.res.or) ; tout le reste dans le sac
-   (state.sac) et dans les coffres de réserve posés au village (state.coffres[].items). On fabrique et on
-   construit avec le sac et les coffres ensemble ; la récolte va dans le sac, et on range soi-même dans un coffre. */
+/* Ce qu'on possède (demande de Yo) : l'or dans la bourse (state.res.or) ; tout le reste sur soi et dans les
+   coffres de réserve posés au village (state.coffres[].items). Sur soi : le sac (state.sac) et les trois cases
+   rapides (state.barre, une pile chacune ; demande de Yo, v1.7.6 : ce qu'on met dans une case sort du sac).
+   On fabrique et on construit avec tout ça ensemble ; la récolte arrive sur soi, et on range soi-même dans un coffre. */
 const BOURSE = "or";
 /* Des emplacements (le sac, un coffre) : [{k, n}], au plus cap emplacements ; un outil prend un emplacement
    à lui seul, le reste s'empile jusqu'à SAC.pile */
@@ -42,10 +43,27 @@ export function slotsTake(list, k, n){
   }
   return n - left;
 }
-export const sacCount = k => slotsCount(state.sac, k);
-export const sacPlace = k => slotsPlace(state.sac, SAC.places, k);
-export const sacAdd = (k, n) => slotsAdd(state.sac, SAC.places, k, n);
-export const sacTake = (k, n) => slotsTake(state.sac, k, n);
+/* Les fonctions « sac » comptent tout ce qu'on porte sur soi : le sac et les cases rapides ([{k, n} ou null] × 3) */
+export const porte = () => [...state.sac, ...state.barre.filter(Boolean)];
+export const sacCount = k => slotsCount(porte(), k);
+/* La place pour k sur soi : ce qui manque à la pile de sa case rapide, puis le sac */
+export const sacPlace = k => state.barre.reduce((n, it) => n + (it && it.k === k ? pileOf(k) - it.n : 0), 0) + slotsPlace(state.sac, SAC.places, k);
+/* Ajoute sur soi : d'abord dans la case rapide qui a déjà k (les graines qu'on ramasse), puis dans le sac */
+export function sacAdd(k, n){
+  let left = n;
+  for(const it of state.barre) if(it && it.k === k && left > 0){ const m = Math.min(pileOf(k) - it.n, left); it.n += m; left -= m; }
+  return n - left + slotsAdd(state.sac, SAC.places, k, left);
+}
+/* Retire de soi : d'abord de la case rapide (ce qu'on tient en main : la graine qu'on plante), puis du sac */
+export function sacTake(k, n){
+  let left = n;
+  state.barre.forEach((it, i) => {
+    if(!it || it.k !== k || left <= 0) return;
+    const m = Math.min(it.n, left); it.n -= m; left -= m;
+    if(!it.n) state.barre[i] = null;
+  });
+  return n - left + slotsTake(state.sac, k, left);
+}
 export const coffresCount = k => state.coffres.reduce((c, co) => c + slotsCount(co.items, k), 0);
 /* La place pour k dans le sac et tous les coffres */
 export const placeFor = k => k === BOURSE ? Infinity : sacPlace(k) + state.coffres.reduce((n, co) => n + slotsPlace(co.items, COFFRE.places, k), 0);
@@ -54,9 +72,10 @@ export const owned = k => k === BOURSE ? state.res.or : GROUPES[k] ? membres(k).
    n < 0 : retire du sac, puis des coffres */
 export function addOwned(k, n){
   if(k === BOURSE){ state.res.or += n; return {sac: 0, coffre: 0, reste: 0, bourse: n}; }
-  if(n < 0){
-    let left = -n - sacTake(k, -n);
+  if(n < 0){                                         // le sac, puis les coffres, et les cases rapides en dernier
+    let left = -n - slotsTake(state.sac, k, -n);
     for(const co of state.coffres){ if(left <= 0) break; left -= slotsTake(co.items, k, left); }
+    if(left > 0) sacTake(k, left);
     return {sac: 0, coffre: 0, reste: 0};
   }
   const sac = sacAdd(k, n);

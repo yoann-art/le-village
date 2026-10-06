@@ -7,37 +7,43 @@
      espèce prise, combien de fois et la plus grosse, state.carnet.poissons), les insectes et les oiseaux (étape 1.7,
      state.carnet.insectes, state.carnet.oiseaux) ; ce qu'on n'a pas encore pris reste un « ? ».
    Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
-   on peut le prendre en main (outil, graine, coffre à poser). */
+   on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
+   est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
 import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, SAC, COFFRE, objet, icone, ouPoisson } from "./donnees.js";
-import { state } from "./sauvegarde.js";
+import { state, save } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
-import { openSheet, wrap } from "./interface.js";
-import { toggleHold, barreAuto, utilisable, jauge } from "./barre.js";
+import { openSheet, wrap, toast } from "./interface.js";
+import { toggleHold, hold, barreAuto, utilisable, jauge, dansCase, auSac, renderBarre } from "./barre.js";
 
 const info = objet;
 const cap = t => t[0].toUpperCase() + t.slice(1);
 let tab = "sac";                      // onglet ouvert : "sac", "coffres" ou "carnet"
 let fiche = null;                     // l'espèce choisie dans le carnet
 let page = "poissons";                // la page du carnet : "poissons", "insectes" ou "oiseaux"
-let pick = null;                      // l'emplacement du sac choisi
+let pick = null;                      // l'objet choisi : {ou: "sac" ou "case", j}
+const choisi = () => pick && (pick.ou === "case" ? state.barre : state.sac)[pick.j];
 
-function sacHTML(){
-  const items = state.sac;
-  const slots = Array.from({length: SAC.places}, (_, i) => {
-    const it = items[i];
-    if(!it) return `<div class="slot empty" aria-label="Emplacement vide"></div>`;
-    const m = info(it.k);
-    return `<button class="slot${pick === i ? " on" : ""}" data-slot="${i}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${icone(it.k)}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}${jauge(it.k)}</button>`;
+function grille(list, places, ou){
+  return Array.from({length: places}, (_, i) => {
+    const it = list[i];
+    if(!it) return `<div class="slot empty" aria-label="${ou === "case" ? "Case rapide vide" : "Emplacement vide"}"></div>`;
+    const m = info(it.k), on = pick && pick.ou === ou && pick.j === i;
+    return `<button class="slot${on ? " on" : ""}" data-slot="${ou}:${i}" aria-label="${it.n} ${m.nom}"><span aria-hidden="true">${icone(it.k)}</span>${it.n > 1 ? `<span class="sn">${it.n}</span>` : ""}${jauge(it.k)}</button>`;
   }).join("");
-  const it = typeof pick === "number" && items[pick];
+}
+function sacHTML(){
+  const items = state.sac, it = choisi(), enCase = pick && pick.ou === "case";
   const detail = it ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(it.k)}</span>
-      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}<p>Pour le ranger, ouvre un coffre de réserve.</p></div>
-      ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button></div>` : ""}</div>`
-    : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length ? "Touche un objet pour le choisir." : "Ce que tu récoltes et fabriques arrive ici."}</p>`;
+      <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${enCase ? `<p>Dans la case rapide ${pick.j + 1}</p>` : ""}${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
+      ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>${enCase ? `<button class="btn ghost" data-sac-remettre>Remettre dans le sac</button>` : ""}</div>` : ""}</div>`
+    : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length || state.barre.some(Boolean) ? "Touche un objet pour le choisir." : "Ce que tu récoltes et fabriques arrive ici."}</p>`;
   return `<p class="muted" style="margin:0 0 8px">Ce que tu portes sur toi : ${items.length} emplacement${items.length > 1 ? "s" : ""} pris sur ${SAC.places}.
     Ce que tu récoltes et fabriques arrive ici ; quand il est plein, range tes affaires dans un coffre de réserve.</p>
-    <div class="sac-grid">${slots}</div>${detail}`;
+    <div class="sac-grid">${grille(items, SAC.places, "sac")}</div>
+    <h3 style="margin:10px 0 4px">Cases rapides</h3>
+    <p class="muted" style="margin:0 0 6px;font-size:14px">En plus du sac : ce que tu y mets sort du sac.</p>
+    <div class="sac-grid">${grille(state.barre, SAC.cases, "case")}</div>${detail}`;
 }
 
 function tiles(keys){
@@ -145,9 +151,19 @@ wrap.addEventListener("click", e => {
   if(pg){ if(pg.dataset.carnetPage !== page){ page = pg.dataset.carnetPage; fiche = null; render(); } return; }
   if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; fiche = null; render(); } return; }
   if(fi){ fiche = fiche === fi.dataset.carnet ? null : fi.dataset.carnet; render(); return; }
-  if(slot){ const i = +slot.dataset.slot; pick = pick === i ? null : i; render(); return; }
-  if(e.target.closest("[data-sac-main]") && typeof pick === "number" && state.sac[pick]){
-    const k = state.sac[pick].k;
-    barreAuto(k); toggleHold(k); render();
+  if(slot){ const [ou, j] = slot.dataset.slot.split(":"); pick = pick && pick.ou === ou && pick.j === +j ? null : {ou, j: +j}; render(); return; }
+  const it = choisi();
+  if(!it) return;
+  if(e.target.closest("[data-sac-main]")){
+    barreAuto(it.k);                                   // pris en main : il sort du sac, dans une case libre
+    const c = dansCase(it.k);
+    if(c >= 0) pick = {ou: "case", j: c};
+    toggleHold(it.k); render();
+  } else if(e.target.closest("[data-sac-remettre]") && pick.ou === "case"){
+    if(!auSac(it)){ toast("Ton sac est plein : range d'abord des affaires dans un coffre", 3000); return; }
+    state.barre[pick.j] = null;
+    if(state.main === it.k) hold(null);
+    pick = {ou: "sac", j: state.sac.findIndex(s => s.k === it.k)};
+    renderBarre(); save(); render();
   }
 });

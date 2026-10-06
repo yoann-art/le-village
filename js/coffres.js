@@ -58,11 +58,11 @@ function render(){
   openSheet(`<div class="sh-head"><h2 class="display">🗃️ ${nomCoffre(co)}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Touche un objet de ton sac pour le ranger, ou un objet du coffre pour le reprendre.</p>
     <div class="co-head"><h3>Dans le coffre (${co.items.length} sur ${COFFRE.places})</h3>
-      <button class="btn primary" data-co-tout ${state.sac.some(it => !state.barre.includes(it.k)) ? "" : "disabled"}>Tout ranger</button></div>
+      <button class="btn primary" data-co-tout ${state.sac.length ? "" : "disabled"}>Tout ranger</button></div>
     <div class="sac-grid">${slots(co.items, COFFRE.places, "data-co-out")}</div>
     <h3 style="margin:12px 0 6px">Ton sac (${state.sac.length} sur ${SAC.places})</h3>
     <div class="sac-grid">${slots(state.sac, SAC.places, "data-co-in")}</div>
-    <p class="muted" style="margin:6px 0 0;font-size:14px">« Tout ranger » garde dans ton sac ce qui est dans tes cases rapides.</p>
+    <p class="muted" style="margin:6px 0 0;font-size:14px">Ce qui est dans tes cases rapides n'est plus dans ton sac : « Tout ranger » n'y touche pas.</p>
     ${co.items.length ? "" : `<button class="btn ghost" data-co-reprendre style="margin-top:10px">Reprendre le coffre (il est vide)</button>`}`);
 }
 export function openCoffre(id){ open = coffreOf(id); if(open) render(); }
@@ -71,7 +71,8 @@ function ranger(j){
   const it = state.sac[j];
   if(!it) return 0;
   const n = slotsAdd(open.items, COFFRE.places, it.k, it.n);
-  if(n) sacTake(it.k, n);
+  it.n -= n;
+  if(!it.n) state.sac.splice(j, 1);
   return n;
 }
 wrap.addEventListener("click", e => {
@@ -92,7 +93,6 @@ wrap.addEventListener("click", e => {
   } else if(e.target.closest("[data-co-tout]")){
     let n = 0, plein = false;
     for(let j = state.sac.length - 1; j >= 0; j--){
-      if(state.barre.includes(state.sac[j].k)) continue;
       const it = state.sac[j], m = ranger(j);
       n += m; if(m < it.n) plein = true;
     }

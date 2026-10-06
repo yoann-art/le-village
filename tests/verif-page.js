@@ -1,7 +1,7 @@
 /* ================= Vérification automatique =================
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
-   couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
+   couper un arbre, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
@@ -23,7 +23,7 @@ import { checkDoors, isInside, currentPlace } from "../js/lieux.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { renderHUD } from "../js/interface.js";
-import { hold } from "../js/barre.js";
+import { hold, mettreEnCase } from "../js/barre.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => document.querySelector(s);
@@ -115,6 +115,17 @@ export async function verifier(){
     if(map.obj[idx(...t)]) throw new Error("l'arbre est toujours là");
     if(owned("bois") <= bois) throw new Error("pas de bois gagné");
     return `+${owned("bois") - bois} bois`;
+  });
+  await etape("Une case rapide : ce qu'on y met sort du sac", async () => {
+    const k = "piochePierre";
+    sacAdd(k, 1);
+    if(!state.sac.some(it => it.k === k)) throw new Error("la pioche n'est pas arrivée dans le sac");
+    if(!mettreEnCase(0, k)) throw new Error("la pioche ne va pas dans la case 1");
+    if(state.sac.some(it => it.k === k)) throw new Error("la pioche est encore dans le sac");
+    $("#barre [data-case='0']").click();
+    if(state.main !== k) throw new Error("la pioche n'est pas en main");
+    if(!owned(k)) throw new Error("la pioche ne compte plus");
+    return `case 1 : ${objet(k).nom}, ${state.sac.length} emplacements pris dans le sac`;
   });
   await etape("Entrer dans la mine et en sortir", async () => {
     await entrer(state.buildings.find(b => b.type === "mine"));
