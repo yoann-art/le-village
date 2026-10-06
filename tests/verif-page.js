@@ -2,7 +2,7 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte au filet, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, objet } from "../js/donnees.js";
@@ -13,6 +13,7 @@ import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
+import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -48,7 +49,7 @@ export async function verifier(){
     catch(e){ erreurs.push(`✗ ${nom} : ${e.message}`); }
   }
   if(state.buildings.some(b => b.type !== "mine")) return {ok, erreurs: ["✗ Partie déjà commencée : la vérification ne tourne que sur une partie neuve"]};
-  pauseInsectes(true);                                 // les insectes de passage ne prennent pas la place des boutons essayés
+  pauseInsectes(true); pauseOiseaux(true);             // les insectes et les oiseaux de passage ne prennent pas la place des boutons essayés
 
   await etape("La partie neuve", async () => {
     if(state.v !== 4) throw new Error(`format de sauvegarde ${state.v}`);
@@ -189,7 +190,10 @@ export async function verifier(){
     for(const [k, v] of Object.entries(pris)) addOwned(k, v);                   // rendus
     return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et un brin de thym`;
   });
+  /* Faire de la place dans le sac de la partie d'essai (12 emplacements : il se remplit au fil des essais) */
+  const place = n => { for(const k of ["graineArbre", "graineThym", "fibre", "pierre", "bois", "planche"]) if(state.sac.length > 12 - n) state.sac = state.sac.filter(it => it.k !== k); };
   await etape("Attraper un insecte au filet", async () => {
+    place(2);
     sacAdd("filet", 1); hold(null);
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);                   // immobile : on ne fait peur à personne
     const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
@@ -205,6 +209,19 @@ export async function verifier(){
     if(!state.carnet.insectes.fourmi) throw new Error("la fourmi n'est pas au carnet");
     frames(40);
     return "une fourmi, inscrite au carnet";
+  });
+  await etape("Attraper un oiseau au filet", async () => {
+    place(1);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    lacherOiseau("moineau", player.position.x, player.position.z + 1.4);
+    frames(2);
+    if(!$("#btn-act").textContent.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    const avant = owned("moineau");
+    $("#btn-act").click();
+    if(owned("moineau") <= avant) throw new Error("pas de moineau dans le sac");
+    if(!state.carnet.oiseaux.moineau) throw new Error("le moineau n'est pas au carnet");
+    frames(40);
+    return "un moineau, inscrit au carnet";
   });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
@@ -238,6 +255,6 @@ export async function verifier(){
     keys.d = 1; for(let k = 0; k < 10; k++) updatePlayer(.016); keys.d = 0; updatePlayer(.016);
     return "il glisse hors du bâtiment";
   });
-  pauseInsectes(false);
+  pauseInsectes(false); pauseOiseaux(false);
   return {ok, erreurs};
 }

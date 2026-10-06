@@ -4,12 +4,12 @@
      Un outil prend un emplacement ; le reste s'empile jusqu'à SAC.pile. Tout ce qu'on récolte arrive ici.
    - Coffres : ce que contiennent tous les coffres de réserve du village, pour s'y retrouver.
    - Carnet (le carnet de collection de la bible) : une page par collection, les poissons (étape 1.6 : chaque
-     espèce prise, combien de fois et la plus grosse, state.carnet.poissons) et les insectes (étape 1.7,
-     state.carnet.insectes) ; ce qu'on n'a pas encore pris reste un « ? ».
+     espèce prise, combien de fois et la plus grosse, state.carnet.poissons), les insectes et les oiseaux (étape 1.7,
+     state.carnet.insectes, state.carnet.oiseaux) ; ce qu'on n'a pas encore pris reste un « ? ».
    Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
    on peut le prendre en main (outil, graine, coffre à poser). */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, SAC, COFFRE, objet, icone, ouPoisson } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, SAC, COFFRE, objet, icone, ouPoisson } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
 import { openSheet, wrap } from "./interface.js";
@@ -19,7 +19,7 @@ const info = objet;
 const cap = t => t[0].toUpperCase() + t.slice(1);
 let tab = "sac";                      // onglet ouvert : "sac", "coffres" ou "carnet"
 let fiche = null;                     // l'espèce choisie dans le carnet
-let page = "poissons";                // la page du carnet : "poissons" ou "insectes"
+let page = "poissons";                // la page du carnet : "poissons", "insectes" ou "oiseaux"
 let pick = null;                      // l'emplacement du sac choisi
 
 function sacHTML(){
@@ -56,6 +56,7 @@ function coffresHTML(){
     <h3 style="margin:8px 0 4px">Graines</h3>${tiles(Object.keys(GRAINES))}
     <h3 style="margin:8px 0 4px">Poissons</h3>${tiles(Object.keys(POISSONS))}
     <h3 style="margin:8px 0 4px">Insectes</h3>${tiles(Object.keys(INSECTES))}
+    <h3 style="margin:8px 0 4px">Oiseaux</h3>${tiles(Object.keys(OISEAUX))}
     <h3 style="margin:8px 0 4px">Meubles</h3>${tiles(MEUBLES_ORDER)}`;
 }
 
@@ -87,12 +88,33 @@ function insectesHTML(){
   return `<p class="muted" style="margin:0 0 8px">🦋 Insectes : ${ks.filter(pris).length} sur ${ks.length}. Approche à pas de loup, puis attrape-les au filet.</p>` + detail +
     COINS.map(([titre, test]) => `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => test(INSECTES[k])).map(tuile).join("")}</div>`).join("");
 }
+/* Les oiseaux, rangés par endroit (le premier où on les trouve) */
+const PERCHOIRS = [
+  ["Au sol et dans le jardin", p => p.ou[0] === "sol"],
+  ["Dans les arbres et les haies", p => p.ou[0] === "arbres" || p.ou[0] === "buissons"],
+  ["Sur les toits", p => p.ou[0] === "toits"],
+  ["Au bord de l'eau", p => p.ou[0] === "plage" || p.ou[0] === "etang"]
+];
+function oiseauxHTML(){
+  const c = state.carnet.oiseaux, ks = Object.keys(OISEAUX), pris = k => c[k] && c[k].n > 0;
+  const tuile = k => { const p = OISEAUX[k], on = fiche === k ? " on" : "";
+    return pris(k)
+      ? `<button class="tile${on}" data-carnet="${k}"><div class="te" aria-hidden="true">${icone(k)}</div><div class="tl">${p.nom}</div></button>`
+      : `<button class="tile inconnu${on}" data-carnet="${k}" aria-label="Oiseau pas encore attrapé"><div class="te" aria-hidden="true">?</div><div class="tl">???</div></button>`; };
+  const f = fiche && OISEAUX[fiche];
+  const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche un oiseau pour voir sa fiche.</p>`
+    : pris(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(fiche)}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>Attrapé${f.une ? "e" : ""} ${c[fiche].n} fois</p></div></div>`
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore attrapé</b><p>On le trouve ${f.ou.map(o => OU_OISEAU[o]).join(" ou ")}. À toi de découvrir quand !</p></div></div>`;
+  return `<p class="muted" style="margin:0 0 8px">🐦 Oiseaux : ${ks.filter(pris).length} sur ${ks.length}. Approche à pas de loup d'un oiseau posé, puis lance le filet.</p>` + detail +
+    PERCHOIRS.map(([titre, test]) => `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => test(OISEAUX[k])).map(tuile).join("")}</div>`).join("");
+}
 function carnetHTML(){
   const onglets = `<div class="sh-tabs sous" role="tablist">
       <button class="sh-tab" role="tab" data-carnet-page="poissons" aria-selected="${page === "poissons"}">🐟 Poissons</button>
       <button class="sh-tab" role="tab" data-carnet-page="insectes" aria-selected="${page === "insectes"}">🦋 Insectes</button>
+      <button class="sh-tab" role="tab" data-carnet-page="oiseaux" aria-selected="${page === "oiseaux"}">🐦 Oiseaux</button>
     </div>`;
-  return onglets + (page === "insectes" ? insectesHTML() : poissonsHTML());
+  return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : poissonsHTML());
 }
 function poissonsHTML(){
   const c = state.carnet.poissons, ks = Object.keys(POISSONS), pris = k => c[k] && c[k].n > 0;

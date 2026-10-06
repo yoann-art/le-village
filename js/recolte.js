@@ -14,7 +14,8 @@
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
      du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés ;
    - du thym : « ✋ Cueillir le thym » (des brins, parfois sa graine ; il repousse sur place) ;
-   - un insecte tout près : « 🥅 Attraper » (le filet ; voir insectes.js), avant tout le reste ;
+   - un insecte tout près : « 🥅 Attraper » (le filet ; voir insectes.js), avant tout le reste ; un oiseau posé :
+     « 🥅 Lancer le filet » (voir oiseaux.js) ;
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
    - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js) ;
    - dans la mine, ses rochers (voir monde/mine.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
@@ -37,6 +38,7 @@ import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
 import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
 import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
 import { updateInsectes, insecteAction, attrapeEnCours } from "./insectes.js";
+import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -185,9 +187,11 @@ export function updateRecolte(dt, active){
   if(anim) animate(dt);
   updatePeche(dt, active, !currentPlace());          // les ombres des poissons ne nagent que dehors
   updateInsectes(dt, active, !currentPlace());        // les insectes non plus
-  cur = active && !anim && !enPeche() && !attrapeEnCours() ? target() : null;
+  updateOiseaux(dt, active, !currentPlace());         // ni les oiseaux
+  cur = active && !anim && !enPeche() && !attrapeEnCours() && !oiseauEnCours() ? target() : null;
   showCase(cur);
-  act = enPeche() ? pecheAction() : (active && !anim && !currentPlace() && insecteAction()) || (cur && actionOf(cur));
+  const bete = active && !anim && !currentPlace() && (insecteAction() || oiseauAction());
+  act = enPeche() ? pecheAction() : bete || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;
