@@ -4,7 +4,7 @@
    couper un arbre, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
-   poser un coffre dans la Scierie, l'ouvrir et l'emporter,
+   poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
@@ -17,7 +17,7 @@ import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
-import { foretObj, W as WF, fcx, fcz } from "../js/monde/foret.js";
+import { foret, foretObj, W as WF, fcx, fcz } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -260,6 +260,49 @@ export async function verifier(){
     frames(40);
     return "un moineau, inscrit au carnet";
   });
+  await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
+    place(4);
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    if(!owned("filet")) sacAdd("filet", 1);
+    if(!owned("canneBois")) sacAdd("canneBois", 1);
+    hold(null);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    /* une case libre au bord de l'eau, face à l'eau */
+    let t = null;
+    for(let i = 0; i < WF * WF && !t; i++){
+      if(foret.type[i] !== "eau") continue;
+      for(const [dx, dz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]){
+        const x = i % WF + dx, z = Math.floor(i / WF) + dz, j = z * WF + x;
+        if(x > 1 && z > 1 && x < WF - 2 && z < WF - 2 && foret.type[j] !== "eau" && !foret.obj[j]){ t = {i, j, dx: -dx, dz: -dz}; break; }
+      }
+    }
+    if(!t) throw new Error("aucun bord du ruisseau");
+    placePlayer(fcx(t.j), fcz(t.j), t.dx, t.dz); frames(2);
+    const p = player.position, pris = [];
+    /* un phasme sur la rive, puis un pic vert posé un peu plus loin */
+    lacherInsecte("phasme", p.x - t.dz * .7, p.z + t.dx * .7, .1); frames(2);
+    if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas d'insecte à attraper)`);
+    $("#btn-act").click(); frames(40);
+    if(!state.carnet.insectes.phasme) throw new Error("le phasme n'est pas au carnet");
+    lacherOiseau("picVert", p.x + t.dz * 1.4, p.z - t.dx * 1.4); frames(2);
+    if(!$("#btn-act").textContent.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas d'oiseau)`);
+    $("#btn-act").click(); frames(40);
+    if(!state.carnet.oiseaux.picVert) throw new Error("le pic vert n'est pas au carnet");
+    /* pêcher : mains libres (la canne du sac est prise toute seule), une ombre dans l'eau, juste devant */
+    hold(null); frames(2);
+    if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au bord du ruisseau, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!lacherOmbre(fcx(t.i) + t.dx * .3, fcz(t.i) + t.dz * .3)) throw new Error("pas d'ombre de poisson possible dans le ruisseau");
+    $("#btn-act").click();
+    let k = 0;
+    while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+    if(k >= 400) throw new Error("rien ne mord dans le ruisseau");
+    $("#btn-act").click();
+    const poisson = Object.keys(state.carnet.poissons).find(f => [].concat(POISSONS[f].lieu).some(l => l === "ruisseau" || l === "source"));
+    if(!poisson) throw new Error("pas de poisson du ruisseau au carnet");
+    frames(40);
+    await sortir();
+    return `un phasme, un pic vert et ${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()}`;
+  });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
     const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
@@ -285,6 +328,7 @@ export async function verifier(){
     const libre = () => { const px = tileOf(player.position.x), pz = tileOf(player.position.z);
       for(let d = 1; d < 8; d++) for(let dx = -d; dx <= d; dx++) for(const dz of [-d, d]){ const i = idx(px + dx, pz + dz); if(!poseProblem(i)) return i; }
       throw new Error("pas de place pour poser un coffre"); };
+    place(4);                                                                   // le sac de la partie d'essai se remplit
     sacAdd("coffreReserve", 2); sacAdd("bois", 5); hold("coffreReserve");
     poserCoffre(libre()); poserCoffre(libre());
     if(state.coffres.length < 2) throw new Error("les coffres ne sont pas posés");

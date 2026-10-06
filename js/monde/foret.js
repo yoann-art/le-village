@@ -32,6 +32,7 @@ function rand(seed){ let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; le
 const CLAIRIERES = [[17.5, 31, 4.5], [7.5, 24, 3.6], [28, 24.5, 4], [17.5, 6, 4.2], [28.5, 8.5, 3.2], [7, 9.5, 3.2]];
 const COEUR = [17, 4];                                   // le Grand Chêne millénaire : 2 × 2 cases
 export const foret = {type: new Array(W * D).fill("mousse"), obj: new Array(W * D).fill(null), r: new Array(W * D).fill(0)};
+export const sources = new Set();                        // les cases d'eau de la source
 {
   const rnd = rand(1789), T = foret.type, O = foret.obj, at = (x, z) => z * W + x;
   for(let z = 0; z < D; z++) for(let x = 0; x < W; x++) foret.r[at(x, z)] = rnd();
@@ -59,6 +60,14 @@ export const foret = {type: new Array(W * D).fill("mousse"), obj: new Array(W * 
   }
   for(const [x, z] of [[0, 0], [1, 0], [0, 1], [1, 1]]) O[at(COEUR[0] + x, COEUR[1] + z)] = "bloc";
   O[at(COEUR[0], COEUR[1])] = "grandChene";
+  /* la source, au cœur de la forêt, dans la clairière du Grand Chêne, au bord du grand sentier (morceau 4, carnet :
+     la Truite d'argent) ; posée après les arbres, pour ne rien changer au reste du tirage */
+  for(const [x, z] of [[15, 5], [16, 5], [15, 6], [16, 6]]){ T[at(x, z)] = "eau"; O[at(x, z)] = null; sources.add(at(x, z)); }
+}
+/* Le centre d'un arbre de la forêt (légèrement décalé, comme son modèle) et sa taille */
+export function arbreEn(i){
+  const sp = foret.obj[i], r = foret.r[i];
+  return {sp, x: fcx(i) + (r - .5) * .3, z: fcz(i) + (r - .5) * .3, s: TAILLE(sp) * (.88 + r * .24)};
 }
 
 /* ----- Ce qui est sur une case, avec les coupes et la repousse ----- */
@@ -146,6 +155,11 @@ export function makeForet(){
   const or = new THREE.MeshLambertMaterial({color: 0xF2C14E, emissive: 0x8A6A10, emissiveIntensity: .6});
   for(const [x, y, z] of [[1.6, 4.6, 1.2], [-1.8, 5.2, -.4], [.3, 7.2, .9], [-.6, 4.2, 1.8]]) gc.add(part(G.head, or, .5, .6, .5, x, y, z));
   gc.position.set(x0, 0, z0); group.add(gc);
+  /* la source : des galets tout autour */
+  for(let k = 0; k < 14; k++){
+    const a = k / 14 * 6.28, x = cx(15) + .5 + Math.cos(a) * 1.45, z = cz(5) + .5 + Math.sin(a) * 1.45;
+    if(foret.type[ftile(x, z)] !== "sentier") group.add(part(G.head, k % 2 ? 0xB8B4AC : 0x9A968E, .45, .25, .4, x, .02, z));
+  }
   /* la sortie : des planches au bout du sentier, au sud */
   group.add(part(G.box, 0x8A5A3B, 2, .03, .6, 0, .015, D/2 - .3));
   /* clair et doux (demande de Yo : la forêt était trop sombre, et on n'a pas encore de torche) */

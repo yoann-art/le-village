@@ -7,8 +7,12 @@
    À pas de loup : en poussant le joystick doucement (allure sous ALLURE_DOUCE, ou Maj au clavier), on approche ;
    trop vite, elles s'enfuient. La luciole se prend au bocal (carnet), qui viendra plus tard.
    Une bête attrapée va dans le sac (vendue au comptoir, plus tard exposée à la Maison des ailes) ; le carnet la
-   garde (state.carnet.insectes = {k: {n}}). */
+   garde (state.carnet.insectes = {k: {n}}).
+   Morceau 4 : ceux de la Forêt profonde (zone « foret ») vivent dans la forêt (scène des intérieurs) : sur les
+   arbres, les vieux chênes, au pied des arbres (le bois mort), dans les clairières. */
 import { scene } from "./monde/scene.js";
+import { interior } from "./monde/interieurs.js";
+import { foret, foretObj, arbreEn, fcx, fcz, W as WF } from "./monde/foret.js";
 import { G, part } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
@@ -18,20 +22,20 @@ import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
-import { saisonDe } from "./peche.js";
+import { saisonDe, pleineLune } from "./peche.js";
 import { toast } from "./interface.js";
 import { barreAuto, hold } from "./barre.js";
 
 /* Combien, où, combien de temps (à régler en jouant) ; peur : à quelle distance une bête fuit qui nous voit arriver trop vite */
 export const INSECTE = {max: 6, rayon: 9, vie: [50, 110], portee: 1.3};
-const PEUR = {papillon: 2.6, libellule: 3, bourdon: 2.2, sauteur: 2.6, coleo: 1.8, fourmi: 1.6, cloporte: 1.6, araignee: 1.8, mante: 2, cigale: 2.4};
+const PEUR = {papillon: 2.6, libellule: 3, bourdon: 2.2, sauteur: 2.6, coleo: 1.8, fourmi: 1.6, cloporte: 1.6, araignee: 1.8, mante: 2, cigale: 2.4, phasme: 1.4, lucane: 1.8};
 const VOLE = {papillon: true, libellule: true, bourdon: true};
 
-/* ----- Qui vit ici et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
-export function insectesPresents(d = new Date()){
-  const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60;
+/* ----- Qui vit ici (zone : « ile » ou « foret ») et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
+export function insectesPresents(zone = "ile", d = new Date()){
+  const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d);
   return Object.keys(INSECTES).filter(k => { const p = INSECTES[k];
-    return p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b); });
+    return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.lune || lune); });
 }
 const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`;
   return maj ? s[0].toUpperCase() + s.slice(1) : s; };
@@ -77,6 +81,14 @@ function modele(k){
     const corps = part(G.cyl, c, .04, .4, .04, 0, .12, 0); corps.rotation.x = .5; g.add(corps);
     g.add(part(G.head, c, .2, .2, .2, 0, .3, -.1));
     for(const x of [-.04, .04]){ const bras = part(G.cyl, c, .02, .14, .02, x, .22, -.13); bras.rotation.x = -.8; g.add(bras); }
+  } else if(p.forme === "phasme"){                   // une brindille sur pattes
+    const corps = part(G.cyl, c, .025, .5, .025, 0, .02, 0); corps.rotation.x = Math.PI/2; g.add(corps);
+    for(const z of [-.12, 0, .12]) for(const x of [-1, 1]){ const pa = part(G.cyl, c, .012, .16, .012, x * .06, .02, z); pa.rotation.z = x * 1.1; g.add(pa); }
+  } else if(p.forme === "lucane"){                    // un gros scarabée : des mandibles en bois de cerf, ou une corne
+    g.add(part(G.hair, c, .45, .4, .55, 0, 0, .02));
+    g.add(part(G.head, c, .3, .25, .28, 0, .01, -.13));
+    if(p.corne){ const co = part(G.cone, c, .06, .16, .06, 0, .08, -.18); co.rotation.x = -.6; g.add(co); }
+    else for(const x of [-.05, .05]){ const m = part(G.cyl, d, .02, .16, .02, x, .02, -.22); m.rotation.x = Math.PI/2; m.rotation.y = -x * 6; g.add(m); }
   } else {                                            // cigale
     g.add(part(G.head, c, .4, .35, .6, 0, 0, 0));
     aile(.08, .2, .06, .04, 0xDDEFF7, .6); aile(.08, .2, -.06, .04, 0xDDEFF7, .6);
@@ -87,7 +99,24 @@ function modele(k){
 }
 
 /* ----- Où elles vivent : une place près du personnage, selon l'endroit ----- */
+/* Dans la Forêt profonde : sur les troncs, les vieux chênes (et le Grand Chêne), au pied des arbres, dans les clairières */
+function placesForet(ou){
+  const R = INSECTE.rayon, p = player.position, out = [], x0 = Math.floor(p.x + WF/2), z0 = Math.floor(p.z + WF/2);
+  for(let z = z0 - R; z <= z0 + R; z++) for(let x = x0 - R; x <= x0 + R; x++){
+    if(x < 0 || z < 0 || x >= WF || z >= WF || Math.hypot(x - x0, z - z0) < 2) continue;
+    const i = z * WF + x, o = foretObj(i), a = Math.random() * 6.28;
+    if(o === "grandChene" && ou === "chenes") out.push({x: fcx(i) + .5 + Math.cos(a) * .8, y: .5 + Math.random() * .8, z: fcz(i) + .5 + Math.sin(a) * .8, tronc: true});
+    else if((ou === "arbres" || ou === "chenes" && o === "chene") && ARBRES.has(o)){
+      const e = arbreEn(i), r = (o === "chene" ? .4 : .2) * e.s + .03;
+      out.push({x: e.x + Math.cos(a) * r, y: .45 + Math.random() * .6, z: e.z + Math.sin(a) * r, tronc: true});
+    }
+    else if(ou === "boisMort" && ARBRES.has(o)){ const e = arbreEn(i); out.push({x: e.x + Math.cos(a) * .55 * e.s, y: .03, z: e.z + Math.sin(a) * .55 * e.s}); }
+    else if(ou === "clairieres" && foret.type[i] === "herbe" && !o) out.push({x: fcx(i), y: .45, z: fcz(i)});
+  }
+  return out;
+}
 function places(ou){
+  if(ici === "foret") return placesForet(ou);
   const R = INSECTE.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), out = [];
   if(ou === "lanternes"){
     for(const l of lanternes) if(Math.hypot(l.x - player.position.x, l.z - player.position.z) < R) out.push({x: l.x, y: l.y, z: l.z});
@@ -109,9 +138,18 @@ function places(ou){
 /* ----- Les bêtes autour du personnage ----- */
 const betes = [];                  // {k, x, y, z, base, t, vie, etat ("vit" | "fuit" | "part"), alpha, mesh, mats, cible, saut}
 const groupe = new THREE.Group(); scene.add(groupe);
+/* Le milieu (morceau 4) : « ile » (dehors) ou « foret » (la scène des intérieurs) ; en changeant, les bêtes s'en vont */
+let ici = "ile";
+const sceneIci = () => ici === "foret" ? interior : scene;
+function changer(ou){
+  if(!ou || ou === ici) return;
+  for(const b of [...betes]) retirer(b);
+  ici = ou; sceneIci().add(groupe);
+}
 function ajouter(k, pl){
-  const mesh = modele(k), mats = [];
-  mesh.traverse(m => { if(m.material){ m.material = m.material.clone(); m.material.transparent = true; mats.push({m: m.material, op: m.material.opacity}); m.material.opacity = 0; } });
+  const mesh = modele(k), mats = [], lueur = INSECTES[k].lueur;
+  mesh.traverse(m => { if(m.material){ m.material = m.material.clone(); m.material.transparent = true; mats.push({m: m.material, op: m.material.opacity}); m.material.opacity = 0;
+    if(lueur && m.material.emissive){ m.material.emissive.setHex(lueur); m.material.emissiveIntensity = .7; } } });   // la phalène de lune luit
   mesh.position.set(pl.x, pl.y, pl.z);
   groupe.add(mesh);
   const b = {k, x: pl.x, y: pl.y, z: pl.z, base: pl, t: Math.random() * 10, vie: INSECTE.vie[0] + Math.random() * (INSECTE.vie[1] - INSECTE.vie[0]),
@@ -122,7 +160,7 @@ function ajouter(k, pl){
 function retirer(b){ groupe.remove(b.mesh); betes.splice(betes.indexOf(b), 1); }
 /* Une nouvelle bête : une rareté d'abord (comme les poissons), puis une espèce qui a une place ici */
 function pondre(){
-  const ks = insectesPresents();
+  const ks = insectesPresents(ici);
   if(!ks.length) return;
   for(let essai = 0; essai < 6; essai++){
     const par = {};
@@ -223,7 +261,7 @@ function aPortee(){
 }
 function attraper(b){
   const p = INSECTES[b.k];
-  if(p.bocal){ toast(`🫙 ${leNom(b.k, true)} se prend au bocal, pas au filet (le bocal viendra avec la Forge)`, 3200); return; }
+  if(p.bocal){ toast(`🫙 ${leNom(b.k, true)} se prend au bocal, pas au filet (le bocal viendra avec la Forge)${p.danger ? ". Attention, il pique !" : ""}`, 3400); return; }
   const k = filetDuSac();
   if(!k){ toast("🥅 Il te faut un filet : fabrique-le à l'établi de la Scierie (2 planches, 4 fibres)", 3200); return; }
   if(state.main !== k){ barreAuto(k); hold(k); }
@@ -233,7 +271,7 @@ function attraper(b){
   const nouveau = !e.n; e.n++;
   save();
   retirer(b);
-  montre = {mesh: modele(b.k), t: 0}; montre.mesh.scale.multiplyScalar(1.8); scene.add(montre.mesh);
+  montre = {mesh: modele(b.k), t: 0}; montre.mesh.scale.multiplyScalar(1.8); sceneIci().add(montre.mesh);
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(b.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
 }
 /* Le bouton d'action pour la bête à portée (recolte.js l'affiche, avant le reste) */
@@ -245,21 +283,22 @@ export function insecteAction(){
   return {label: `🥅 Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, run: () => { if(b.etat === "vit" && betes.includes(b)) attraper(b); }};
 }
 
-/* À chaque image (recolte.js) ; dehors : sur l'île */
+/* À chaque image (recolte.js) ; ou : le milieu, « ile » ou « foret » (null dans un bâtiment ou la mine) */
 let ponte = 0, enPause = false;
 /* Pour la vérification automatique : plus de nouvelles bêtes, et celles qui sont là s'en vont (pour qu'un papillon
    de passage ne prenne pas la place du bouton qu'on essaie) */
 export function pauseInsectes(oui){ enPause = oui; if(oui) for(const b of [...betes]) retirer(b); }
-export function updateInsectes(dt, actif, dehors){
-  groupe.visible = dehors;
+export function updateInsectes(dt, actif, ou){
+  changer(ou);
+  groupe.visible = !!ou;
   if(montre){
     montre.t += dt; const u = Math.min(1, montre.t / .25);
     pencheMain(montre.t < .2 ? .35 + 1.2 * montre.t / .2 : .35);
     montre.mesh.position.set(player.position.x, .9 + .55 * u, player.position.z + .05);
     montre.mesh.rotation.y = montre.t * 2;
-    if(montre.t > 1.7){ scene.remove(montre.mesh); montre = null; pencheMain(); }
+    if(montre.t > 1.7){ montre.mesh.parent.remove(montre.mesh); montre = null; pencheMain(); }
   }
-  if(!dehors) return;
+  if(!ou) return;
   const p = player.position, vite = allure() > ALLURE_DOUCE;
   for(const b of [...betes]){
     const d = Math.hypot(b.x - p.x, b.z - p.z);

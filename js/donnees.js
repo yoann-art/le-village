@@ -172,7 +172,11 @@ export const MINE = {rochers:10, cuivre:3};
    sa taille (cm), son prix en or au comptoir (étape 1.6, morceau 2), sa couleur et sa forme (son dessin).
    Un légendaire ne se prend qu'une fois dans tout le jeu (carnet). À toute heure et en toute saison, il reste
    un poisson commun à l'étang (la perche) et en mer depuis la plage (maquereau, rouget, merlan…).
-   une : féminin (« une perche »). Vraie horloge du téléphone, hémisphère nord en attendant l'étape 1.10. */
+   une : féminin (« une perche »). Vraie horloge du téléphone, hémisphère nord en attendant l'étape 1.10.
+   La Forêt profonde (étape 1.7, morceau 4, carnet : « les ruisseaux de la Forêt profonde ») : lieu « ruisseau »
+   (le ruisseau qui la traverse) ou « source » (la source au cœur de la forêt, où nagent aussi ceux du ruisseau) ;
+   la truite vit à l'étang et au ruisseau (décidé par Yo : lieu peut être une liste). lune : « pleine », seulement
+   les nuits de pleine lune (la vraie lune). banc : il nage en petit groupe (« jamais seul »). */
 const TOUTE = ["printemps", "ete", "automne", "hiver"];
 export const POISSONS = {
   /* L'étang */
@@ -181,7 +185,7 @@ export const POISSONS = {
   tanche:  {nom:"Tanche", pluriel:"tanches", une:true, lieu:"etang", rarete:"commun", saisons:["ete"], heures:"soir", taille:[20, 50], prix:1, couleur:0x9A9A3C, note:"Vert doré, elle aime la vase"},
   carpe:   {nom:"Carpe", pluriel:"carpes", une:true, lieu:"etang", rarete:"commun", saisons:["printemps", "ete", "automne"], heures:"toujours", taille:[30, 80], prix:1, couleur:0xB08A4A, forme:"rond", note:"Grosse et patiente, elle tire fort"},
   ecrevisse:{nom:"Écrevisse", pluriel:"écrevisses", une:true, lieu:"etang", rarete:"commun", saisons:["ete"], heures:"nuit", taille:[8, 15], prix:1, couleur:0xB5523B, forme:"crustace", note:"Elle pince quand on la décroche"},
-  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86, note:"Tachetée, elle remonte le courant"},
+  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:["etang", "ruisseau"], rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86, note:"Tachetée, elle remonte le courant"},
   brochet: {nom:"Brochet", pluriel:"brochets", lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"aube", taille:[50, 110], prix:3, couleur:0x6E7E4A, forme:"fin", note:"Des dents pointues, il chasse les petits poissons"},
   anguille:{nom:"Anguille", pluriel:"anguilles", une:true, lieu:"etang", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", meteo:"pluie", taille:[40, 100], prix:3, couleur:0x5B5642, forme:"long", note:"Elle glisse et se tortille"},
   koi:     {nom:"Carpe koï", pluriel:"carpes koï", une:true, lieu:"etang", rarete:"rare", saisons:["printemps"], heures:"jour", meteo:"beau", taille:[30, 70], prix:8, couleur:0xF08A3C, forme:"rond", note:"Orange et blanche, splendide en bassin"},
@@ -200,6 +204,11 @@ export const POISSONS = {
   mulet:   {nom:"Mulet", pluriel:"mulets", lieu:"mer", depuis:"ponton", rarete:"commun", saisons:TOUTE, heures:"jour", taille:[30, 60], prix:1, couleur:0x8E9AA3, note:"Il tourne autour des pontons"},
   orphie:  {nom:"Orphie", pluriel:"orphies", une:true, lieu:"mer", depuis:"ponton", rarete:"peuCommun", saisons:["printemps"], heures:"jour", taille:[40, 80], prix:3, couleur:0x5FA39B, forme:"long", note:"Un long bec pointu, et des arêtes vertes"},
   encornet:{nom:"Encornet", pluriel:"encornets", lieu:"mer", depuis:"ponton", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"nuit", taille:[15, 40], prix:3, couleur:0xE8C2B4, forme:"calmar", note:"Il sort la nuit, attiré par la lumière"},
+  /* Les ruisseaux de la Forêt profonde (carnet) */
+  goujon:  {nom:"Goujon", pluriel:"goujons", lieu:"ruisseau", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[8, 15], prix:1, couleur:0xA8A08A, forme:"fin", banc:true, note:"Petit, mais jamais seul"},
+  ombre:   {nom:"Ombre", pluriel:"ombres", lieu:"ruisseau", rarete:"peuCommun", saisons:["automne"], heures:"toujours", taille:[30, 50], prix:3, couleur:0x8A9AA8, note:"Une grande nageoire en forme de voile"},
+  saumon:  {nom:"Saumon", pluriel:"saumons", lieu:"ruisseau", rarete:"peuCommun", saisons:["automne"], heures:"toujours", taille:[50, 100], prix:3, couleur:0xC88A7A, note:"Il remonte la rivière en sautant"},
+  truiteArgent:{nom:"Truite d'argent", pluriel:"truites d'argent", une:true, lieu:"source", rarete:"rare", saisons:TOUTE, heures:"nuit", lune:"pleine", taille:[30, 60], prix:8, couleur:0xD8E0EA, brille:true, note:"Elle brille comme une pièce neuve"},
   /* La mer, au large en barque (quand la barque arrivera) */
   thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", depuis:"barque", rarete:"rare", saisons:["ete"], heures:"toujours", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond", note:"Énorme : il faut tenir longtemps"}
 };
@@ -227,8 +236,11 @@ export const PECHE = {morsure:[1.5, 5], fenetre:1, poids:{commun:60, peuCommun:2
 /* Où et quand on le trouve, en toutes lettres (le sac, le carnet) */
 const EN = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
 export const quandPoisson = p => [p.saisons.length === 4 ? "toute l'année" : p.saisons.map(s => EN[s]).join(", ").replace(/, ([^,]*)$/, " et $1"),
-  p.meteo === "orage" ? "" : HEURES[p.heures].nom, p.meteo ? METEOS[p.meteo] : ""].filter(Boolean).join(", ");
-export const ouPoisson = p => (p.lieu === "mer" ? "en mer" : "à l'étang") + (p.depuis === "ponton" ? ", depuis le ponton" : p.depuis === "barque" ? ", au large en barque" : "");
+  p.meteo === "orage" || p.lune ? "" : HEURES[p.heures].nom, p.meteo ? METEOS[p.meteo] : "", p.lune ? "les nuits de pleine lune" : ""].filter(Boolean).join(", ");
+/* Les lieux d'un poisson (une liste : la truite vit à l'étang et au ruisseau) */
+export const lieuxDe = p => [].concat(p.lieu);
+const OU_EAU = {etang:"à l'étang", mer:"en mer", ruisseau:"dans le ruisseau de la Forêt profonde", source:"à la source, au cœur de la Forêt profonde"};
+export const ouPoisson = p => lieuxDe(p).map(l => OU_EAU[l]).join(" ou ") + (p.depuis === "ponton" ? ", depuis le ponton" : p.depuis === "barque" ? ", au large en barque" : "");
 /* Le dessin d'un poisson, pour le sac, les coffres et le carnet (à la place d'un emoji, pour les reconnaître) ;
    l'écrevisse et l'encornet gardent leur emoji */
 const hex = c => "#" + c.toString(16).padStart(6, "0");
@@ -239,7 +251,7 @@ for(const p of Object.values(POISSONS)){
   p.emoji = p.forme === "crustace" ? "🦞" : p.forme === "calmar" ? "🦑" : "🐟";
   if(p.forme === "crustace" || p.forme === "calmar") continue;
   const ry = {long:3, fin:4.4, rond:7}[p.forme] || 5.6, rx = p.forme === "long" ? 13 : 11, a = Math.max(3, ry * .9), c = hex(p.couleur);
-  p.icone = `<svg class="ico-poisson${p.rarete === "legendaire" ? " legende" : ""}" viewBox="0 0 32 20" aria-hidden="true">` +
+  p.icone = `<svg class="ico-poisson${p.rarete === "legendaire" || p.brille ? " legende" : ""}" viewBox="0 0 32 20" aria-hidden="true">` +
     `<polygon points="${2 * rx - 1},10 31,${10 - a} 31,${10 + a}" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
     `<ellipse cx="${rx + 1}" cy="10" rx="${rx}" ry="${ry}" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
     `<circle cx="5.5" cy="${10 - ry * .3}" r="1.5" fill="#1C2230"/></svg>`;
@@ -250,7 +262,10 @@ for(const p of Object.values(POISSONS)){
    en s'approchant à pas de loup. Chacun : où le trouver (ou : fleurs, herbes, arbres, sol, pierres, etang,
    lanternes ; le premier compte pour le carnet), ses saisons, ses heures (HEURES), sa rareté, son comportement
    (note, du carnet), son prix en or au comptoir, sa forme et ses couleurs (son dessin et son modèle).
-   bocal : il se prend au bocal (carnet), pas au filet. Sur l'île, aucun insecte n'est dangereux (carnet). */
+   bocal : il se prend au bocal (carnet), pas au filet. Sur l'île, aucun insecte n'est dangereux (carnet).
+   La Forêt profonde (étape 1.7, morceau 4, carnet : « dans l'ombre des vieux arbres, des insectes plus grands et
+   plus discrets ») : zone « foret » ; ou : arbres, chenes (les vieux chênes), boisMort (au pied des arbres),
+   clairieres. Le frelon (dangereux, il pique) attend le bocal, comme la luciole (décidé par Yo). lune : « pleine ». */
 export const INSECTES = {
   pieride:  {nom:"Piéride blanche", pluriel:"piérides blanches", une:true, ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"papillon", couleur:0xF4F2E8, c2:0x3A3A3A, note:"Elle volette de fleur en fleur"},
   abeille:  {nom:"Abeille", pluriel:"abeilles", une:true, ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"bourdon", couleur:0xE8B73A, c2:0x3A2A1A, taille:.75, note:"Elle butine, puis repart vers sa ruche"},
@@ -274,9 +289,18 @@ export const INSECTES = {
   cigale:   {nom:"Cigale", pluriel:"cigales", une:true, ou:["arbres"], saisons:["ete"], heures:"apresMidi", rarete:"peuCommun", prix:3, forme:"cigale", couleur:0x6A6A4A, note:"Elle chante fort et se cache dans l'écorce"},
   mante:    {nom:"Mante religieuse", pluriel:"mantes religieuses", une:true, ou:["herbes"], saisons:["ete", "automne"], heures:"jour", rarete:"peuCommun", prix:3, forme:"mante", couleur:0x7FC05A, note:"Immobile, les pattes jointes"},
   epeire:   {nom:"Épeire des jardins", pluriel:"épeires des jardins", une:true, ou:["arbres"], saisons:["ete", "automne"], heures:"matin", rarete:"peuCommun", prix:3, forme:"araignee", couleur:0xB0803A, c2:0xFFFFFF, note:"Une croix blanche sur le dos ; sa toile brille de rosée"},
+  /* La Forêt profonde */
+  tisserande:{nom:"Araignée tisserande", pluriel:"araignées tisserandes", une:true, zone:"foret", ou:["arbres"], saisons:["automne"], heures:"matin", rarete:"commun", prix:1, forme:"araignee", couleur:0x8A6A3A, c2:0xE8D8A0, note:"Sa toile, entre deux branches, brille de rosée"},
+  phasme:   {nom:"Phasme", pluriel:"phasmes", zone:"foret", ou:["arbres"], saisons:["ete"], heures:"toujours", rarete:"peuCommun", prix:3, forme:"phasme", couleur:0x8A7A4A, note:"On le prend pour une brindille"},
+  rhinoceros:{nom:"Scarabée-rhinocéros", pluriel:"scarabées-rhinocéros", zone:"foret", ou:["boisMort"], saisons:["ete"], heures:"toujours", rarete:"peuCommun", prix:3, forme:"lucane", couleur:0x5A3A22, corne:true, taille:1.2, note:"Une corne sur la tête ; il vit dans le bois mort"},
+  frelon:   {nom:"Frelon", pluriel:"frelons", zone:"foret", ou:["arbres"], saisons:["ete"], heures:"jour", rarete:"peuCommun", prix:3, forme:"bourdon", couleur:0x8A4A22, c2:0xF0C83A, taille:1.15, bocal:true, danger:true, note:"Il pique si on dérange son nid, dans les troncs creux"},
+  lucane:   {nom:"Lucane cerf-volant", pluriel:"lucanes cerfs-volants", zone:"foret", ou:["chenes"], saisons:["ete"], heures:"soir", rarete:"rare", prix:8, forme:"lucane", couleur:0x4A2A1A, c2:0x8A3A22, taille:1.4, note:"Des mandibules comme des bois de cerf"},
+  grandMars:{nom:"Grand Mars changeant", pluriel:"Grands Mars changeants", zone:"foret", ou:["clairieres"], saisons:["ete"], heures:"jour", rarete:"rare", prix:8, forme:"papillon", couleur:0x6A4A8A, c2:0xE8D8A0, taille:1.3, note:"Des ailes aux reflets violets"},
+  phaleneLune:{nom:"Phalène de lune", pluriel:"phalènes de lune", une:true, zone:"foret", ou:["clairieres"], saisons:TOUTE, heures:"nuit", lune:"pleine", rarete:"rare", prix:8, forme:"papillon", couleur:0xD8DCE8, c2:0xA8B8D8, taille:1.3, lueur:0x8A9AC8, note:"Des ailes d'argent, les nuits de pleine lune"},
   grandPaon:{nom:"Grand Paon de nuit", pluriel:"Grands Paons de nuit", ou:["lanternes"], saisons:["printemps"], heures:"nuit", rarete:"rare", prix:8, forme:"papillon", couleur:0x9A8A7A, c2:0x3A2A2A, taille:1.6, note:"Le plus grand papillon d'Europe"}
 };
-export const OU_INSECTE = {fleurs:"sur les fleurs", herbes:"dans les herbes", arbres:"sur les arbres", sol:"au sol", pierres:"sous les pierres", etang:"au bord de l'étang", lanternes:"autour des lanternes"};
+export const OU_INSECTE = {chenes:"sur les vieux chênes", boisMort:"dans le bois mort, au pied des arbres", clairieres:"dans les clairières",
+  fleurs:"sur les fleurs", herbes:"dans les herbes", arbres:"sur les arbres", sol:"au sol", pierres:"sous les pierres", etang:"au bord de l'étang", lanternes:"autour des lanternes"};
 /* Le dessin de chaque insecte (sac, coffres, carnet), selon sa forme, à ses couleurs */
 const ins = b => `<svg class="ico-insecte" viewBox="0 0 24 24" aria-hidden="true">${b}</svg>`, AILE = "#DDEFF7", NOIR = "#2A2A2A";
 const DESSIN = {
@@ -296,15 +320,19 @@ const DESSIN = {
     `<circle cx="12" cy="8.5" r="2.6" fill="${c}"/><circle cx="12" cy="14" r="4.5" fill="${c}"/><path d="M12 11.5v5M10 14h4" stroke="${d}" stroke-width="1.1"/>`),
   cloporte: c => ins(`<ellipse cx="12" cy="12" rx="6" ry="8.5" fill="${c}"/><path d="M6.4 9h11.2M6 12h12M6.4 15h11.2M7.5 18h9" stroke="#1C2230" stroke-opacity=".45"/>`),
   mante: c => ins(`<path d="M12 22V9" stroke="${c}" stroke-width="2.6" stroke-linecap="round"/><path d="M12 11l-4-4M8 7l-1 3M12 11l4-4M16 7l1 3M12 15l-5 4M12 15l5 4" stroke="${c}" stroke-width="1.4"/><path d="M10 6.5l2-2.5l2 2.5z" fill="${c}"/>`),
+  phasme: c => ins(`<path d="M12 2v20" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/><path d="M12 7l-6-3M12 7l6-3M12 12l-7 1M12 12l7 1M12 16l-5 5M12 16l5 5" stroke="${c}" stroke-width="1.1"/>`),
+  lucane: (c, d) => ins(`<path d="M9 7Q5 4 7 1M15 7Q19 4 17 1M8 3.5l-1.6.8M16 3.5l1.6.8" stroke="${d}" stroke-width="1.6" fill="none"/><circle cx="12" cy="7.5" r="3.2" fill="${c}"/><ellipse cx="12" cy="15" rx="6" ry="7" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/><path d="M12 9v13" stroke="#1C2230" stroke-opacity=".5"/>`),
+  corne: c => ins(`<path d="M12 6Q11 1 14 0.8" stroke="${c}" stroke-width="2" fill="none"/><circle cx="12" cy="7.5" r="3.2" fill="${c}"/><ellipse cx="12" cy="15" rx="6.5" ry="7" fill="${c}" stroke="#1C2230" stroke-opacity=".4"/><path d="M12 9v13" stroke="#1C2230" stroke-opacity=".5"/>`),
   cigale: c => ins(`<ellipse cx="8" cy="13" rx="4.5" ry="8" fill="${AILE}" transform="rotate(12 8 13)"/><ellipse cx="16" cy="13" rx="4.5" ry="8" fill="${AILE}" transform="rotate(-12 16 13)"/><ellipse cx="12" cy="11" rx="3.6" ry="6" fill="${c}"/><circle cx="12" cy="5" r="2.6" fill="${c}"/>`)
 };
-const EMOJI_INSECTE = {papillon:"🦋", coleo:"🪲", bourdon:"🐝", fourmi:"🐜", sauteur:"🦗", libellule:"🦋", araignee:"🕷️", cloporte:"🪲", mante:"🦗", cigale:"🪲"};
+const EMOJI_INSECTE = {papillon:"🦋", coleo:"🪲", bourdon:"🐝", fourmi:"🐜", sauteur:"🦗", libellule:"🦋", araignee:"🕷️", cloporte:"🪲", mante:"🦗", cigale:"🪲", phasme:"🦗", lucane:"🪲"};
 for(const [k, p] of Object.entries(INSECTES)){
   const r = RARETES[p.rarete];
-  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${p.ou.map(o => OU_INSECTE[o]).join(" ou ")} : ${quandPoisson(p)}.` + (p.bocal ? " Elle se prend au bocal, pas au filet." : "");
+  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${p.zone === "foret" ? "dans la Forêt profonde, " : ""}${p.ou.map(o => OU_INSECTE[o]).join(" ou ")} : ${quandPoisson(p)}.` +
+    (p.bocal ? ` ${p.une ? "Elle" : "Il"} se prend au bocal, pas au filet.` : "");
   p.emoji = k === "coccinelle" ? "🐞" : EMOJI_INSECTE[p.forme];
   const c = hex(p.couleur), d = p.c2 !== undefined ? hex(p.c2) : null;
-  p.icone = DESSIN[p.forme](c, p.forme === "coleo" ? d : d || NOIR, p.bocal);
+  p.icone = DESSIN[p.corne ? "corne" : p.forme](c, p.forme === "coleo" ? d : d || NOIR, p.bocal);
 }
 
 /* Les oiseaux de l'île (étape 1.7, morceau 2), d'après le Grand Carnet (page « Les oiseaux », l'île) : on
@@ -313,7 +341,11 @@ for(const [k, p] of Object.entries(INSECTES)){
    chouette se pose sur les arbres et les toits ; la cigogne sur les toits, faute de cheminées dehors), ses
    saisons, ses heures, sa rareté, son comportement (note, du carnet), son prix au comptoir, sa forme
    (passereau, echassier, rapace) et ses couleurs (corps, tête, poitrine, bec). Plus tard (carnet) : la mangeoire,
-   le nichoir et les chants. */
+   le nichoir et les chants.
+   La Forêt profonde (étape 1.7, morceau 4, carnet : « on les entend partout, on les voit rarement ») : zone
+   « foret » ; ou : troncs (agrippé au tronc), chenes, lisiere (au bord des clairières et des sentiers), vieuxArbres
+   (chênes et ifs), feuillage. farouche : il s'envole de plus loin (le coucou) ; pic : il tambourine sur le tronc ;
+   yeux : la couleur de ses yeux. */
 export const OISEAUX = {
   moineau:  {nom:"Moineau", pluriel:"moineaux", ou:["sol"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x9A7A5A, tete:0x6B5040, poitrine:0xD8C8B0, bec:0x3A3A3A, note:"Il picore les miettes et s'envole en groupe"},
   mesange:  {nom:"Mésange charbonnière", pluriel:"mésanges charbonnières", une:true, ou:["arbres", "buissons"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x7FA05A, tete:0x1C1C1C, poitrine:0xF0D84A, bec:0x2A2A2A, note:"Acrobate, souvent la tête en bas"},
@@ -326,9 +358,16 @@ export const OISEAUX = {
   chouette: {nom:"Chouette effraie", pluriel:"chouettes effraies", une:true, ou:["arbres", "toits"], saisons:TOUTE, heures:"nuit", rarete:"peuCommun", prix:4, forme:"rapace", couleur:0xC8A060, tete:0xF4ECDC, poitrine:0xF8F0E0, bec:0xD8C8A8, note:"Son vol est silencieux"},
   rossignol:{nom:"Rossignol", pluriel:"rossignols", ou:["buissons"], saisons:["printemps"], heures:"nuit", rarete:"peuCommun", prix:4, forme:"passereau", couleur:0x8A6A4A, tete:0x8A6A4A, poitrine:0xD8C8B0, bec:0x5A4A3A, note:"Il chante dans le noir"},
   martinPecheur:{nom:"Martin-pêcheur", pluriel:"martins-pêcheurs", ou:["etang"], saisons:["printemps", "ete"], heures:"jour", rarete:"rare", prix:10, forme:"passereau", couleur:0x2E8FD0, tete:0x2E8FD0, poitrine:0xE8782E, bec:0x1E1E1E, note:"Un éclair bleu qui plonge dans l'eau"},
+  /* La Forêt profonde */
+  picVert:  {nom:"Pic vert", pluriel:"pics verts", zone:"foret", ou:["troncs"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x6E9A3A, tete:0xD8302A, poitrine:0xC8D86A, bec:0x3A3A3A, taille:1.25, pic:true, note:"Il tambourine sur le bois"},
+  geai:     {nom:"Geai des chênes", pluriel:"geais des chênes", zone:"foret", ou:["chenes"], saisons:["automne"], heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0xC8A08A, tete:0xD8C0B0, poitrine:0xE0C8B8, bec:0x2A2A2A, ailes:0x3A6AC8, taille:1.3, note:"Il cache des glands partout"},
+  coucou:   {nom:"Coucou", pluriel:"coucous", zone:"foret", ou:["lisiere"], saisons:["printemps"], heures:"jour", rarete:"peuCommun", prix:4, forme:"passereau", couleur:0x8A8E96, tete:0x8A8E96, poitrine:0xE8E4DC, bec:0x3A3A3A, taille:1.3, queue:1.6, farouche:true, note:"On l'entend sans jamais le voir"},
+  hibou:    {nom:"Hibou grand-duc", pluriel:"hiboux grands-ducs", zone:"foret", ou:["vieuxArbres"], saisons:TOUTE, heures:"nuit", rarete:"rare", prix:10, forme:"rapace", couleur:0x8A6A4A, tete:0xA8885A, poitrine:0xC8A87A, bec:0x2A2A2A, yeux:0xF08A2A, taille:1.4, note:"De grands yeux orange"},
+  oiseauFeuille:{nom:"Oiseau-feuille", pluriel:"oiseaux-feuilles", zone:"foret", ou:["feuillage"], saisons:["automne"], heures:"jour", rarete:"rare", prix:10, forme:"passereau", couleur:0xD8822A, tete:0xC8502A, poitrine:0xE8B83A, bec:0x5A3A2A, note:"Ses plumes changent avec les saisons"},
   cigogne:  {nom:"Cigogne", pluriel:"cigognes", une:true, ou:["toits"], saisons:["printemps"], heures:"jour", rarete:"rare", prix:10, forme:"echassier", couleur:0xF4F4F4, tete:0xF4F4F4, poitrine:0xF4F4F4, bec:0xE0503A, ailes:0x1E1E1E, note:"Elle construit son nid sur les toits"}
 };
-export const OU_OISEAU = {sol:"au sol et dans le jardin", arbres:"dans les arbres", buissons:"dans les haies et les buissons", toits:"sur les toits", plage:"au bord de la mer", etang:"au bord de l'étang"};
+export const OU_OISEAU = {troncs:"sur les troncs", chenes:"dans les chênes", lisiere:"à la lisière", vieuxArbres:"dans les vieux arbres", feuillage:"dans le feuillage",
+  sol:"au sol et dans le jardin", arbres:"dans les arbres", buissons:"dans les haies et les buissons", toits:"sur les toits", plage:"au bord de la mer", etang:"au bord de l'étang"};
 /* Le dessin de chaque oiseau, selon sa forme, à ses couleurs */
 const DESSIN_OISEAU = {
   passereau: (c, t, p, b) => `<svg class="ico-insecte" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14l6-2 0 4z" fill="${c}"/><ellipse cx="12" cy="13.5" rx="7" ry="5" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
@@ -336,14 +375,16 @@ const DESSIN_OISEAU = {
     `<circle cx="18.6" cy="7.8" r=".9" fill="#1C1C1C"/><path d="M11 18.5v3M14 18.5v3" stroke="#8A6A4A" stroke-width="1"/></svg>`,
   echassier: (c, t, p, b) => `<svg class="ico-insecte" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 15v8M12 15v8" stroke="${b}" stroke-width="1"/><ellipse cx="10" cy="12" rx="6" ry="3.6" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
     `<path d="M14 11 Q18 9 17 3" stroke="${p}" stroke-width="2.4" fill="none"/><circle cx="17" cy="3.2" r="2.2" fill="${t}"/><path d="M19 3l4.5 1.2-4.5.8z" fill="${b}"/><circle cx="17.6" cy="2.7" r=".7" fill="#1C1C1C"/></svg>`,
-  rapace: (c, t, p, b) => `<svg class="ico-insecte" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15" rx="6.5" ry="7" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
-    `<ellipse cx="12" cy="16" rx="4" ry="5" fill="${p}"/><circle cx="12" cy="8" r="5" fill="${t}" stroke="#1C2230" stroke-opacity=".35"/><circle cx="10" cy="7.6" r="1.1" fill="#1C1C1C"/><circle cx="14" cy="7.6" r="1.1" fill="#1C1C1C"/><path d="M11.3 9.3h1.4l-.7 1.6z" fill="${b}"/></svg>`
+  rapace: (c, t, p, b, y) => `<svg class="ico-insecte" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15" rx="6.5" ry="7" fill="${c}" stroke="#1C2230" stroke-opacity=".35"/>` +
+    `<ellipse cx="12" cy="16" rx="4" ry="5" fill="${p}"/><circle cx="12" cy="8" r="5" fill="${t}" stroke="#1C2230" stroke-opacity=".35"/>` +
+    (y ? `<circle cx="10" cy="7.6" r="1.7" fill="${y}"/><circle cx="14" cy="7.6" r="1.7" fill="${y}"/>` : "") +
+    `<circle cx="10" cy="7.6" r="1.1" fill="#1C1C1C"/><circle cx="14" cy="7.6" r="1.1" fill="#1C1C1C"/><path d="M11.3 9.3h1.4l-.7 1.6z" fill="${b}"/></svg>`
 };
 for(const p of Object.values(OISEAUX)){
   const r = RARETES[p.rarete];
-  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${p.ou.map(o => OU_OISEAU[o]).join(" ou ")} : ${quandPoisson(p)}.`;
+  p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${p.zone === "foret" ? "dans la Forêt profonde, " : ""}${p.ou.map(o => OU_OISEAU[o]).join(" ou ")} : ${quandPoisson(p)}.`;
   p.emoji = p.forme === "rapace" ? "🦉" : p.forme === "echassier" ? "🪶" : "🐦";
-  p.icone = DESSIN_OISEAU[p.forme](hex(p.couleur), hex(p.tete), hex(p.poitrine), hex(p.bec));
+  p.icone = DESSIN_OISEAU[p.forme](hex(p.couleur), hex(p.tete), hex(p.poitrine), hex(p.bec), p.yeux ? hex(p.yeux) : null);
 }
 
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */

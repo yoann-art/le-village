@@ -34,7 +34,7 @@ import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
-import { foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
+import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
@@ -60,10 +60,13 @@ const inForet = () => { const p = currentPlace(); return !!p && p.b.type === "fo
 /* Dans la forêt : l'arbre ou le rocher juste devant */
 function targetForet(){
   const d = dir4(), p = player.position;
+  const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
+  const canne = state.main ? OUTILS[state.main] && OUTILS[state.main].famille === "canne" : !!bestTool("canne");
   for(const dist of [.8, 1.3]){
     const i = ftile(p.x + d.x * dist, p.z + d.z * dist);
     const o = i >= 0 && foretObj(i);
     if(o) return {w: FORET, i, x: i % W_FORET, z: Math.floor(i / W_FORET), o};
+    if(i >= 0 && foret.type[i] === "eau" && (arrosoir || canne)) return {w: FORET, i, eau: true, peche: !arrosoir};   // le ruisseau, la source
   }
   return null;
 }
@@ -215,12 +218,13 @@ function showCase(t){
 }
 export function updateRecolte(dt, active){
   if(anim) animate(dt);
-  updatePeche(dt, active, !currentPlace());          // les ombres des poissons ne nagent que dehors
-  updateInsectes(dt, active, !currentPlace());        // les insectes non plus
-  updateOiseaux(dt, active, !currentPlace());         // ni les oiseaux
+  const milieu = !currentPlace() ? "ile" : inForet() ? "foret" : null;   // les poissons, les insectes et les oiseaux : dehors et dans la forêt
+  updatePeche(dt, active, milieu);
+  updateInsectes(dt, active, milieu);
+  updateOiseaux(dt, active, milieu);
   cur = active && !anim && !enPeche() && !attrapeEnCours() && !oiseauEnCours() ? target() : null;
   showCase(cur);
-  const bete = active && !anim && !currentPlace() && (insecteAction() || oiseauAction());
+  const bete = active && !anim && milieu && (insecteAction() || oiseauAction());
   act = enPeche() ? pecheAction() : bete || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
