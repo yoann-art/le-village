@@ -21,7 +21,8 @@ import { openAtelier } from "./ateliers.js";
 let deco = null;                     // la pièce qu'on décore : {b, room}
 let sel = null;                      // le meuble choisi
 let lift = null;                     // hors du mode décoration, le meuble soulevé : {place, it, pid, x, y, x0, y0, from, last}
-const cur = () => deco || lift.place;          // la pièce où l'on bouge un meuble
+let ici = null;                      // la pièce où l'on pose un coffre de réserve (voir placerDans)
+const cur = () => ici || deco || lift.place;   // la pièce où l'on bouge un meuble
 const items = () => cur().b.deco.items;
 
 export const decorating = () => !!deco;
@@ -70,6 +71,19 @@ function findSpot(it){
   return false;
 }
 
+/* Pose un meuble au plus près de (x, z) dans une pièce, sans rien gêner (le coffre de réserve qu'on pose
+   devant soi, v1.7.9) ; false s'il n'y a pas de place tout près */
+export function placerDans(place, it, x, z){
+  ici = place;
+  const spots = [];
+  for(let dz = -1.5; dz <= 1.5; dz += .5) for(let dx = -1.5; dx <= 1.5; dx += .5) spots.push([x + dx, z + dz]);
+  spots.sort((a, b) => Math.hypot(a[0] - x, a[1] - z) - Math.hypot(b[0] - x, b[1] - z));
+  let ok = false;
+  for(const [sx, sz] of spots){ settle(it, sx, sz); if(!problem(it)){ ok = true; break; } }
+  ici = null;
+  return ok;
+}
+
 /* ----- Ce qu'on voit : le meuble choisi est posé sur une plaque jaune (rouge si la place ne va pas) ----- */
 const plateMat = new THREE.MeshBasicMaterial({color:0xFFE27A, transparent:true, opacity:.5, depthWrite:false});
 const plate = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), plateMat);
@@ -93,9 +107,10 @@ function showPlate(it){
 }
 function showSel(){
   $("#deco-sel").hidden = !sel;
-  $("#deco-store").hidden = !!(sel && MEUBLES[sel.type].plan);       // un plan de travail ne se range pas
+  $("#deco-store").hidden = !!(sel && (MEUBLES[sel.type].plan || sel.reserve));   // un plan de travail, un coffre de réserve ne se rangent pas ici
   const pb = showPlate(sel);
   if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
+  if(sel.reserve && !pb){ hint("🗃️ Coffre de réserve : glisse-le du doigt. Pour l'emporter, ouvre-le : « Déplacer le coffre »"); return; }
   hint(pb ? WHY[pb] : `${MEUBLES[sel.type].emoji} ${MEUBLES[sel.type].nom} : glisse-le du doigt`, !!pb);
 }
 
@@ -196,7 +211,7 @@ $("#deco-rot").addEventListener("click", () => {
   placeItemMesh(sel); showSel(); save();
 });
 $("#deco-store").addEventListener("click", () => {
-  if(!sel || MEUBLES[sel.type].plan) return;                          // le plan de travail reste dans son bâtiment
+  if(!sel || MEUBLES[sel.type].plan || sel.reserve) return;           // le plan de travail reste dans son bâtiment ; un coffre de réserve s'emporte depuis le coffre
   if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);

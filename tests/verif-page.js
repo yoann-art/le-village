@@ -4,6 +4,7 @@
    couper un arbre, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
+   poser un coffre dans la Scierie, l'ouvrir et l'emporter,
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
@@ -23,7 +24,7 @@ import { updateRecolte } from "../js/recolte.js";
 import { checkDoors, isInside, currentPlace } from "../js/lieux.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
-import { openCoffre, poserCoffre, poseProblem } from "../js/coffres.js";
+import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
 import { renderHUD } from "../js/interface.js";
 import { hold, mettreEnCase } from "../js/barre.js";
 
@@ -305,6 +306,24 @@ export async function verifier(){
     if(owned("bois") !== bois) throw new Error(`le bois ne compte plus (${owned("bois")} au lieu de ${bois})`);
     $("#sheetWrap [data-close]").click(); await wait(300);
     return `un coffre rempli (${range.items.length} emplacement) rangé dans un autre`;
+  });
+  if(scierie) await etape("Un coffre dans un bâtiment : le poser, l'ouvrir, l'emporter", async () => {
+    sacAdd("coffreReserve", 1); hold("coffreReserve");
+    await entrer(scierie);
+    const avant = state.coffres.length;
+    updateCoffrePiece(true);
+    if($("#btn-coffre").hidden || !$("#btn-coffre").textContent.includes("Poser")) throw new Error(`pas de bouton « Poser le coffre » (${$("#btn-coffre").textContent})`);
+    $("#btn-coffre").click();
+    const co = state.coffres.find(c => c.b === scierie.id), it = co && scierie.deco.items.find(v => v.reserve === co.id);
+    if(state.coffres.length !== avant + 1 || !it) throw new Error("le coffre n'est pas posé dans la Scierie");
+    updateCoffrePiece(true);
+    if(!$("#btn-coffre").textContent.includes("Ouvrir")) throw new Error(`pas de bouton « Ouvrir le coffre » (${$("#btn-coffre").textContent})`);
+    $("#btn-coffre").click(); await wait(200);
+    if(!$("[data-co-deplacer]")) throw new Error("le coffre ne s'ouvre pas");
+    $("[data-co-deplacer]").click(); await wait(300);
+    if(state.coffres.includes(co) || scierie.deco.items.includes(it)) throw new Error("le coffre n'est pas emporté");
+    await sortir();
+    return `posé à (${it.x}, ${it.z}) dans la pièce, puis emporté`;
   });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */
