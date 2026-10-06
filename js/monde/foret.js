@@ -22,15 +22,23 @@ import { pontForet } from "./ponton.js";
 import { rockMesh } from "./rochers.js";
 import { essences, TAILLE, arbreModele, FRUITS, fruitsDeSaison } from "./essences.js";
 
-export const W = 36, D = 36;
+/* Demande de Yo (v1.7.12) : une forêt plus grande (48 × 48 cases au lieu de 36 × 36) et un peu moins dense */
+export const W = 48, D = 48;
+const M = W / 2;                                          // le grand sentier : colonnes M - 1 et M, de l'entrée (au sud) au cœur
 const cx = x => x - W/2 + .5, cz = z => z - D/2 + .5;
 export const ftile = (wx, wz) => { const x = Math.floor(wx + W/2), z = Math.floor(wz + D/2); return x >= 0 && z >= 0 && x < W && z < D ? z * W + x : -1; };
 export const fcx = i => cx(i % W), fcz = i => cz(Math.floor(i / W));
 
 /* ----- Le plan de la forêt (tirage fixe, le même pour tous) ----- */
 function rand(seed){ let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-const CLAIRIERES = [[17.5, 31, 4.5], [7.5, 24, 3.6], [28, 24.5, 4], [17.5, 6, 4.2], [28.5, 8.5, 3.2], [7, 9.5, 3.2]];
-const COEUR = [17, 4];                                   // le Grand Chêne millénaire : 2 × 2 cases
+/* Les clairières [x, z, rayon], en cases : l'entrée, l'ouest et l'est, le cœur, le nord-est et le nord-ouest, deux au
+   bord du ruisseau, deux petites près de l'entrée */
+const CLAIRIERES = [[M, 42, 5], [10, 32, 4.4], [38, 32.5, 4.6], [M, 7.5, 5.2], [38.5, 11, 4.2], [9.5, 12, 4], [9.5, 21.5, 3.4], [38.5, 21, 3.6], [M + 10, 41, 3.4], [M - 11, 41.5, 3.2]];
+const COEUR = [M - 1, 5];                                // le Grand Chêne millénaire : 2 × 2 cases
+const SOURCE = [[M - 3, 6], [M - 2, 6], [M - 3, 7], [M - 2, 7]];   // la source, au bord du grand sentier, près du Grand Chêne
+const PONTS = new Set([M - 1, M, 9, 10, 38, 39]);       // les colonnes des sentiers qui enjambent le ruisseau
+/* Le chemin du Cerf blanc (chasse.js), en cases : de la clairière du cœur, par le sentier de l'est, à la clairière du nord-est */
+export const CHEMIN_BLANC = [[M + 1.5, 8.5], [M + 5, 9.8], [M + 9, 10.2], [M + 13, 10.2], [38.5, 11.6]];
 export const foret = {type: new Array(W * D).fill("mousse"), obj: new Array(W * D).fill(null), r: new Array(W * D).fill(0)};
 export const sources = new Set();                        // les cases d'eau de la source
 {
@@ -38,15 +46,17 @@ export const sources = new Set();                        // les cases d'eau de l
   for(let z = 0; z < D; z++) for(let x = 0; x < W; x++) foret.r[at(x, z)] = rnd();
   for(const [x0, z0, r] of CLAIRIERES) for(let z = 0; z < D; z++) for(let x = 0; x < W; x++) if(Math.hypot(x + .5 - x0, z + .5 - z0) < r) T[at(x, z)] = "herbe";
   const sentier = (x, z) => { if(x >= 0 && z >= 0 && x < W && z < D && T[at(x, z)] !== "eau") T[at(x, z)] = "sentier"; };
-  for(let z = 5; z < D; z++){ sentier(17, z); sentier(18, z); }                     // le grand sentier, de l'entrée au cœur
-  for(let x = 7; x <= 18; x++){ sentier(x, 23); sentier(x, 24); }                   // vers les clairières de l'ouest et de l'est
-  for(let x = 17; x <= 28; x++){ sentier(x, 24); sentier(x, 25); }
-  for(let x = 17; x <= 28; x++){ sentier(x, 7); sentier(x, 8); }                    // du cœur vers le nord-est et le nord-ouest
-  for(let x = 7; x <= 18; x++){ sentier(x, 9); sentier(x, 10); }
-  /* le ruisseau, d'ouest en est, et le petit pont du sentier */
+  for(let z = COEUR[1] + 1; z < D; z++){ sentier(M - 1, z); sentier(M, z); }       // le grand sentier, de l'entrée au cœur
+  for(let x = 10; x <= M; x++){ sentier(x, 31); sentier(x, 32); }                   // vers les clairières de l'ouest et de l'est
+  for(let x = M - 1; x <= 38; x++){ sentier(x, 32); sentier(x, 33); }
+  for(let x = M - 1; x <= 38; x++){ sentier(x, 9); sentier(x, 10); }                // du cœur vers le nord-est et le nord-ouest
+  for(let x = 9; x <= M; x++){ sentier(x, 11); sentier(x, 12); }
+  for(let z = 12; z <= 32; z++){ sentier(9, z); sentier(10, z); }                   // deux sentiers sur les côtés : une grande boucle
+  for(let z = 10; z <= 33; z++){ sentier(38, z); sentier(39, z); }
+  /* le ruisseau, d'ouest en est, et un petit pont pour chaque sentier */
   for(let x = 0; x < W; x++){
-    const z = 16 + Math.round(Math.sin(x * .33) * 2);
-    for(const dz of Math.sin(x * .6 + 1) > -.2 ? [0, 1] : [0]) T[at(x, z + dz)] = x === 17 || x === 18 ? "pont" : "eau";
+    const z = 21 + Math.round(Math.sin(x * .26) * 2.5);
+    for(const dz of Math.sin(x * .5 + 1) > -.2 ? [0, 1] : [0]) T[at(x, z + dz)] = PONTS.has(x) ? "pont" : "eau";
   }
   /* les arbres : serrés dans le sous-bois, quelques buissons dans les clairières ; un bord tout boisé */
   const essence = r => r < .38 ? "charme" : r < .66 ? "frene" : r < .76 ? "sureau" : r < .88 ? "if" : r < .96 ? "houx" : "chene";
@@ -54,7 +64,7 @@ export const sources = new Set();                        // les cases d'eau de l
     const i = at(x, z), t = T[i], r = rnd(), bord = x < 2 || x > W - 3 || z < 2 || z > D - 3;
     if(t === "eau" || t === "pont" || t === "sentier") continue;
     if(bord && t !== "herbe") O[i] = essence(rnd() * .88);
-    else if(t === "mousse"){ if(r < .44) O[i] = essence(rnd()); else if(r < .48) O[i] = "rock"; }
+    else if(t === "mousse"){ if(r < .3) O[i] = essence(rnd()); else if(r < .33) O[i] = "rock"; }   // moins dense (demande de Yo, v1.7.12)
     else if(t === "herbe" && r < .05) O[i] = rnd() < .5 ? "sureau" : "houx";
     else if(t === "herbe" && r < .08) O[i] = "rock";
   }
@@ -62,13 +72,17 @@ export const sources = new Set();                        // les cases d'eau de l
   O[at(COEUR[0], COEUR[1])] = "grandChene";
   /* la source, au cœur de la forêt, dans la clairière du Grand Chêne, au bord du grand sentier (morceau 4, carnet :
      la Truite d'argent) ; posée après les arbres, pour ne rien changer au reste du tirage */
-  for(const [x, z] of [[15, 5], [16, 5], [15, 6], [16, 6]]){ T[at(x, z)] = "eau"; O[at(x, z)] = null; sources.add(at(x, z)); }
+  for(const [x, z] of SOURCE){ T[at(x, z)] = "eau"; O[at(x, z)] = null; sources.add(at(x, z)); }
 }
 /* Le centre d'un arbre de la forêt (légèrement décalé, comme son modèle) et sa taille */
 export function arbreEn(i){
   const sp = foret.obj[i], r = foret.r[i];
   return {sp, x: fcx(i) + (r - .5) * .3, z: fcz(i) + (r - .5) * .3, s: TAILLE(sp) * (.88 + r * .24)};
 }
+
+/* Le plan a changé (v1.7.12) : les coupes et les cueillettes d'avant ne tombent plus sur les mêmes cases, on les oublie */
+const PLAN = 2;
+if(!state.foret || state.foret.plan !== PLAN) state.foret = {plan: PLAN, coupes: {}, cueillis: {}};
 
 /* ----- Ce qui est sur une case, avec les coupes et la repousse ----- */
 const coupes = () => (state.foret = state.foret || {coupes: {}}).coupes;
@@ -126,7 +140,13 @@ export function makeForet(){
   const eau = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshPhongMaterial({color: 0x4FA8B8, shininess: 80}));
   eau.rotation.x = -Math.PI/2; eau.position.y = -.18; group.add(eau);
   const lit = new THREE.Mesh(new THREE.PlaneGeometry(W, D), mat(0x2F6E7A)); lit.rotation.x = -Math.PI/2; lit.position.y = -.6; group.add(lit);
-  for(const z of [15.5, 18.5].map(v => cz(v))) for(const x of [cx(17) - .55, cx(18) + .55]) group.add(part(G.cyl, 0x6B4A2F, .1, .6, .1, x, .2, z));   // les poteaux du petit pont
+  /* les poteaux des petits ponts, aux quatre coins de chacun */
+  for(const x0 of [...PONTS].filter(x => !PONTS.has(x - 1))){
+    const rangs = [];
+    for(let z = 0; z < D; z++) if(foret.type[z * W + x0] === "pont" || foret.type[z * W + x0 + 1] === "pont") rangs.push(z);
+    if(!rangs.length) continue;
+    for(const z of [Math.min(...rangs) - .05, Math.max(...rangs) + 1.05].map(v => v - D / 2)) for(const x of [cx(x0) - .55, cx(x0 + 1) + .55]) group.add(part(G.cyl, 0x6B4A2F, .1, .6, .1, x, .2, z));
+  }
   /* les arbres, en série : une instance par arbre et par morceau (tronc, feuillage…) */
   const parEssence = {};
   const E = essences();
@@ -157,7 +177,7 @@ export function makeForet(){
   gc.position.set(x0, 0, z0); group.add(gc);
   /* la source : des galets tout autour */
   for(let k = 0; k < 14; k++){
-    const a = k / 14 * 6.28, x = cx(15) + .5 + Math.cos(a) * 1.45, z = cz(5) + .5 + Math.sin(a) * 1.45;
+    const a = k / 14 * 6.28, x = cx(SOURCE[0][0]) + .5 + Math.cos(a) * 1.45, z = cz(SOURCE[0][1]) + .5 + Math.sin(a) * 1.45;
     if(foret.type[ftile(x, z)] !== "sentier") group.add(part(G.head, k % 2 ? 0xB8B4AC : 0x9A968E, .45, .25, .4, x, .02, z));
   }
   /* la sortie : des planches au bout du sentier, au sud */

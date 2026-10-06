@@ -144,9 +144,9 @@ export async function verifier(){
     if(!b) throw new Error("pas d'orée de la forêt sur l'île");
     await entrer(b);
     if(currentPlace().room.w < 30) throw new Error("la forêt n'est pas construite");
-    /* un arbre au bord du grand sentier (colonnes 17 et 18), qu'on coupe depuis le sentier */
+    /* un arbre au bord du grand sentier (les deux colonnes du milieu), qu'on coupe depuis le sentier */
     let t = null;
-    for(let z = 33; z > 19 && !t; z--) for(const [x, dx] of [[16, -1], [19, 1]]){
+    for(let z = WF - 3; z > WF / 2 + 2 && !t; z--) for(const [x, dx] of [[WF / 2 - 2, -1], [WF / 2 + 1, 1]]){
       const i = z * WF + x, o = foretObj(i);
       if(o && RECOLTE[o] && RECOLTE[o].res){ t = {i, dx}; break; }   // un arbre qui donne du bois
     }

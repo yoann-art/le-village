@@ -18,7 +18,7 @@ import { G, part } from "./monde/formes.js";
 import { GIBIER, HEURES, PECHE, OUTILS, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacTake, sacCount, sacPlace, porte } from "./regles.js";
-import { foret, foretObj, walk, W } from "./monde/foret.js";
+import { foret, foretObj, walk, W, CHEMIN_BLANC } from "./monde/foret.js";
 import { ARBRES } from "./monde/essences.js";
 import { player, placePlayer, allure, ALLURE_DOUCE, pencheMain } from "./monde/personnage.js";
 import { saisonDe, pleineLune } from "./peche.js";
@@ -376,8 +376,8 @@ function voler(dt){
 }
 
 /* ----- Le Cerf blanc : on le suit, sans courir, jusqu'au bout de son chemin ----- */
-/* Son chemin : de la clairière du Grand Chêne, par le sentier de l'est, jusqu'à la clairière du nord-est */
-const CHEMIN = [[19.5, 6.5], [22, 7.6], [25, 8], [28, 8.3], [29.2, 9.4]].map(([x, z]) => ({x: x - W / 2, z: z - W / 2}));
+/* Son chemin (foret.js) : de la clairière du Grand Chêne, par le sentier de l'est, jusqu'à la clairière du nord-est */
+const CHEMIN = CHEMIN_BLANC.map(([x, z]) => ({x: x - W / 2, z: z - W / 2}));
 let blanc = null;        // {a (la bête), etape, etat ("attend" | "marche" | "part" | "fini"), cadeau: {x, z, mesh}}
 let blancVu = false;     // déjà apparu pendant cette visite de la forêt
 function cadeauMesh(){
