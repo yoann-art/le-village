@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Prompts Gemini</title>
 <!-- Les prompts Gemini du jeu, à copier d'un toucher depuis le téléphone, un onglet par famille.
-     Même contenu que les fiches « Prompts Gemini : bâtiments » et « Prompts Gemini : meubles » (docs Claude) :
-     garder la page et les fiches d'accord. -->
+     Bâtiments et Meubles : même contenu que les fiches « Prompts Gemini : bâtiments » et « Prompts Gemini : meubles »
+     (docs Claude) : garder la page et les fiches d'accord. Les autres onglets (demande de Yo, 7 octobre 2026) :
+     tout le Grand Carnet, dans prompts-carnet.js. -->
 <style>
 :root{
   --bg:#F6F1E7; --card:#FFFDF8; --ink:#3B2A1A; --muted:#7A6652; --line:#E6D9C3;
@@ -48,8 +49,8 @@ h2{font-size:20px;margin:24px 0 8px}
 .copy.ok{filter:brightness(1.1)}
 .check{display:flex;align-items:center;gap:8px;min-height:48px;cursor:pointer;color:var(--muted)}
 .check input{width:24px;height:24px;accent-color:var(--done)}
-.tabs{display:flex;gap:8px;margin:0 0 12px}
-.tab{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.tab{flex:1 1 auto;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 </style>
@@ -64,11 +65,16 @@ h2{font-size:20px;margin:24px 0 8px}
   <div id="list"></div>
 </main>
 
+<script src="prompts-carnet.js"></script>
 <script>
 (function(){
 "use strict";
 /* Phrase de style de la bible (fiche de commande, étape 0.7), mot pour mot */
 const STYLE = "Objet 3D en style jouet, formes rondes et douces, couleurs chaudes et simples, ombrage doux en aplats, univers médiéval-fantastique chaleureux. Un seul objet, entier et centré, vue de trois quarts légèrement en hauteur, sur fond blanc uni, sans texte, sans personnage, sans décor autour.";
+/* Pour les créatures (bible, fiche de commande) : « la vue de face remplace la vue de trois quarts, et on retire
+   « sans personnage » » */
+const STYLE_CREATURE = "Objet 3D en style jouet, formes rondes et douces, couleurs chaudes et simples, ombrage doux en aplats, univers médiéval-fantastique chaleureux. Un seul objet, entier et centré, vue de face, sur fond blanc uni, sans texte, sans décor autour.";
+const styleDe = c => c.style === "creature" ? STYLE_CREATURE : STYLE;
 const FAMILIES = [
   {name:"Ateliers", items:[
     {id:"scierie", name:"Scierie", size:"moyenne", line:"Une scierie en bois couleur miel, taille moyenne, toit de tuiles orange, roue à eau sur le côté, scie circulaire sur un établi devant, piles de bûches, porte d'entrée bien visible sur la façade avant."},
@@ -139,6 +145,8 @@ const CATS = {
     lead:"Un prompt par meuble et par plan de travail, prêt pour Gemini. Chacun commence par la phrase de style de la bible, mot pour mot. L'image montre la couleur d'origine du meuble.",
     steps:["Touche <b>Copier</b>, puis colle dans Gemini.", "Vérifie l'image : un seul meuble, entier, fond blanc, vu de trois quarts, le devant bien visible.", "Enregistre-la sous le nom du meuble (par exemple chaise.png) et coche la case."]}
 };
+/* Tout le Grand Carnet (prompts-carnet.js) : un onglet par famille */
+(window.PROMPTS_CARNET || []).forEach(c => { CATS[c.key] = c; });
 const TAB_KEY = "le-village-prompts-onglet";
 let cat = "batiments";
 try{ const v = localStorage.getItem(TAB_KEY); if(CATS[v]) cat = v; }catch(_){}
@@ -179,7 +187,7 @@ document.getElementById("list").innerHTML = c.families.map(f => `
   ${f.items.map(i => `
     <section class="card${done[i.id] ? " is-done" : ""}" data-id="${i.id}">
       <div class="head"><h3>${i.name}</h3><span class="size">${i.size}</span></div>
-      <p class="prompt"><span class="style">${esc(STYLE)}</span>\n${esc(i.line)}</p>
+      <p class="prompt"><span class="style">${esc(styleDe(c))}</span>\n${esc(i.line)}</p>
       <div class="actions">
         <button class="copy" type="button">Copier</button>
         <label class="check"><input type="checkbox"${done[i.id] ? " checked" : ""}> Image générée</label>
@@ -197,12 +205,12 @@ document.getElementById("tabs").addEventListener("click", e => {
 });
 
 const byId = {};
-Object.values(CATS).forEach(c => c.families.forEach(f => f.items.forEach(i => { byId[i.id] = i; })));
+Object.values(CATS).forEach(c => c.families.forEach(f => f.items.forEach(i => { byId[i.id] = {line: i.line, style: styleDe(c)}; })));
 document.getElementById("list").addEventListener("click", async e => {
   const btn = e.target.closest(".copy");
   if(!btn) return;
   const item = byId[btn.closest(".card").dataset.id];
-  const ok = await copy(STYLE + "\n" + item.line);
+  const ok = await copy(item.style + "\n" + item.line);
   btn.textContent = ok ? "Copié ✓" : "Échec : sélectionne le texte";
   btn.classList.toggle("ok", ok);
   setTimeout(() => { btn.textContent = "Copier"; btn.classList.remove("ok"); }, 1800);
