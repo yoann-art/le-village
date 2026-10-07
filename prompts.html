@@ -74,7 +74,9 @@ const STYLE = "Objet 3D en style jouet, formes rondes et douces, couleurs chaude
 /* Pour les créatures (bible, fiche de commande) : « la vue de face remplace la vue de trois quarts, et on retire
    « sans personnage » » */
 const STYLE_CREATURE = "Objet 3D en style jouet, formes rondes et douces, couleurs chaudes et simples, ombrage doux en aplats, univers médiéval-fantastique chaleureux. Un seul objet, entier et centré, vue de face, sur fond blanc uni, sans texte, sans décor autour.";
-const styleDe = c => c.style === "creature" ? STYLE_CREATURE : STYLE;
+/* Choix de Yo (7 octobre 2026) : les poissons, les fonds marins et les insectes de côté, on voit mieux leur forme */
+const STYLE_COTE = "Objet 3D en style jouet, formes rondes et douces, couleurs chaudes et simples, ombrage doux en aplats, univers médiéval-fantastique chaleureux. Un seul objet, entier et centré, vue de côté légèrement en hauteur, sur fond blanc uni, sans texte, sans décor autour.";
+const styleDe = c => c.style === "creature" ? STYLE_CREATURE : c.style === "cote" ? STYLE_COTE : STYLE;
 const FAMILIES = [
   {name:"Ateliers", items:[
     {id:"scierie", name:"Scierie", size:"moyenne", line:"Une scierie en bois couleur miel, taille moyenne, toit de tuiles orange, roue à eau sur le côté, scie circulaire sur un établi devant, piles de bûches, porte d'entrée bien visible sur la façade avant."},

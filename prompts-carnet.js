@@ -1492,7 +1492,7 @@ window.PROMPTS_CARNET = [
 {
 "key": "poissons",
 "label": "Poissons",
-"style": "creature",
+"style": "cote",
 "families": [
 {
 "name": "L'étang de l'île",
@@ -1502,55 +1502,55 @@ window.PROMPTS_CARNET = [
 "id": "poi-gardon",
 "name": "Gardon",
 "size": "commun",
-"line": "Un gardon, petit poisson argenté aux nageoires rougeâtres et à l'œil rouge, environ 0,25 P de long, vue de face, corps entier, pose neutre."
+"line": "Un gardon, petit poisson argenté aux nageoires rougeâtres et à l'œil rouge, environ 0,25 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-perche",
 "name": "Perche",
 "size": "commun",
-"line": "Une perche, poisson vert doré rayé de bandes sombres, nageoire épineuse sur le dos, nageoires orange, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Une perche, poisson vert doré rayé de bandes sombres, nageoire épineuse sur le dos, nageoires orange, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-tanche",
 "name": "Tanche",
 "size": "commun",
-"line": "Une tanche, poisson trapu vert doré au petit œil rouge, nageoires arrondies, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Une tanche, poisson trapu vert doré au petit œil rouge, nageoires arrondies, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-carpe",
 "name": "Carpe",
 "size": "commun",
-"line": "Une carpe dodue, grosses écailles bronze, petits barbillons, environ 0,6 P de long, vue de face, corps entier, pose neutre."
+"line": "Une carpe dodue, grosses écailles bronze, petits barbillons, environ 0,6 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-ecrevisse",
 "name": "Écrevisse",
 "size": "commun",
-"line": "Une écrevisse brun-rouge, deux grosses pinces, antennes, queue articulée, environ 0,15 P de long, vue de face, corps entier, pose neutre."
+"line": "Une écrevisse brun-rouge, deux grosses pinces, antennes, queue articulée, environ 0,15 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-brochet",
 "name": "Brochet",
 "size": "peu commun",
-"line": "Un brochet long et fin, vert tacheté de clair, long museau plat aux dents pointues, environ 0,8 P de long, vue de face, corps entier, pose neutre."
+"line": "Un brochet long et fin, vert tacheté de clair, long museau plat aux dents pointues, environ 0,8 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-anguille",
 "name": "Anguille",
 "size": "peu commun",
-"line": "Une anguille longue et souple comme un serpent, brune et dorée, environ 0,8 P de long, vue de face, corps entier, pose neutre."
+"line": "Une anguille longue et souple comme un serpent, brune et dorée, environ 0,8 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-carpe-koi",
 "name": "Carpe koï",
 "size": "rare",
-"line": "Une carpe koï splendide, blanche à grandes taches orange vif, nageoires voilées, environ 0,6 P de long, vue de face, corps entier, pose neutre."
+"line": "Une carpe koï splendide, blanche à grandes taches orange vif, nageoires voilées, environ 0,6 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-vieux-silure",
 "name": "Vieux Silure",
 "size": "légendaire 👑",
-"line": "Un vieux silure légendaire, énorme poisson gris-vert à la large bouche, très longues moustaches, l'air très ancien, environ 2 P de long, vue de face, corps entier, pose neutre."
+"line": "Un vieux silure légendaire, énorme poisson gris-vert à la large bouche, très longues moustaches, l'air très ancien, environ 2 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1562,43 +1562,43 @@ window.PROMPTS_CARNET = [
 "id": "poi-sardine",
 "name": "Sardine",
 "size": "commun",
-"line": "Une sardine argentée et fine, dos bleu-vert, environ 0,15 P de long, vue de face, corps entier, pose neutre."
+"line": "Une sardine argentée et fine, dos bleu-vert, environ 0,15 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-maquereau",
 "name": "Maquereau",
 "size": "commun",
-"line": "Un maquereau fuselé, dos rayé de bleu et de vert, ventre argenté, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un maquereau fuselé, dos rayé de bleu et de vert, ventre argenté, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-rouget",
 "name": "Rouget",
 "size": "commun",
-"line": "Un rouget rouge rosé, deux petites moustaches sous le menton, environ 0,25 P de long, vue de face, corps entier, pose neutre."
+"line": "Un rouget rouge rosé, deux petites moustaches sous le menton, environ 0,25 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-bar",
 "name": "Bar",
 "size": "peu commun",
-"line": "Un bar argenté et puissant, dos gris-bleu, environ 0,6 P de long, vue de face, corps entier, pose neutre."
+"line": "Un bar argenté et puissant, dos gris-bleu, environ 0,6 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-dorade",
 "name": "Dorade",
 "size": "peu commun",
-"line": "Une dorade ronde argentée, un trait doré entre les yeux, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Une dorade ronde argentée, un trait doré entre les yeux, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-sole",
 "name": "Sole",
 "size": "peu commun",
-"line": "Une sole plate et ovale, brun sable, les deux yeux du même côté, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Une sole plate et ovale, brun sable, les deux yeux du même côté, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-thon",
 "name": "Thon",
 "size": "rare",
-"line": "Un thon énorme et fuselé, dos bleu nuit, ventre argenté, petites nageoires jaunes, environ 1,5 P de long, vue de face, corps entier, pose neutre."
+"line": "Un thon énorme et fuselé, dos bleu nuit, ventre argenté, petites nageoires jaunes, environ 1,5 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1610,31 +1610,31 @@ window.PROMPTS_CARNET = [
 "id": "poi-goujon",
 "name": "Goujon",
 "size": "commun",
-"line": "Un goujon, tout petit poisson brun-gris tacheté, deux petits barbillons, environ 0,1 P de long, vue de face, corps entier, pose neutre."
+"line": "Un goujon, tout petit poisson brun-gris tacheté, deux petits barbillons, environ 0,1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-truite",
 "name": "Truite",
 "size": "commun",
-"line": "Une truite fario, dos brun doré tacheté de points noirs et rouges, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Une truite fario, dos brun doré tacheté de points noirs et rouges, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-ombre",
 "name": "Ombre",
 "size": "peu commun",
-"line": "Un ombre, poisson gris argenté à la très grande nageoire dorsale en forme de voile violette, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un ombre, poisson gris argenté à la très grande nageoire dorsale en forme de voile violette, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-saumon",
 "name": "Saumon",
 "size": "peu commun",
-"line": "Un saumon puissant, flancs argentés et rosés, dos tacheté, environ 0,8 P de long, vue de face, corps entier, pose neutre."
+"line": "Un saumon puissant, flancs argentés et rosés, dos tacheté, environ 0,8 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-truite-d-argent",
 "name": "Truite d'argent",
 "size": "rare ✨",
-"line": "Une truite d'argent merveilleuse, écailles argentées qui brillent comme une pièce neuve, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Une truite d'argent merveilleuse, écailles argentées qui brillent comme une pièce neuve, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1646,25 +1646,25 @@ window.PROMPTS_CARNET = [
 "id": "poi-poisson-chat",
 "name": "Poisson-chat",
 "size": "commun",
-"line": "Un poisson-chat brun foncé, large tête plate, longues moustaches, environ 0,5 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-chat brun foncé, large tête plate, longues moustaches, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-lamproie",
 "name": "Lamproie",
 "size": "peu commun",
-"line": "Une lamproie longue comme une anguille, grise et brune, bouche ronde en ventouse, environ 0,6 P de long, vue de face, corps entier, pose neutre."
+"line": "Une lamproie longue comme une anguille, grise et brune, bouche ronde en ventouse, environ 0,6 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-anguille-lanterne",
 "name": "Anguille-lanterne",
 "size": "peu commun ✨",
-"line": "Une anguille-lanterne merveilleuse, longue et sombre, taches lumineuses jaunes le long du corps, environ 0,8 P de long, vue de face, corps entier, pose neutre."
+"line": "Une anguille-lanterne merveilleuse, longue et sombre, taches lumineuses jaunes le long du corps, environ 0,8 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-brume",
 "name": "Poisson-brume",
 "size": "rare ✨",
-"line": "Un poisson-brume merveilleux, translucide et blanc comme un voile de brume, longues nageoires vaporeuses, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-brume merveilleux, translucide et blanc comme un voile de brume, longues nageoires vaporeuses, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1676,43 +1676,43 @@ window.PROMPTS_CARNET = [
 "id": "poi-poisson-clown",
 "name": "Poisson-clown",
 "size": "commun",
-"line": "Un poisson-clown orange vif à trois bandes blanches bordées de noir, environ 0,1 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-clown orange vif à trois bandes blanches bordées de noir, environ 0,1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-perroquet",
 "name": "Poisson-perroquet",
 "size": "peu commun",
-"line": "Un poisson-perroquet aux couleurs vives turquoise, rose et vert, bouche en bec dur, environ 0,5 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-perroquet aux couleurs vives turquoise, rose et vert, bouche en bec dur, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-barracuda",
 "name": "Barracuda",
 "size": "peu commun",
-"line": "Un barracuda long et argenté, mâchoire en avant aux dents pointues, environ 1 P de long, vue de face, corps entier, pose neutre."
+"line": "Un barracuda long et argenté, mâchoire en avant aux dents pointues, environ 1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-lune",
 "name": "Poisson-lune",
 "size": "rare",
-"line": "Un poisson-lune énorme et tout rond comme un disque, gris argenté, grandes nageoires en haut et en bas, environ 2 P de haut, vue de face, corps entier, pose neutre."
+"line": "Un poisson-lune énorme et tout rond comme un disque, gris argenté, grandes nageoires en haut et en bas, environ 2 P de haut, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-espadon",
 "name": "Espadon",
 "size": "rare",
-"line": "Un espadon puissant, dos bleu nuit, long nez droit en forme d'épée, environ 2 P de long, vue de face, corps entier, pose neutre."
+"line": "Un espadon puissant, dos bleu nuit, long nez droit en forme d'épée, environ 2 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-arc-en-ciel",
 "name": "Poisson-arc-en-ciel",
 "size": "rare ✨",
-"line": "Un poisson-arc-en-ciel merveilleux, écailles qui passent par toutes les couleurs de l'arc-en-ciel, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-arc-en-ciel merveilleux, écailles qui passent par toutes les couleurs de l'arc-en-ciel, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-serpent-de-mer",
 "name": "Serpent de mer",
 "size": "légendaire 👑",
-"line": "Un serpent de mer légendaire, immense et majestueux, long corps ondulant bleu-vert, crête dorée, grands yeux doux, environ 8 P de long, vue de face, corps entier, pose neutre."
+"line": "Un serpent de mer légendaire, immense et majestueux, long corps ondulant bleu-vert, crête dorée, grands yeux doux, environ 8 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1724,19 +1724,19 @@ window.PROMPTS_CARNET = [
 "id": "poi-fera",
 "name": "Féra",
 "size": "peu commun",
-"line": "Une féra argentée et fine, dos gris-bleu, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Une féra argentée et fine, dos gris-bleu, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-omble-chevalier",
 "name": "Omble chevalier",
 "size": "peu commun",
-"line": "Un omble chevalier, dos vert olive tacheté de clair, ventre rouge vif, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un omble chevalier, dos vert olive tacheté de clair, ventre rouge vif, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-de-glace",
 "name": "Poisson de glace",
 "size": "rare ✨",
-"line": "Un poisson de glace merveilleux, corps transparent comme de la glace où l'on voit battre un petit cœur rose, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson de glace merveilleux, corps transparent comme de la glace où l'on voit battre un petit cœur rose, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1748,13 +1748,13 @@ window.PROMPTS_CARNET = [
 "id": "poi-tilapia",
 "name": "Tilapia",
 "size": "commun",
-"line": "Un tilapia, poisson rond gris-vert aux reflets bleus, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un tilapia, poisson rond gris-vert aux reflets bleus, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-des-sables",
 "name": "Poisson des sables",
 "size": "rare ✨",
-"line": "Un poisson des sables merveilleux, écailles couleur sable doré, nageoires en pelles pour nager dans le sable, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson des sables merveilleux, écailles couleur sable doré, nageoires en pelles pour nager dans le sable, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1766,13 +1766,13 @@ window.PROMPTS_CARNET = [
 "id": "poi-poisson-aveugle",
 "name": "Poisson aveugle",
 "size": "peu commun",
-"line": "Un poisson aveugle des grottes, rose pâle presque translucide, sans yeux, environ 0,2 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson aveugle des grottes, rose pâle presque translucide, sans yeux, environ 0,2 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-poisson-cristal",
 "name": "Poisson-cristal",
 "size": "rare ✨",
-"line": "Un poisson-cristal merveilleux, corps de cristal bleuté qui éclaire autour de lui, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-cristal merveilleux, corps de cristal bleuté qui éclaire autour de lui, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1784,13 +1784,13 @@ window.PROMPTS_CARNET = [
 "id": "poi-poisson-nuage",
 "name": "Poisson-nuage",
 "size": "peu commun ✨",
-"line": "Un poisson-nuage merveilleux, blanc et duveteux comme un petit nuage, nageoires bleu ciel, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson-nuage merveilleux, blanc et duveteux comme un petit nuage, nageoires bleu ciel, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-raie-des-vents",
 "name": "Raie des vents",
 "size": "rare ✨",
-"line": "Une raie des vents merveilleuse, grande raie bleu ciel aux ailes larges comme un cerf-volant, longue queue fine, environ 1,5 P de large, vue de face, corps entier, pose neutre."
+"line": "Une raie des vents merveilleuse, grande raie bleu ciel aux ailes larges comme un cerf-volant, longue queue fine, environ 1,5 P de large, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1802,7 +1802,7 @@ window.PROMPTS_CARNET = [
 "id": "poi-poisson-de-lave",
 "name": "Poisson de lave",
 "size": "rare ✨",
-"line": "Un poisson de lave merveilleux, écailles noires craquelées qui rougeoient de l'intérieur, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un poisson de lave merveilleux, écailles noires craquelées qui rougeoient de l'intérieur, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1814,52 +1814,52 @@ window.PROMPTS_CARNET = [
 "id": "poi-vieille-carpe-d-or",
 "name": "Vieille Carpe d'or",
 "size": "légendaire 👑",
-"line": "Une vieille carpe d'or légendaire, énorme carpe aux écailles d'or brillantes, longs barbillons, l'air sage, environ 1 P de long, vue de face, corps entier, pose neutre."
+"line": "Une vieille carpe d'or légendaire, énorme carpe aux écailles d'or brillantes, longs barbillons, l'air sage, environ 1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-congre",
 "name": "Congre",
 "size": "rare",
-"line": "Un congre long et puissant, gris sombre, grosse tête, environ 1,5 P de long, vue de face, corps entier, pose neutre."
+"line": "Un congre long et puissant, gris sombre, grosse tête, environ 1,5 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-merlan",
 "name": "Merlan",
 "size": "commun",
-"line": "Un merlan argenté et fin, dos gris-vert, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un merlan argenté et fin, dos gris-vert, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-mulet",
 "name": "Mulet",
 "size": "commun",
-"line": "Un mulet gris argenté rayé de lignes sombres, tête large, environ 0,4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un mulet gris argenté rayé de lignes sombres, tête large, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-orphie",
 "name": "Orphie",
 "size": "peu commun",
-"line": "Une orphie longue et fine, bleu-vert argenté, long bec pointu, environ 0,6 P de long, vue de face, corps entier, pose neutre."
+"line": "Une orphie longue et fine, bleu-vert argenté, long bec pointu, environ 0,6 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "poi-encornet",
 "name": "Encornet",
 "size": "peu commun",
-"line": "Un encornet rose nacré, corps fuselé, deux nageoires en losange, tentacules courts, grands yeux, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un encornet rose nacré, corps fuselé, deux nageoires en losange, tentacules courts, grands yeux, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
 }
 ],
-"lead": "Les poissons du Grand Carnet, et ceux du jeu qui n'y sont pas. Créatures (pour Meshy) : vue de face, corps entier (bible).",
+"lead": "Les poissons du Grand Carnet, et ceux du jeu qui n'y sont pas. Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo : on voit mieux leur forme).",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans Gemini.",
-"Vérifie l'image : un seul poisson, entier, fond blanc.",
+"Vérifie l'image : un seul poisson, entier, fond blanc, vu de côté.",
 "Enregistre-la sous le nom de l'objet (par exemple gardon.png) et coche la case."
 ]
 },
 {
 "key": "fonds",
 "label": "Fonds marins",
-"style": "creature",
+"style": "cote",
 "families": [
 {
 "name": "Les fonds de l'île",
@@ -1869,73 +1869,73 @@ window.PROMPTS_CARNET = [
 "id": "fon-etoile-de-mer",
 "name": "Étoile de mer",
 "size": "commun",
-"line": "Une étoile de mer orange à cinq bras dodus et granuleux, environ 0,2 P de large, vue de face, corps entier, pose neutre."
+"line": "Une étoile de mer orange à cinq bras dodus et granuleux, environ 0,2 P de large, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-moule",
 "name": "Moule",
 "size": "commun",
-"line": "Une grappe de moules bleu nuit fermées, accrochées ensemble, environ 0,15 P, vue de face, corps entier, pose neutre."
+"line": "Une grappe de moules bleu nuit fermées, accrochées ensemble, environ 0,15 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-bigorneau",
 "name": "Bigorneau",
 "size": "commun",
-"line": "Un bigorneau, petit coquillage en spirale brun foncé, environ 0,05 P (grossi pour bien le voir), vue de face, corps entier, pose neutre."
+"line": "Un bigorneau, petit coquillage en spirale brun foncé, environ 0,05 P (grossi pour bien le voir), vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-oursin",
 "name": "Oursin",
 "size": "commun",
-"line": "Un oursin tout rond violet foncé, couvert de piquants arrondis, environ 0,1 P, vue de face, corps entier, pose neutre."
+"line": "Un oursin tout rond violet foncé, couvert de piquants arrondis, environ 0,1 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-crabe",
 "name": "Crabe",
 "size": "commun",
-"line": "Un crabe orange et rond, deux grosses pinces levées, yeux sur pédoncules, environ 0,2 P de large, vue de face, corps entier, pose neutre."
+"line": "Un crabe orange et rond, deux grosses pinces levées, yeux sur pédoncules, environ 0,2 P de large, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-crevette",
 "name": "Crevette",
 "size": "commun",
-"line": "Une crevette rose translucide, longues antennes, queue en éventail, environ 0,1 P de long, vue de face, corps entier, pose neutre."
+"line": "Une crevette rose translucide, longues antennes, queue en éventail, environ 0,1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-concombre-de-mer",
 "name": "Concombre de mer",
 "size": "commun",
-"line": "Un concombre de mer brun et mou, couvert de petites bosses, environ 0,3 P de long, vue de face, corps entier, pose neutre."
+"line": "Un concombre de mer brun et mou, couvert de petites bosses, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-coquille-saint-jacques",
 "name": "Coquille Saint-Jacques",
 "size": "peu commun",
-"line": "Une coquille Saint-Jacques en éventail côtelé crème et orange, entrouverte, environ 0,15 P, vue de face, corps entier, pose neutre."
+"line": "Une coquille Saint-Jacques en éventail côtelé crème et orange, entrouverte, environ 0,15 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-huitre",
 "name": "Huître",
 "size": "peu commun",
-"line": "Une huître grise et rugueuse entrouverte, une perle blanche à l'intérieur, environ 0,15 P, vue de face, corps entier, pose neutre."
+"line": "Une huître grise et rugueuse entrouverte, une perle blanche à l'intérieur, environ 0,15 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-poulpe",
 "name": "Poulpe",
 "size": "peu commun",
-"line": "Un poulpe rond et doux, rouge orangé, huit bras enroulés, grands yeux, environ 0,5 P, vue de face, corps entier, pose neutre."
+"line": "Un poulpe rond et doux, rouge orangé, huit bras enroulés, grands yeux, environ 0,5 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-homard",
 "name": "Homard",
 "size": "peu commun",
-"line": "Un homard bleu sombre, deux énormes pinces, longues antennes, environ 0,5 P de long, vue de face, corps entier, pose neutre."
+"line": "Un homard bleu sombre, deux énormes pinces, longues antennes, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-hippocampe",
 "name": "Hippocampe",
 "size": "rare",
-"line": "Un hippocampe jaune doré, queue enroulée, museau en trompette, environ 0,15 P de haut, vue de face, corps entier, pose neutre."
+"line": "Un hippocampe jaune doré, queue enroulée, museau en trompette, environ 0,15 P de haut, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -1947,49 +1947,49 @@ window.PROMPTS_CARNET = [
 "id": "fon-anemone-de-mer",
 "name": "Anémone de mer",
 "size": "commun",
-"line": "Une anémone de mer rose et violette, tentacules souples qui ondulent, environ 0,3 P, vue de face, corps entier, pose neutre."
+"line": "Une anémone de mer rose et violette, tentacules souples qui ondulent, environ 0,3 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-benitier",
 "name": "Bénitier",
 "size": "peu commun",
-"line": "Un bénitier, coquillage géant ondulé entrouvert, lèvres bleues et turquoise, environ 0,8 P de large, vue de face, corps entier, pose neutre."
+"line": "Un bénitier, coquillage géant ondulé entrouvert, lèvres bleues et turquoise, environ 0,8 P de large, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-limace-de-mer",
 "name": "Limace de mer",
 "size": "peu commun",
-"line": "Une limace de mer de toutes les couleurs, violette à bords orange, petites plumes sur le dos, environ 0,15 P, vue de face, corps entier, pose neutre."
+"line": "Une limace de mer de toutes les couleurs, violette à bords orange, petites plumes sur le dos, environ 0,15 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-langouste",
 "name": "Langouste",
 "size": "peu commun",
-"line": "Une langouste rouge orangé tachetée, très longues antennes épineuses, sans pinces, environ 0,5 P de long, vue de face, corps entier, pose neutre."
+"line": "Une langouste rouge orangé tachetée, très longues antennes épineuses, sans pinces, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-raie",
 "name": "Raie",
 "size": "peu commun",
-"line": "Une raie plate et ronde, couleur sable tachetée, longue queue fine, environ 1 P de large, vue de face, corps entier, pose neutre."
+"line": "Une raie plate et ronde, couleur sable tachetée, longue queue fine, environ 1 P de large, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-meduse",
 "name": "Méduse",
 "size": "peu commun ⚠️",
-"line": "Une méduse rose translucide en cloche, longs filaments qui piquent, environ 0,4 P, vue de face, corps entier, pose neutre."
+"line": "Une méduse rose translucide en cloche, longs filaments qui piquent, environ 0,4 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-murene",
 "name": "Murène",
 "size": "peu commun ⚠️",
-"line": "Une murène longue et tachetée vert et jaune, bouche ouverte aux petites dents, environ 1 P de long, vue de face, corps entier, pose neutre."
+"line": "Une murène longue et tachetée vert et jaune, bouche ouverte aux petites dents, environ 1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-nautile",
 "name": "Nautile",
 "size": "rare",
-"line": "Un nautile, coquille en spirale parfaite rayée de blanc et de brun, petits tentacules, environ 0,2 P, vue de face, corps entier, pose neutre."
+"line": "Un nautile, coquille en spirale parfaite rayée de blanc et de brun, petits tentacules, environ 0,2 P, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2001,31 +2001,31 @@ window.PROMPTS_CARNET = [
 "id": "fon-calmar-geant",
 "name": "Calmar géant",
 "size": "rare",
-"line": "Un calmar géant rouge profond, longs tentacules, énormes yeux, environ 4 P de long, vue de face, corps entier, pose neutre."
+"line": "Un calmar géant rouge profond, longs tentacules, énormes yeux, environ 4 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-crabe-araignee-geant",
 "name": "Crabe-araignée géant",
 "size": "rare",
-"line": "Un crabe-araignée géant orange pâle, corps rond et pattes immenses très fines, environ 2 P de large, vue de face, corps entier, pose neutre."
+"line": "Un crabe-araignée géant orange pâle, corps rond et pattes immenses très fines, environ 2 P de large, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-meduse-lanterne",
 "name": "Méduse-lanterne",
 "size": "rare ✨",
-"line": "Une méduse-lanterne merveilleuse, cloche bleutée qui éclaire comme une lanterne, filaments doux, environ 0,5 P, vue de face, corps entier, pose neutre."
+"line": "Une méduse-lanterne merveilleuse, cloche bleutée qui éclaire comme une lanterne, filaments doux, environ 0,5 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-huitre-a-perle-noire",
 "name": "Huître à perle noire",
 "size": "rare ✨",
-"line": "Une huître à perle noire merveilleuse, coquille sombre aux reflets nacrés entrouverte, une grosse perle noire brillante, environ 0,2 P, vue de face, corps entier, pose neutre."
+"line": "Une huître à perle noire merveilleuse, coquille sombre aux reflets nacrés entrouverte, une grosse perle noire brillante, environ 0,2 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-corail-chantant",
 "name": "Corail chantant",
 "size": "rare ✨",
-"line": "Un corail chantant merveilleux, branches de corail bleu et rose en forme de petits cors, notes de musique légères autour, environ 0,6 P, vue de face, corps entier, pose neutre."
+"line": "Un corail chantant merveilleux, branches de corail bleu et rose en forme de petits cors, notes de musique légères autour, environ 0,6 P, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2037,34 +2037,34 @@ window.PROMPTS_CARNET = [
 "id": "fon-crevette-de-cristal",
 "name": "Crevette de cristal",
 "size": "peu commun ✨",
-"line": "Une crevette de cristal merveilleuse, transparente et lumineuse, environ 0,1 P, vue de face, corps entier, pose neutre."
+"line": "Une crevette de cristal merveilleuse, transparente et lumineuse, environ 0,1 P, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-gymnote",
 "name": "Gymnote",
 "size": "rare ⚠️",
-"line": "Un gymnote, long poisson brun-gris comme une anguille, petites étincelles électriques le long du corps, environ 1 P de long, vue de face, corps entier, pose neutre."
+"line": "Un gymnote, long poisson brun-gris comme une anguille, petites étincelles électriques le long du corps, environ 1 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-nautile-d-or",
 "name": "Nautile d'or",
 "size": "légendaire 👑",
-"line": "Un nautile d'or légendaire, coquille en spirale parfaite en or brillant qui luit dans le noir, environ 0,3 P, vue de face, corps entier, pose neutre."
+"line": "Un nautile d'or légendaire, coquille en spirale parfaite en or brillant qui luit dans le noir, environ 0,3 P, vue de côté, corps entier, pose neutre."
 }
 ]
 }
 ],
-"lead": "Les créatures des fonds du Grand Carnet (plongée). Créatures (pour Meshy) : vue de face, corps entier (bible).",
+"lead": "Les créatures des fonds du Grand Carnet (plongée). Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo).",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans Gemini.",
-"Vérifie l'image : une seule créature, entière, fond blanc.",
+"Vérifie l'image : une seule créature, entière, fond blanc, vue de côté.",
 "Enregistre-la sous le nom de l'objet (par exemple crabe.png) et coche la case."
 ]
 },
 {
 "key": "insectes",
 "label": "Insectes",
-"style": "creature",
+"style": "cote",
 "families": [
 {
 "name": "Le jardin et les prés de l'île",
@@ -2074,139 +2074,139 @@ window.PROMPTS_CARNET = [
 "id": "ins-pieride-blanche",
 "name": "Piéride blanche",
 "size": "commun",
-"line": "Un papillon piéride blanche, ailes blanches au bout noir, deux petits points noirs, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon piéride blanche, ailes blanches au bout noir, deux petits points noirs, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-abeille",
 "name": "Abeille",
 "size": "commun",
-"line": "Une abeille dodue rayée jaune miel et brun, petites ailes transparentes, vue de face, corps entier, pose neutre."
+"line": "Une abeille dodue rayée jaune miel et brun, petites ailes transparentes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-coccinelle",
 "name": "Coccinelle",
 "size": "commun",
-"line": "Une coccinelle toute ronde, carapace rouge vif à sept points noirs, tête noire, vue de face, corps entier, pose neutre."
+"line": "Une coccinelle toute ronde, carapace rouge vif à sept points noirs, tête noire, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-fourmi",
 "name": "Fourmi",
 "size": "commun",
-"line": "Une fourmi brun-rouge, trois parties bien rondes, longues antennes, vue de face, corps entier, pose neutre."
+"line": "Une fourmi brun-rouge, trois parties bien rondes, longues antennes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-sauterelle",
 "name": "Sauterelle",
 "size": "commun",
-"line": "Une sauterelle verte, longues pattes arrière pliées, longues antennes, vue de face, corps entier, pose neutre."
+"line": "Une sauterelle verte, longues pattes arrière pliées, longues antennes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-grillon",
 "name": "Grillon",
 "size": "commun",
-"line": "Un grillon noir et brun, grosse tête ronde, ailes striées, antennes, vue de face, corps entier, pose neutre."
+"line": "Un grillon noir et brun, grosse tête ronde, ailes striées, antennes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-libellule",
 "name": "Libellule",
 "size": "commun",
-"line": "Une libellule bleue au long corps fin, quatre ailes transparentes ouvertes, gros yeux, vue de face, corps entier, pose neutre."
+"line": "Une libellule bleue au long corps fin, quatre ailes transparentes ouvertes, gros yeux, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-hanneton",
 "name": "Hanneton",
 "size": "commun",
-"line": "Un hanneton brun roux, antennes en éventail, ventre rayé de blanc, vue de face, corps entier, pose neutre."
+"line": "Un hanneton brun roux, antennes en éventail, ventre rayé de blanc, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-luciole",
 "name": "Luciole",
 "size": "peu commun",
-"line": "Une luciole brun sombre, bout du ventre qui brille d'une lumière jaune-vert, vue de face, corps entier, pose neutre."
+"line": "Une luciole brun sombre, bout du ventre qui brille d'une lumière jaune-vert, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-paon-du-jour",
 "name": "Paon-du-jour",
 "size": "peu commun",
-"line": "Un papillon paon-du-jour, ailes rouge-brun ornées de quatre grands yeux bleus et jaunes, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon paon-du-jour, ailes rouge-brun ornées de quatre grands yeux bleus et jaunes, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-machaon",
 "name": "Machaon",
 "size": "peu commun",
-"line": "Un papillon machaon, grandes ailes jaunes rayées de noir, queues fines, taches bleues et un point rouge, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon machaon, grandes ailes jaunes rayées de noir, queues fines, taches bleues et un point rouge, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-sphinx",
 "name": "Sphinx",
 "size": "peu commun",
-"line": "Un sphinx, papillon de nuit dodu gris-brun, ailes arrière roses, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un sphinx, papillon de nuit dodu gris-brun, ailes arrière roses, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-cigale",
 "name": "Cigale",
 "size": "peu commun",
-"line": "Une cigale trapue brun-vert, grosse tête, ailes transparentes veinées repliées, vue de face, corps entier, pose neutre."
+"line": "Une cigale trapue brun-vert, grosse tête, ailes transparentes veinées repliées, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-mante-religieuse",
 "name": "Mante religieuse",
 "size": "peu commun",
-"line": "Une mante religieuse vert tendre, pattes avant jointes comme pour prier, tête triangulaire, vue de face, corps entier, pose neutre."
+"line": "Une mante religieuse vert tendre, pattes avant jointes comme pour prier, tête triangulaire, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-bourdon",
 "name": "Bourdon",
 "size": "commun",
-"line": "Un bourdon tout rond et velu, rayé noir et jaune, bout blanc, petites ailes, vue de face, corps entier, pose neutre."
+"line": "Un bourdon tout rond et velu, rayé noir et jaune, bout blanc, petites ailes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-vulcain",
 "name": "Vulcain",
 "size": "peu commun",
-"line": "Un papillon vulcain, ailes noires barrées d'orange vif, petites taches blanches, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon vulcain, ailes noires barrées d'orange vif, petites taches blanches, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-epeire-des-jardins",
 "name": "Épeire des jardins",
 "size": "peu commun",
-"line": "Une épeire des jardins, araignée ronde brun doré avec une croix blanche sur le dos, huit pattes, vue de face, corps entier, pose neutre."
+"line": "Une épeire des jardins, araignée ronde brun doré avec une croix blanche sur le dos, huit pattes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-cloporte",
 "name": "Cloporte",
 "size": "commun",
-"line": "Un cloporte gris ardoise, dos ovale fait d'anneaux, petites pattes, vue de face, corps entier, pose neutre."
+"line": "Un cloporte gris ardoise, dos ovale fait d'anneaux, petites pattes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-perce-oreille",
 "name": "Perce-oreille",
 "size": "commun",
-"line": "Un perce-oreille brun-roux luisant, deux pinces courbées au bout du ventre, vue de face, corps entier, pose neutre."
+"line": "Un perce-oreille brun-roux luisant, deux pinces courbées au bout du ventre, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-punaise-verte",
 "name": "Punaise verte",
 "size": "commun",
-"line": "Une punaise verte en forme de petit bouclier, vert vif, vue de face, corps entier, pose neutre."
+"line": "Une punaise verte en forme de petit bouclier, vert vif, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-citron",
 "name": "Citron",
 "size": "peu commun",
-"line": "Un papillon citron, ailes jaune soufre aux bords pointus, un petit point orange, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon citron, ailes jaune soufre aux bords pointus, un petit point orange, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-phalene-d-hiver",
 "name": "Phalène d'hiver",
 "size": "peu commun",
-"line": "Une phalène d'hiver, papillon de nuit gris-beige délicat, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Une phalène d'hiver, papillon de nuit gris-beige délicat, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-grand-paon-de-nuit",
 "name": "Grand Paon de nuit",
 "size": "rare",
-"line": "Un grand paon de nuit, très grand papillon de nuit brun et gris aux quatre gros yeux dessinés, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un grand paon de nuit, très grand papillon de nuit brun et gris aux quatre gros yeux dessinés, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2218,43 +2218,43 @@ window.PROMPTS_CARNET = [
 "id": "ins-araignee-tisserande",
 "name": "Araignée tisserande",
 "size": "commun",
-"line": "Une araignée tisserande brun clair sur sa toile ronde perlée de rosée, vue de face, corps entier, pose neutre."
+"line": "Une araignée tisserande brun clair sur sa toile ronde perlée de rosée, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-phasme",
 "name": "Phasme",
 "size": "peu commun",
-"line": "Un phasme brun qui ressemble exactement à une brindille, longues pattes fines, vue de face, corps entier, pose neutre."
+"line": "Un phasme brun qui ressemble exactement à une brindille, longues pattes fines, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-scarabee-rhinoceros",
 "name": "Scarabée-rhinocéros",
 "size": "peu commun",
-"line": "Un scarabée-rhinocéros brun-noir luisant, une grande corne courbée sur la tête, vue de face, corps entier, pose neutre."
+"line": "Un scarabée-rhinocéros brun-noir luisant, une grande corne courbée sur la tête, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-frelon",
 "name": "Frelon",
 "size": "peu commun ⚠️",
-"line": "Un frelon dodu rayé brun-roux et jaune, ailes ambrées, l'air sévère, vue de face, corps entier, pose neutre."
+"line": "Un frelon dodu rayé brun-roux et jaune, ailes ambrées, l'air sévère, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-lucane-cerf-volant",
 "name": "Lucane cerf-volant",
 "size": "rare",
-"line": "Un lucane cerf-volant brun-noir, grandes mandibules rousses comme des bois de cerf, vue de face, corps entier, pose neutre."
+"line": "Un lucane cerf-volant brun-noir, grandes mandibules rousses comme des bois de cerf, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-grand-mars-changeant",
 "name": "Grand Mars changeant",
 "size": "rare",
-"line": "Un papillon grand mars changeant, ailes brunes aux reflets violets irisés, bandes blanches, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon grand mars changeant, ailes brunes aux reflets violets irisés, bandes blanches, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-phalene-de-lune",
 "name": "Phalène de lune",
 "size": "rare ✨",
-"line": "Une phalène de lune merveilleuse, papillon de nuit aux ailes d'argent qui luisent, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Une phalène de lune merveilleuse, papillon de nuit aux ailes d'argent qui luisent, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2266,25 +2266,25 @@ window.PROMPTS_CARNET = [
 "id": "ins-araignee-d-eau",
 "name": "Araignée d'eau",
 "size": "commun",
-"line": "Une araignée d'eau gerris, corps fin brun, très longues pattes posées à la surface d'une petite flaque, vue de face, corps entier, pose neutre."
+"line": "Une araignée d'eau gerris, corps fin brun, très longues pattes posées à la surface d'une petite flaque, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-dytique",
 "name": "Dytique",
 "size": "peu commun",
-"line": "Un dytique, scarabée d'eau ovale vert-noir luisant bordé de jaune, pattes arrière en rames, vue de face, corps entier, pose neutre."
+"line": "Un dytique, scarabée d'eau ovale vert-noir luisant bordé de jaune, pattes arrière en rames, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-luciole-des-brumes",
 "name": "Luciole des brumes",
 "size": "peu commun ✨",
-"line": "Une luciole des brumes merveilleuse, petit insecte rond qui flotte dans un halo de lumière bleutée, vue de face, corps entier, pose neutre."
+"line": "Une luciole des brumes merveilleuse, petit insecte rond qui flotte dans un halo de lumière bleutée, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-libellule-de-verre",
 "name": "Libellule de verre",
 "size": "rare ✨",
-"line": "Une libellule de verre merveilleuse, corps et ailes transparents comme du verre, reflets irisés, vue de face, corps entier, pose neutre."
+"line": "Une libellule de verre merveilleuse, corps et ailes transparents comme du verre, reflets irisés, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2296,19 +2296,19 @@ window.PROMPTS_CARNET = [
 "id": "ins-sphinx-colibri",
 "name": "Sphinx colibri",
 "size": "peu commun",
-"line": "Un sphinx colibri, papillon dodu brun et orange qui fait du surplace, longue trompe, ailes floues, vue de face, corps entier, pose neutre."
+"line": "Un sphinx colibri, papillon dodu brun et orange qui fait du surplace, longue trompe, ailes floues, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-scarabee-joyau",
 "name": "Scarabée-joyau",
 "size": "peu commun",
-"line": "Un scarabée-joyau, carapace vert émeraude et violette qui brille comme une gemme, vue de face, corps entier, pose neutre."
+"line": "Un scarabée-joyau, carapace vert émeraude et violette qui brille comme une gemme, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-morpho",
 "name": "Morpho",
 "size": "rare",
-"line": "Un papillon morpho, grandes ailes d'un bleu électrique éclatant, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon morpho, grandes ailes d'un bleu électrique éclatant, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2320,19 +2320,19 @@ window.PROMPTS_CARNET = [
 "id": "ins-bourdon-des-alpages",
 "name": "Bourdon des alpages",
 "size": "commun",
-"line": "Un bourdon des montagnes très velu et rond, rayé noir, jaune et roux, petites ailes, vue de face, corps entier, pose neutre."
+"line": "Un bourdon des montagnes très velu et rond, rayé noir, jaune et roux, petites ailes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-apollon",
 "name": "Apollon",
 "size": "rare",
-"line": "Un papillon apollon, ailes blanches translucides à taches rouges cerclées de noir, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon apollon, ailes blanches translucides à taches rouges cerclées de noir, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-papillon-de-givre",
 "name": "Papillon de givre",
 "size": "rare ✨",
-"line": "Un papillon de givre merveilleux, ailes de cristal de glace transparentes qui scintillent, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon de givre merveilleux, ailes de cristal de glace transparentes qui scintillent, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2344,25 +2344,25 @@ window.PROMPTS_CARNET = [
 "id": "ins-scarabee-bousier",
 "name": "Scarabée bousier",
 "size": "commun",
-"line": "Un scarabée bousier noir luisant qui pousse une boule brune ronde, vue de face, corps entier, pose neutre."
+"line": "Un scarabée bousier noir luisant qui pousse une boule brune ronde, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-criquet-du-desert",
 "name": "Criquet du désert",
 "size": "commun",
-"line": "Un criquet du désert jaune sable tacheté de brun, longues pattes arrière, vue de face, corps entier, pose neutre."
+"line": "Un criquet du désert jaune sable tacheté de brun, longues pattes arrière, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-scorpion",
 "name": "Scorpion",
 "size": "peu commun ⚠️",
-"line": "Un scorpion couleur sable, deux pinces, queue recourbée terminée par un dard, vue de face, corps entier, pose neutre."
+"line": "Un scorpion couleur sable, deux pinces, queue recourbée terminée par un dard, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-scarabee-d-or",
 "name": "Scarabée d'or",
 "size": "rare ✨",
-"line": "Un scarabée d'or merveilleux, carapace en or brillant, vue de face, corps entier, pose neutre."
+"line": "Un scarabée d'or merveilleux, carapace en or brillant, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2374,13 +2374,13 @@ window.PROMPTS_CARNET = [
 "id": "ins-grillon-des-cavernes",
 "name": "Grillon des cavernes",
 "size": "commun",
-"line": "Un grillon des cavernes beige pâle, très longues antennes et longues pattes, dos bossu, vue de face, corps entier, pose neutre."
+"line": "Un grillon des cavernes beige pâle, très longues antennes et longues pattes, dos bossu, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-ver-luisant-des-grottes",
 "name": "Ver luisant des grottes",
 "size": "peu commun",
-"line": "Un ver luisant des grottes, petite larve pâle qui pend au bout de fils lumineux bleu-vert, vue de face, corps entier, pose neutre."
+"line": "Un ver luisant des grottes, petite larve pâle qui pend au bout de fils lumineux bleu-vert, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2392,19 +2392,19 @@ window.PROMPTS_CARNET = [
 "id": "ins-papillon-nuage",
 "name": "Papillon-nuage",
 "size": "peu commun ✨",
-"line": "Un papillon-nuage merveilleux, ailes de coton blanc moelleux, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon-nuage merveilleux, ailes de coton blanc moelleux, ailes ouvertes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-libellule-des-vents",
 "name": "Libellule des vents",
 "size": "rare ✨",
-"line": "Une libellule des vents merveilleuse, long corps bleu ciel, quatre très longues ailes pâles qui planent, vue de face, corps entier, pose neutre."
+"line": "Une libellule des vents merveilleuse, long corps bleu ciel, quatre très longues ailes pâles qui planent, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-papillon-aurore",
 "name": "Papillon-aurore",
 "size": "légendaire 👑",
-"line": "Un papillon-aurore légendaire, grandes ailes aux couleurs dégradées du lever du jour, rose, orange, or et violet, halo de lumière, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon-aurore légendaire, grandes ailes aux couleurs dégradées du lever du jour, rose, orange, or et violet, halo de lumière, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
 },
@@ -2416,21 +2416,21 @@ window.PROMPTS_CARNET = [
 "id": "ins-scarabee-de-lave",
 "name": "Scarabée de lave",
 "size": "peu commun ✨",
-"line": "Un scarabée de lave merveilleux, carapace d'obsidienne noire luisante aux fissures rougeoyantes, vue de face, corps entier, pose neutre."
+"line": "Un scarabée de lave merveilleux, carapace d'obsidienne noire luisante aux fissures rougeoyantes, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-papillon-de-braise",
 "name": "Papillon de braise",
 "size": "rare ✨",
-"line": "Un papillon de braise merveilleux, ailes incandescentes orange et rouge comme des braises, ailes ouvertes, vue de face, corps entier, pose neutre."
+"line": "Un papillon de braise merveilleux, ailes incandescentes orange et rouge comme des braises, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
 }
 ],
-"lead": "Les insectes du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier (bible).",
+"lead": "Les insectes du Grand Carnet. Créatures (pour Meshy) : vue de côté légèrement en hauteur, corps entier (choix de Yo).",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans Gemini.",
-"Vérifie l'image : un seul insecte, entier, fond blanc.",
+"Vérifie l'image : un seul insecte, entier, fond blanc, vu de côté.",
 "Enregistre-la sous le nom de l'objet (par exemple coccinelle.png) et coche la case."
 ]
 },
