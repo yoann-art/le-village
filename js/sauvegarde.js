@@ -34,7 +34,7 @@ export let state, migrationMsg = null;
      maintenant l'objet lui-même, sorti du sac (un outil, ou une pile de graines…) */
   state.barre = state.barre.map(k => {
     if(typeof k !== "string") return k;
-    const pile = OUTILS[k] || (POSABLES[k] && POSABLES[k].seul) ? 1 : SAC.pile;
+    const pile = OUTILS[k] ? OUTILS[k].pile || 1 : POSABLES[k] && POSABLES[k].seul ? 1 : SAC.pile;
     let n = 0;
     for(let j = state.sac.length - 1; j >= 0 && n < pile; j--){
       const it = state.sac[j];

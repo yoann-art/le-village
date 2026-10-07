@@ -35,6 +35,7 @@ import { player, frontTile, dir4 } from "./monde/personnage.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
+import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
@@ -58,6 +59,17 @@ const MINE = {obj: mineRock, mesh: mineRockMesh, set: setMineRock, cx: () => 0};
 const inMine = () => { const p = currentPlace(); return !!p && p.b.type === "mine"; };
 const FORET = {obj: foretObj, mesh: foretMesh, set: setForetObj, cx: x => x - W_FORET/2 + .5};
 const inForet = () => { const p = currentPlace(); return !!p && p.b.type === "foret"; };
+/* La grotte de la forêt (étape 1.8) : ses rochers, ses veines et ses coffres au trésor, pour la visite en cours */
+const GROTTE = {obj: grotteObj, mesh: grotteMesh, set: setGrotteObj, cx: x => x - W_GROTTE/2 + .5};
+const inGrotte = () => { const p = currentPlace(); return !!p && p.b.type === "grotte"; };
+function targetGrotte(){
+  const d = dir4(), p = player.position;
+  for(const dist of [.8, 1.3]){
+    const i = gtile(p.x + d.x * dist, p.z + d.z * dist), o = i >= 0 && grotteObj(i);
+    if(o) return {w: GROTTE, i, x: i % W_GROTTE, z: Math.floor(i / W_GROTTE), o};
+  }
+  return null;
+}
 /* Dans la forêt : l'arbre ou le rocher juste devant */
 function targetForet(){
   const d = dir4(), p = player.position;
@@ -85,6 +97,7 @@ function targetMine(){
 function target(){
   if(inMine()) return targetMine();
   if(inForet()) return targetForet();
+  if(inGrotte()) return targetGrotte();
   const own = [tileOf(player.position.x), tileOf(player.position.z)];
   for(const dist of [0, .8]){
     const [x, z] = dist ? frontTile(dist) : own;
@@ -147,7 +160,7 @@ function giveSeed(k){
 /* ----- Le bouton d'action : son texte, et ce qu'il fait ----- */
 let cur = null, act = null, anim = null;              // ce qu'on vise ; son action {label, run} ; l'animation {i, t, kind}
 const hits = new Map();                               // coups déjà donnés à chaque arbre, buisson ou rocher
-const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : "") + t.i;
+const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : t.w === GROTTE ? "g" : "") + t.i;
 const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
@@ -157,6 +170,9 @@ function actionOf(t){
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
   const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
+  if(t.o === "tresor") return {label: "🎁 Ouvrir le coffre au trésor", run: () => ouvrirTresor(t)};
+  if(t.o === "rockOr"){ const h2 = hits.get(hk(t)); return {label: `⛏️ Miner la veine d'or${h2 ? ` (${RECOLTE.rockOr.coups - h2})` : ""}`, run: () => couper(t)}; }
+  if(t.o === "racines") return info("🕳️ La grotte, sous les racines du vieux chêne : avance dans l'ouverture pour y descendre");
   if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
   /* Les arbres de la forêt (dans la forêt, ou plantés sur l'île) : chacun son bois et sa graine ; le houx et le
      sureau se cueillent (baies, fleurs), et se coupent hache en main */
@@ -235,6 +251,20 @@ export function updateRecolte(dt, active){
 }
 btn.addEventListener("click", () => { if(act && !anim) act.run(); });
 
+/* ----- Un coffre au trésor de la grotte (étape 1.8) : de l'or, et de quoi continuer (plus on descend, plus il y en a) ----- */
+function ouvrirTresor(t){
+  const p = palierEnCours() || 1, or = 3 * p + Math.floor(Math.random() * 4 * p);
+  const choix = [["cuivre", 2 + Math.floor(Math.random() * 3)], ["fleche", 5], ["torche", 2], ["cuivre", 3 * p]];
+  const gains = [choix[Math.floor(Math.random() * choix.length)]];
+  if(p > 1) gains.push(choix[Math.floor(Math.random() * choix.length)]);
+  if(gains.some(([k, n]) => sacPlace(k) < n)){ toast("🎒 Ton sac est plein : fais de la place pour ouvrir le coffre", 3000); return; }
+  for(const [k, n] of gains){ sacAdd(k, n); barreAuto(k); }
+  addOwned("or", or);
+  t.w.set(t.i, null);
+  syncBarre(); renderHUD(); save();
+  toast(`🎁 Le coffre s'ouvre : +${or} or, ${gains.map(([k, n]) => `+${n} ${nomDe(k, n)}`).join(", ")}`, 3400);
+}
+
 /* ----- Ramasser ce qui est par terre ----- */
 function ramasser(t){
   const d = SOL[solAt(t.i)], n = gain(d.n, d.res);
@@ -301,13 +331,13 @@ function remplir(){
 }
 
 /* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
-const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé"};
+const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée"};
 const IL_FAUT = {hache: "🪓 Il te faut une hache dans ton sac : fabrique-la", pioche: "⛏️ Il te faut une pioche dans ton sac : fabrique-la"};
 function couper(t){
   const R = RECOLTE[t.o], k = takeTool(R.outil);
   if(!k){ toast(`${IL_FAUT[R.outil]} à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
   const n = R.res ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
-  if(n){ if(!sacOk(R.res, n)) return; sacAdd(R.res, n); renderHUD(); }
+  if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); } renderHUD(); }   // l'or va dans la bourse
   const h = (hits.get(hk(t)) || 0) + 1;
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {

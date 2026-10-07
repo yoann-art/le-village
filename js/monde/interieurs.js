@@ -11,6 +11,7 @@ import { makeMeuble } from "./meubles.js";
 import { COULEURS } from "../donnees.js";
 import { makeMine } from "./mine.js";
 import { makeForet } from "./foret.js";
+import { makeGrotte } from "./grotte.js";
 
 export const interior = new THREE.Scene();
 interior.background = new THREE.Color(0x1E1813);
@@ -61,6 +62,14 @@ export function buildRoom(b){
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
     interior.add(room); lampeSur(0, D_FORET / 2);
     return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk};
+  }
+  if(b.type === "grotte"){                           // la grotte de la forêt (étape 1.8) : construite par grotte.js, noire
+    const m = makeGrotte(b.palier);
+    room = m.group; floor.count = 0;
+    interior.background.setHex(m.fond);
+    hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
+    interior.add(room); lampeSur(0, 0);
+    return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk, passages: m.passages, depart: m.depart};
   }
   if(b.type === "mine"){                             // la mine : une grotte, construite par mine.js
     const m = makeMine();

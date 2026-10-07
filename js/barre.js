@@ -72,7 +72,9 @@ export function mettreEnCase(i, k){
 }
 /* La jauge d'eau d'un arrosoir (vide si ce n'est pas un arrosoir) */
 export const jauge = k => OUTILS[k] && OUTILS[k].eau
-  ? `<span class="jauge" aria-hidden="true"><i style="width:${Math.round(100 * Math.min(state.eau, OUTILS[k].eau) / OUTILS[k].eau)}%"></i></span>` : "";
+  ? `<span class="jauge" aria-hidden="true"><i style="width:${Math.round(100 * Math.min(state.eau, OUTILS[k].eau) / OUTILS[k].eau)}%"></i></span>`
+  : OUTILS[k] && OUTILS[k].duree && state.torche > 0                 // la torche allumée : ce qui lui reste à brûler
+  ? `<span class="jauge feu" aria-hidden="true"><i style="width:${Math.round(100 * state.torche / OUTILS[k].duree)}%"></i></span>` : "";
 export function renderBarre(){
   bar.innerHTML = state.barre.map((it, i) => { const k = it && it.k;
     return k

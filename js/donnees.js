@@ -85,6 +85,9 @@ export const OUTILS = {
   filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, usage:"Pour attraper les insectes et les oiseaux : approche à pas de loup, en poussant le joystick doucement, puis « Attraper » ou « Lancer le filet »."},
   epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."},
   /* La chasse (étape 1.7, morceau 5, carnet : « Arc et flèches | Établi, en bois d'if ») */
+  /* La grotte (étape 1.8, carnet : « Torche, puis lanterne : éclairer les grottes ; la torche s'use ») : elles
+     s'empilent (pile), chacune brûle duree secondes, seulement dans la grotte */
+  torche:      {nom:"Torche", pluriel:"torches", emoji:"🔥", famille:"torche", force:1, pile:10, duree:600, usage:"Dans la grotte, elle s'allume toute seule et éclaire loin autour de toi. Elle brûle 10 minutes, puis la suivante prend le relais. Elle se refait à l'établi."},
   arcIf:       {nom:"Arc en if", pluriel:"arcs en if", emoji:"🏹", famille:"arc", force:1, usage:"Dans la Forêt profonde : suis les traces, approche le gibier à pas de loup et sous le vent, puis « Tirer ». Il lui faut des flèches."},
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
@@ -135,6 +138,7 @@ export const RECOLTE = {
   /* Les rochers de l'île ne reviennent jamais (décidé par Yo) : ensuite, la pierre se trouve à la mine */
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:2, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:2, prendre:"rocherCuivre"},
+  rockOr: {nom:"la veine d'or", outil:"pioche", coups:4, res:"or", parCoup:2},           // la grotte (étape 1.8) : l'or va dans la bourse
   herbe:  {nom:"les herbes hautes", cueille:"fibre", n:2, repousse:900, graine:"graineHerbe"},
   buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
@@ -463,6 +467,7 @@ export const ATELIERS = {
     {out:"canneBois", in:{planche:4, fibre:3}, t:40, lvl:1, cat:"Outils"},
     {out:"filet", in:{planche:2, fibre:4}, t:40, lvl:1, cat:"Outils"},
     {out:"arcIf", in:{boisIf:3, fibre:4}, t:60, lvl:1, cat:"Outils"},
+    {out:"torche", n:2, in:{bois:1, fibre:2}, t:10, lvl:1, cat:"Outils"},
     {out:"fleche", n:10, in:{planche:2, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
     {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},

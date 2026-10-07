@@ -37,6 +37,9 @@ const CLAIRIERES = [[M, 42, 5], [10, 32, 4.4], [38, 32.5, 4.6], [M, 7.5, 5.2], [
 const COEUR = [M - 1, 5];                                // le Grand Chêne millénaire : 2 × 2 cases
 const SOURCE = [[M - 3, 6], [M - 2, 6], [M - 3, 7], [M - 2, 7]];   // la source, au bord du grand sentier, près du Grand Chêne
 const PONTS = new Set([M - 1, M, 9, 10, 38, 39]);       // les colonnes des sentiers qui enjambent le ruisseau
+/* L'entrée de la grotte (étape 1.8, carnet : « sous les racines des vieux arbres ») : au nord de la clairière du
+   nord-ouest, une ouverture de deux cases (colonnes 9 et 10, rangée 9) sous les racines d'un vieux chêne */
+const GROTTE = [9, 9];
 /* Le chemin du Cerf blanc (chasse.js), en cases : de la clairière du cœur, par le sentier de l'est, à la clairière du nord-est */
 export const CHEMIN_BLANC = [[M + 1.5, 8.5], [M + 5, 9.8], [M + 9, 10.2], [M + 13, 10.2], [38.5, 11.6]];
 export const foret = {type: new Array(W * D).fill("mousse"), obj: new Array(W * D).fill(null), r: new Array(W * D).fill(0)};
@@ -73,7 +76,13 @@ export const sources = new Set();                        // les cases d'eau de l
   /* la source, au cœur de la forêt, dans la clairière du Grand Chêne, au bord du grand sentier (morceau 4, carnet :
      la Truite d'argent) ; posée après les arbres, pour ne rien changer au reste du tirage */
   for(const [x, z] of SOURCE){ T[at(x, z)] = "eau"; O[at(x, z)] = null; sources.add(at(x, z)); }
+  /* les racines du vieux chêne de la grotte, autour de l'ouverture (posées après coup, elles aussi) */
+  for(let z = GROTTE[1] - 2; z <= GROTTE[1]; z++) for(let x = GROTTE[0] - 1; x <= GROTTE[0] + 2; x++){
+    T[at(x, z)] = "herbe"; O[at(x, z)] = z === GROTTE[1] && (x === GROTTE[0] || x === GROTTE[0] + 1) ? null : "racines";
+  }
 }
+/* Le seuil de la grotte : le milieu de l'ouverture, à son bord nord (on y entre en marchant vers le haut, voir lieux.js) */
+export const ENTREE_GROTTE = {x: cx(GROTTE[0]) + .5, z: cz(GROTTE[1]) - .5};
 /* Le centre d'un arbre de la forêt (légèrement décalé, comme son modèle) et sa taille */
 export function arbreEn(i){
   const sp = foret.obj[i], r = foret.r[i];
@@ -179,6 +188,25 @@ export function makeForet(){
   for(let k = 0; k < 14; k++){
     const a = k / 14 * 6.28, x = cx(SOURCE[0][0]) + .5 + Math.cos(a) * 1.45, z = cz(SOURCE[0][1]) + .5 + Math.sin(a) * 1.45;
     if(foret.type[ftile(x, z)] !== "sentier") group.add(part(G.head, k % 2 ? 0xB8B4AC : 0x9A968E, .45, .25, .4, x, .02, z));
+  }
+  /* l'entrée de la grotte : un vieux chêne trapu, ses racines en arche au-dessus d'une ouverture noire */
+  {
+    const x0 = ENTREE_GROTTE.x, z0 = ENTREE_GROTTE.z;
+    group.add(part(G.cyl, 0x4A3A2A, 2.6, 2.4, 1.6, x0, 1.2, z0 - 1.1));                       // le tronc, large et bas
+    group.add(part(G.box, 0x050404, 1.7, 1.15, .3, x0, .55, z0 - .2));                         // l'ouverture
+    const arche = new THREE.Mesh(new THREE.TorusGeometry(.95, .17, 6, 14, Math.PI), new THREE.MeshLambertMaterial({color: 0x5A4030}));
+    arche.position.set(x0, .25, z0 - .05); group.add(arche);                                    // les racines en arche
+    for(const s of [-1, 1]){
+      const rac = part(G.cyl, 0x5A4030, .3, 1.4, .3, x0 + s * 1.55, .35, z0 + .1); rac.rotation.z = s * 1.1; group.add(rac);
+      const rac2 = part(G.cyl, 0x4E3828, .25, 1.1, .25, x0 + s * 1.25, .25, z0 - .9); rac2.rotation.x = .9; rac2.rotation.z = s * .5; group.add(rac2);
+    }
+    group.add(part(G.leaf, 0x2E5E34, 4.6, 3.2, 4.2, x0, 3.9, z0 - 1.4));                       // le feuillage, sombre
+    group.add(part(G.leaf2, 0x386A3A, 3.4, 2.6, 3.2, x0 + .9, 4.8, z0 - 1.8));
+    const luit = new THREE.MeshLambertMaterial({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
+    for(const [dx, dz] of [[-1.1, .25], [1.25, .3], [-.75, .45]]){                              // des champignons qui luisent au seuil
+      group.add(part(G.cyl, 0xE8E0D0, .05, .14, .05, x0 + dx, .07, z0 + dz));
+      group.add(part(G.hair, luit, .55, .5, .55, x0 + dx, .13, z0 + dz));
+    }
   }
   /* la sortie : des planches au bout du sentier, au sud */
   group.add(part(G.box, 0x8A5A3B, 2, .03, .6, 0, .015, D/2 - .3));

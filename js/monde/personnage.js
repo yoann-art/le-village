@@ -34,6 +34,21 @@ export function holdTool(k){
   if(k){ held = makeOutil(k); hand.add(held); }
   hand.visible = !!k;
 }
+/* La torche, dans la main gauche (étape 1.8) : allumée dans la grotte, sa flamme vacille (t : le temps) */
+const torche = new THREE.Group();
+torche.position.set(.27, .4, .1);
+torche.add(part(G.head, 0xF2C9A0, .38, .38, .38, 0, 0, 0));
+torche.add(part(G.cyl, 0x7A4E2A, .05, .42, .05, 0, .16, .04));
+const flamme = part(G.head, new THREE.MeshLambertMaterial({color: 0xFFB347, emissive: 0xFF8A1E, emissiveIntensity: 1}), .5, .8, .5, 0, .42, .04);
+const coeur = part(G.head, new THREE.MeshLambertMaterial({color: 0xFFF2B0, emissive: 0xFFE070, emissiveIntensity: 1}), .25, .45, .25, 0, .4, .04);
+flamme.castShadow = coeur.castShadow = false;
+torche.add(flamme, coeur);
+torche.visible = false;
+body.add(torche);
+export function tenirTorche(oui, t = 0){
+  torche.visible = !!oui;
+  if(oui){ const f = 1 + Math.sin(t * 17) * .12 + Math.sin(t * 9.3) * .08; flamme.scale.set(.5 * f, .8 * (2 - f), .5 * f); }
+}
 /* Penche la main (et l'outil) vers l'avant : rx en radians ; sans rien, la position normale (la pêche s'en sert) */
 export function pencheMain(rx){ hand.rotation.x = rx === undefined ? .35 : rx; }
 player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P

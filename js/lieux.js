@@ -1,7 +1,10 @@
 /* ================= Dehors et dedans =================
    On entre dans un bâtiment en marchant dans sa porte,
    on en sort en repassant par la porte (le paillasson).
-   Un court fondu au noir cache le changement de lieu. */
+   Un court fondu au noir cache le changement de lieu.
+   La grotte (étape 1.8) est un lieu dans un lieu : on y entre depuis la Forêt profonde (les racines du vieux chêne),
+   on descend ses paliers par le trou du fond, et on en sort vers la forêt (le tunnel du premier palier, la corde
+   des suivants) ; jamais directement au village (bible : « on sort par les paliers »). */
 import { $ } from "./outils.js";
 import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
@@ -10,11 +13,13 @@ import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
 import { meubleAt, hasPlan } from "./monde/meubles.js";
+import { ENTREE_GROTTE } from "./monde/foret.js";
+import { PALIERS } from "./monde/grotte.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable } from "./monde/personnage.js";
 import { placing } from "./construire.js";
 import { toast } from "./interface.js";
 
-let inside = null;        // {b, room} quand on est dans un bâtiment
+let inside = null;        // {b, room} quand on est dans un bâtiment ; dans la grotte : {b: {type: "grotte", palier}, room, foret}
 let busy = false;         // pendant le fondu
 let jump = false;         // la caméra doit sauter d'un coup au nouveau lieu
 const fondu = $("#fondu");
@@ -65,6 +70,33 @@ function enter(b){
     if(a && !hasPlan(b)) setTimeout(() => toast(`${a.emoji} Pas encore ${a.le.startsWith("l'") ? "d'" + a.le.slice(2) : "de " + a.le.slice(3)} ici : construis-${a.fem ? "la" : "le"} dans « 🪑 Décorer », puis « Meubles »`, 4200), 400);
   });
 }
+/* La grotte : y entrer (depuis la forêt), ou descendre au palier suivant */
+const MOTS = ["", "🕳️ La grotte, sous les racines : il y fait noir. Une torche (établi de la Scierie) éclaire autour de toi. Au fond, un trou descend plus bas ; plus on descend, plus il y a de butin.",
+  "🕳️ Deuxième palier : plus sombre, plus riche. La corde, près de l'échelle, remonte à la forêt.",
+  "🕳️ Le fond de la grotte : le dernier palier. La corde, près de l'échelle, remonte à la forêt."];
+export function entrerGrotte(palier){
+  const foret = inside && (inside.foret || inside.b);
+  fade(() => {
+    const b = {type: "grotte", palier}, room = buildRoom(b);
+    inside = {b, room, foret};
+    setWalkable(room.walk);
+    if(room.depart) placePlayer(room.depart.x, room.depart.z, 0, 1);
+    else placePlayer(room.doorX, room.d/2 - R - .3, 0, -1);
+    $("#btn-deco").hidden = true;
+    setTimeout(() => toast(MOTS[palier], 5000), 400);
+  });
+}
+/* Sortir de la grotte : on se retrouve dans la forêt, devant les racines du vieux chêne */
+function sortirGrotte(){
+  const b = inside.foret;
+  fade(() => {
+    const room = buildRoom(b);
+    inside = {b, room};
+    setWalkable(room.walk);
+    placePlayer(ENTREE_GROTTE.x, ENTREE_GROTTE.z + 1.2, 0, 1);
+    $("#btn-deco").hidden = true;
+  });
+}
 function exit(){
   const b = inside.b;
   fade(() => {
@@ -83,7 +115,17 @@ export function checkDoors(pushing){
   if(busy || !pushing || placing) return;
   const p = player.position, d = dir4();
   if(inside){
-    const {room} = inside;
+    const {room, b} = inside;
+    if(b.type === "grotte"){                         // le trou qui descend, la corde qui remonte, le tunnel du premier palier
+      for(const q of room.passages) if(Math.hypot(p.x - q.x, p.z - q.z) < .45){
+        if(q.vers === "bas" && b.palier < PALIERS) entrerGrotte(b.palier + 1); else sortirGrotte();
+        return;
+      }
+      if(room.doorX !== null && d.z === 1 && Math.abs(p.x - room.doorX) < .45 && p.z > room.d/2 - R - .08) sortirGrotte();
+      return;
+    }
+    /* dans la forêt : les racines du vieux chêne, en marchant vers le haut dans l'ouverture */
+    if(b.type === "foret" && d.z === -1 && Math.abs(p.x - ENTREE_GROTTE.x) < .6 && p.z < ENTREE_GROTTE.z + R + .12 && p.z > ENTREE_GROTTE.z - .6){ entrerGrotte(1); return; }
     if(d.z === 1 && Math.abs(p.x - room.doorX) < .45 && p.z > room.d/2 - R - .08) exit();
     return;
   }
@@ -96,7 +138,7 @@ export function checkDoors(pushing){
 
 /* Position à sauvegarder sur l'île : dedans, on garde la place devant la porte,
    pour reprendre dehors si le jeu est rouvert */
-export function islandPos(){ return inside ? outsideSpot(inside.b) : {x: player.position.x, z: player.position.z}; }
+export function islandPos(){ return inside ? outsideSpot(inside.foret || inside.b) : {x: player.position.x, z: player.position.z}; }
 
 /* Point que regarde la caméra : dedans, elle suit le personnage sans trop sortir de la pièce
    (si la pièce tient dans l'écran, elle reste au milieu) */

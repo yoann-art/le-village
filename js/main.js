@@ -21,6 +21,7 @@ import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, isl
 import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
 import { updateCoffrePiece } from "./coffres.js";
+import { updateTorche } from "./torche.js";
 import { lampeSur } from "./monde/interieurs.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
@@ -61,7 +62,7 @@ function tick(now){
   if(pushing) dirty = true;
   checkDoors(pushing);
   const dv = decoView();
-  const foret = isInside() && currentPlace().b.type === "foret";                // la forêt se voit comme dehors, en grand
+  const foret = isInside() && ["foret", "grotte"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
   if(takeJump()) camT.copy(target);
@@ -78,7 +79,8 @@ function tick(now){
   }
   updatePlan(isInside() && !decorating() && !lifting() && !isBusy());   // bouton du plan de travail, quand on est tout près
   updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden);   // un coffre dans la pièce : l'ouvrir, ou le poser
-  updateRecolte(dt, (!isInside() || ["mine", "foret"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
+  updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
+  updateTorche(dt);                                        // dans la grotte : la torche éclaire et s'use
   renderer.render(currentScene(), camera);
   if(dirty && now - lastSave > 2000){
     const p = islandPos();

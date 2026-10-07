@@ -42,6 +42,10 @@ const BUILD = {
     const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
     anse.rotation.x = Math.PI/2; g.add(anse);
   },
+  torche(g){                                                                         // la torche éteinte : un bâton, une tête de résine
+    g.add(part(G.cyl, C.wood, .05, .5, .05, 0, .16, 0));
+    g.add(part(G.cyl, C.dark, .09, .14, .09, 0, .44, 0));
+  },
   arc(g){                                                                            // l'arc en if, tenu debout, et sa corde
     const bois = new THREE.Mesh(new THREE.TorusGeometry(.34, .025, 6, 18, Math.PI * .8), new THREE.MeshLambertMaterial({color: 0xC8743C}));
     bois.rotation.z = Math.PI * .6; bois.rotation.y = Math.PI/2; bois.position.set(0, .3, -.2); g.add(bois);

@@ -106,7 +106,7 @@ let actPiece = null;
 export function updateCoffrePiece(active){
   const place = active && currentPlace();
   actPiece = null;
-  if(place && !B[place.b.type].fixe){
+  if(place && B[place.b.type] && !B[place.b.type].fixe){
     const p = player.position, proche = ((place.b.deco && place.b.deco.items) || []).find(it => {
       if(!it.reserve) return false;
       const [w, d] = footOf(it);

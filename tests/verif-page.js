@@ -6,6 +6,7 @@
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
    chasser à l'arc (un chevreuil, approché sous le vent) et ramasser le présent du Cerf blanc,
+   la grotte (y entrer depuis la forêt, la torche allumée, descendre d'un palier, remonter par la corde),
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
@@ -19,7 +20,7 @@ import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
-import { foret, foretObj, W as WF, fcx, fcz } from "../js/monde/foret.js";
+import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -334,6 +335,25 @@ export async function verifier(){
     if(!owned("boisArgent") || !state.cerfBlanc) throw new Error("le bois d'argent n'est pas dans le sac");
     await sortir();
     return "un chevreuil (2 viandes, 1 cuir, la flèche reprise), puis le bois d'argent";
+  });
+  await etape("La grotte : y entrer depuis la forêt, descendre d'un palier, remonter", async () => {
+    place(2);
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    sacAdd("torche", 2); hold(null);
+    const E = ENTREE_GROTTE;
+    placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
+    if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte par les racines");
+    await wait(400);
+    if(!(state.torche > 0)) throw new Error("la torche ne s'allume pas dans la grotte");
+    const bas = currentPlace().room.passages.find(p => p.vers === "bas");
+    if(!bas) throw new Error("pas de trou pour descendre");
+    placePlayer(bas.x, bas.z + .3, 0, -1); checkDoors(true);
+    if(!await attendre(() => currentPlace().b.palier === 2)) throw new Error("on ne descend pas au palier 2");
+    const haut = currentPlace().room.passages.find(p => p.vers === "haut");
+    placePlayer(haut.x, haut.z + .3, 0, -1); checkDoors(true);
+    if(!await attendre(() => currentPlace().b.type === "foret")) throw new Error("la corde ne ramène pas à la forêt");
+    await sortir();
+    return "palier 1, palier 2, puis la corde jusqu'à la forêt";
   });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
