@@ -43,6 +43,7 @@ function chain(q){
 /* Les recettes d'un plan de travail (key : pour les retrouver au toucher) ; le comptoir y ajoute la vente des
    poissons et des plats qu'on possède, avec leur prix (POISSONS, PRODUITS) */
 const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf"];
+const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse"];
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 function recettesDe(b){
@@ -58,6 +59,8 @@ function recettesDe(b){
   for(const k of FORET_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La Forêt profonde", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* la chasse (morceau 5) : la viande et les peaux, en attendant le potager et l'équipement (décidé par Yo) */
   for(const k of CHASSE_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La chasse", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
+  /* ce que laissent les monstres de la grotte (étape 1.8), en attendant l'équipement et les potions */
+  for(const k of MONSTRES_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Les monstres", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   return list;
 }
 /* Vendre au comptoir : tout de suite (demande de Yo) ; l'or va dans la bourse, avec le bonus du Marché */

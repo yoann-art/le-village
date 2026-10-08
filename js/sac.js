@@ -5,12 +5,14 @@
    - Coffres : ce que contiennent tous les coffres de réserve du village, pour s'y retrouver.
    - Carnet (le carnet de collection de la bible) : une page par collection, les poissons (étape 1.6 : chaque
      espèce prise, combien de fois et la plus grosse, state.carnet.poissons), les insectes et les oiseaux (étape 1.7,
-     state.carnet.insectes, state.carnet.oiseaux) ; ce qu'on n'a pas encore pris reste un « ? ».
+     state.carnet.insectes, state.carnet.oiseaux), le gibier (state.carnet.gibier) et les monstres (étape 1.8 :
+     chaque espèce vaincue, son signe avant l'attaque, ce qu'elle laisse, state.carnet.monstres) ; ce qu'on n'a pas
+     encore pris reste un « ? ».
    Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
    on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
    est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { coffresCount } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
@@ -124,8 +126,27 @@ function carnetHTML(){
       <button class="sh-tab" role="tab" data-carnet-page="insectes" aria-selected="${page === "insectes"}">🦋 Insectes</button>
       <button class="sh-tab" role="tab" data-carnet-page="oiseaux" aria-selected="${page === "oiseaux"}">🐦 Oiseaux</button>
       <button class="sh-tab" role="tab" data-carnet-page="gibier" aria-selected="${page === "gibier"}">🦌 Gibier</button>
+      <button class="sh-tab" role="tab" data-carnet-page="monstres" aria-selected="${page === "monstres"}">👹 Monstres</button>
     </div>`;
-  return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : page === "gibier" ? gibierHTML() : poissonsHTML());
+  return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : page === "gibier" ? gibierHTML()
+    : page === "monstres" ? monstresHTML() : poissonsHTML());
+}
+/* Les monstres (étape 1.8, morceau 3 ; Grand Carnet : « chaque espèce vaincue s'inscrit au carnet ») : leur taille,
+   leur comportement, le signe avant l'attaque, ce qu'ils laissent */
+function monstresHTML(){
+  const c = state.carnet.monstres, ks = Object.keys(MONSTRES), vu = k => c[k] && c[k].n > 0;
+  const tuile = k => { const L = MONSTRES[k], on = fiche === k ? " on" : "";
+    return vu(k)
+      ? `<button class="tile${on}" data-carnet="${k}"><div class="te" aria-hidden="true">${L.emoji}</div><div class="tl">${L.nom}</div><div class="tn">× ${c[k].n}</div></button>`
+      : `<button class="tile inconnu${on}" data-carnet="${k}" aria-label="Monstre pas encore vaincu"><div class="te" aria-hidden="true">?</div><div class="tl">???</div></button>`; };
+  const L = fiche && MONSTRES[fiche], e = L && L.une ? "e" : "";
+  const laisse = L && Object.entries(L.donne).map(([k, n]) => `${n} ${(n > 1 ? objet(k).pluriel : objet(k).nom).toLowerCase()}`).join(", ");
+  const detail = !L ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche un monstre pour voir sa fiche.</p>`
+    : vu(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${L.emoji}</span><div class="pt"><b>${L.nom}</b><p>${L.comportement}. Taille : ${L.taille}.</p>` +
+      `<p>⚠️ Son signe avant l'attaque : ${L.annonce.toLowerCase()}.</p><p>${L.une ? "Elle" : "Il"} laisse : ${laisse}. Vaincu${e} ${c[fiche].n} fois.</p></div></div>`
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore vaincu${e}</b><p>On ${L.une ? "la" : "le"} rencontre dans la grotte de la Forêt profonde, sous les racines du vieux chêne. Observe bien son signe avant l'attaque !</p></div></div>`;
+  return `<p class="muted" style="margin:0 0 8px">👹 Monstres : ${ks.filter(vu).length} sur ${ks.length}. Chaque attaque s'annonce par un signe : on gagne en observant.</p>` + detail +
+    `<h3 style="margin:8px 0 4px">🌲 La grotte de la Forêt profonde</h3><div class="res-grid">${ks.map(tuile).join("")}</div>`;
 }
 /* Le gibier (étape 1.7, morceau 5) : chaque espèce chassée met son trophée au carnet (carnet) ; le Cerf blanc,
    qui ne se chasse pas, s'y inscrit quand il a offert son bois d'argent */

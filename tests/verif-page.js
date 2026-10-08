@@ -7,8 +7,9 @@
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
    chasser à l'arc (un chevreuil, approché sous le vent) et ramasser le présent du Cerf blanc,
    la grotte (y entrer depuis la forêt, la torche allumée, descendre d'un palier, remonter par la corde),
-   le combat (un loup qui mord, la roulade qui esquive, l'épée qui le vainc, le poisson grillé qui soigne, vaincu :
-   le retour dans la forêt, toute sa vie revenue),
+   le combat (un loup qui mord, la roulade qui esquive, l'épée qui le vainc et ce qu'il laisse, une chauve-souris,
+   le poisson grillé qui soigne, vaincu : le retour dans la forêt, toute sa vie revenue), le sanglier de la forêt
+   (touché à l'arc, il charge ; vaincu à l'épée),
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
@@ -22,7 +23,7 @@ import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
-import { lacherMonstre, pauseMonstres, monstresVaincus } from "../js/monstres.js";
+import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../js/monstres.js";
 import { combat, vieCombat } from "../js/combat.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
@@ -361,7 +362,7 @@ export async function verifier(){
     return "palier 1, palier 2, puis la corde jusqu'à la forêt";
   });
   await etape("Le combat : un loup mord, la roulade esquive, l'épée le vainc, le poisson grillé soigne, vaincu", async () => {
-    place(3);
+    place(6);                                          // l'épée, le poisson grillé, et ce que laissent le loup et la chauve-souris
     await entrer(state.buildings.find(b => b.type === "foret"));
     sacAdd("epeeBois", 1); sacAdd("poissonGrille", 1); hold(null);
     const E = ENTREE_GROTTE;
@@ -386,7 +387,13 @@ export async function verifier(){
     while(monstresVaincus() === avant && coups < 12){ combat.attaquer(); coups++; await wait(COMBAT.coup * 1000 + 100); }
     if(monstresVaincus() === avant) throw new Error("aucun loup vaincu à l'épée");
     if(state.main !== "epeeBois") throw new Error("l'épée n'est pas prise en main");
+    if(!owned("croc") || !owned("fourrureGrise") || !state.carnet.monstres.loup) throw new Error("le loup vaincu ne laisse ni croc ni fourrure, ou n'est pas au carnet");
     pauseMonstres(true);                               // l'autre loup s'en va
+    /* une chauve-souris qui remonte après son plongeon : un coup suffit */
+    p = player.position;
+    lacherMonstre("chauveSouris", p.x + 1, p.z, "remonte");
+    combat.attaquer(); await wait(200);
+    if(!owned("aileMembraneuse")) throw new Error("la chauve-souris n'est pas vaincue d'un coup d'épée");
     /* le poisson grillé rend des cœurs */
     const v = vieCombat(), poissons = sacCount("poissonGrille");
     combat.manger();
@@ -398,13 +405,42 @@ export async function verifier(){
     if(!await attendre(() => currentPlace() && currentPlace().b.type === "foret")) throw new Error("vaincu, on ne se retrouve pas dans la forêt");
     if(vieCombat() !== COMBAT.vie || !$("#coeurs").hidden) throw new Error("la vie ne revient pas en sortant de la grotte");
     await sortir();
-    return `mordu (${COMBAT.vie - vie} cœur), esquivé, un loup vaincu en ${coups} coups, soigné, puis réveillé dans la forêt`;
+    return `mordu (${COMBAT.vie - vie} cœur), esquivé, un loup vaincu en ${coups} coups, une chauve-souris, soigné, puis réveillé dans la forêt`;
+  });
+  await etape("Le sanglier de la forêt : touché à l'arc, il charge ; vaincu à l'épée", async () => {
+    place(6);                                          // l'arc, les flèches, l'épée, et ce que laisse le sanglier
+    pauseChasse(true);
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    if(!owned("arcIf")) sacAdd("arcIf", 1);
+    if(owned("fleche") < 2) sacAdd("fleche", 3);
+    if(!owned("epeeBois")) sacAdd("epeeBois", 1);
+    hold(null);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016); frames(2);
+    let p = player.position;
+    const w = vent();
+    lacherGibier("sanglier", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
+    if(!$("#btn-act").textContent.includes("Tirer")) throw new Error(`devant le sanglier, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(!await attendre(() => monstresIci().some(m => m.foret), 3000)) throw new Error("touché, le sanglier ne se retourne pas");
+    if($("#coeurs").hidden || $("#combat").hidden) throw new Error("pas de cœurs ni de boutons de combat quand le sanglier charge");
+    let coups = 0;
+    while(monstresIci().length && coups < 20){
+      const m = monstresIci()[0]; p = player.position;
+      if(Math.hypot(m.x - p.x, m.z - p.z) > 2) placePlayer(m.x + 1.2, m.z, -1, 0);
+      combat.attaquer(); coups++; await wait(COMBAT.coup * 1000 + 100);
+    }
+    if(monstresIci().length) throw new Error("le sanglier n'est pas vaincu à l'épée");
+    if(!state.carnet.gibier.sanglier || !owned("cuirEpais") || !owned("defense")) throw new Error("le sanglier vaincu ne laisse ni cuir épais ni défense");
+    if(!await attendre(() => $("#coeurs").hidden, 2000)) throw new Error("les cœurs restent après le combat");
+    await sortir();
+    return `${coups} coups d'épée, puis du cuir épais et une défense`;
   });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
     const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
     state.buildings.push(marche);
     try {
+      if(!state.sac.some(it => POISSONS[it.k])){ place(1); sacAdd("gardon", 1); }   // les poissons des essais d'avant ont pu être retirés pour faire de la place
       const poisson = state.sac.find(it => POISSONS[it.k]);
       if(!poisson) throw new Error("pas de poisson à vendre");
       const or = state.res.or, n = owned(poisson.k);

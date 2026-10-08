@@ -86,8 +86,8 @@ button{font:inherit;color:inherit}
 .ico-poisson{width:1.35em;height:.85em;vertical-align:middle}
 .ico{width:1em;height:1em;vertical-align:middle}
 .ico-insecte{width:1.05em;height:1.05em;vertical-align:middle}
-.sh-tabs.sous{margin-top:-2px}
-.sh-tabs.sous .sh-tab{font-size:14px;padding:6px 8px}
+.sh-tabs.sous{margin-top:-2px;flex-wrap:wrap;gap:6px}
+.sh-tabs.sous .sh-tab{flex:1 1 auto;font-size:14px;padding:6px 8px}
 .tile.inconnu .te{color:var(--muted);font-weight:700}
 .tile.legende{border-color:#F2C14E}
 .ico-poisson.legende{filter:drop-shadow(0 0 3px #F2C14E)}

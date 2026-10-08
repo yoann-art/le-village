@@ -97,8 +97,14 @@ function sortirGrotte(){
     $("#btn-deco").hidden = true;
   });
 }
-/* Pour le combat (étape 1.8) : vaincu dans la grotte, on se retrouve dans la forêt */
+/* Pour le combat (étape 1.8) : vaincu dans la grotte, on se retrouve dans la forêt ; vaincu dans la forêt, à son
+   orée (puis apres(), pendant le fondu) */
 export function quitterGrotte(){ if(inside && inside.b.type === "grotte" && !busy) sortirGrotte(); }
+export function reveilOree(apres){
+  if(!inside || inside.b.type !== "foret" || busy) return;
+  const room = inside.room;
+  fade(() => { placePlayer(room.doorX, room.d/2 - R - .3, 0, -1); if(apres) apres(); });
+}
 function exit(){
   const b = inside.b;
   fade(() => {

@@ -10,12 +10,15 @@
    plus sûr (sûr jusqu'à CHASSE.sur, puis de moins en moins jusqu'à CHASSE.portee). Touchée : sa viande et sa peau
    dans le sac, la flèche reprise, son trophée au carnet (state.carnet.gibier = {k: {n}}). Ratée : elle s'enfuit
    et la flèche est perdue.
+   Le sanglier (étape 1.8, morceau 3 ; carnet : « charge s'il est blessé ») : touché, il ne tombe pas, il se
+   retourne et charge (il devient un monstre : enrager, dans monstres.js ; on le finit à l'épée).
    Le Cerf blanc (légendaire, les nuits de pleine lune, au cœur de la forêt) ne se chasse pas : on le suit sans
    courir ; au bout de son chemin, il laisse son bois d'argent, une seule fois dans tout le jeu (state.cerfBlanc). */
 import { $ } from "./outils.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
-import { GIBIER, HEURES, PECHE, OUTILS, objet } from "./donnees.js";
+import { GIBIER, HEURES, PECHE, OUTILS, MONSTRES, objet } from "./donnees.js";
+import { modeleMonstre, enrager } from "./monstres.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacTake, sacCount, sacPlace, porte } from "./regles.js";
 import { foret, foretObj, walk, W, CHEMIN_BLANC } from "./monde/foret.js";
@@ -27,9 +30,9 @@ import { barreAuto, hold } from "./barre.js";
 
 /* Combien, où, à quelle distance ils sentent, entendent, voient ; la portée de l'arc (à régler en jouant) */
 export const CHASSE = {max: 2, de: 8, a: 14, rayon: 20, flair: 9, ouie: 6, vue: 2.2, portee: 7, sur: 3, ponte: 12};
-const FUITE = {lapin: 4.5, oiseau: 3.4, renard: 4.2, cervide: 5};          // vitesse de fuite
-const PAS = {lapin: 1.3, oiseau: .6, renard: .9, cervide: .7};             // vitesse de promenade
-const ECHELLE = {lapin: .8, oiseau: .8, renard: .85, cervide: .8};
+const FUITE = {lapin: 4.5, oiseau: 3.4, renard: 4.2, cervide: 5, sanglier: 4};          // vitesse de fuite
+const PAS = {lapin: 1.3, oiseau: .6, renard: .9, cervide: .7, sanglier: .7};             // vitesse de promenade
+const ECHELLE = {lapin: .8, oiseau: .8, renard: .85, cervide: .8, sanglier: 1};
 const nomDe = (k, n) => (n > 1 ? objet(k).pluriel || objet(k).nom : objet(k).nom).toLowerCase();
 const leNom = (k, maj) => { const p = GIBIER[k], s = `${p.une ? "la" : "le"} ${k === "cerfBlanc" ? p.nom : p.nom.toLowerCase()}`; return maj ? s[0].toUpperCase() + s.slice(1) : s; };
 
@@ -48,6 +51,7 @@ export function vent(t = Date.now()){
 
 /* ----- Les modèles, en formes simples et rondes (style jouet), la tête vers -z ----- */
 function modele(k){
+  if(GIBIER[k].forme === "sanglier") return modeleMonstre("sanglier");   // le même que dans la grotte
   const p = GIBIER[k], g = new THREE.Group(), c = p.couleur, c2 = p.c2, pattes = [], tete = new THREE.Group();
   const patte = (x, z, h, r, col) => { const piv = new THREE.Group(); piv.position.set(x, h, z); piv.add(part(G.cyl, col, r, h, r, 0, -h / 2, 0)); g.add(piv); pattes.push(piv); };
   const yeux = (y, z, e) => { for(const x of [-e, e]) tete.add(part(G.eye, 0x1C1C1C, 1.1, 1.1, 1.1, x, y, z)); };
@@ -146,7 +150,7 @@ function retirer(a){ groupe.remove(a.mesh); a.mats.forEach(m => m.dispose()); be
 
 const empreintes = [];   // {mesh, mat, age}
 const ROND = new THREE.CircleGeometry(.5, 8);
-const TAILLE_PAS = {lapin: [.06, .09], oiseau: [.06, .07], renard: [.07, .08], cervide: [.07, .11]};
+const TAILLE_PAS = {lapin: [.06, .09], oiseau: [.06, .07], renard: [.07, .08], cervide: [.07, .11], sanglier: [.08, .09]};
 function empreinte(k, x, z, ang, age = 0){
   if(empreintes.length >= 160){ const e = empreintes.shift(); groupe.remove(e.mesh); e.mat.dispose(); }
   const p = GIBIER[k], [sx, sy] = TAILLE_PAS[p.forme], s = p.taille || 1;
@@ -364,6 +368,13 @@ function voler(dt){
   T.mesh.position.copy(tmp);
   if(u < 1) return;
   const a = T.bete;
+  if(T.touche && betes.includes(a) && a.etat !== "fuite" && GIBIER[a.k].charge){   // le sanglier blessé se retourne et charge
+    retirer(a);
+    enrager(a.x, a.z, MONSTRES.sanglier.vie - 1);
+    toast("🐗 Touché, le sanglier se retourne, furieux ! Il gratte le sol : roule (🤸). Puis l'épée (⚔️)", 4600);
+    groupe.remove(T.mesh); tir = null; pencheMain();
+    return;
+  }
   if(T.touche && betes.includes(a) && a.etat !== "fuite"){
     a.etat = "tombe"; a.t = 0;
     donner(a);

@@ -1,8 +1,10 @@
 /* ================= Le combat (étape 1.8, morceau 2) =================
    Bible : « Combat en temps réel : […] trois boutons pour attaquer, esquiver par une roulade et utiliser un objet
    rapide (potion, plat, bombe). Visée automatique sur le monstre le plus proche. » Choix de Yo (étape 1.3) : les
-   boutons à gauche, le joystick à droite. Seulement dans la grotte (le village est un refuge) :
-   - la vie : COMBAT.vie cœurs en haut de l'écran ; ils reviennent tous en sortant de la grotte ;
+   boutons à gauche, le joystick à droite. Dans la grotte (le village est un refuge), et dans la Forêt profonde
+   tant qu'un sanglier blessé à l'arc charge (morceau 3) :
+   - la vie : COMBAT.vie cœurs en haut de l'écran ; ils reviennent tous en sortant de la grotte (dans la forêt :
+     quand le sanglier est vaincu ou parti) ;
    - ⚔️ Attaquer : l'épée (celle qu'on tient, sinon la plus forte du sac) se met en main ; le personnage se tourne
      vers le monstre le plus proche (jusqu'à COMBAT.vise), fait un pas vers lui, et le touche à moins de
      COMBAT.portee : autant de dégâts que la force de l'épée (bois 1, cuivre 2) ;
@@ -10,17 +12,17 @@
    - 🍢 Soin, l'objet rapide : un poisson grillé rend COMBAT.soin cœurs ;
    - une morsure enlève des cœurs ; ensuite, un court répit (le personnage clignote) ;
    - à 0 cœur : en attendant le morceau 4 (le réveil au village, la moitié du butin perdue), on se retrouve dans la
-     forêt, devant la grotte, sans rien perdre.
+     forêt, devant la grotte (vaincu dans la forêt : à l'orée), sans rien perdre.
    Sur ordinateur : Espace pour attaquer, E pour rouler, F pour manger. Les monstres : monstres.js. */
 import { $ } from "./outils.js";
 import { COMBAT, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { porte, sacCount, sacTake } from "./regles.js";
 import { player, placePlayer, regard, elan, enRoulade, clignoter, pencheMain } from "./monde/personnage.js";
-import { currentPlace, isBusy, quitterGrotte } from "./lieux.js";
+import { currentPlace, isBusy, quitterGrotte, reveilOree } from "./lieux.js";
 import { barreAuto, hold, syncBarre } from "./barre.js";
 import { toast, wrap } from "./interface.js";
-import { updateMonstres, plusProche, frapper } from "./monstres.js";
+import { updateMonstres, plusProche, frapper, monstresIci, oublierMonstres } from "./monstres.js";
 
 const coeurs = $("#coeurs"), boutons = $("#combat"), bRoul = $("#btn-roulade"), bObj = $("#btn-objet"), nObj = $("#objet-n");
 const aie = $("#aie"), but = $("#goal");
@@ -91,11 +93,12 @@ function blesser(n, m){
   else if(vie <= 2 && !conseil && sacCount("poissonGrille")){ conseil = true; toast("🍢 Plus beaucoup de cœurs : mange un poisson grillé (bouton 🍢 Soin)", 3600); }
   return true;
 }
-/* À 0 cœur (en attendant le morceau 4) : réveil dans la forêt, devant la grotte, sans rien perdre */
+/* À 0 cœur (en attendant le morceau 4) : réveil dans la forêt, devant la grotte (ou à l'orée), sans rien perdre */
 function defaite(){
   vaincu = true;
-  toast("💫 Tu t'effondres… et tu te réveilles dans la forêt, devant la grotte, toute ta vie revenue. Cette fois, rien n'est perdu.", 5200);
-  const sortir = () => { if(!dans) return; if(isBusy()) setTimeout(sortir, 300); else quitterGrotte(); };
+  const grotte = currentPlace().b.type === "grotte";
+  toast(`💫 Tu t'effondres… et tu te réveilles ${grotte ? "dans la forêt, devant la grotte" : "à l'orée de la forêt"}, toute ta vie revenue. Cette fois, rien n'est perdu.`, 5200);
+  const sortir = () => { if(!dans) return; if(isBusy()) setTimeout(sortir, 300); else if(grotte) quitterGrotte(); else reveilOree(oublierMonstres); };
   setTimeout(sortir, 800);
 }
 
@@ -118,15 +121,16 @@ window.addEventListener("keydown", e => {
 
 /* ----- À chaque image (main.js) ; actif : le jeu n'attend pas (pas de panneau ouvert, pas de fondu) ----- */
 export function updateCombat(dt, actif){
-  const p = currentPlace(), ici = !!p && p.b.type === "grotte";
-  if(ici !== dans){                                     // on entre dans la grotte, ou on en sort : toute la vie
+  const p = currentPlace(), ou = p && (p.b.type === "grotte" || p.b.type === "foret") ? p.b.type : null;
+  updateMonstres(dt, ou, actif && !vaincu, blesser);
+  const ici = ou === "grotte" || ou === "foret" && monstresIci().length > 0;
+  if(ici !== dans){                                     // on entre dans la grotte, ou on en sort (dans la forêt : le sanglier arrive, ou s'en va) : toute la vie
     dans = ici; vie = COMBAT.vie; vaincu = false; repit = attente = roule = 0; conseil = false;
     coeurs.hidden = boutons.hidden = !ici;
     if(but) but.hidden = ici;                           // les cœurs prennent la place de l'objectif du Château
     if(ici) afficher();
     if(coup){ coup = 0; pencheMain(); }
   }
-  updateMonstres(dt, ici, actif && !vaincu, blesser);
   if(!ici) return;
   repit = Math.max(0, repit - dt); attente = Math.max(0, attente - dt); roule = Math.max(0, roule - dt);
   bRoul.classList.toggle("attend", roule > 0);

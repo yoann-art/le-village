@@ -443,6 +443,19 @@ export const PRODUITS = {
     usage:"Pour l'équipement et les armures (plus tard)."},
   boisDeCerf:{nom:"Bois de cerf", pluriel:"bois de cerf", emoji:"🦌", prix:6, aide:"Les bois de cerf viennent du cerf, chassé en automne dans les grandes clairières de la Forêt profonde.",
     usage:"Les bois du cerf, pour la décoration (plus tard)."},
+  /* Ce que laissent les monstres de la grotte (étape 1.8, morceau 3 ; Grand Carnet : « ce qu'ils laissent sert à
+     l'équipement et aux potions ») : en attendant, tout se vend au comptoir. Le sanglier de la forêt donne aussi sa
+     viande. */
+  croc:     {nom:"Croc", pluriel:"crocs", emoji:"🦷", prix:3, aide:"Le croc vient du loup, dans la grotte de la Forêt profonde (sous les racines du vieux chêne).",
+    usage:"Le croc du loup, pour l'équipement (plus tard). En attendant, il se vend au comptoir."},
+  fourrureGrise:{nom:"Fourrure grise", pluriel:"fourrures grises", emoji:"🐺", prix:4, aide:"La fourrure grise vient du loup, dans la grotte de la Forêt profonde.",
+    usage:"La fourrure du loup, pour l'équipement et les armures (plus tard)."},
+  defense:  {nom:"Défense", pluriel:"défenses", emoji:"🐗", prix:5, aide:"Les défenses viennent du sanglier, dans la grotte de la Forêt profonde, ou chassé la nuit dans son sous-bois.",
+    usage:"La défense du sanglier, pour l'équipement (plus tard)."},
+  cuirEpais:{nom:"Cuir épais", pluriel:"cuirs épais", emoji:"🟫", prix:5, aide:"Le cuir épais vient du sanglier, dans la grotte de la Forêt profonde, ou chassé la nuit dans son sous-bois.",
+    usage:"Le cuir du sanglier, solide : pour les armures (plus tard)."},
+  aileMembraneuse:{nom:"Aile membraneuse", pluriel:"ailes membraneuses", emoji:"🦇", prix:2, aide:"Les ailes membraneuses viennent des chauves-souris, dans le noir de la grotte de la Forêt profonde.",
+    usage:"L'aile d'une chauve-souris, pour les potions (plus tard)."},
   boisArgent:{nom:"Bois d'argent", pluriel:"bois d'argent", emoji:"✨", aide:"Le bois d'argent est le présent du Cerf blanc, une seule fois dans tout le jeu.",
     usage:"Le présent du Cerf blanc, qu'on a suivi jusqu'au bout une nuit de pleine lune. Un seul dans tout le jeu."},
   thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
@@ -549,13 +562,25 @@ export const COMBAT = {vie:5, soin:2, portee:1.45, vise:2.6, pas:.55, coup:.42, 
    attaque s'annonce par un signe (bible : « on gagne en observant »). vie : en coups d'épée en bois ; degats : les cœurs
    qu'enlève une attaque ; vitesse (P/s) ; flair : à quelle distance il repère le personnage (P) ; tourne : à quelle
    distance il tourne autour avant d'attaquer ; signe : la durée du signe (s) ; bond : sa vitesse (P/s) et sa durée (s) ;
-   souffle : le temps où il reprend son souffle après son bond (le moment de frapper).
-   Morceau 2 (décidé avec Yo) : le loup arrive seul, pour essayer le combat ; la meute, le sanglier, les chauves-souris,
-   ce qu'ils laissent et la page du carnet viendront au morceau 3. */
+   souffle : le temps où il reprend son souffle après son attaque (le moment de frapper) ; donne : ce qu'il laisse
+   (dans le sac). Le sanglier : distance (il se place face au personnage à cette distance), charge (vitesse, durée
+   au plus), etourdi (le temps où il reste sonné s'il fonce dans une paroi). Les chauves-souris : tourne (le rayon de
+   l'essaim autour du personnage), loin (le rayon quand la torche brûle : elles fuient sa lumière), pique (leur
+   plongeon : vitesse, durée). Le danger à régler plus tard en jouant (Yo).
+   Morceau 2 (décidé avec Yo) : le loup, seul, pour essayer le combat ; morceau 3 : la meute, le sanglier, les
+   chauves-souris, ce qu'ils laissent et la page « 👹 Monstres » du carnet. */
 export const MONSTRES = {
-  loup:{nom:"Loup", emoji:"🐺", taille:"moyen", vie:3, degats:1, vitesse:2.5, flair:5.5, tourne:1.9, signe:.75, bond:{v:7.5, t:.3}, souffle:1,
-    comportement:"Chasse en meute et encercle", annonce:"Grogne et baisse la tête", laisse:"Croc, fourrure grise"}
+  loup:{nom:"Loup", pluriel:"loups", emoji:"🐺", taille:"Moyen (environ 1 P)", vie:3, degats:1, vitesse:2.5, flair:5.5, tourne:1.9, signe:.75, bond:{v:7.5, t:.3}, souffle:1,
+    comportement:"Chasse en meute et encercle", annonce:"Grogne et baisse la tête", donne:{croc:1, fourrureGrise:1}},
+  sanglier:{nom:"Sanglier", pluriel:"sangliers", emoji:"🐗", taille:"Moyen (environ 1 P)", vie:5, degats:2, vitesse:2, flair:5, distance:3.6, signe:1, charge:{v:8, t:1.1}, etourdi:1.8, souffle:.8,
+    comportement:"Charge en ligne droite, à esquiver sur le côté", annonce:"Gratte le sol", donne:{defense:1, cuirEpais:1}},
+  chauveSouris:{nom:"Chauve-souris", pluriel:"chauves-souris", une:true, emoji:"🦇", taille:"Petit (environ ½ P)", vie:1, degats:1, vitesse:3.2, flair:4.5, tourne:2.3, loin:4.6, signe:.55, pique:{v:6.5, t:.4}, souffle:.8,
+    comportement:"Attaquent en essaim dans le noir, fuient la torche", annonce:"Couinement aigu", donne:{aileMembraneuse:1}}
 };
+/* Qui vit à chaque palier de la grotte : des bandes [sorte, combien], chacune dans sa salle (Grand Carnet : « plus on
+   descend les paliers, et plus on s'éloigne de la lumière, plus ils sont nombreux et forts ») */
+export const PALIER_MONSTRES = {1:[["loup", 2], ["chauveSouris", 3]], 2:[["loup", 2], ["sanglier", 1], ["chauveSouris", 4]],
+  3:[["loup", 3], ["sanglier", 1], ["chauveSouris", 4], ["sanglier", 1]]};
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
 /* Les dessins des bois, des graines, des baies et des fleurs de la forêt */
 {
@@ -582,8 +607,8 @@ export const membres = g => g === "poisson" ? Object.keys(POISSONS).filter(k => 
    grandesClairieres, lisiere, sousBois ; coeur pour le Cerf blanc), ses saisons, ses heures, sa rareté, son
    comportement (note, du carnet), ce qu'il donne (donne), sa forme (lapin, oiseau, renard, cervide), ses couleurs
    et sa taille. groupe : ils vont à plusieurs (la perdrix) ; ruse : il se méfie de plus loin (le renard) ; bois :
-   il porte des bois (le cerf). Le sanglier (dangereux, il charge) attend l'étape 1.8. Le Cerf blanc, légendaire,
-   ne se chasse pas : on le suit (voir chasse.js). */
+   il porte des bois (le cerf). charge : touché à l'arc, il se retourne et charge (le sanglier, étape 1.8, morceau 3 :
+   il devient un monstre, voir monstres.js). Le Cerf blanc, légendaire, ne se chasse pas : on le suit (voir chasse.js). */
 export const GIBIER = {
   lapin:    {nom:"Lapin de garenne", pluriel:"lapins de garenne", ou:"clairieres", saisons:TOUTE, heures:"aube", rarete:"commun", forme:"lapin", couleur:0x9A8270, c2:0xF4F0E8, donne:{viandeGibier:1, fourrureDouce:1}, note:"Il détale en zigzag"},
   lievre:   {nom:"Lièvre", pluriel:"lièvres", ou:"lisiere", saisons:TOUTE, heures:"crepuscule", rarete:"commun", forme:"lapin", couleur:0xA8865A, c2:0xF0E8DC, taille:1.3, longues:true, donne:{viandeGibier:1, fourrure:1}, note:"Il s'arrête pour écouter, puis file"},
@@ -592,6 +617,7 @@ export const GIBIER = {
   renard:   {nom:"Renard", pluriel:"renards", ou:"lisiere", saisons:TOUTE, heures:"nuit", rarete:"peuCommun", forme:"renard", couleur:0xD8702A, c2:0xF4ECDC, ruse:true, donne:{fourrureRousse:1}, note:"Rusé, il tourne autour des appâts"},
   chevreuil:{nom:"Chevreuil", pluriel:"chevreuils", ou:"sousBois", saisons:TOUTE, heures:"aubeCrepuscule", rarete:"peuCommun", forme:"cervide", couleur:0x9A6A44, c2:0xF0E8DC, donne:{viandeGibier:2, cuir:1}, note:"Il aboie quand il sent le danger"},
   cerf:     {nom:"Cerf", pluriel:"cerfs", ou:"grandesClairieres", saisons:["automne"], heures:"toujours", rarete:"peuCommun", forme:"cervide", couleur:0x7A5034, c2:0xE8DCC8, taille:1.35, bois:true, donne:{viandeGibier:3, cuir:1, boisDeCerf:1}, note:"Il brame à la saison des amours"},
+  sanglier: {nom:"Sanglier", pluriel:"sangliers", ou:"sousBois", saisons:TOUTE, heures:"nuit", rarete:"peuCommun", forme:"sanglier", couleur:0x5A4334, c2:0x3A2A20, charge:true, donne:{viandeGibier:2, cuirEpais:1, defense:1}, note:"Il charge s'il est blessé"},
   cerfBlanc:{nom:"Cerf blanc", pluriel:"cerfs blancs", ou:"coeur", saisons:TOUTE, heures:"nuit", lune:"pleine", rarete:"legendaire", forme:"cervide", couleur:0xF4F4F0, c2:0xFFFFFF, taille:1.45, bois:true, argent:true, donne:{boisArgent:1}, note:"Il ne se chasse pas : on le suit jusqu'au bout, et il offre un présent"}
 };
 export const OU_GIBIER = {clairieres:"dans les clairières", grandesClairieres:"dans les grandes clairières", lisiere:"à la lisière", sousBois:"dans le sous-bois", coeur:"au cœur de la forêt"};
@@ -599,7 +625,7 @@ for(const [k, p] of Object.entries(GIBIER)){
   const r = RARETES[p.rarete];
   p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, dans la Forêt profonde, ${OU_GIBIER[p.ou]} : ${quandPoisson(p)}. ` +
     `${p.une ? "Elle" : "Il"} ${k === "cerfBlanc" ? "offre" : "donne"} : ${Object.entries(p.donne).map(([d, n]) => `${n} ${(n > 1 ? PRODUITS[d].pluriel : PRODUITS[d].nom).toLowerCase()}`).join(", ")}.`;
-  p.emoji = p.forme === "lapin" ? "🐇" : p.forme === "renard" ? "🦊" : p.forme === "oiseau" ? "🐦" : "🦌";
+  p.emoji = p.forme === "lapin" ? "🐇" : p.forme === "renard" ? "🦊" : p.forme === "oiseau" ? "🐦" : p.forme === "sanglier" ? "🐗" : "🦌";
 }
 export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k] || GIBIER[k];
 /* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
