@@ -44,6 +44,9 @@ const SILL = 0x654028, MAT = 0xA9322A, GOLD = 0xE2B24D;
 /* Sol : un carreau par case (jusqu'à 12 × 12 P) */
 const floor = new THREE.InstancedMesh(new THREE.BoxGeometry(P, .2, P), new THREE.MeshLambertMaterial({color:0xffffff}), 144);
 floor.receiveShadow = true;
+/* Ses couleurs existent dès le départ : sinon, entré d'abord dans la mine ou la forêt (sol vide), les pièces
+   avaient ensuite un sol sans couleur, noir sur le téléphone, même en la changeant (bug de Yo, v1.8.2) */
+floor.setColorAt(0, new THREE.Color(0xffffff));
 interior.add(floor);
 
 let room = null;
