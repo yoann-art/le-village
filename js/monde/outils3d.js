@@ -42,6 +42,11 @@ const BUILD = {
     const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
     anse.rotation.x = Math.PI/2; g.add(anse);
   },
+  pelle(g, o){                                                                       // le manche, et la lame arrondie au bout
+    g.add(part(G.cyl, C.wood, .045, .62, .045, 0, .2, 0));
+    g.add(part(G.box, C.dark, .14, .04, .04, 0, -.1, 0));                              // la poignée
+    g.add(part(G.head, o.tete || C.wood, .62, .9, .18, 0, .6, .02));                   // la lame (bois, cuivre…)
+  },
   torche(g){                                                                         // la torche éteinte : un bâton, une tête de résine
     g.add(part(G.cyl, C.wood, .05, .5, .05, 0, .16, 0));
     g.add(part(G.cyl, C.dark, .09, .14, .09, 0, .44, 0));

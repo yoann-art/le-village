@@ -11,7 +11,7 @@
    le poisson grillé qui soigne, vaincu : la moitié du butin de la grotte perdue, jamais l'équipement, le réveil au
    village, toute sa vie revenue), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
-   ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   creuser et combler à la pelle, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, objet } from "../js/donnees.js";
@@ -242,6 +242,28 @@ export async function verifier(){
     for(const k of ["graineArbre", "graineThym", "fibre", "pierre", "bois", "planche"]) if(state.sac.length > 12 - n) state.sac = state.sac.filter(it => it.k !== k);
     while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => !OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }   // puis les prises des essais d'avant
   };
+  await etape("Creuser et combler à la pelle", async () => {
+    place(1);
+    sacAdd("pelleBois", 1); hold("pelleBois");
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    /* une case d'herbe libre sur la place du village, avec une case libre en dessous pour s'y tenir */
+    const c = Math.floor(N / 2), libre = j => map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
+    let t = null;
+    for(let r = 2; r < 9 && !t; r++) for(const [dx, dz] of [[0, -r], [r, 0], [-r, 0], [0, r], [r, r], [-r, -r]]){
+      const x = c + dx, z = c + dz, i = idx(x, z);
+      if(libre(i) && libre(idx(x, z + 1))){ t = {x, z, i}; break; }
+    }
+    if(!t) throw new Error("pas de case d'herbe libre sur la place");
+    placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
+    if(!$("#btn-act").textContent.includes("Creuser")) throw new Error(`face à l'herbe, la pelle en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    for(let k = 0; k < OUTILS.pelleBois.coups; k++){ $("#btn-act").click(); frames(1); }
+    if(map.type[t.i] !== "water" || state.terrain[t.i] !== "water") throw new Error(`après ${OUTILS.pelleBois.coups} coups de pelle, la case n'est pas de l'eau`);
+    if(!$("#btn-act").textContent.includes("Combler")) throw new Error(`face à l'eau creusée, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click(); frames(1);
+    if(map.type[t.i] !== "grass" || state.terrain[t.i]) throw new Error("la case n'est pas comblée");
+    hold(null);
+    return `${OUTILS.pelleBois.coups} coups de pelle : de l'eau, puis comblée`;
+  });
   await etape("Attraper un insecte au filet", async () => {
     place(2);
     sacAdd("filet", 1); hold(null);

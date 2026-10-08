@@ -18,6 +18,7 @@
      « 🥅 Lancer le filet » (voir oiseaux.js) ;
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
    - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js) ;
+   - la pelle en main (étape 1.9) : « 🪏 Creuser » l'herbe devant soi, « 🪏 Combler » l'eau douce (voir terraformer.js) ;
    - dans la mine, ses rochers (voir monde/mine.js) ; dans la Forêt profonde, ses arbres et ses rochers, qui
      repoussent (voir monde/foret.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
@@ -44,6 +45,7 @@ import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
 import { updateInsectes, insecteAction, attrapeEnCours } from "./insectes.js";
 import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
+import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -107,6 +109,8 @@ function target(){
   const [fx, fz] = frontTile(.8);
   if((GRAINES[state.main] || POSABLES[state.main]) && inb(fx, fz) && !map.obj[idx(fx, fz)] && !occ.has(idx(fx, fz)))
     return {i: idx(fx, fz), x: fx, z: fz, o: null};
+  const pelle = cibleTerrain();                       // la pelle en main : creuser, combler (étape 1.9)
+  if(pelle) return pelle;
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
   const canne = state.main ? OUTILS[state.main] && OUTILS[state.main].famille === "canne" : !!bestTool("canne");
   for(const dist of [.8, 1.3]){
@@ -164,6 +168,7 @@ const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : t.w === GROTTE ? "g"
 const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
+  if(t.pelle) return actionTerrain(t);
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
   if(t.peche) return {label: "🎣 Lancer", run: () => { if(takeTool("canne")) lancer(); }};
   if(t.eau){ const max = OUTILS[state.main].eau;
@@ -226,9 +231,9 @@ const cadre = new THREE.Mesh(new THREE.RingGeometry(.6, .69, 4, 1), bord);
 cadre.rotation.z = Math.PI/4; cadre.position.z = .002; surbrillance.add(cadre);
 surbrillance.rotation.x = -Math.PI/2; surbrillance.visible = false; scene.add(surbrillance);
 function showCase(t){
-  const k = state.main, pose = t && !t.o && !t.sol && !t.eau && t.x !== undefined && (GRAINES[k] || POSABLES[k]);
+  const k = state.main, pose = t && (t.pelle || !t.o && !t.sol && !t.eau && t.x !== undefined && (GRAINES[k] || POSABLES[k]));
   if(!pose){ if(surbrillance.visible) surbrillance.visible = false; return; }
-  const ok = !(GRAINES[k] ? plantProblem(t, GRAINES[k].plante) : poseProblem(t.i));
+  const ok = !(t.pelle ? terrainProbleme(t) : GRAINES[k] ? plantProblem(t, GRAINES[k].plante) : poseProblem(t.i));
   fond.color.setHex(ok ? 0xFFE27A : 0xE4776C); bord.color.setHex(ok ? 0xFFFFFF : 0xFFD1CC);
   surbrillance.position.set(centerOf(t.x), .03, centerOf(t.z));
   surbrillance.visible = true;

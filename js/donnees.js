@@ -89,10 +89,17 @@ export const OUTILS = {
      s'empilent (pile), chacune brûle duree secondes, seulement dans la grotte */
   torche:      {nom:"Torche", pluriel:"torches", emoji:"🔥", famille:"torche", force:1, pile:10, duree:600, usage:"Dans la grotte, elle s'allume toute seule et éclaire loin autour de toi. Elle brûle 10 minutes, puis la suivante prend le relais. Elle se refait à l'établi."},
   arcIf:       {nom:"Arc en if", pluriel:"arcs en if", emoji:"🏹", famille:"arc", force:1, usage:"Dans la Forêt profonde : suis les traces, approche le gibier à pas de loup et sous le vent, puis « Tirer ». Il lui faut des flèches."},
+  /* La pelle (étape 1.9 ; Grand Carnet : « creuser, combler, déterrer, tracer des chemins », « les paliers : creuse
+     plus vite ») : en bois à l'établi, puis en cuivre à l'enclume (décidé avec Yo, le carnet la met à l'enclume) ;
+     coups : les coups de pelle pour creuser une case */
+  pelleBois:   {nom:"Pelle en bois", pluriel:"pelles en bois", emoji:"🪏", famille:"pelle", force:1, coups:2,
+    usage:"Pelle en main, face à l'herbe : « Creuser » (la case devient de l'eau douce : un étang, une rivière…) ; face à l'eau douce : « Combler ». La mer ne se comble pas."},
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
   hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", emoji:"🪓", famille:"hache", force:2, tete:0xC8743C, usage:"Coupe les arbres : un bois de plus à chaque coup."},
   piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", emoji:"⛏️", famille:"pioche", force:2, tete:0xC8743C, usage:"Casse les rochers : une pierre de plus à chaque coup."},
+  pelleCuivre: {nom:"Pelle en cuivre", pluriel:"pelles en cuivre", emoji:"🪏", famille:"pelle", force:2, coups:1, tete:0xC8743C,
+    usage:"Creuse plus vite que la pelle en bois : un seul coup par case. Face à l'eau douce : « Combler »."},
   epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", emoji:"🗡️", famille:"arme", force:2, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
   arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5,
     usage:"Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."}
@@ -477,6 +484,7 @@ export const ATELIERS = {
     {out:"hachePierre", in:{planche:3, pierre:2}, t:30, lvl:1, cat:"Outils"},
     {out:"piochePierre", in:{planche:3, pierre:3}, t:30, lvl:1, cat:"Outils"},
     {out:"arrosoir", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Outils"},
+    {out:"pelleBois", in:{planche:3, fibre:2}, t:30, lvl:1, cat:"Outils"},
     {out:"canneBois", in:{planche:4, fibre:3}, t:40, lvl:1, cat:"Outils"},
     {out:"filet", in:{planche:2, fibre:4}, t:40, lvl:1, cat:"Outils"},
     {out:"arcIf", in:{boisIf:3, fibre:4}, t:60, lvl:1, cat:"Outils"},
@@ -527,7 +535,8 @@ export const ATELIERS = {
     pour:"forger des outils et des armes en métal", recettes:[
     {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
     {out:"hacheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
-    {out:"epeeCuivre", in:{cuivre:5, planche:1}, t:60, lvl:1}
+    {out:"epeeCuivre", in:{cuivre:5, planche:1}, t:60, lvl:1},
+    {out:"pelleCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",
     pour:"lancer les grands chantiers et les quêtes", note:"La salle du trône : c'est d'ici que tu lanceras les grands chantiers.", recettes:[

@@ -54,8 +54,15 @@ function genMap(seed){
   return {type, obj};
 }
 export const map = genMap(state.seed);
-/* L'eau d'une case (étape 1.6, la pêche) : l'étang, au nord-est de la place du village, ou la mer */
-export const lieuEau = i => { const c = (N-1)/2; return Math.hypot(i % N - (c+8), Math.floor(i / N) - (c-7)) < 3.3 ? "etang" : "mer"; };
+/* Terraformer (étape 1.9) : l'île telle que la nature l'a faite (ORIGINE), puis les cases que le joueur a creusées
+   ou comblées (state.terrain = {case: "water" | "grass"}), appliquées avant tout le reste */
+export const ORIGINE = map.type.slice();
+for(const [i, t] of Object.entries(state.terrain)) map.type[+i] = t;
+/* L'eau d'une case (étape 1.6, la pêche) : l'étang, au nord-est de la place du village, ou la mer ; l'eau qu'on a
+   creusée est de l'eau douce, comme l'étang (ses poissons, ses libellules, ses hérons y viennent) */
+export const lieuEau = i => { const c = (N-1)/2; return ORIGINE[i] !== "water" || Math.hypot(i % N - (c+8), Math.floor(i / N) - (c-7)) < 3.3 ? "etang" : "mer"; };
+/* De l'eau qu'on peut combler : l'eau douce (l'étang, l'eau creusée), jamais la mer */
+export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
 /* Herbes hautes et buissons de baies (étape 1.5) : posés après coup, avec leur propre tirage, pour ne pas
    déplacer les arbres et les rochers des parties déjà commencées ; jamais sous un bâtiment déjà posé */
 {
@@ -90,24 +97,38 @@ state.buildings.forEach(b => {
    l'horloge du téléphone) ; coupe = herbes cueillies à cette heure ; vide = buisson sans baies, arrose = arrosé à cette heure */
 for(const [i, c] of Object.entries(state.ile)) map.obj[+i] = c.o;
 
-/* Terrain : dalle d'herbe ou de sable sur un socle de terre */
-{
-  const land = [];
-  map.type.forEach((t,i) => { if(t !== "water") land.push(i); });
-  const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), new THREE.MeshLambertMaterial({color:0xffffff}), land.length);
-  const dirt = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.8,1), mat(0xA8774C), land.length);
-  const m4 = new THREE.Matrix4(), col = new THREE.Color();
-  land.forEach((i,k) => {
-    const x = i % N, z = Math.floor(i / N), wx = centerOf(x), wz = centerOf(z), alt = (x+z) % 2;
-    m4.makeTranslation(wx, -.12, wz); slabs.setMatrixAt(k, m4);
-    m4.makeTranslation(wx, -.64, wz); dirt.setMatrixAt(k, m4);
-    col.setHex(map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : (alt ? 0x74C063 : 0x7DC96B));
-    slabs.setColorAt(k, col);
-  });
-  slabs.instanceColor.needsUpdate = true;
-  slabs.receiveShadow = true; dirt.receiveShadow = true;
-  scene.add(slabs, dirt);
+/* Terrain : dalle d'herbe ou de sable sur un socle de terre ; une place par case de l'île (une case d'eau a sa
+   place vide), pour pouvoir creuser et combler (étape 1.9) */
+const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), new THREE.MeshLambertMaterial({color:0xffffff}), N*N);
+const dirt = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.8,1), mat(0xA8774C), N*N);
+const m4 = new THREE.Matrix4(), col = new THREE.Color(), RIEN = new THREE.Matrix4().makeScale(0, 0, 0);
+/* entame : une case qu'on a commencé à creuser (de la terre retournée, un peu plus bas) */
+function poserCase(i, entame){
+  const x = i % N, z = Math.floor(i / N), wx = centerOf(x), wz = centerOf(z), alt = (x+z) % 2;
+  if(map.type[i] === "water"){ slabs.setMatrixAt(i, RIEN); dirt.setMatrixAt(i, RIEN); }
+  else {
+    m4.makeTranslation(wx, entame ? -.2 : -.12, wz); slabs.setMatrixAt(i, m4);
+    m4.makeTranslation(wx, -.64, wz); dirt.setMatrixAt(i, m4);
+  }
+  col.setHex(entame ? 0x9A6B45 : map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : (alt ? 0x74C063 : 0x7DC96B));
+  slabs.setColorAt(i, col);
 }
+for(let i = 0; i < N*N; i++) poserCase(i);
+slabs.instanceColor.needsUpdate = true;
+slabs.receiveShadow = true; dirt.receiveShadow = true;
+scene.add(slabs, dirt);
+const terrainChange = () => { slabs.instanceMatrix.needsUpdate = dirt.instanceMatrix.needsUpdate = slabs.instanceColor.needsUpdate = true; };
+/* Creuser, combler (étape 1.9) : la case devient de l'eau (« water ») ou de la terre (son herbe ou son sable d'origine,
+   de l'herbe pour l'étang comblé) ; gardé dans la partie. Rien n'y repousse tout seul ensuite */
+export function setTerrain(i, t){
+  map.type[i] = t;
+  if(t === ORIGINE[i]) delete state.terrain[i]; else state.terrain[i] = t;
+  if(!state.ile[i]) state.ile[i] = {o: null};
+  poserCase(i); terrainChange();
+}
+export const terreDe = i => ORIGINE[i] === "water" ? "grass" : ORIGINE[i];
+/* Une case qu'on commence à creuser, ou qu'on laisse (entame = false) */
+export function entamer(i, entame){ poserCase(i, entame); terrainChange(); }
 export const water = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90),
   new THREE.MeshPhongMaterial({color:0x58C3D8, transparent:true, opacity:.8, shininess:90, specular:0x99DDEE}));
 water.rotation.x = -Math.PI/2; water.position.y = -.2; water.receiveShadow = true;
