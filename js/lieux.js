@@ -15,7 +15,7 @@ import { interior, buildRoom } from "./monde/interieurs.js";
 import { meubleAt, hasPlan } from "./monde/meubles.js";
 import { ENTREE_GROTTE } from "./monde/foret.js";
 import { PALIERS } from "./monde/grotte.js";
-import { player, R, dir4, placePlayer, setWalkable, islandWalkable } from "./monde/personnage.js";
+import { player, R, dir4, placePlayer, setWalkable, islandWalkable, degager } from "./monde/personnage.js";
 import { placing } from "./construire.js";
 import { toast } from "./interface.js";
 
@@ -52,17 +52,22 @@ function fade(change){
     setTimeout(() => { busy = false; }, 250);
   }, 260);
 }
+/* Le personnage dans la pièce d'un bâtiment, sur le paillasson */
+function installer(b){
+  const room = buildRoom(b);
+  inside = {b, room};
+  interior.add(player);
+  /* Dans la pièce : entre les murs, en contournant les meubles (la mine a sa propre règle) */
+  setWalkable(room.walk || ((x, z) => Math.abs(x) < room.w/2 && Math.abs(z) < room.d/2 && !meubleAt((b.deco && b.deco.items) || [], x, z)));
+  placePlayer(room.doorX, room.d/2 - R - .3, 0, -1);
+  $("#btn-build").hidden = true;
+  $("#btn-ctx").hidden = true;
+  $("#btn-deco").hidden = !!B[b.type].fixe;          // on ne décore pas la mine
+  return room;
+}
 function enter(b){
   fade(() => {
-    const room = buildRoom(b);
-    inside = {b, room};
-    interior.add(player);
-    /* Dans la pièce : entre les murs, en contournant les meubles (la mine a sa propre règle) */
-    setWalkable(room.walk || ((x, z) => Math.abs(x) < room.w/2 && Math.abs(z) < room.d/2 && !meubleAt((b.deco && b.deco.items) || [], x, z)));
-    placePlayer(room.doorX, room.d/2 - R - .3, 0, -1);
-    $("#btn-build").hidden = true;
-    $("#btn-ctx").hidden = true;
-    $("#btn-deco").hidden = !!B[b.type].fixe;          // on ne décore pas la mine
+    installer(b);
     /* Pas encore de plan de travail : on dit comment le construire */
     const a = ATELIERS[b.type];
     if(b.type === "foret") setTimeout(() => toast("🌲 La Forêt profonde : de vieux arbres, des clairières, un ruisseau. Hache en main, coupe ses arbres (l'if donne un bois souple pour les arcs) : ils repoussent avec le temps. Au cœur, le Grand Chêne millénaire.", 5600), 400);
@@ -97,13 +102,32 @@ function sortirGrotte(){
     $("#btn-deco").hidden = true;
   });
 }
-/* Pour le combat (étape 1.8) : vaincu dans la grotte, on se retrouve dans la forêt ; vaincu dans la forêt, à son
-   orée (puis apres(), pendant le fondu) */
-export function quitterGrotte(){ if(inside && inside.b.type === "grotte" && !busy) sortirGrotte(); }
-export function reveilOree(apres){
-  if(!inside || inside.b.type !== "foret" || busy) return;
-  const room = inside.room;
-  fade(() => { placePlayer(room.doorX, room.d/2 - R - .3, 0, -1); if(apres) apres(); });
+/* Vaincu (étape 1.8, morceau 4 ; bible : « réveil au village ») : dans son lit, à la Chaumière, s'il y en a un ;
+   sinon devant la porte de sa Chaumière ; sinon sur la place du village. Puis apres(où), pendant le fondu */
+export function reveilVillage(apres){
+  if(busy) return false;
+  const avecLit = b => b.type === "chaumiere" && b.deco && (b.deco.items || []).some(it => it.type === "lit");
+  const ch = state.buildings.find(avecLit), porte = state.buildings.find(b => b.type === "chaumiere");
+  fade(() => {
+    let ou;
+    if(ch){                                            // à côté du lit : posé dessus, il glisse jusqu'à la place libre la plus proche
+      installer(ch);
+      const lit = ch.deco.items.find(it => it.type === "lit");
+      placePlayer(lit.x, lit.z, 0, 1); degager();
+      ou = "lit";
+    } else {
+      inside = null;
+      scene.add(player);
+      setWalkable(islandWalkable);
+      const p = porte ? outsideSpot(porte) : {x: .5, z: .5};
+      placePlayer(p.x, p.z, 0, 1); degager();
+      $("#btn-build").hidden = false;
+      $("#btn-deco").hidden = true;
+      ou = porte ? "porte" : "place";
+    }
+    if(apres) apres(ou);
+  });
+  return true;
 }
 function exit(){
   const b = inside.b;

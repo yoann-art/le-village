@@ -1,4 +1,4 @@
-/* ================= Le combat (étape 1.8, morceau 2) =================
+/* ================= Le combat (étape 1.8, morceaux 2 à 4) =================
    Bible : « Combat en temps réel : […] trois boutons pour attaquer, esquiver par une roulade et utiliser un objet
    rapide (potion, plat, bombe). Visée automatique sur le monstre le plus proche. » Choix de Yo (étape 1.3) : les
    boutons à gauche, le joystick à droite. Dans la grotte (le village est un refuge), et dans la Forêt profonde
@@ -11,22 +11,29 @@
    - 🤸 Roulade : une culbute dans le sens du joystick (sinon droit devant) ; pendant la roulade, rien ne touche ;
    - 🍢 Soin, l'objet rapide : un poisson grillé rend COMBAT.soin cœurs ;
    - une morsure enlève des cœurs ; ensuite, un court répit (le personnage clignote) ;
-   - à 0 cœur : en attendant le morceau 4 (le réveil au village, la moitié du butin perdue), on se retrouve dans la
-     forêt, devant la grotte (vaincu dans la forêt : à l'orée), sans rien perdre.
+   - à 0 cœur, vaincu (morceau 4 ; bible : « réveil au village et perte de la moitié du butin ramassé depuis la
+     dernière sortie. Ce qui a été remonté à la surface, l'équipement, l'or et les collections ne se perdent
+     jamais ») : on se réveille au village (dans son lit, à la Chaumière, s'il y en a un : reveilVillage, dans
+     lieux.js). Le butin de la grotte : ce qu'on porte (sac et cases rapides) en plus de ce qu'on avait en y entrant
+     (entree), sans les outils ni les armes ; la moitié de chaque sorte est perdue (pour un nombre impair, la
+     dernière à pile ou face). Vaincu dans la forêt (le sanglier) : à la surface, rien n'est perdu. Un panneau dit
+     où l'on se réveille, ce qui est perdu et ce qu'on garde.
    Sur ordinateur : Espace pour attaquer, E pour rouler, F pour manger. Les monstres : monstres.js. */
 import { $ } from "./outils.js";
-import { COMBAT, OUTILS } from "./donnees.js";
+import { COMBAT, OUTILS, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { porte, sacCount, sacTake } from "./regles.js";
 import { player, placePlayer, regard, elan, enRoulade, clignoter, pencheMain } from "./monde/personnage.js";
-import { currentPlace, isBusy, quitterGrotte, reveilOree } from "./lieux.js";
+import { currentPlace, isBusy, reveilVillage } from "./lieux.js";
 import { barreAuto, hold, syncBarre } from "./barre.js";
-import { toast, wrap } from "./interface.js";
+import { toast, wrap, openSheet } from "./interface.js";
 import { updateMonstres, plusProche, frapper, monstresIci, oublierMonstres } from "./monstres.js";
 
 const coeurs = $("#coeurs"), boutons = $("#combat"), bRoul = $("#btn-roulade"), bObj = $("#btn-objet"), nObj = $("#objet-n");
 const aie = $("#aie"), but = $("#goal");
 let dans = false, vie = COMBAT.vie, vaincu = false, repit = 0, attente = 0, roule = 0, coup = 0, conseil = false;
+let entree = null;                                      // ce qu'on portait en entrant dans la grotte : {sorte: combien}
+let dansOu = null;                                      // où l'on se bat : "grotte" ou "foret"
 const COUP = .22;                                       // la durée du geste de l'épée
 const pret = () => dans && !vaincu && !isBusy() && wrap.hidden;
 const vibre = ms => { try{ const u = navigator.userActivation; if(navigator.vibrate && (!u || u.hasBeenActive)) navigator.vibrate(ms); }catch(_){} };
@@ -93,13 +100,47 @@ function blesser(n, m){
   else if(vie <= 2 && !conseil && sacCount("poissonGrille")){ conseil = true; toast("🍢 Plus beaucoup de cœurs : mange un poisson grillé (bouton 🍢 Soin)", 3600); }
   return true;
 }
-/* À 0 cœur (en attendant le morceau 4) : réveil dans la forêt, devant la grotte (ou à l'orée), sans rien perdre */
+/* ----- Vaincu (morceau 4) : la moitié du butin de la grotte perdue, puis le réveil au village ----- */
+/* Ce qu'on porte, sans les outils ni les armes (l'équipement ne se perd jamais) ni les coffres remplis */
+function butin(){
+  const c = {};
+  for(const it of porte()) if(!it.items && !OUTILS[it.k]) c[it.k] = (c[it.k] || 0) + it.n;
+  return c;
+}
 function defaite(){
   vaincu = true;
-  const grotte = currentPlace().b.type === "grotte";
-  toast(`💫 Tu t'effondres… et tu te réveilles ${grotte ? "dans la forêt, devant la grotte" : "à l'orée de la forêt"}, toute ta vie revenue. Cette fois, rien n'est perdu.`, 5200);
-  const sortir = () => { if(!dans) return; if(isBusy()) setTimeout(sortir, 300); else if(grotte) quitterGrotte(); else reveilOree(oublierMonstres); };
-  setTimeout(sortir, 800);
+  const grotte = currentPlace().b.type === "grotte", perdu = [], garde = [];
+  if(grotte && entree){
+    for(const [k, n] of Object.entries(butin())){
+      const gagne = n - (entree[k] || 0);
+      if(gagne <= 0) continue;
+      const q = Math.floor(gagne / 2) + (gagne % 2 && Math.random() < .5 ? 1 : 0);
+      if(q){ sacTake(k, q); perdu.push([k, q]); }
+      if(gagne > q) garde.push([k, gagne - q]);
+    }
+    syncBarre(); save();
+  }
+  toast("💫 Tu t'effondres…", 1600);
+  const sortir = () => {
+    if(!dans) return;
+    if(isBusy()){ setTimeout(sortir, 300); return; }
+    reveilVillage(ou => { oublierMonstres(); setTimeout(() => bilan(ou, grotte, perdu, garde), 500); });
+  };
+  setTimeout(sortir, 900);
+}
+/* Le panneau du réveil : où l'on est, ce qui est perdu, ce qu'on garde */
+const REVEIL = {lit: "dans ton lit, à la Chaumière", porte: "devant ta Chaumière", place: "sur la place du village"};
+function bilan(ou, grotte, perdu, garde){
+  const tuiles = (l, signe) => `<div class="res-grid">${l.map(([k, n]) =>
+    `<div class="tile"><div class="te" aria-hidden="true">${icone(k)}</div><div class="tl">${objet(k).nom[0].toUpperCase() + objet(k).nom.slice(1)}</div><div class="tn">${signe} ${n}</div></div>`).join("")}</div>`;
+  const quoi = !grotte ? `<p>Rien n'est perdu : dans la forêt, tu étais à la surface.</p>`
+    : !perdu.length && !garde.length ? `<p>Tu n'avais encore rien ramassé dans la grotte : rien n'est perdu.</p>`
+    : (perdu.length ? `<h3 style="margin:8px 0 4px">Perdu : la moitié de ton butin de la grotte</h3>${tuiles(perdu, "−")}` : `<p>Tu as eu de la chance : rien n'est perdu.</p>`) +
+      (garde.length ? `<h3 style="margin:8px 0 4px">Ce que tu gardes</h3>${tuiles(garde, "+")}` : "");
+  openSheet(`<div class="sh-head"><h2 class="display">💫 Vaincu…</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p style="margin:0 0 6px">Tu te réveilles ${REVEIL[ou]}, toute ta vie revenue.</p>${quoi}
+    <p class="muted" style="font-size:14px;margin:6px 0 12px">Ce que tu as déjà rapporté à la surface, ton équipement, ton or et tes collections ne se perdent jamais.</p>
+    <button class="btn primary" data-close style="width:100%">Se relever</button>`);
 }
 
 /* ----- Les boutons : au toucher (pointerdown, plus vif qu'un clic) ; le clavier passe par le clic ----- */
@@ -124,8 +165,9 @@ export function updateCombat(dt, actif){
   const p = currentPlace(), ou = p && (p.b.type === "grotte" || p.b.type === "foret") ? p.b.type : null;
   updateMonstres(dt, ou, actif && !vaincu, blesser);
   const ici = ou === "grotte" || ou === "foret" && monstresIci().length > 0;
-  if(ici !== dans){                                     // on entre dans la grotte, ou on en sort (dans la forêt : le sanglier arrive, ou s'en va) : toute la vie
-    dans = ici; vie = COMBAT.vie; vaincu = false; repit = attente = roule = 0; conseil = false;
+  if(ici !== dans || ici && ou !== dansOu){            // on entre dans la grotte, ou on en sort (dans la forêt : le sanglier arrive, ou s'en va) : toute la vie
+    dans = ici; dansOu = ici ? ou : null; vie = COMBAT.vie; vaincu = false; repit = attente = roule = 0; conseil = false;
+    entree = ici && ou === "grotte" ? butin() : null;  // le butin de la grotte se compte depuis l'entrée ; sorti, il est à l'abri
     coeurs.hidden = boutons.hidden = !ici;
     if(but) but.hidden = ici;                           // les cœurs prennent la place de l'objectif du Château
     if(ici) afficher();

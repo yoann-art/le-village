@@ -8,7 +8,8 @@
    chasser à l'arc (un chevreuil, approché sous le vent) et ramasser le présent du Cerf blanc,
    la grotte (y entrer depuis la forêt, la torche allumée, descendre d'un palier, remonter par la corde),
    le combat (un loup qui mord, la roulade qui esquive, l'épée qui le vainc et ce qu'il laisse, une chauve-souris,
-   le poisson grillé qui soigne, vaincu : le retour dans la forêt, toute sa vie revenue), le sanglier de la forêt
+   le poisson grillé qui soigne, vaincu : la moitié du butin de la grotte perdue, jamais l'équipement, le réveil au
+   village, toute sa vie revenue), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
@@ -362,7 +363,7 @@ export async function verifier(){
     return "palier 1, palier 2, puis la corde jusqu'à la forêt";
   });
   await etape("Le combat : un loup mord, la roulade esquive, l'épée le vainc, le poisson grillé soigne, vaincu", async () => {
-    place(6);                                          // l'épée, le poisson grillé, et ce que laissent le loup et la chauve-souris
+    place(7);                                          // l'épée, le poisson grillé, et ce que laissent le loup et la chauve-souris
     await entrer(state.buildings.find(b => b.type === "foret"));
     sacAdd("epeeBois", 1); sacAdd("poissonGrille", 1); hold(null);
     const E = ENTREE_GROTTE;
@@ -398,14 +399,20 @@ export async function verifier(){
     const v = vieCombat(), poissons = sacCount("poissonGrille");
     combat.manger();
     if(vieCombat() !== Math.min(COMBAT.vie, v + COMBAT.soin) || sacCount("poissonGrille") !== poissons - 1) throw new Error(`le poisson grillé ne soigne pas (${v} → ${vieCombat()} cœurs)`);
-    /* à 0 cœur : on se retrouve dans la forêt, toute sa vie revenue */
+    /* vaincu : la moitié du butin de la grotte est perdue (4 pierres, comme minées ici : 2 perdues), jamais l'épée ;
+       on se réveille au village (pas de Chaumière dans cette partie : sur la place), toute sa vie revenue */
+    sacAdd("pierre", 4);
+    const pierres = owned("pierre"), epees = owned("epeeBois");
     await wait(COMBAT.repit * 1000 + 200);
     p = player.position;
     combat.blesser(vieCombat(), {x: p.x + 1, z: p.z});
-    if(!await attendre(() => currentPlace() && currentPlace().b.type === "foret")) throw new Error("vaincu, on ne se retrouve pas dans la forêt");
-    if(vieCombat() !== COMBAT.vie || !$("#coeurs").hidden) throw new Error("la vie ne revient pas en sortant de la grotte");
-    await sortir();
-    return `mordu (${COMBAT.vie - vie} cœur), esquivé, un loup vaincu en ${coups} coups, une chauve-souris, soigné, puis réveillé dans la forêt`;
+    if(!await attendre(() => !isInside() || currentPlace().b.type === "chaumiere")) throw new Error("vaincu, on ne se réveille pas au village");
+    if(owned("pierre") !== pierres - 2) throw new Error(`vaincu, ${pierres - owned("pierre")} pierres perdues sur les 4 ramassées dans la grotte, au lieu de 2`);
+    if(owned("epeeBois") !== epees) throw new Error("vaincu, l'épée est perdue");
+    if(!await attendre(() => !$("#sheetWrap").hidden && $("#sheet").textContent.includes("Vaincu"), 2500)) throw new Error("pas de panneau au réveil");
+    $("#sheetWrap [data-close]").click(); await wait(300);
+    if(vieCombat() !== COMBAT.vie || !$("#coeurs").hidden) throw new Error("la vie ne revient pas au réveil");
+    return `mordu (${COMBAT.vie - vie} cœur), esquivé, un loup vaincu en ${coups} coups, une chauve-souris, soigné ; vaincu : 2 pierres perdues sur 4, l'épée gardée, réveil au village`;
   });
   await etape("Le sanglier de la forêt : touché à l'arc, il charge ; vaincu à l'épée", async () => {
     place(6);                                          // l'arc, les flèches, l'épée, et ce que laisse le sanglier
