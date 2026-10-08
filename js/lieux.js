@@ -8,7 +8,7 @@
 import { $ } from "./outils.js";
 import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
-import { sizeOf, doorTile } from "./regles.js";
+import { sizeOf, porteDe, SENS } from "./regles.js";
 import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
@@ -30,16 +30,18 @@ export const currentPlace = () => inside;
 export const isBusy = () => busy;
 export const currentScene = () => inside ? interior : scene;
 
-/* Porte d'un bâtiment posé : milieu de la porte (x) et bord avant de son carré de cases (z) */
-function doorOf(b){
-  const s = sizeOf(b.type);
-  return {x: b.x - H + s/2 + B[b.type].door, z: b.z - H + s};
+/* Porte d'un bâtiment posé : le milieu de la porte, au bord de son carré de cases, et le sens où elle regarde (n) ;
+   tourné (étape 1.9), la porte tourne avec lui autour du milieu du carré */
+export function doorOf(b){
+  const s = sizeOf(b.type), d = B[b.type].door || 0, r = (b.rot || 0) & 3;
+  const cx = b.x - H + s/2, cz = b.z - H + s/2;
+  return {x: cx + [d, s/2, -d, -s/2][r], z: cz + [s/2, -d, -s/2, d][r], n: SENS[r]};
 }
 /* Où l'on se retrouve en sortant : juste devant la porte, entièrement sur la case
-   devant la porte (toujours libre), pour ne jamais toucher un arbre voisin */
+   devant la porte (toujours libre), pour ne jamais toucher un arbre voisin ; n : le sens où l'on regarde */
 function outsideSpot(b){
-  const d = doorOf(b), left = doorTile(b.type, b.x, b.z)[0] - H;
-  return {x: Math.max(left + R + .02, Math.min(left + 1 - R - .02, d.x)), z: d.z + R + .25};
+  const d = doorOf(b), [tx, tz] = porteDe(b), n = d.n, cale = (v, a) => Math.max(a + R + .02, Math.min(a + 1 - R - .02, v));
+  return n.x === 0 ? {x: cale(d.x, tx - H), z: d.z + n.z * (R + .25), n} : {x: d.x + n.x * (R + .25), z: cale(d.z, tz - H), n};
 }
 
 function fade(change){
@@ -119,8 +121,8 @@ export function reveilVillage(apres){
       inside = null;
       scene.add(player);
       setWalkable(islandWalkable);
-      const p = porte ? outsideSpot(porte) : {x: .5, z: .5};
-      placePlayer(p.x, p.z, 0, 1); degager();
+      const p = porte ? outsideSpot(porte) : {x: .5, z: .5, n: {x: 0, z: 1}};
+      placePlayer(p.x, p.z, p.n.x, p.n.z); degager();
       $("#btn-build").hidden = false;
       $("#btn-deco").hidden = true;
       ou = porte ? "porte" : "place";
@@ -136,7 +138,7 @@ function exit(){
     scene.add(player);
     setWalkable(islandWalkable);
     const p = outsideSpot(b);
-    placePlayer(p.x, p.z, 0, 1);
+    placePlayer(p.x, p.z, p.n.x, p.n.z);
     $("#btn-build").hidden = false;
     $("#btn-deco").hidden = true;
   });
@@ -161,10 +163,12 @@ export function checkDoors(pushing){
     if(d.z === 1 && Math.abs(p.x - room.doorX) < .45 && p.z > room.d/2 - R - .08) exit();
     return;
   }
-  if(d.z !== -1) return;
+  /* dehors : on entre en marchant vers la porte, juste devant elle (quel que soit le côté où elle regarde) */
   for(const b of state.buildings){
-    const door = doorOf(b);
-    if(Math.abs(p.x - door.x) < .45 && p.z > door.z && p.z - door.z < R + .08){ enter(b); return; }
+    const door = doorOf(b), n = door.n;
+    if(d.x !== -n.x || d.z !== -n.z) continue;
+    const cote = n.x === 0 ? Math.abs(p.x - door.x) : Math.abs(p.z - door.z), devant = (p.x - door.x) * n.x + (p.z - door.z) * n.z;
+    if(cote < .45 && devant > 0 && devant < R + .08){ enter(b); return; }
   }
 }
 

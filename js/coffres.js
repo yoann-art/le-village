@@ -44,7 +44,7 @@ export function poseProblem(i){
   if(!inb(x, z) || map.type[i] === "water") return "Pas dans l'eau";
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
   if(state.sol && state.sol[i]) return "Ramasse d'abord ce qui est par terre";
-  if(state.buildings.some(b => { const [dx, dz] = doorTile(b.type, b.x, b.z); return dx === x && dz === z; })) return "La case devant une porte reste libre";
+  if(state.buildings.some(b => { const [dx, dz] = doorTile(b.type, b.x, b.z, b.rot); return dx === x && dz === z; })) return "La case devant une porte reste libre";
   if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === x && tileOf(player.position.z) === z) return "Recule d'un pas pour le poser devant toi";
   return null;

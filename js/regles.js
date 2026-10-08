@@ -4,8 +4,21 @@ import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet } from "
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
-/* La case juste devant la porte d'un bâtiment posé en (x, z) : elle doit rester libre */
-export const doorTile = (t, x, z) => [x + Math.floor(sizeOf(t)/2 + (B[t].door || 0)), z + sizeOf(t)];
+/* La case juste devant la porte d'un bâtiment posé en (x, z) : elle doit rester libre. rot (étape 1.9) : le
+   bâtiment tourné d'autant de quarts de tour (0 : la porte en bas de l'écran, 1 : à droite, 2 : en haut, 3 : à
+   gauche) ; la case tourne avec le bâtiment autour du milieu de son carré */
+export function doorTile(t, x, z, rot = 0){
+  const s = sizeOf(t), k = Math.floor(s/2 + (B[t].door || 0));
+  switch(rot & 3){
+    case 1: return [x + s, z + s - 1 - k];
+    case 2: return [x + s - 1 - k, z - 1];
+    case 3: return [x - 1, z + k];
+    default: return [x + k, z + s];
+  }
+}
+/* Le sens où regarde la porte d'un bâtiment tourné de rot quarts de tour */
+export const SENS = [{x: 0, z: 1}, {x: 1, z: 0}, {x: 0, z: -1}, {x: -1, z: 0}];
+export const porteDe = b => doorTile(b.type, b.x, b.z, b.rot);
 /* Côté de la pièce intérieure, en P : elle grandit de 1 P à chaque niveau */
 const ROOM = {petite:4, moyenne:6, grande:8};
 export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);

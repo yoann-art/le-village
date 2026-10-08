@@ -89,7 +89,7 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
 state.buildings.forEach(b => {
-  const [x, z] = doorTile(b.type, b.x, b.z);
+  const [x, z] = doorTile(b.type, b.x, b.z, b.rot);
   if(inb(x, z)) map.obj[idx(x, z)] = null;
 });
 /* Ce que le joueur a changé sur l'île (étape 1.5) : state.ile = {case: {o, plante?, coupe?, vide?, arrose?}} ;

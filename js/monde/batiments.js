@@ -144,6 +144,7 @@ export function placeMesh(b){
   if(bMeshes.has(b.id)) scene.remove(bMeshes.get(b.id));
   const s = sizeOf(b.type), g = makeBuilding(b.type, b.lvl);
   g.position.set(b.x - H + s/2, 0, b.z - H + s/2);
+  g.rotation.y = (b.rot || 0) * Math.PI / 2;          // tourné (étape 1.9) : la porte regarde vers b.rot
   scene.add(g); bMeshes.set(b.id, g);
 }
 /* Montre ou cache le modèle d'un bâtiment posé (caché pendant qu'on le déplace) */

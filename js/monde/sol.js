@@ -35,7 +35,7 @@ function remove(i){
 /* Une case où il peut apparaître : la bonne sorte de sol, rien dessus, pas un bâtiment ni la case d'une porte */
 const NEAR = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
 function spot(k){
-  const d = SOL[k], doors = new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z); return idx(x, z); }));
+  const d = SOL[k], doors = new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return idx(x, z); }));
   const ok = [];
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z);

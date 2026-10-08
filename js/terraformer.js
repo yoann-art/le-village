@@ -68,7 +68,7 @@ function probleme(t){
   if(t.pelle === "combler") return comblable(t.i) ? null : "🌊 La mer ne se comble pas : l'île garde sa forme";
   const i = t.i;
   if(map.type[i] !== "grass") return "🏖️ Le sable s'écroule : on ne creuse que dans l'herbe";
-  if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
+  if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
   if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour creuser devant toi";
   if(!relie(i) && relie(-1)) return "Tu ne pourrais plus revenir : laisse-toi un passage";
