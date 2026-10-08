@@ -7,7 +7,7 @@ const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
-    buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}};
+    buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{}};
 }
 function read(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
 export function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
@@ -32,6 +32,7 @@ export let state, migrationMsg = null;
   if(!state.carnet.gibier) state.carnet.gibier = {};        // étape 1.7, morceau 5
   if(!state.carnet.monstres) state.carnet.monstres = {};    // étape 1.8, morceau 3
   if(!state.terrain) state.terrain = {};                    // étape 1.9 : les cases creusées ou comblées
+  if(!state.chemins) state.chemins = {};                    // étape 1.9, morceau 2 : les chemins {case: sorte}
   /* Les cases rapides (demande de Yo, v1.7.6) : elles gardaient le nom d'un objet du sac ; elles gardent
      maintenant l'objet lui-même, sorti du sac (un outil, ou une pile de graines…) */
   state.barre = state.barre.map(k => {

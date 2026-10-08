@@ -6,15 +6,17 @@
    de Minecraft, en plus du sac). state.barre = [{k, n} ou null, ×3] : un outil, ou une pile de graines, de coffres,
    de rochers ; state.main = la clé de l'objet tenu. Un même objet n'occupe qu'une case. */
 import { $ } from "./outils.js";
-import { OUTILS, GRAINES, POSABLES, SAC, objet, icone } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacCount, pileOf, slotsAdd, slotsPlace } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
 import { openSheet, closeSheet, toast, wrap } from "./interface.js";
 
 const bar = $("#barre");
-/* Ce qui se tient en main : un outil, ou une graine qu'on va planter */
-export const utilisable = k => !!(OUTILS[k] || GRAINES[k] || POSABLES[k]);
+/* Ce qui se tient en main : un outil, une graine qu'on va planter, ce qu'on pose ; et la matière d'un chemin
+   (planches, blocs, gravier : étape 1.9), qu'on prend en main soi-même */
+export const enCaseAuto = k => !!(OUTILS[k] || GRAINES[k] || POSABLES[k]);
+export const utilisable = k => enCaseAuto(k) || !!CHEMIN_DE[k];
 
 /* Prend un outil en main (une clé de OUTILS), ou vide la main (null) */
 export function hold(k){

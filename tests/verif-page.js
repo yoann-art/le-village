@@ -11,7 +11,7 @@
    le poisson grillé qui soigne, vaincu : la moitié du butin de la grotte perdue, jamais l'équipement, le réveil au
    village, toute sa vie revenue), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
-   creuser et combler à la pelle, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   creuser et combler à la pelle, tracer un chemin en marchant et l'enlever à la pelle, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, objet } from "../js/donnees.js";
@@ -30,6 +30,7 @@ import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/f
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
+import { updateChemins } from "../js/terraformer.js";
 import { checkDoors, isInside, currentPlace } from "../js/lieux.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
@@ -263,6 +264,35 @@ export async function verifier(){
     if(map.type[t.i] !== "grass" || state.terrain[t.i]) throw new Error("la case n'est pas comblée");
     hold(null);
     return `${OUTILS.pelleBois.coups} coups de pelle : de l'eau, puis comblée`;
+  });
+  await etape("Tracer un chemin en marchant, puis l'enlever à la pelle", async () => {
+    place(2);
+    sacAdd("planche", 6); sacAdd("pelleBois", 1);
+    keys.u = keys.d = keys.l = keys.r = 0;
+    /* une rangée de 5 cases libres sur la place du village, pour marcher vers la droite */
+    const c = Math.floor(N / 2), libre = j => map.type[j] !== "water" && !map.obj[j] && !occ.has(j) && !state.chemins[j];
+    let rang = null;
+    for(let dz = 1; dz < 8 && rang === null; dz++) for(const z of [c + dz, c - dz]) if([0, 1, 2, 3, 4].every(k => libre(idx(c - 2 + k, z)))){ rang = z; break; }
+    if(rang === null) throw new Error("pas de rangée libre sur la place");
+    hold("planche");
+    placePlayer(centerOf(c - 2), centerOf(rang), 1, 0); updateChemins(true);
+    const bt = $("#btn-tracer");
+    if(bt.hidden || !bt.textContent.includes("planches")) throw new Error(`des planches en main, le bouton « Tracer » ${bt.hidden ? "n'apparaît pas" : `dit « ${bt.textContent} »`}`);
+    bt.click();
+    const avant = owned("planche");
+    keys.r = 1; for(let f = 0; f < 50; f++){ updatePlayer(.016); updateChemins(true); } keys.r = 0; updatePlayer(.016);
+    bt.click();
+    const poses = [0, 1, 2, 3, 4].filter(k => state.chemins[idx(c - 2 + k, rang)] === "planches").length;
+    if(poses < 2) throw new Error(`${poses} case de chemin en marchant`);
+    if(owned("planche") !== avant - poses) throw new Error("les planches ne sont pas prises une par case");
+    /* la pelle, tournée vers le chemin derrière soi, enlève une case et rend sa planche */
+    hold("pelleBois");
+    const p = player.position; placePlayer(p.x, p.z, -1, 0); frames(1);
+    if(!$("#btn-act").textContent.includes("Enlever")) throw new Error(`face au chemin, la pelle en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    const pl = owned("planche"); $("#btn-act").click(); frames(1);
+    if(owned("planche") !== pl + 1) throw new Error("la planche du chemin enlevé n'est pas rendue");
+    hold(null);
+    return `${poses} cases de planches en marchant, une enlevée à la pelle`;
   });
   await etape("Attraper un insecte au filet", async () => {
     place(2);

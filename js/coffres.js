@@ -26,7 +26,7 @@ import { addItemMesh, removeItemMesh } from "./monde/interieurs.js";
 import { currentPlace } from "./lieux.js";
 import { placerDans } from "./decorer.js";
 import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
-import { syncBarre, barreAuto, utilisable, jauge, enCase, hold } from "./barre.js";
+import { syncBarre, barreAuto, utilisable, enCaseAuto, jauge, enCase, hold } from "./barre.js";
 
 const coffreOf = id => state.coffres.find(c => c.id === id);
 const nomCoffre = co => `Coffre ${state.coffres.indexOf(co) + 1}`;
@@ -189,7 +189,7 @@ function ranger(ou, it, n){
 function prendre(it, n){
   if(it.items){ if(!sacPut(it)) return 0; oter("coffre", it, 1); barreAuto(it.k); return 1; }
   const m = sacAdd(it.k, Math.min(n, it.n));
-  if(m){ oter("coffre", it, m); if(utilisable(it.k)) barreAuto(it.k); }
+  if(m){ oter("coffre", it, m); if(enCaseAuto(it.k)) barreAuto(it.k); }
   return m;
 }
 /* Range tout le sac, ou seulement ce que le coffre a déjà (« Compléter les piles ») */

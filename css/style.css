@@ -81,6 +81,7 @@ button{font:inherit;color:inherit}
 .act.primary{background:var(--sinople);color:var(--on-sinople)}
 .act.ctx{background:#E2B24D;color:#1C2230}
 .act:disabled{opacity:.45;cursor:not-allowed}
+.act.ctx.on{background:#E4574C;color:#fff}
 .act.ferrer{background:#E4574C;color:#fff;animation:ferrer .3s ease-in-out infinite alternate}
 @keyframes ferrer{to{transform:scale(1.1)}}
 .ico-poisson{width:1.35em;height:.85em;vertical-align:middle}

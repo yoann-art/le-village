@@ -23,6 +23,7 @@ import { updatePlan } from "./ateliers.js";
 import { updateCoffrePiece } from "./coffres.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
+import { updateChemins } from "./terraformer.js";
 import { lampeSur } from "./monde/interieurs.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
@@ -83,6 +84,7 @@ function tick(now){
   updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
   updateTorche(dt);                                        // dans la grotte : la torche éclaire et s'use
   updateCombat(dt, wrap.hidden && !isBusy());              // dans la grotte : les cœurs, les coups, les monstres
+  updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating());   // sur l'île : tracer les chemins en marchant
   renderer.render(currentScene(), camera);
   if(dirty && now - lastSave > 2000){
     const p = islandPos();

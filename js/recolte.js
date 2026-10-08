@@ -135,6 +135,7 @@ function plantProblem(t, plante){
   if(map.type[i] !== "grass") return "Ça ne pousse que sur l'herbe";
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
   if(solAt(i)) return "Ramasse d'abord ce qui est par terre";
+  if(state.chemins[i]) return "Rien ne pousse sur un chemin (la pelle l'enlève)";
   if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
   if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour planter devant toi";

@@ -17,7 +17,7 @@ import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
-import { barreAuto, utilisable } from "./barre.js";
+import { barreAuto, enCaseAuto } from "./barre.js";
 
 /* ----- Noms et images de ce qu'on fabrique ou utilise ----- */
 const info = k => { const o = objet(k); return {nom: o.nom, pluriel: o.pluriel || o.nom, emoji: o.emoji}; };
@@ -101,7 +101,7 @@ function livrer(){
       const j = q[0];
       if(ATELIERS[b.type].vente && !j.bonus){ j.n = gain(j.n, j.out); j.bonus = true; }   // une vente : le bonus du Marché
       const r = addOwned(j.out, j.n);
-      if(r.sac && utilisable(j.out)) barreAuto(j.out);     // un nouvel outil prend une case rapide libre
+      if(r.sac && enCaseAuto(j.out)) barreAuto(j.out);     // un nouvel outil prend une case rapide libre
       if(r.sac || r.coffre || r.bourse) faits.push({b, j, sac: r.sac, coffre: r.coffre, bourse: r.bourse || 0});
       if(r.reste){ j.n = r.reste; bloque = true; break; }
       q.shift();

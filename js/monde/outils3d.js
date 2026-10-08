@@ -3,7 +3,7 @@
    et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
 import { G, part } from "./formes.js";
-import { OUTILS, GRAINES, POSABLES } from "../donnees.js";
+import { OUTILS, GRAINES, POSABLES, CHEMIN_DE } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 
@@ -69,6 +69,15 @@ function graine(g){
   g.add(part(G.cyl, C.dark, .12, .04, .12, 0, .24, 0));                              // lien
   g.add(part(G.head, 0x7A4E2A, .28, .3, .28, 0, .3, .02));                           // la graine qui dépasse
 }
+/* La matière d'un chemin, tenue en main (étape 1.9) : une planche, un bloc, un petit tas de gravier */
+function matiere(g, k){
+  if(k === "planche") g.add(part(G.box, 0xC29462, .09, .05, .46, 0, .1, .12));
+  else if(k === "bloc") g.add(part(G.box, 0x9EA3A8, .2, .15, .2, 0, .08, .05));
+  else {
+    g.add(part(G.head, 0xD8CDB4, .7, .5, .7, 0, .06, .05));
+    for(const [x, z] of [[-.05, .02], [.05, .08], [0, -.04]]) g.add(part(G.dode, 0x8E8678, .05, .04, .05, x, .12, z));
+  }
+}
 /* Le modèle d'un outil (une clé de OUTILS) ou d'une graine (une clé de GRAINES) */
 export function makeOutil(k){
   const g = new THREE.Group();
@@ -77,6 +86,7 @@ export function makeOutil(k){
     const c = POSABLES[k].pose === "coffre" ? makeMeuble("coffre") : rockMesh(POSABLES[k].pose, .5);
     c.scale.multiplyScalar(POSABLES[k].pose === "coffre" ? .22 : .4); c.position.y = .05; g.add(c); return g;
   }
+  else if(CHEMIN_DE[k]) matiere(g, k);
   else BUILD[OUTILS[k].famille](g, OUTILS[k]);
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;

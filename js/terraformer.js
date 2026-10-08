@@ -6,10 +6,18 @@
    (l'étang, l'eau creusée) : « 🪏 Combler » (la case redevient de la terre). Décidé avec Yo : la mer ne se comble pas,
    l'île garde sa forme. On ne creuse jamais devant une porte, sous un bâtiment ou un coffre, devant le ponton ou le
    pont de la forêt, ni de quoi s'enfermer : il faut toujours pouvoir rejoindre le pont de la forêt. La case visée
-   est en surbrillance (jaune si c'est possible, rouge sinon : recolte.js). */
-import { OUTILS } from "./donnees.js";
+   est en surbrillance (jaune si c'est possible, rouge sinon : recolte.js).
+   Morceau 2, les chemins (CHEMINS dans donnees.js, modèles dans monde/chemins.js) : la pelle en main (chemin de
+   terre, gratuit), ou des planches, des blocs (pavés) ou du gravier en main : « 👣 Tracer » ; tant qu'on ne l'arrête
+   pas, chaque case de terre libre où l'on marche devient chemin (une pièce par case, prise dans le sac). La pelle
+   en main, face à un chemin : « 🪏 Enlever le chemin » (la pièce revient dans le sac). Rien ne pousse sur un chemin
+   (recolte.js) ; sous un bâtiment, il est caché. */
+import { $ } from "./outils.js";
+import { OUTILS, CHEMINS, CHEMIN_DE, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { doorTile } from "./regles.js";
+import { doorTile, sacCount, sacTake, sacAdd, sacPlace } from "./regles.js";
+import { syncBarre } from "./barre.js";
+import { dessinerChemins } from "./monde/chemins.js";
 import { map, idx, inb, N, tileOf, comblable, setTerrain, terreDe, entamer } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { solAt } from "./monde/sol.js";
@@ -24,6 +32,7 @@ export function cibleTerrain(){
   const [x, z] = frontTile(.8);
   if(!inb(x, z)) return null;
   const i = idx(x, z);
+  if(state.chemins[i] && !occ.has(i)) return {i, x, z, pelle: "enlever"};
   if(map.type[i] === "water") return passageCases.has(i) ? null : {i, x, z, pelle: "combler"};
   if(!map.obj[i] && !occ.has(i) && !solAt(i)) return {i, x, z, pelle: "creuser"};
   return null;
@@ -55,6 +64,7 @@ export function terrainProbleme(t){
   return memo.r;
 }
 function probleme(t){
+  if(t.pelle === "enlever") return null;
   if(t.pelle === "combler") return comblable(t.i) ? null : "🌊 La mer ne se comble pas : l'île garde sa forme";
   const i = t.i;
   if(map.type[i] !== "grass") return "🏖️ Le sable s'écroule : on ne creuse que dans l'herbe";
@@ -68,6 +78,7 @@ function probleme(t){
 /* ----- Le bouton d'action (recolte.js) ----- */
 const coups = new Map();        // la case qu'on est en train de creuser → coups de pelle déjà donnés
 export function actionTerrain(t){
+  if(t.pelle === "enlever") return {label: `🪏 Enlever le chemin de ${CHEMINS[state.chemins[t.i]].nom}`, run: () => enlever(t)};
   if(t.pelle === "combler") return {label: "🪏 Combler", run: () => combler(t)};
   const n = coups.get(t.i) || 0, reste = (OUTILS[state.main].coups || 1) - n;
   return {label: `🪏 Creuser${n ? ` (${reste})` : ""}`, run: () => creuser(t)};
@@ -91,3 +102,75 @@ function combler(t){
   setTerrain(t.i, terreDe(t.i)); memo.cle = "";
   save();
 }
+
+/* ----- Les chemins (morceau 2) ----- */
+/* Enlever un chemin à la pelle : la pièce revient dans le sac (s'il y a la place) */
+function enlever(t){
+  const s = state.chemins[t.i], k = CHEMINS[s] && CHEMINS[s].avec;
+  geste();
+  delete state.chemins[t.i];
+  if(k && sacPlace(k) > 0){ sacAdd(k, 1); syncBarre(); }
+  dessinerChemins(); memo.cle = ""; save();
+}
+/* Le chemin que trace ce qu'on tient en main : la pelle, la terre ; des planches, des blocs, du gravier */
+function sorteTenue(){
+  const k = state.main;
+  if(!k) return null;
+  if(OUTILS[k] && OUTILS[k].famille === "pelle") return "terre";
+  return CHEMIN_DE[k] || null;
+}
+/* Une case peut-elle devenir chemin ? De la terre (herbe ou sable), rien dessus, pas sous un bâtiment */
+const cheminPossible = i => i >= 0 && map.type[i] !== "water" && !map.obj[i] && !occ.has(i);
+const bTracer = $("#btn-tracer");
+let trace = null;          // {sorte, n : cases posées, derniere : la dernière case regardée}
+function arreter(msg){
+  if(!trace) return;
+  if(msg || trace.n) toast(msg || `👣 Chemin de ${CHEMINS[trace.sorte].nom} : ${trace.n} case${trace.n > 1 ? "s" : ""}`, 2400);
+  trace = null; save();
+}
+function tracer(){
+  if(trace){ arreter(); return; }
+  const sorte = sorteTenue();
+  if(!sorte) return;
+  trace = {sorte, n: 0, derniere: -1};
+  toast(`👣 Marche : chaque case devient un chemin de ${CHEMINS[sorte].nom}. Touche « Arrêter » pour finir`, 3000);
+}
+bTracer.addEventListener("click", tracer);
+/* La case où l'on marche devient chemin */
+function poser(i){
+  if(!cheminPossible(i) || state.chemins[i] === trace.sorte) return;
+  const ancien = state.chemins[i], k = CHEMINS[trace.sorte].avec;
+  if(k){
+    if(!sacCount(k)){ arreter(`👣 Plus de ${objet(k).pluriel.toLowerCase()} : le chemin s'arrête ici`); return; }
+    sacTake(k, 1);
+  }
+  const rend = ancien && CHEMINS[ancien].avec;           // on change la sorte d'une case : l'ancienne pièce revient
+  if(rend && sacPlace(rend) > 0) sacAdd(rend, 1);
+  state.chemins[i] = trace.sorte; trace.n++;
+  syncBarre(); dessinerChemins();
+}
+/* À chaque image (main.js) ; actif : sur l'île, rien d'ouvert, pas de pose de bâtiment ni de décoration */
+let signature = "", verifie = 0;
+export function updateChemins(actif){
+  const sorte = actif ? sorteTenue() : null;
+  if(trace && sorte !== trace.sorte) arreter();
+  bTracer.hidden = !sorte;
+  if(sorte){
+    const txt = trace ? `⏹️ Arrêter le chemin (${trace.n})` : `👣 Tracer : ${CHEMINS[sorte].nom}`;
+    if(bTracer.textContent !== txt) bTracer.textContent = txt;
+    bTracer.classList.toggle("on", !!trace);
+  }
+  /* un bâtiment posé, déplacé ou amélioré : les chemins dessous se cachent (une fois par seconde, on regarde) */
+  if(performance.now() - verifie > 1000){
+    verifie = performance.now();
+    const sig = state.buildings.map(b => `${b.id}:${b.x},${b.z}`).join(";");
+    if(sig !== signature){ signature = sig; dessinerChemins(); }
+  }
+  if(!trace) return;
+  const i = idx(tileOf(player.position.x), tileOf(player.position.z));
+  if(i === trace.derniere || !inb(tileOf(player.position.x), tileOf(player.position.z))) return;
+  trace.derniere = i;
+  poser(i);
+}
+/* Pour la vérification automatique */
+export const traceEnCours = () => trace && {...trace};

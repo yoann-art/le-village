@@ -404,8 +404,14 @@ for(const p of Object.values(OISEAUX)){
 
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */
 export const PRODUITS = {
-  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫", aide:"Les planches se fabriquent à l'établi de la Scierie."},
-  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱", aide:"Les blocs se taillent à la table de taille de la Carrière."},
+  planche:{nom:"Planche", pluriel:"planches", emoji:"🟫", aide:"Les planches se fabriquent à l'établi de la Scierie.",
+    usage:"Pour fabriquer et bâtir. En main, « 👣 Tracer » fait un chemin de planches : une planche par case."},
+  bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱", aide:"Les blocs se taillent à la table de taille de la Carrière.",
+    usage:"Pour fabriquer et bâtir. En main, « 👣 Tracer » fait un chemin de pavés : un bloc par case."},
+  /* Le gravier (étape 1.9, morceau 2) : pour les chemins de gravier, une poignée par case */
+  gravier:{nom:"Gravier", pluriel:"gravier", emoji:"⚪", aide:"Le gravier se taille à la table de taille de la Carrière : 1 pierre pour 4 poignées.",
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19Q12 6 21 19Z" fill="#CFC6B4" stroke="#1C2230" stroke-opacity=".3"/><g fill="#8E8678"><circle cx="9" cy="16" r="1.3"/><circle cx="13" cy="13" r="1.1"/><circle cx="15.5" cy="17" r="1.4"/><circle cx="11.5" cy="17.5" r="1"/></g><g fill="#F2EDE2"><circle cx="11" cy="14.5" r="1"/><circle cx="17" cy="15" r=".9"/></g></svg>',
+    usage:"En main, « 👣 Tracer » fait un chemin de gravier : une poignée par case."},
   fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
   baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐", aide:"Les baies se cueillent sur les buissons de baies."},
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
@@ -512,6 +518,7 @@ export const ATELIERS = {
   carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{pierre:10, planche:4},
     pour:"tailler des blocs, des statues et des cheminées", recettes:[
     {out:"bloc", n:2, in:{pierre:1}, t:5, lvl:1},
+    {out:"gravier", n:4, in:{pierre:1}, t:5, lvl:1},
     {out:"statue", in:{bloc:3}, t:40, lvl:1},
     {out:"cheminee", in:{bloc:6, planche:2}, t:90, lvl:2}
   ]},
@@ -590,6 +597,17 @@ export const MONSTRES = {
    descend les paliers, et plus on s'éloigne de la lumière, plus ils sont nombreux et forts ») */
 export const PALIER_MONSTRES = {1:[["loup", 2], ["chauveSouris", 3]], 2:[["loup", 2], ["sanglier", 1], ["chauveSouris", 4]],
   3:[["loup", 3], ["sanglier", 1], ["chauveSouris", 4], ["sanglier", 1]]};
+/* Les chemins (étape 1.9, morceau 2 ; Grand Carnet : « Chemins : gravier, pavés ou planches, se tracent librement sur
+   l'île ») : avec = ce qu'il faut tenir en main pour les tracer (une pièce par case, prise dans le sac, rendue quand
+   la pelle enlève le chemin) ; la terre se trace à la pelle, gratuitement (décidé avec Yo) */
+export const CHEMINS = {
+  terre:   {nom:"terre", avec:null},
+  gravier: {nom:"gravier", avec:"gravier"},
+  paves:   {nom:"pavés", avec:"bloc"},
+  planches:{nom:"planches", avec:"planche"}
+};
+/* La matière tenue en main → le chemin qu'elle trace */
+export const CHEMIN_DE = {gravier:"gravier", bloc:"paves", planche:"planches"};
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
 /* Les dessins des bois, des graines, des baies et des fleurs de la forêt */
 {
