@@ -23,8 +23,11 @@ export const PALIERS = 3;
 const BUTIN = p => ({rochers: 4 + p * 2, cuivre: 2 + p, or: p - 1, tresors: p === PALIERS ? 2 : 1});
 
 /* ----- Le plan du palier en cours ----- */
-let plan = null;          // {palier, sol, objets (case → sorte), passages, depart, porte, salles}
+let plan = null;          // {palier, sol, objets (case → sorte), passages, depart, porte, salles, visite}
+let visites = 0;
 export const palierEnCours = () => plan && plan.palier;
+/* Le numéro du palier tiré en dernier : il change à chaque palier, à chaque visite (les monstres s'en servent) */
+export const visiteEnCours = () => plan ? plan.visite : 0;
 function genere(palier){
   const rnd = Math.random;                         // la grotte change à chaque visite (bible)
   const sol = new Uint8Array(W * D);
@@ -81,7 +84,7 @@ function genere(palier){
     if(!sol[i] || objets.has(i) || ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, c]) => !sol[(z + c) * W + x + a])) continue;
     lueurs.push(i);
   }
-  return {palier, sol, objets, passages, depart, porte: palier === 1, lueurs, rnd: [...Array(W * D)].map(() => rnd())};
+  return {palier, sol, objets, passages, depart, porte: palier === 1, lueurs, salles, visite: ++visites, rnd: [...Array(W * D)].map(() => rnd())};
 }
 
 /* ----- Ce qu'il y a sur une case ; le miner, l'ouvrir ----- */
@@ -194,8 +197,21 @@ export function makeGrotte(palier){
   return {group, w: W, d: D, doorX: plan.porte ? 0 : null, walk, passages: plan.passages, depart: plan.depart,
     fond: 0x050407, light: 0x8090A8, power: .06, sky: 0x2A2E3A, ground: 0x0E0B08, hemi: .14};   // pas de brume : la pénombre vient de la lumière
 }
+/* Les tanières des monstres (étape 1.8) : le milieu de n salles tirées au hasard, jamais la salle d'arrivée ;
+   une salle chacun ; {x, z} dans le monde */
+export function tanieres(n){
+  const out = [], salles = plan.salles.slice(1).sort(() => Math.random() - .5);
+  for(const s of salles){
+    if(out.length >= n) break;
+    for(let essai = 0; essai < 12; essai++){
+      const x = s.x0 + 1 + Math.floor(Math.random() * Math.max(1, s.x1 - s.x0 - 1)), z = s.z0 + 1 + Math.floor(Math.random() * Math.max(1, s.z1 - s.z0 - 1));
+      if(walk(cx(x), cz(z))){ out.push({x: cx(x), z: cz(z)}); break; }
+    }
+  }
+  return out;
+}
 /* Où l'on marche : le sol, sans les rochers ni les coffres */
-function walk(x, z){
+export function walk(x, z){
   const i = gtile(x, z);
   return i >= 0 && !!plan.sol[i] && !plan.objets.has(i);
 }

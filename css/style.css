@@ -60,6 +60,23 @@ button{font:inherit;color:inherit}
 .jauge.feu i{background:#F0A040}
 .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 3px 8px rgba(0,0,0,.25);pointer-events:none}
 .actions{position:absolute;left:14px;bottom:24px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+/* Le combat (étape 1.8) : les cœurs en haut, à la place de l'objectif ; trois boutons ronds en bas à gauche, sous les autres */
+.coeurs{position:absolute;top:50px;left:10px;z-index:2;display:flex;gap:2px;background:var(--hud);border-radius:12px;padding:2px 8px;font-size:19px;line-height:1.35;box-shadow:0 2px 0 rgba(0,0,0,.12);pointer-events:none}
+.coeurs i{font-style:normal}
+.coeurs i.vide{filter:grayscale(1);opacity:.35}
+.coeurs.secoue{animation:secoue .4s}
+@keyframes secoue{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.combat{display:flex;align-items:flex-end;gap:6px}
+.cb{border:0;border-radius:50%;width:50px;height:50px;padding:0;background:var(--hud);box-shadow:0 3px 0 rgba(0,0,0,.2);cursor:pointer;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;transition:opacity .15s}
+.cb span{font-size:21px}
+.cb small{font-size:10px;font-weight:700;margin-top:2px;white-space:nowrap}
+.cb.attaque{width:60px;height:60px;background:#E2B24D;color:#1C2230}
+.cb.attaque span{font-size:26px}
+.cb:active{transform:scale(.92)}
+.cb.attend,.cb.vide{opacity:.5}
+.aie{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px rgba(200,30,20,.75)}
+.aie.on{animation:aie .5s ease-out}
+@keyframes aie{from{opacity:1}to{opacity:0}}
 .act{border:0;border-radius:999px;min-height:50px;padding:0 18px;background:var(--hud);font-weight:700;font-size:17px;box-shadow:0 3px 0 rgba(0,0,0,.2);cursor:pointer;touch-action:manipulation;white-space:nowrap}
 .act.primary{background:var(--sinople);color:var(--on-sinople)}
 .act.ctx{background:#E2B24D;color:#1C2230}

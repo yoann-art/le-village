@@ -22,6 +22,7 @@ import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from
 import { updatePlan } from "./ateliers.js";
 import { updateCoffrePiece } from "./coffres.js";
 import { updateTorche } from "./torche.js";
+import { updateCombat } from "./combat.js";
 import { lampeSur } from "./monde/interieurs.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
@@ -81,6 +82,7 @@ function tick(now){
   updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden);   // un coffre dans la pièce : l'ouvrir, ou le poser
   updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
   updateTorche(dt);                                        // dans la grotte : la torche éclaire et s'use
+  updateCombat(dt, wrap.hidden && !isBusy());              // dans la grotte : les cœurs, les coups, les monstres
   renderer.render(currentScene(), camera);
   if(dirty && now - lastSave > 2000){
     const p = islandPos();

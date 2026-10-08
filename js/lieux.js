@@ -97,6 +97,8 @@ function sortirGrotte(){
     $("#btn-deco").hidden = true;
   });
 }
+/* Pour le combat (étape 1.8) : vaincu dans la grotte, on se retrouve dans la forêt */
+export function quitterGrotte(){ if(inside && inside.b.type === "grotte" && !busy) sortirGrotte(); }
 function exit(){
   const b = inside.b;
   fade(() => {

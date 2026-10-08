@@ -83,7 +83,7 @@ export const OUTILS = {
   canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
   /* Le filet (étape 1.7, Grand Carnet : « Établi, avec du lin » ; des fibres en attendant le lin) */
   filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, usage:"Pour attraper les insectes et les oiseaux : approche à pas de loup, en poussant le joystick doucement, puis « Attraper » ou « Lancer le filet »."},
-  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Servira à te défendre dans la grotte."},
+  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Pour te défendre dans la grotte : le bouton ⚔️ Attaquer la prend en main tout seul."},
   /* La chasse (étape 1.7, morceau 5, carnet : « Arc et flèches | Établi, en bois d'if ») */
   /* La grotte (étape 1.8, carnet : « Torche, puis lanterne : éclairer les grottes ; la torche s'use ») : elles
      s'empilent (pile), chacune brûle duree secondes, seulement dans la grotte */
@@ -93,7 +93,7 @@ export const OUTILS = {
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
   hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", emoji:"🪓", famille:"hache", force:2, tete:0xC8743C, usage:"Coupe les arbres : un bois de plus à chaque coup."},
   piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", emoji:"⛏️", famille:"pioche", force:2, tete:0xC8743C, usage:"Casse les rochers : une pierre de plus à chaque coup."},
-  epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", emoji:"🗡️", famille:"arme", force:2, tete:0xC8743C, usage:"Servira à te défendre dans la grotte, plus fort que l'épée en bois."},
+  epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", emoji:"🗡️", famille:"arme", force:2, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
   arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5,
     usage:"Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."}
 };
@@ -450,7 +450,7 @@ export const PRODUITS = {
     usage:"Une herbe aromatique des prés de l'île, toute l'année. Pour la cuisine (le poisson grillé) et, plus tard, des potions douces."},
   poissonGrille:{nom:"Poisson grillé", pluriel:"poissons grillés", emoji:"🍢", prix:3, aide:"Le poisson grillé se cuisine au fourneau de la Taverne : un poisson et un brin de thym.",
     icone:'<svg class="ico-poisson" viewBox="0 0 32 20" aria-hidden="true"><polygon points="21,10 31,5 31,15" fill="#B9733A" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="12" cy="10" rx="11" ry="5.6" fill="#C98A4B" stroke="#1C2230" stroke-opacity=".35"/><path d="M8 5.5v9M12 4.5v11M16 5.5v9" stroke="#5A3418" stroke-width="1.4" stroke-linecap="round"/><circle cx="5.5" cy="8.3" r="1.5" fill="#1C2230"/><g fill="#7E9C66"><ellipse cx="19" cy="4" rx="2" ry="1"/><ellipse cx="21.5" cy="5.5" rx="1.8" ry=".9"/></g></svg>',
-    usage:"Il soigne : il servira dans la grotte (étape 1.8). Se cuisine au fourneau de la Taverne (un poisson et un brin de thym) ; se vend 3 or au comptoir."}
+    usage:"Il soigne : dans la grotte, le bouton 🍢 te rend 2 cœurs. Se cuisine au fourneau de la Taverne (un poisson et un brin de thym) ; se vend 3 or au comptoir."}
 };
 /* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
    construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le ; fem : nom féminin),
@@ -539,6 +539,23 @@ export const COULEURS = {
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
+/* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
+   vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
+   automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;
+   coup : le temps entre deux coups (s) ; roulade : sa longueur (P), sa durée et l'attente avant la suivante (s) ;
+   repit : après une blessure, le temps où plus rien ne touche (s) */
+export const COMBAT = {vie:5, soin:2, portee:1.45, vise:2.6, pas:.55, coup:.42, roulade:{dist:2.2, duree:.38, attente:.6}, repit:1.1};
+/* Les monstres de la grotte (bible, étape 0.5 ; Grand Carnet, « Les monstres », la grotte de la Forêt profonde) : chaque
+   attaque s'annonce par un signe (bible : « on gagne en observant »). vie : en coups d'épée en bois ; degats : les cœurs
+   qu'enlève une attaque ; vitesse (P/s) ; flair : à quelle distance il repère le personnage (P) ; tourne : à quelle
+   distance il tourne autour avant d'attaquer ; signe : la durée du signe (s) ; bond : sa vitesse (P/s) et sa durée (s) ;
+   souffle : le temps où il reprend son souffle après son bond (le moment de frapper).
+   Morceau 2 (décidé avec Yo) : le loup arrive seul, pour essayer le combat ; la meute, le sanglier, les chauves-souris,
+   ce qu'ils laissent et la page du carnet viendront au morceau 3. */
+export const MONSTRES = {
+  loup:{nom:"Loup", emoji:"🐺", taille:"moyen", vie:3, degats:1, vitesse:2.5, flair:5.5, tourne:1.9, signe:.75, bond:{v:7.5, t:.3}, souffle:1,
+    comportement:"Chasse en meute et encercle", annonce:"Grogne et baisse la tête", laisse:"Croc, fourrure grise"}
+};
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
 /* Les dessins des bois, des graines, des baies et des fleurs de la forêt */
 {

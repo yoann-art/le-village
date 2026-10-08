@@ -7,12 +7,14 @@
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
    chasser à l'arc (un chevreuil, approché sous le vent) et ramasser le présent du Cerf blanc,
    la grotte (y entrer depuis la forêt, la torche allumée, descendre d'un palier, remonter par la corde),
+   le combat (un loup qui mord, la roulade qui esquive, l'épée qui le vainc, le poisson grillé qui soigne, vaincu :
+   le retour dans la forêt, toute sa vie revenue),
    ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
-import { sacAdd, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
+import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
@@ -20,6 +22,8 @@ import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
+import { lacherMonstre, pauseMonstres, monstresVaincus } from "../js/monstres.js";
+import { combat, vieCombat } from "../js/combat.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
@@ -58,6 +62,7 @@ export async function verifier(){
   }
   if(state.buildings.some(b => !B[b.type].fixe)) return {ok, erreurs: ["✗ Partie déjà commencée : la vérification ne tourne que sur une partie neuve"]};
   pauseInsectes(true); pauseOiseaux(true);             // les insectes et les oiseaux de passage ne prennent pas la place des boutons essayés
+  pauseMonstres(true);                                 // pas de loups dans la grotte, sauf ceux de l'essai du combat
 
   await etape("La partie neuve", async () => {
     if(state.v !== 4) throw new Error(`format de sauvegarde ${state.v}`);
@@ -355,6 +360,46 @@ export async function verifier(){
     await sortir();
     return "palier 1, palier 2, puis la corde jusqu'à la forêt";
   });
+  await etape("Le combat : un loup mord, la roulade esquive, l'épée le vainc, le poisson grillé soigne, vaincu", async () => {
+    place(3);
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    sacAdd("epeeBois", 1); sacAdd("poissonGrille", 1); hold(null);
+    const E = ENTREE_GROTTE;
+    placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
+    if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte");
+    if($("#coeurs").hidden || $("#combat").hidden) throw new Error("pas de cœurs ni de boutons de combat dans la grotte");
+    if(vieCombat() !== COMBAT.vie) throw new Error(`${vieCombat()} cœurs en entrant, au lieu de ${COMBAT.vie}`);
+    /* un loup qui bondit tout près : il mord */
+    let p = player.position;
+    lacherMonstre("loup", p.x + .9, p.z, "bond");
+    if(!await attendre(() => vieCombat() < COMBAT.vie, 3000)) throw new Error("le loup qui bondit ne mord pas");
+    if($("#coeurs").querySelectorAll(".vide").length !== COMBAT.vie - vieCombat()) throw new Error("le cœur perdu ne se voit pas");
+    /* un autre bondit pendant une roulade : il ne touche pas */
+    await wait(COMBAT.repit * 1000 + 200);
+    const vie = vieCombat(); p = player.position;
+    lacherMonstre("loup", p.x - .9, p.z, "bond"); combat.rouler();
+    await wait(600);
+    if(vieCombat() < vie) throw new Error("la roulade n'esquive pas le bond du loup");
+    /* frapper à l'épée en bois (prise dans le sac), le loup le plus proche, jusqu'à le vaincre */
+    const avant = monstresVaincus();
+    let coups = 0;
+    while(monstresVaincus() === avant && coups < 12){ combat.attaquer(); coups++; await wait(COMBAT.coup * 1000 + 100); }
+    if(monstresVaincus() === avant) throw new Error("aucun loup vaincu à l'épée");
+    if(state.main !== "epeeBois") throw new Error("l'épée n'est pas prise en main");
+    pauseMonstres(true);                               // l'autre loup s'en va
+    /* le poisson grillé rend des cœurs */
+    const v = vieCombat(), poissons = sacCount("poissonGrille");
+    combat.manger();
+    if(vieCombat() !== Math.min(COMBAT.vie, v + COMBAT.soin) || sacCount("poissonGrille") !== poissons - 1) throw new Error(`le poisson grillé ne soigne pas (${v} → ${vieCombat()} cœurs)`);
+    /* à 0 cœur : on se retrouve dans la forêt, toute sa vie revenue */
+    await wait(COMBAT.repit * 1000 + 200);
+    p = player.position;
+    combat.blesser(vieCombat(), {x: p.x + 1, z: p.z});
+    if(!await attendre(() => currentPlace() && currentPlace().b.type === "foret")) throw new Error("vaincu, on ne se retrouve pas dans la forêt");
+    if(vieCombat() !== COMBAT.vie || !$("#coeurs").hidden) throw new Error("la vie ne revient pas en sortant de la grotte");
+    await sortir();
+    return `mordu (${COMBAT.vie - vie} cœur), esquivé, un loup vaincu en ${coups} coups, soigné, puis réveillé dans la forêt`;
+  });
   await etape("Vendre au comptoir, tout de suite", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
     const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
@@ -433,6 +478,6 @@ export async function verifier(){
     keys.d = 1; for(let k = 0; k < 10; k++) updatePlayer(.016); keys.d = 0; updatePlayer(.016);
     return "il glisse hors du bâtiment";
   });
-  pauseInsectes(false); pauseOiseaux(false);
+  pauseInsectes(false); pauseOiseaux(false); pauseMonstres(false);
   return {ok, erreurs};
 }

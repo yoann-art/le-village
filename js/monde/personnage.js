@@ -65,6 +65,7 @@ export function islandWalkable(wx, wz){
 let walkable = islandWalkable;
 export function setWalkable(fn){ walkable = fn; }
 const free = (wx, wz) => walkable(wx-R, wz-R) && walkable(wx+R, wz-R) && walkable(wx-R, wz+R) && walkable(wx+R, wz+R);
+export const libre = free;
 /* Ne jamais rester coincé (bugs de Yo, 6 octobre 2026 : un arbre planté contre le personnage, une partie rouverte
    dans un bâtiment) : s'il se retrouve dans un obstacle, il glisse jusqu'à la place libre la plus proche */
 export function degager(){
@@ -105,8 +106,32 @@ export function frontTile(dist){
   const d = dir4();
   return [tileOf(player.position.x + d.x*dist), tileOf(player.position.z + d.z*dist)];
 }
+/* Un élan (étape 1.8) : la roulade (roule : il fait la culbute), ou le recul quand un monstre le blesse ; vx, vz en P/s,
+   pendant T secondes ; le joystick n'agit pas pendant ce temps */
+let elanEnCours = null;
+export function elan(vx, vz, T, roule){ elanEnCours = {vx, vz, t: 0, T, roule}; }
+export const enRoulade = () => !!(elanEnCours && elanEnCours.roule);
+/* Après une blessure, il clignote pendant t secondes */
+let clign = 0;
+export function clignoter(t){ clign = t; }
+function bouger(dt){
+  const e = elanEnCours, p = player.position;
+  e.t += dt;
+  const nx = p.x + e.vx * dt, nz = p.z + e.vz * dt;
+  if(free(nx, p.z)) p.x = nx;
+  if(free(p.x, nz)) p.z = nz;
+  const u = Math.min(1, e.t / e.T), a = e.roule ? u * Math.PI * 2 : 0;
+  /* la culbute tourne autour du milieu du corps (à .45 du sol), et le soulève un peu */
+  body.rotation.x = a;
+  body.position.set(0, e.roule ? .45 - .45 * Math.cos(a) + Math.sin(u * Math.PI) * .25 : 0, e.roule ? -.45 * Math.sin(a) : 0);
+  legL.rotation.x = legR.rotation.x = e.roule ? -.9 : 0;
+  if(e.t >= e.T){ elanEnCours = null; body.rotation.x = 0; body.position.set(0, 0, 0); }
+}
 export function updatePlayer(dt){
   degager();                                          // coincé (un arbre planté, un bâtiment, un meuble posé dessus) : il se dégage
+  if(clign > 0){ clign -= dt; body.visible = clign <= 0 || Math.floor(clign * 12) % 2 === 0; }
+  else if(!body.visible) body.visible = true;
+  if(elanEnCours){ bouger(dt); allureNow = 0; return false; }
   let ix = jv.x, iz = jv.z;
   if(!ix && !iz){
     ix = (keys.r||0) - (keys.l||0); iz = (keys.d||0) - (keys.u||0);
