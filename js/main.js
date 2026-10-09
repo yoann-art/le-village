@@ -57,12 +57,44 @@ let lastSave = 0, dirty = false;
 const OFF = new THREE.Vector3(0, .78, .63).normalize(), camT = new THREE.Vector3();
 camT.copy(player.position);
 
+/* Une erreur dans un morceau du jeu ne doit jamais tout figer (bug de Yo, 9 octobre 2026 : le jeu bloqué après avoir
+   replanté une fleur) : chaque morceau de la boucle est gardé à part (garde), la boucle repart toujours ; l'erreur est
+   écrite dans la console (la vérification automatique la voit) et montrée une fois à l'écran, pour la décrire à Claude */
+const vues = new Set();
+function signaler(nom, e){
+  console.error(`[${nom}]`, e);
+  const cle = nom + ":" + (e && e.message);
+  if(vues.has(cle)) return;
+  vues.add(cle);
+  toast(`⚠️ Erreur du jeu (${nom}) : ${e && e.message}. Dis-le à Claude, avec ce que tu faisais.`, 9000);
+}
+function garde(nom, f){ try{ return f(); }catch(e){ signaler(nom, e); } }
+window.addEventListener("error", e => signaler("page", e.error || {message: e.message}));
+window.addEventListener("unhandledrejection", e => signaler("page", e.reason || {message: "promesse"}));
+
 let last = performance.now();
 function tick(now){
+  requestAnimationFrame(tick);                              // en premier : la boucle repart, quoi qu'il arrive
   const dt = Math.min(.05, (now - last) / 1000); last = now;
-  const pushing = wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && updatePlayer(dt);   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
+  const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
   if(pushing) dirty = true;
-  checkDoors(pushing);
+  garde("portes", () => checkDoors(pushing));
+  garde("caméra", () => camera_(now, dt));
+  garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
+  garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
+  garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
+  garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
+  garde("combat", () => updateCombat(dt, wrap.hidden && !isBusy()));   // dans la grotte : les cœurs, les coups, les monstres
+  garde("chemins", () => updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating()));   // sur l'île : tracer les chemins en marchant
+  garde("dessin", () => renderer.render(currentScene(), camera));
+  if(dirty && now - lastSave > 2000) garde("sauvegarde", () => {
+    const p = islandPos();
+    state.player = {x:+p.x.toFixed(2), z:+p.z.toFixed(2)};
+    save(); lastSave = now; dirty = false;
+  });
+}
+/* La caméra, le soleil, la mer, et ce qu'on bâtit dehors */
+function camera_(now, dt){
   const dv = decoView();
   const foret = isInside() && ["foret", "grotte"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
@@ -79,19 +111,6 @@ function tick(now){
     water.position.y = -.2 + Math.sin(now * .0012) * .02;
     updateInteraction(dt);
   }
-  updatePlan(isInside() && !decorating() && !lifting() && !isBusy());   // bouton du plan de travail, quand on est tout près
-  updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden);   // un coffre dans la pièce : l'ouvrir, ou le poser
-  updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing);   // couper, planter, miner : le bouton d'action
-  updateTorche(dt);                                        // dans la grotte : la torche éclaire et s'use
-  updateCombat(dt, wrap.hidden && !isBusy());              // dans la grotte : les cœurs, les coups, les monstres
-  updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating());   // sur l'île : tracer les chemins en marchant
-  renderer.render(currentScene(), camera);
-  if(dirty && now - lastSave > 2000){
-    const p = islandPos();
-    state.player = {x:+p.x.toFixed(2), z:+p.z.toFixed(2)};
-    save(); lastSave = now; dirty = false;
-  }
-  requestAnimationFrame(tick);
 }
 
 /* ================= Démarrage ================= */
