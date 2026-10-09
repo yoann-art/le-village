@@ -6,7 +6,7 @@
 import { P, G, part, roof } from "./formes.js";
 import { scene } from "./scene.js";
 import { H, idx } from "./ile.js";
-import { B } from "../donnees.js";
+import { B, ENTREE_MINE } from "../donnees.js";
 import { state } from "../sauvegarde.js";
 import { sizeOf, maxLvl } from "../regles.js";
 import { VITRE, lanterne } from "./ciel.js";
@@ -424,9 +424,11 @@ const BUILD = {
   }
 };
 /* L'entrée de la mine (étape 1.5) : une colline de roche arrondie, une ouverture étayée de bois,
-   des rails qui en sortent et une lanterne ; pas de porte, on entre dans le noir */
+   des rails qui en sortent et une lanterne ; pas de porte, on entre dans le noir. Étape 1.11 : une partie neuve la
+   trouve éboulée (des rochers bouchent l'ouverture, ils partent un à un sous la pioche), puis dégagée (des planches
+   attendent à côté), puis construite (les étais, les rails, la lanterne) : state.entreeMine */
 BUILD.mine = g => {
-  const f = frontOf("mine");
+  const f = frontOf("mine"), etat = state.entreeMine;
   g.add(part(G.dode, 0x8E8578, 3.3, 2.3, 3, 0, .75, -.15));                         // la colline
   g.add(part(G.dode, 0x7A7268, 1.6, 1.3, 1.5, -.9, 1.5, -.5));
   g.add(part(G.dode, 0x9A9184, 1.2, 1, 1.2, 1, 1.35, -.3));
@@ -434,6 +436,17 @@ BUILD.mine = g => {
   g.add(part(G.leaf2, 0x6CB35A, 1, .5, 1, .8, 1.85, -.1));
   g.add(part(G.box, 0x1A1410, 1.3, 1.45, .5, 0, .72, f - .2));                       // l'ouverture, dans le noir
   g.add(part(G.cyl, 0x1A1410, 1.3, .5, 1.3, 0, 1.45, f - .2));
+  if(etat === "eboulee"){                                                              // l'éboulement
+    [[-.33, .32, f + .24, .74], [.35, .3, f + .26, .7], [0, .8, f + .16, .68], [-.42, 1.15, f + .08, .54], [.4, 1.18, f + .08, .52]]
+      .slice(0, ENTREE_MINE.coups - (state.deblai || 0))
+      .forEach(([x, y, z, s], k) => g.add(part(G.dode, k % 2 ? 0x8E8578 : 0x9A9184, s, s * .85, s * .75, x, y, z)));
+    const p = part(G.box, C.miel, 1.4, .14, .1, .1, 1.35, f + .3); p.rotation.z = .45; g.add(p);   // un étai cassé
+    return;
+  }
+  if(etat === "deblayee"){                                                             // dégagée : les planches attendent
+    for(let k = 0; k < 3; k++) g.add(part(G.box, C.miel, .95, .07, .22, 1.08, .04 + k * .08, f - .1 - k * .03));
+    return;
+  }
   for(const x of [-.75, .75]) g.add(part(G.box, C.dark, .18, 1.75, .2, x, .87, f));   // l'étai de bois
   g.add(part(G.box, C.dark, 1.75, .2, .24, 0, 1.75, f));
   for(const x of [-.3, .3]) g.add(part(G.box, 0x6F7884, .06, .05, 1.1, x, .03, f + .2));   // les rails qui sortent

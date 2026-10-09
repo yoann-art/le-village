@@ -7,7 +7,8 @@ const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
-    buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{}};
+    buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
+    entreeMine:"eboulee"};                                   // l'entrée de la mine à déblayer puis construire (étape 1.11)
 }
 function read(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
 export function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }

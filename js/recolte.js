@@ -48,6 +48,7 @@ import { updateInsectes, insecteAction, attrapeEnCours } from "./insectes.js";
 import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
+import { entreeAction } from "./entreeMine.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);   // espaces insécables : « 2 h 59 » reste sur une ligne
@@ -258,7 +259,8 @@ export function updateRecolte(dt, active){
   cur = active && !anim && !enPeche() && !attrapeEnCours() && !oiseauEnCours() && !tirEnCours() ? target() : null;
   showCase(cur);
   const bete = active && !anim && milieu && (insecteAction() || oiseauAction() || chasseAction());
-  act = enPeche() ? pecheAction() : bete || (cur && actionOf(cur));
+  const entree = active && !anim && milieu === "ile" && entreeAction();   // devant l'entrée de la mine pas encore construite
+  act = enPeche() ? pecheAction() : bete || entree || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;

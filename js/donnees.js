@@ -25,6 +25,9 @@ export const B = {
   foret:    {nom:"Forêt profonde", emoji:"🌲", cost:{}, stars:0, size:3, door:0, taille:"foret", fixe:true, desc:"L'orée de la Forêt profonde, la première zone sauvage. Dedans, de grands arbres qui repoussent, des clairières, un ruisseau ; le gibier arrive bientôt."}
 };
 export const ORDER = ["scierie","chaumiere","carriere","marche","taverne","forge","chateau"];
+/* L'entrée de la mine (étape 1.11, morceau 1 ; choix de Yo : on déblaie d'abord l'éboulement à la pioche, puis on pose
+   les étais) : une partie neuve la trouve éboulée ; chaque coup rend des pierres. Chiffres choisis par Claude */
+export const ENTREE_MINE = {coups: 5, pierres: 2, cost: {planche: 15, pierre: 10, torche: 4}};
 /* Meubles du catalogue : gabarit de la bible (petit ≈ 1 P², moyen ≈ 2 P², grand ≈ 4 P²),
    taille au sol w × d en P (w de gauche à droite, d de l'arrière à l'avant),
    flat : posé à plat comme un tapis (on marche dessus, on pose des meubles dessus),

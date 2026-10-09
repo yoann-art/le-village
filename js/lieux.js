@@ -8,7 +8,7 @@
 import { $ } from "./outils.js";
 import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
-import { sizeOf, porteDe, SENS } from "./regles.js";
+import { sizeOf, porteDe, SENS, mineOuverte } from "./regles.js";
 import { scene, halfViewWidth } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
@@ -165,6 +165,7 @@ export function checkDoors(pushing){
   }
   /* dehors : on entre en marchant vers la porte, juste devant elle (quel que soit le côté où elle regarde) */
   for(const b of state.buildings){
+    if(b.type === "mine" && !mineOuverte()) continue;          // l'entrée de la mine pas encore construite (étape 1.11)
     const door = doorOf(b), n = door.n;
     if(d.x !== -n.x || d.z !== -n.z) continue;
     const cote = n.x === 0 ? Math.abs(p.x - door.x) : Math.abs(p.z - door.z), devant = (p.x - door.x) * n.x + (p.z - door.z) * n.z;

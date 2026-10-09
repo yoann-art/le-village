@@ -247,6 +247,27 @@ export async function verifier(){
     if(!owned(k)) throw new Error("la pioche ne compte plus");
     return `case 1 : ${objet(k).nom}, ${state.sac.length} emplacements pris dans le sac`;
   });
+  await etape("L'entrée de la mine : déblayer l'éboulement à la pioche, puis poser les étais", async () => {
+    const mine = state.buildings.find(b => b.type === "mine"), d = doorOf(mine);
+    if(state.entreeMine !== "eboulee") throw new Error(`une partie neuve trouve l'entrée « ${state.entreeMine || "ouverte"} » au lieu d'éboulée`);
+    if(!owned("piochePierre")) sacAdd("piochePierre", 1);
+    placePlayer(d.x + d.n.x * R, d.z + d.n.z * R, -d.n.x, -d.n.z);
+    checkDoors(true);
+    if(isInside()) throw new Error("on entre dans la mine éboulée");
+    let coups = 0;
+    for(let k = 0; k < 8 && state.entreeMine === "eboulee"; k++){
+      frames(3);
+      if(!$("#btn-act").textContent.includes("Déblayer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » devant l'éboulement`);
+      $("#btn-act").click(); coups++;
+    }
+    if(state.entreeMine !== "deblayee") throw new Error("l'éboulement n'est pas dégagé");
+    addOwned("planche", 15); addOwned("pierre", 10); addOwned("torche", 4);
+    frames(3);
+    if(!$("#btn-act").textContent.includes("étais")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » devant l'entrée dégagée`);
+    $("#btn-act").click();
+    if(state.entreeMine) throw new Error("les étais ne sont pas posés");
+    return `${coups} coups de pioche, puis les étais : la mine est ouverte`;
+  });
   await etape("Entrer dans la mine et en sortir", async () => {
     await entrer(state.buildings.find(b => b.type === "mine"));
     if(currentPlace().room.w < 10) throw new Error("la grotte n'est pas construite");

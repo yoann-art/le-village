@@ -15,6 +15,7 @@ import { entrees } from "./monde/ponton.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
 import { renderHUD, toast, openSheet, closeSheet } from "./interface.js";
+import { ligneEntree } from "./entreeMine.js";
 
 /* ----- Pose d'un bâtiment : nouveau (menu Construire) ou déjà posé (appui long) ----- */
 export let placing = null;           // type du bâtiment en cours de pose
@@ -299,13 +300,13 @@ demonterDoubles();
 $("#btn-build").addEventListener("click", () => {
   openSheet(`<div class="sh-head"><h2 class="display">Que veux-tu bâtir ?</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Tu choisis : le bâtiment apparaît devant toi, fais-le glisser du doigt. Un seul de chaque sorte : ensuite, améliore-le depuis sa fiche (niveaux 2 et 3). Pour déplacer un bâtiment déjà posé, garde le doigt appuyé dessus.</p>` +
-    ORDER.map(t => {
+    ORDER.map((t, k) => (k === 1 ? ligneEntree() : "") + (() => {
       const b = B[t], built = dejaBati(t), ok = !built && canAfford(b.cost);
       return `<div class="brow"><div class="be" aria-hidden="true">${b.emoji}</div>
         <div class="bt"><span class="bn">${b.nom}</span><span class="st">★ ${b.stars}</span><p>${b.desc}</p><div>${costHTML(b.cost)}</div>
           ${built || ok ? "" : `<p class="manque">${missingHTML(b.cost)}</p>`}</div>
         <button class="btn primary" data-pick="${t}" ${ok ? "" : "disabled"}>${built ? `Déjà bâti${MASC.has(t) ? "" : "e"}` : "Choisir"}</button></div>`;
-    }).join(""));
+    })()).join(""));
 });
 
 /* Fiche du bâtiment devant soi */
