@@ -4,6 +4,8 @@
    planté avec sa graine : ile.js). Leurs fruits (baies du houx, fleurs ou baies du sureau) suivent la saison du
    téléphone et se cachent une fois cueillis. */
 import { G, part } from "./formes.js";
+import { saison } from "../donnees.js";
+export { saison };
 
 export const ESSENCES = ["charme", "frene", "sureau", "if", "houx", "chene"];
 /* Les vrais arbres : jamais collés l'un à l'autre (le houx et le sureau sont des arbustes) */
@@ -11,7 +13,6 @@ export const ARBRES = new Set(["tree", "charme", "frene", "if", "chene"]);
 export const estArbre = o => ARBRES.has(o) || ESSENCES.includes(o);
 /* Les morceaux du modèle qui sont des fruits ou des fleurs (cachés une fois cueillis, ou hors saison) */
 export const FRUITS = {houx: [1, 2], sureau: [2]};
-export const saison = () => ["hiver", "hiver", "printemps", "printemps", "printemps", "ete", "ete", "ete", "automne", "automne", "automne", "hiver"][new Date().getMonth()];
 /* Le houx a ses baies en automne et en hiver (carnet : « baies en hiver ») ; le sureau ses fleurs au printemps et
    en été, ses baies noires en automne (carnet), rien en hiver */
 export const fruitsDeSaison = sp => sp === "houx" ? ["automne", "hiver"].includes(saison()) : sp === "sureau" ? saison() !== "hiver" : false;

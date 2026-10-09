@@ -15,7 +15,7 @@
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
-import { POISSONS, HEURES, PECHE, OUTILS, SAC, lieuxDe } from "./donnees.js";
+import { POISSONS, HEURES, PECHE, OUTILS, SAC, lieuxDe, saisonDu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
 import { idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
@@ -25,9 +25,8 @@ import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
 
-/* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
-const SAISON = ["hiver", "hiver", "printemps", "printemps", "printemps", "ete", "ete", "ete", "automne", "automne", "automne", "hiver"];
-export const saisonDe = d => SAISON[d.getMonth()];
+/* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, l'hémisphère du joueur) ----- */
+export const saisonDe = saisonDu;
 /* La météo : elle arrive à l'étape 1.10 ; en attendant, il fait toujours beau (décidé par Yo) : l'anguille
    (pluie) et le Vieux Silure (orage) attendent la météo */
 export const meteo = () => "beau";

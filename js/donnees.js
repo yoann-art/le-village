@@ -620,9 +620,17 @@ export const FLEURS = {
   muguet:    {nom:"Muguet", pluriel:"muguets", couleurs:[0xFFFFFF], saisons:["printemps"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Porte-bonheur, à offrir"}
 };
 export const FLEUR_RARETE = {commun:{graine:.75, refleurit:43200, pousse:3600}, peuCommun:{graine:.5, refleurit:86400, pousse:10800}, rare:{graine:.2, refleurit:259200, pousse:21600}};
-/* La saison d'une date (hémisphère nord, en attendant l'étape 1.10) ; quand fleurit une fleur, en toutes lettres */
+/* La saison d'une date, selon l'hémisphère du joueur (étape 1.10 ; bible : « le joueur choisit l'hémisphère nord ou
+   sud au début de la partie ») : au sud, les saisons sont inversées (janvier y est en été). Tout ce qui suit les
+   saisons passe par ici (fleurs, poissons, insectes, oiseaux, gibier, arbres, couleurs de l'île). L'hémisphère est
+   réglé au chargement de la partie (sauvegarde.js) et quand le joueur le choisit (saisons.js) ; nord en attendant.
+   Quand fleurit une fleur, en toutes lettres */
 const SAISON_DU_MOIS = ["hiver", "hiver", "printemps", "printemps", "printemps", "ete", "ete", "ete", "automne", "automne", "automne", "hiver"];
-export const saisonDu = d => SAISON_DU_MOIS[d.getMonth()];
+let sud = false, forcee = null;
+export const reglerHemisphere = h => { sud = h === "sud"; };
+export const forcerSaison = s => { forcee = s; };            // pour la vérification et les essais (null : la vraie)
+export const saisonDu = d => forcee || SAISON_DU_MOIS[(d.getMonth() + (sud ? 6 : 0)) % 12];
+export const saison = () => saisonDu(new Date());
 const QUAND_FLEUR = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
 export const quandFleur = f => f.saisons.map(s => QUAND_FLEUR[s]).join(" et ");
 export const enFleur = f => f.saisons.includes(saisonDu(new Date()));

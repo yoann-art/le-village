@@ -19,7 +19,7 @@
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
-import { map, idx, N, H, centerOf, tileOf, setObj } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
@@ -30,6 +30,8 @@ import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../j
 import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
+import { choisirHemisphere } from "../js/saisons.js";
+import { forcerSaison, saisonDu, reglerHemisphere } from "../js/donnees.js";
 import { scene } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
@@ -71,6 +73,7 @@ export async function verifier(){
   if(state.buildings.some(b => !B[b.type].fixe)) return {ok, erreurs: ["✗ Partie déjà commencée : la vérification ne tourne que sur une partie neuve"]};
   pauseInsectes(true); pauseOiseaux(true);             // les insectes et les oiseaux de passage ne prennent pas la place des boutons essayés
   pauseMonstres(true);                                 // pas de loups dans la grotte, sauf ceux de l'essai du combat
+  if(!state.hemisphere) choisirHemisphere("nord");     // la question de l'hémisphère ne s'ouvre pas pendant l'essai
 
   await etape("La partie neuve", async () => {
     if(state.v !== 4) throw new Error(`format de sauvegarde ${state.v}`);
@@ -102,6 +105,21 @@ export async function verifier(){
       if(vitreMidi > .05 || vitreNuit < .5) throw new Error(`les vitres ne s'allument pas la nuit (${vitreMidi} à midi, ${vitreNuit} la nuit)`);
       return `ciel #${midi} à midi, #${nuit} la nuit ; vitres allumées la nuit`;
     } finally { forcerHeure(null); }
+  });
+  await etape("Les saisons : l'herbe change de couleur, l'hémisphère sud inverse les saisons", async () => {
+    const herbe = () => { const i = idx(Math.floor(N / 2), Math.floor(N / 2)); return scene.children.find(o => o.isInstancedMesh && o.count === N * N && o.instanceColor).instanceColor.array.slice(i * 3, i * 3 + 3).join(); };
+    try {
+      forcerSaison("ete"); rafraichirSaison(); const ete = herbe();
+      forcerSaison("hiver"); rafraichirSaison(); const hiver = herbe();
+      if(ete === hiver) throw new Error("l'herbe a la même couleur en été et en hiver");
+    } finally { forcerSaison(null); rafraichirSaison(); }
+    const janvier = new Date(2027, 0, 15);
+    try {
+      reglerHemisphere("sud");
+      if(saisonDu(janvier) !== "ete") throw new Error(`au sud, janvier est en ${saisonDu(janvier)}`);
+    } finally { reglerHemisphere(state.hemisphere); }
+    if(saisonDu(janvier) !== "hiver") throw new Error(`au nord, janvier est en ${saisonDu(janvier)}`);
+    return "l'herbe de l'été n'est pas celle de l'hiver ; janvier : hiver au nord, été au sud";
   });
   await etape("Ouvrir le sac", async () => {
     $("#btn-sac").click(); await wait(300);

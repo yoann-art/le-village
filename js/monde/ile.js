@@ -4,7 +4,7 @@ import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
-import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, enFleur } from "../donnees.js";
+import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, enFleur, saison } from "../donnees.js";
 import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
@@ -113,6 +113,20 @@ state.buildings.forEach(b => {
    l'horloge du téléphone) ; coupe = herbes cueillies à cette heure ; vide = buisson sans baies, arrose = arrosé à cette heure */
 for(const [i, c] of Object.entries(state.ile)) map.obj[+i] = c.o;
 
+/* Les saisons (étape 1.10, morceau 2 ; bible : « vert tendre au printemps, doré en été, roux en automne, blanc en
+   hiver ») : la couleur de l'herbe, des herbes hautes, des buissons et du feuillage des arbres de l'île. L'hiver, tout
+   pâlit et les arbres se givrent ; la neige qui blanchit tout viendra avec la météo. */
+const SAISONS = {
+  printemps:{herbe: [0x82D26A, 0x8BD872], hautes: [0x78C850, 0x66BA48, 0x86D25C], buisson: [0x48A452, 0x5AB862],
+    arbre: [[0x52B456, 0x5CBC58], 0x74C868], pousse: 0x7CCC6C},
+  ete:      {herbe: [0x92BE58, 0x9AC460], hautes: [0x9CC24E, 0x8CB446, 0xACCC58], buisson: [0x3E8F48, 0x4FA556],
+    arbre: [[0x3E9D50, 0x479F46], 0x57B25C], pousse: 0x6CC46A},
+  automne:  {herbe: [0xA6A062, 0xAEA86A], hautes: [0xC2A24C, 0xB08E42, 0xCCAE56], buisson: [0x9A7A3A, 0xAE8A42],
+    arbre: [[0xD9822B, 0xC8553D, 0xD8AA48], [0xE8A040, 0xD8704A, 0xE8C060]], pousse: 0xC89A48},
+  hiver:    {herbe: [0xA6BEB2, 0xAEC6BA], hautes: [0xA8B89E, 0x98AA90, 0xB4C2AA], buisson: [0x5E806A, 0x6E9078],
+    arbre: [[0x5E8A72, 0x648F76], 0x7AA08A], pousse: 0x86A890}
+};
+const enSaison = () => SAISONS[saison()];
 /* Terrain : dalle d'herbe ou de sable sur un socle de terre ; une place par case de l'île (une case d'eau a sa
    place vide), pour pouvoir creuser et combler (étape 1.9) */
 const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), new THREE.MeshLambertMaterial({color:0xffffff}), N*N);
@@ -126,7 +140,7 @@ function poserCase(i, entame){
     m4.makeTranslation(wx, entame ? -.2 : -.12, wz); slabs.setMatrixAt(i, m4);
     m4.makeTranslation(wx, -.64, wz); dirt.setMatrixAt(i, m4);
   }
-  col.setHex(entame ? 0x9A6B45 : map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : (alt ? 0x74C063 : 0x7DC96B));
+  col.setHex(entame ? 0x9A6B45 : map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : enSaison().herbe[alt]);
   slabs.setColorAt(i, col);
 }
 for(let i = 0; i < N*N; i++) poserCase(i);
@@ -211,25 +225,36 @@ function buildObj(i){
   looks.set(i, lookOf(i));
   if(o === "tree"){
     const st = stageOf(i);
+    const S = enSaison(), s = saison();
     if(st === 0){                                    // une pousse
       g.add(part(G.trunk, 0x8A5A3B, .6,.5,.6, 0,.14,0));
-      g.add(part(G.leaf2, 0x6CC46A, .9,.9,.9, 0,.42,0));
+      g.add(part(G.leaf2, S.pousse, .9,.9,.9, 0,.42,0));
     } else {
+      /* le feuillage de sa saison ; en automne, chaque arbre a sa couleur (orange, roux ou doré) */
+      const [bas, haut] = S.arbre, k = s === "automne" ? Math.floor(r * 3) : r < .5 ? 0 : 1;
       g.add(part(G.trunk, 0x8A5A3B, 2.2,2.4,2.2, 0,.66,0));
-      g.add(part(G.leaf, r < .5 ? 0x3E9D50 : 0x479F46, 2,2,2, 0,1.95,0));
-      g.add(part(G.leaf2, 0x57B25C, 2,2,2, .1,2.75,.05));
+      g.add(part(G.leaf, bas[k], 2,2,2, 0,1.95,0));
+      g.add(part(G.leaf2, Array.isArray(haut) ? haut[k] : haut, 2,2,2, .1,2.75,.05));
+      if(s === "printemps" && r < .45)               // au printemps, certains arbres sont en fleurs
+        [[.45, 2.2, .5], [-.5, 2.35, .35], [.1, 3.0, .45], [.55, 2.75, -.1], [-.3, 2.9, -.3]].forEach(([x, y, z], j) =>
+          g.add(part(G.head, j % 2 ? 0xFFF0F4 : 0xF4B8C8, .32, .32, .32, x, y, z)));
+      if(s === "hiver")                              // l'hiver, du givre sur le haut du feuillage
+        [[0, 3.15, .05, .9], [.5, 2.55, .3, .55], [-.45, 2.6, .2, .5]].forEach(([x, y, z, e]) =>
+          g.add(part(G.leaf2, 0xF2F6F8, e * 1.6, e, e * 1.6, x, y, z)));
       g.scale.setScalar((.9 + r*.25) * (st === 1 ? .5 : 1));   // jeune plant : moitié de la taille
     }
   } else if(o === "herbe"){                         // des brins hauts et souples ; ras une fois cueillis
     const h = stageOf(i) < 2 ? .45 : herbeLeft(i) > 0 ? .25 : 1;
-    [[0,0,0x6FBF4E],[.14,.08,0x5DAE45],[-.13,.1,0x7CCB58],[.06,-.14,0x67B84B],[-.08,-.1,0x5DAE45]].forEach(([x, z, c], k) => {
+    const H = enSaison().hautes;
+    [[0,0,H[0]],[.14,.08,H[1]],[-.13,.1,H[2]],[.06,-.14,H[0]],[-.08,-.1,H[1]]].forEach(([x, z, c], k) => {
       const b = part(G.cone, c, .16, .6 * h * (1 + (k % 2) * .25), .16, x, .3 * h * (1 + (k % 2) * .25), z);
       b.rotation.set(z * 1.2, 0, -x * 1.2); g.add(b);
     });
   } else if(o === "buisson"){                       // une touffe ronde, avec ses baies si elle est pleine
     const st = stageOf(i);
-    g.add(part(G.leaf, 0x3E8F48, 1.1, .9, 1.1, 0, .38, 0));
-    g.add(part(G.leaf2, 0x4FA556, 1.1, 1, 1.1, .18, .62, -.1));
+    const [b1, b2] = enSaison().buisson;
+    g.add(part(G.leaf, b1, 1.1, .9, 1.1, 0, .38, 0));
+    g.add(part(G.leaf2, b2, 1.1, 1, 1.1, .18, .62, -.1));
     if(st === 2 && !baiesLeft(i))
       [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
         g.add(part(G.head, 0x4A5FC1, .32, .32, .32, x, y, z)));
@@ -276,7 +301,16 @@ export function setEtat(i, patch){
   refreshObj(i);
 }
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
+/* Une nouvelle saison (ou l'hémisphère choisi) : l'herbe et tout ce qui change de couleur sont repeints */
+const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || ESSENCES.includes(o);
+let peinte = saison();
+export function rafraichirSaison(){
+  peinte = saison();
+  for(let i = 0; i < N*N; i++){ poserCase(i); if(SAISONNIER(map.obj[i])) refreshObj(i); }
+  slabs.instanceColor.needsUpdate = true;
+}
 /* Ce qui a été planté grandit, les herbes repoussent, les baies reviennent : on regarde régulièrement */
 setInterval(() => {
+  if(saison() !== peinte){ rafraichirSaison(); return; }
   for(const i of Object.keys(state.ile)) if(map.obj[+i] && looks.get(+i) !== lookOf(+i)) refreshObj(+i);
 }, 10000);

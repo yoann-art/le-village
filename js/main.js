@@ -29,6 +29,7 @@ import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
 import "./barre.js";
+import "./saisons.js";
 
 /* Touche Échap : ferme ce qui est ouvert */
 window.addEventListener("keydown", e => {

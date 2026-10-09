@@ -2,7 +2,7 @@
    La partie est gardée dans le navigateur du téléphone.
    Format 4 (1er octobre 2026, décidé avec Yo) : une île plus grande et une partie qui commence sans rien ;
    les parties plus anciennes repartent de zéro (le jeu le dit une fois). */
-import { OUTILS, POSABLES, SAC } from "./donnees.js";
+import { OUTILS, POSABLES, SAC, reglerHemisphere } from "./donnees.js";
 const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
@@ -33,6 +33,7 @@ export let state, migrationMsg = null;
   if(!state.carnet.monstres) state.carnet.monstres = {};    // étape 1.8, morceau 3
   if(!state.terrain) state.terrain = {};                    // étape 1.9 : les cases creusées ou comblées
   if(!state.chemins) state.chemins = {};                    // étape 1.9, morceau 2 : les chemins {case: sorte}
+  reglerHemisphere(state.hemisphere);                       // étape 1.10 : « nord » ou « sud », demandé une fois (saisons.js)
   /* Les cases rapides (demande de Yo, v1.7.6) : elles gardaient le nom d'un objet du sac ; elles gardent
      maintenant l'objet lui-même, sorti du sac (un outil, ou une pile de graines…) */
   state.barre = state.barre.map(k => {
