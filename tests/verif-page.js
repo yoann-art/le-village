@@ -27,6 +27,7 @@ import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../js/monstres.js";
 import { combat, vieCombat } from "../js/combat.js";
+import { torcheAllumee } from "../js/torche.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
@@ -419,7 +420,7 @@ export async function verifier(){
     placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
     if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte par les racines");
     await wait(400);
-    if(!(state.torche > 0)) throw new Error("la torche ne s'allume pas dans la grotte");
+    if(!(state.torche > 0) || !torcheAllumee()) throw new Error("la torche ne s'allume pas dans la grotte");
     const bas = currentPlace().room.passages.find(p => p.vers === "bas");
     if(!bas) throw new Error("pas de trou pour descendre");
     placePlayer(bas.x, bas.z + .3, 0, -1); checkDoors(true);
@@ -434,9 +435,13 @@ export async function verifier(){
     place(7);                                          // l'épée, le poisson grillé, et ce que laissent le loup et la chauve-souris
     await entrer(state.buildings.find(b => b.type === "foret"));
     sacAdd("epeeBois", 1); sacAdd("poissonGrille", 1); hold(null);
+    /* bug de Yo (v1.9.4) : toutes ses torches rangées au coffre, une torche entamée s'allumait quand même */
+    state.sac = state.sac.filter(it => it.k !== "torche"); state.barre = state.barre.map(it => it && it.k === "torche" ? null : it);
+    state.torche = 300;
     const E = ENTREE_GROTTE;
     placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
     if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte");
+    if(torcheAllumee()) throw new Error("une torche s'allume dans la grotte alors qu'on n'en porte aucune");
     if($("#coeurs").hidden || $("#combat").hidden) throw new Error("pas de cœurs ni de boutons de combat dans la grotte");
     if(vieCombat() !== COMBAT.vie) throw new Error(`${vieCombat()} cœurs en entrant, au lieu de ${COMBAT.vie}`);
     /* un loup qui bondit tout près : il mord */
