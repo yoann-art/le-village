@@ -73,7 +73,7 @@ function enter(b){
     /* Pas encore de plan de travail : on dit comment le construire */
     const a = ATELIERS[b.type];
     if(b.type === "foret") setTimeout(() => toast("🌲 La Forêt profonde : de vieux arbres, des clairières, un ruisseau. Hache en main, coupe ses arbres (l'if donne un bois souple pour les arcs) : ils repoussent avec le temps. Au cœur, le Grand Chêne millénaire.", 5600), 400);
-    if(b.type === "mine") setTimeout(() => toast("⛰️ La mine : pioche en main, mine les rochers (pierre, cuivre) ; mains libres, prends un rocher pour le reposer sur ton île. Les rochers reviennent chaque jour.", 5200), 400);
+    if(b.type === "mine") setTimeout(() => toast("⛰️ La mine : pioche en main, mine les rochers (pierre, cuivre, charbon) ; ils reviennent chaque jour. À gauche, la paroi marquée d'une croix cache une galerie : creuse-la avec une pioche en cuivre.", 5600), 400);
     if(a && !hasPlan(b)) setTimeout(() => toast(`${a.emoji} Pas encore ${a.le.startsWith("l'") ? "d'" + a.le.slice(2) : "de " + a.le.slice(3)} ici : construis-${a.fem ? "la" : "le"} dans « 🪑 Décorer », puis « Meubles »`, 4200), 400);
   });
 }

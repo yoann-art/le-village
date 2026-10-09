@@ -101,7 +101,9 @@ export const OUTILS = {
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
   hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", emoji:"🪓", famille:"hache", force:2, tete:0xC8743C, usage:"Coupe les arbres : un bois de plus à chaque coup."},
-  piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", emoji:"⛏️", famille:"pioche", force:2, tete:0xC8743C, usage:"Casse les rochers : une pierre de plus à chaque coup."},
+  piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", emoji:"⛏️", famille:"pioche", force:2, tete:0xC8743C, usage:"Casse les rochers : une pierre de plus à chaque coup. Dans la mine, elle creuse la galerie de la salle de l'étain (la paroi marquée d'une croix) et en casse les roches."},
+  /* Le bronze (étape 1.11, palier ajouté avec Yo entre le cuivre et le fer du Grand Carnet) */
+  piocheBronze:{nom:"Pioche en bronze", pluriel:"pioches en bronze", emoji:"⛏️", famille:"pioche", force:3, tete:0xB98A4A, usage:"La plus solide de l'île : deux pierres de plus à chaque coup. Dans la mine, elle creuse la galerie de la géode, au fond de la salle de l'étain, et casse l'argent, le marbre et les grenats."},
   pelleCuivre: {nom:"Pelle en cuivre", pluriel:"pelles en cuivre", emoji:"🪏", famille:"pelle", force:2, coups:1, tete:0xC8743C,
     usage:"Creuse plus vite que la pelle en bois : un seul coup par case. Face à l'eau douce : « Combler »."},
   epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", emoji:"🗡️", famille:"arme", force:2, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
@@ -150,6 +152,17 @@ export const RECOLTE = {
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:2, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:2, prendre:"rocherCuivre"},
   rockOr: {nom:"la veine d'or", outil:"pioche", coups:4, res:"or", parCoup:2},           // la grotte (étape 1.8) : l'or va dans la bourse
+  /* Les roches des trois salles de la mine (étape 1.11, morceau 2) : force, la pioche qu'il faut au moins (2 : cuivre,
+     3 : bronze) ; auBout : une pierre précieuse ne se donne qu'au dernier coup, une seule */
+  rockCharbon:{nom:"la veine de charbon", outil:"pioche", coups:3, res:"charbon", parCoup:1},
+  rockEtain:  {nom:"la veine d'étain", outil:"pioche", coups:3, res:"etain", parCoup:1, force:2},
+  rockGranit: {nom:"le bloc de granit", outil:"pioche", coups:4, res:"granit", parCoup:1, force:2},
+  rockQuartz: {nom:"le rocher à quartz", outil:"pioche", coups:3, res:"quartz", parCoup:1, force:2},
+  rockAmethyste:{nom:"le rocher à améthyste", outil:"pioche", coups:4, res:"amethyste", auBout:1, force:2},
+  rockArgent: {nom:"la veine d'argent", outil:"pioche", coups:4, res:"argent", parCoup:1, force:3},
+  rockMarbre: {nom:"le bloc de marbre", outil:"pioche", coups:4, res:"marbre", parCoup:1, force:3},
+  rockGrenat: {nom:"le rocher à grenats", outil:"pioche", coups:4, res:"grenat", auBout:1, force:3},
+  rockGeode:  {nom:"la géode", outil:"pioche", coups:2, res:"geode", auBout:1, force:3},
   herbe:  {nom:"les herbes hautes", cueille:"fibre", n:2, repousse:900, graine:"graineHerbe"},
   buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
@@ -178,7 +191,17 @@ export const SOL = {
 };
 export const SOL_RETOUR = 600;
 /* La mine : combien de rochers chaque jour, dont combien à veines de cuivre (à régler en jouant) */
-export const MINE = {rochers:10, cuivre:3};
+/* Les rochers du jour de chaque salle de la mine (étape 1.11 : trois salles) : sortes = [sorte, combien, chance d'être
+   là] ; les autres places : reste. Chiffres choisis par Claude, à régler en jouant */
+export const MINE = {salles: {
+  1: {n: 10, sortes: [["rockCuivre", 3], ["rockCharbon", 2]], reste: "rock"},
+  2: {n: 9, sortes: [["rockEtain", 3], ["rockQuartz", 2], ["rockAmethyste", 1, .5]], reste: "rockGranit"},
+  3: {n: 9, sortes: [["rockArgent", 2], ["rockGrenat", 1, .5], ["rockGeode", 1, .6]], reste: "rockMarbre"}}};
+/* Les galeries de la mine (étape 1.11, morceau 2 ; demande de Yo : il faut une pioche plus solide pour chaque galerie) :
+   force de la pioche qu'il faut, en combien de tronçons (2 cases chacun), de combien de coups */
+export const GALERIES = {
+  2: {force: 2, segments: 4, coups: 3, salle: "la salle de l'étain", pioche: "une pioche en cuivre (enclume de la Forge)"},
+  3: {force: 3, segments: 4, coups: 4, salle: "la géode", pioche: "une pioche en bronze (enclume de la Forge : du bronze et des planches)"}};
 
 /* La pêche (étape 1.6) : les poissons de l'île d'après le Grand Carnet (pages « Les poissons », décision de Yo
    le 5 octobre 2026), plus la truite, le congre et la Vieille Carpe d'or gardés par Yo, et quatre poissons du
@@ -407,6 +430,20 @@ for(const p of Object.values(OISEAUX)){
 }
 
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */
+/* Le dessin d'une matière de la mine (étape 1.11), dans le sac et les coffres : morceaux (charbon), veine (un rocher et
+   ses éclats), bloc (taillé), cristal, gemme (taillée), boule (géode, ouverte sur ses cristaux), lingot ; c1, c2 : couleurs */
+function pierreIco(forme, c1, c2){
+  const t = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">', f = '</svg>', bord = 'stroke="#1C2230" stroke-opacity=".32"';
+  return t + ({
+    morceaux: `<path d="M3 18L6 12L11 13L12 19Z" fill="${c1}" ${bord}/><path d="M10 12L14 6L20 9L19 16L13 15Z" fill="${c2}" ${bord}/><path d="M12 19L15 15L21 17L19 21Z" fill="${c1}" ${bord}/>`,
+    veine: `<path d="M3 17Q4 8 11 6Q19 5 21 13Q21 19 13 20Q5 21 3 17Z" fill="#9EA3A8" ${bord}/><g fill="${c1}" stroke="${c2}" stroke-width=".6"><circle cx="9" cy="11" r="2.1"/><circle cx="15" cy="10" r="1.6"/><circle cx="13.5" cy="15.5" r="2.3"/><circle cx="7.5" cy="16" r="1.3"/></g>`,
+    bloc: `<path d="M4 9L12 5L20 9V17L12 21L4 17Z" fill="${c1}" ${bord}/><path d="M4 9L12 13L20 9M12 13V21" stroke="#1C2230" stroke-opacity=".22" fill="none"/><path d="M6 12L9 14M14 16L18 12M7 16L9 17" stroke="${c2}" stroke-width=".9" fill="none"/>`,
+    cristal: `<path d="M5 20L7 9L10 20Z" fill="${c2}" ${bord}/><path d="M9 20L12 3L15 20Z" fill="${c1}" ${bord}/><path d="M14 20L17 8L20 20Z" fill="${c2}" ${bord}/>`,
+    gemme: `<path d="M5 9L8.5 4.5H15.5L19 9L12 20Z" fill="${c1}" ${bord}/><path d="M5 9H19M8.5 4.5L12 9L15.5 4.5M12 9V20M8 9L12 20L16 9" stroke="${c2}" stroke-opacity=".8" stroke-width=".8" fill="none"/>`,
+    boule: `<circle cx="12" cy="12.5" r="8.5" fill="${c1}" ${bord}/><path d="M7 11Q12 7 17 11Q16 17 12 17Q8 17 7 11Z" fill="#3A2E46"/><path d="M8.5 12L10 9.5L11 12L12.5 9L13.5 12L15 10L15.5 12.5" fill="${c2}"/>`,
+    lingot: `<path d="M3 17L6 10H18L21 17Z" fill="${c1}" ${bord}/><path d="M6 10L7.5 7H16.5L18 10Z" fill="${c2}" ${bord}/>`
+  })[forme] + f;
+}
 export const PRODUITS = {
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫", aide:"Les planches se fabriquent à l'établi de la Scierie.",
     usage:"Pour fabriquer et bâtir. En main, « 👣 Tracer » fait un chemin de planches : une planche par case."},
@@ -419,6 +456,28 @@ export const PRODUITS = {
   fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
   baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐", aide:"Les baies se cueillent sur les buissons de baies."},
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
+  /* Les matières de la mine (étape 1.11, morceau 2 ; Grand Carnet, « Les pierres et minerais ») : leur dessin (pierreIco) ;
+     prix au comptoir (morceau 3) */
+  charbon: {nom:"Charbon", pluriel:"charbon", emoji:"⚫", icone: pierreIco("morceaux", "#2E2E33", "#4A4A52"), prix:1,
+    aide:"Le charbon se mine à la mine, dans la grande salle, sur les veines noires.", usage:"Il fait chauffer la forge : avec le cuivre et l'étain, il donne le bronze."},
+  etain:   {nom:"Étain", pluriel:"étain", emoji:"⚪", icone: pierreIco("veine", "#D8DDE2", "#9EA3A8"), prix:2,
+    aide:"L'étain se mine dans la salle de l'étain (la galerie se creuse avec une pioche en cuivre).", usage:"Avec le cuivre, fondu au charbon à l'enclume : le bronze."},
+  granit:  {nom:"Granit", pluriel:"granit", emoji:"🪨", icone: pierreIco("bloc", "#B4A49A", "#6E625A"), prix:2,
+    aide:"Le granit se taille dans la salle de l'étain (pioche en cuivre).", usage:"Une pierre très dure, pour bâtir solide : bientôt les bâtiments au niveau 3 et les dallages."},
+  quartz:  {nom:"Quartz", pluriel:"quartz", emoji:"🤍", icone: pierreIco("cristal", "#F2F6FA", "#C8D4E0"), prix:3,
+    aide:"Le quartz se mine dans la salle de l'étain (pioche en cuivre).", usage:"Fondu à la forge, il donnera le verre : un bocal, des lanternes, des vitrines."},
+  amethyste:{nom:"Améthyste", pluriel:"améthystes", une:true, emoji:"💜", icone: pierreIco("gemme", "#9A5AD0", "#C9A0F0"), prix:12,
+    aide:"L'améthyste est rare : un rocher à cristaux violets, de temps en temps, dans la salle de l'étain.", usage:"Une pierre précieuse : pour ta collection, une vitrine, ou le comptoir."},
+  argent:  {nom:"Argent", pluriel:"argent", emoji:"🥈", icone: pierreIco("veine", "#EEF2F6", "#B8C0C8"), prix:4,
+    aide:"L'argent se mine dans la géode, la salle du fond (la galerie se creuse avec une pioche en bronze).", usage:"Un métal clair et précieux, pour de beaux objets de décoration."},
+  marbre:  {nom:"Marbre", pluriel:"marbre", emoji:"🏛️", icone: pierreIco("bloc", "#F2F0EA", "#A8A4A0"), prix:3,
+    aide:"Le marbre se taille dans la géode (pioche en bronze).", usage:"Pour les statues, les colonnes, les dallages, et le Château au niveau 3."},
+  grenat:  {nom:"Grenat", pluriel:"grenats", emoji:"❤️", icone: pierreIco("gemme", "#A8203A", "#E0607A"), prix:15,
+    aide:"Le grenat est rare : un rocher à cristaux rouges, de temps en temps, dans la géode.", usage:"Une pierre précieuse : pour ta collection, une vitrine, ou le comptoir."},
+  geode:   {nom:"Géode", pluriel:"géodes", une:true, emoji:"🥚", icone: pierreIco("boule", "#8A7A6A", "#B48CE8"), prix:6,
+    aide:"Les géodes se trouvent dans la salle du fond de la mine (pioche en bronze).", usage:"Une pierre ronde qui cache des cristaux : bientôt, on l'ouvrira à la table de taille."},
+  bronze:  {nom:"Bronze", pluriel:"bronze", emoji:"🟫", icone: pierreIco("lingot", "#C8924A", "#9A6A2E"), prix:5,
+    aide:"Le bronze se fond à l'enclume de la Forge : 2 cuivre, 1 étain et 1 charbon.", usage:"Pour la pioche en bronze, qui ouvre la géode, au fond de la mine."},
   /* Étape 1.6, d'après le Grand Carnet : le thym des prés de l'île, et le poisson grillé (un poisson + du thym, il soigne).
      prix : en or au comptoir */
   /* Les bois de la Forêt profonde (étape 1.7, demande de Yo : chaque essence donne son bois, comme le dit le Grand
@@ -544,7 +603,9 @@ export const ATELIERS = {
   ]},
   forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
     pour:"forger des outils et des armes en métal", recettes:[
-    {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
+    {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze, fondu au charbon
+    {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1, cat:"Outils"},
+    {out:"piocheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
     {out:"hacheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
     {out:"epeeCuivre", in:{cuivre:5, planche:1}, t:60, lvl:1},
     {out:"pelleCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1}

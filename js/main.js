@@ -117,7 +117,7 @@ function camera_(now, dt){
   camera.position.copy(camT).addScaledVector(OFF, D);
   camera.lookAt(camT.x, .4, camT.z);
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
-  if(foret) lampeSur(camT.x, camT.z);
+  if(foret || isInside() && currentPlace().b.type === "mine") lampeSur(camT.x, camT.z);   // la lumière suit, dans les grands lieux
   const sousLeCiel = !isInside() || currentPlace().b.type === "foret";
   garde("météo", () => updateMeteo(dt, sousLeCiel ? currentScene() : null, camT.x, camT.z));   // la pluie, la neige, les éclairs (étape 1.10)
   updateCiel(camT.x, camT.z);                              // le jour et la nuit (étape 1.10) : le ciel, le soleil, les vitres

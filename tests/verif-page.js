@@ -23,6 +23,7 @@ import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, r
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre, presents } from "../js/peche.js";
+import { devantGalerie, galerieOuverte, salleEn } from "../js/monde/mine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
 import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
@@ -274,6 +275,29 @@ export async function verifier(){
     const n = Object.keys(state.mine.rocks).length;
     await sortir();
     return `${n} rochers aujourd'hui`;
+  });
+  await etape("Creuser la galerie de la mine vers la salle de l'étain, avec une pioche en cuivre", async () => {
+    await entrer(state.buildings.find(b => b.type === "mine"));
+    try {
+      const avant = devantGalerie(2);
+      placePlayer(avant.x, avant.z, avant.fx, avant.fz); frames(3);
+      if(!$("#btn-act").textContent.includes("pioche en cuivre")) throw new Error(`sans pioche en cuivre, le bouton dit « ${$("#btn-act").textContent} »`);
+      sacAdd("piocheCuivre", 1);
+      let coups = 0;
+      for(let k = 0; k < 20 && !galerieOuverte(2); k++){
+        const p = devantGalerie(2);
+        placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
+        if(!$("#btn-act").textContent.includes("Creuser la galerie")) throw new Error(`devant la galerie, le bouton dit « ${$("#btn-act").textContent} »`);
+        $("#btn-act").click(); coups++;
+      }
+      if(!galerieOuverte(2)) throw new Error("la galerie n'est pas ouverte");
+      const p3 = devantGalerie(3);
+      placePlayer(p3.x, p3.z, p3.fx, p3.fz); frames(3);
+      if(!$("#btn-act").textContent.includes("pioche en bronze")) throw new Error(`devant la galerie de la géode, le bouton dit « ${$("#btn-act").textContent} »`);
+      const sortes = [...new Set(Object.entries(state.mine.rocks).filter(([t]) => salleEn(+t) === 2).map(([, o]) => o))];
+      if(!sortes.includes("rockEtain")) throw new Error("pas d'étain dans la salle de l'étain");
+      return `${coups} coups de pioche ; dans la salle de l'étain : ${sortes.join(", ")} ; la géode attend la pioche en bronze`;
+    } finally { await sortir(); }
   });
   await etape("La Forêt profonde : y aller, couper un arbre, revenir", async () => {
     const b = state.buildings.find(b => b.type === "foret");

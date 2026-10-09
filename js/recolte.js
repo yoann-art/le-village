@@ -27,7 +27,7 @@
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
@@ -35,7 +35,7 @@ import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
-import { mineTile, mineRock, mineRockMesh, setMineRock } from "./monde/mine.js";
+import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
@@ -94,6 +94,8 @@ function targetMine(){
   for(const dist of [.8, 1.3]){
     const t = mineTile(p.x + d.x * dist, p.z + d.z * dist);
     if(t >= 0 && mineRock(t)) return {w: MINE, i: t, o: mineRock(t)};
+    const g = galerieEn(t);                          // la paroi d'une galerie à creuser (étape 1.11)
+    if(g) return {w: MINE, i: t, galerie: g};
   }
   return null;
 }
@@ -179,6 +181,7 @@ function actionOf(t){
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
   const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
+  if(t.galerie) return galerieAction(t.galerie);
   if(t.o === "tresor") return {label: "🎁 Ouvrir le coffre au trésor", run: () => ouvrirTresor(t)};
   if(t.o === "rockOr"){ const h2 = hits.get(hk(t)); return {label: `⛏️ Miner la veine d'or${h2 ? ` (${RECOLTE.rockOr.coups - h2})` : ""}`, run: () => couper(t)}; }
   if(t.o === "racines") return info("🕳️ La grotte, sous les racines du vieux chêne : avance dans l'ouverture pour y descendre");
@@ -202,6 +205,11 @@ function actionOf(t){
   if(t.o === "rock" || t.o === "rockCuivre")         // mains libres : on le prend ; sinon, on le mine
     return !state.main && !h ? {label: "✋ Prendre le rocher", run: () => prendre(t)}
       : {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)};
+  if(RECOLTE[t.o] && RECOLTE[t.o].outil === "pioche"){   // les roches des salles de la mine (étape 1.11)
+    const R = RECOLTE[t.o], k = bestTool("pioche");
+    if(R.force && (!k || OUTILS[k].force < R.force)) return info(`🪨 Roche trop dure : il te faut ${PIOCHE[R.force]}`);
+    return {label: `⛏️ Miner ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
+  }
   if(t.o === "herbe"){
     if(g < 1) return info(`🌱 Jeunes herbes : hautes dans ${duree(growthLeft(t.i))}`);
     return herbeLeft(t.i) > 0 ? {label: "✋ Arracher (+1 graine)", run: () => arracher(t)} : {label: "✋ Cueillir", run: () => cueillirHerbe(t)};
@@ -358,20 +366,47 @@ function remplir(){
 }
 
 /* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
-const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée"};
+const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
+  rockAmethyste: "💜 Le rocher s'ouvre sur une améthyste", rockGrenat: "❤️ Le rocher s'ouvre sur un grenat", rockGeode: "🥚 Une géode se détache"};
 const IL_FAUT = {hache: "🪓 Il te faut une hache dans ton sac : fabrique-la", pioche: "⛏️ Il te faut une pioche dans ton sac : fabrique-la"};
+const PIOCHE = {2: "une pioche en cuivre", 3: "une pioche en bronze"};
+/* Une roche dure (étape 1.11) : la pioche tenue est trop faible, mais une plus solide est sur soi : on la prend */
+function piocheAssez(k, force){
+  if(!k || !force || OUTILS[k].force >= force) return k;
+  const b = bestTool("pioche");
+  if(b && OUTILS[b].force >= force){ barreAuto(b); hold(b); return b; }
+  return k;
+}
 function couper(t){
-  const R = RECOLTE[t.o], k = takeTool(R.outil);
+  const R = RECOLTE[t.o], k = piocheAssez(takeTool(R.outil), R.force);
   if(!k){ toast(`${IL_FAUT[R.outil]} à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
-  const n = R.res ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
-  if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); } renderHUD(); }   // l'or va dans la bourse
+  if(R.force && OUTILS[k].force < R.force){ toast(`🪨 Roche trop dure : il te faut ${PIOCHE[R.force]}`, 2800); return; }
   const h = (hits.get(hk(t)) || 0) + 1;
+  if(R.auBout && h >= R.coups && !sacOk(R.res, R.auBout)) return;     // une pierre précieuse : seulement au dernier coup
+  const n = R.res && !R.auBout ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
+  if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); } renderHUD(); }   // l'or va dans la bourse
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {
     hits.delete(hk(t));
-    anim = {w: t.w, i: t.i, t: 0, kind: t.o.startsWith("rock") ? "break" : "fall", o: t.o, R, n, side: Math.sign(player.position.x - t.w.cx(t.x)) || 1};
+    if(R.auBout) sacAdd(R.res, R.auBout);
+    anim = {w: t.w, i: t.i, t: 0, kind: t.o.startsWith("rock") ? "break" : "fall", o: t.o, R, n: R.auBout || n, side: Math.sign(player.position.x - t.w.cx(t.x)) || 1};
   }
   save();
+}
+/* ----- Les galeries de la mine (étape 1.11, morceau 2) : la paroi marquée d'une croix, à creuser avec la bonne pioche ----- */
+function galerieAction(g){
+  const c = GALERIES[g], k = bestTool("pioche");
+  if(!k || OUTILS[k].force < c.force) return info(`🪨 Une roche très dure cache ${c.salle} : il te faut ${c.pioche}`);
+  return {label: `⛏️ Creuser la galerie (${coupsRestants(g)})`, run: () => creuserGalerie(g)};
+}
+function creuserGalerie(g){
+  const c = GALERIES[g], k = piocheAssez(takeTool("pioche"), c.force);
+  if(!k || OUTILS[k].force < c.force) return;
+  const r = creuser(g), place = sacPlace("pierre") >= 1;
+  if(place) sacAdd("pierre", 1);
+  renderHUD(); save();
+  toast(r === "ouverte" ? `✨ La galerie est ouverte : voici ${c.salle} ! ${g === 2 ? "Étain, granit, quartz… et peut-être une améthyste." : "Argent, marbre, grenats, géodes…"}`
+    : r === "troncon" ? `⛏️ La galerie avance : encore ${coupsRestants(g)} coups${place ? " (+1 pierre)" : ""}` : "🪨 +1 pierre", r === "ouverte" ? 4600 : r === "troncon" ? 2400 : 900);
 }
 function animate(dt){
   anim.t += dt;
@@ -398,7 +433,7 @@ function tombe(){
   /* sa graine : toujours pour l'arbre de l'île ; selon sa rareté pour ceux de la forêt (carnet : chance) */
   const graine = R.graine && (R.chance === undefined || Math.random() < R.chance);
   const ou = graine ? giveSeed(R.graine) : ""; save();
-  toast(`${FIN[o] || "🌳 L'arbre est tombé"} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : ""].filter(Boolean).join(", ")}`, 3600);
+  toast(`${FIN[o] || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : ""].filter(Boolean).join(", ")}`, 3600);
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */
