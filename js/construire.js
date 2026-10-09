@@ -1,9 +1,9 @@
 /* ================= Construire =================
    Menu des bâtiments, pose et déplacement au doigt,
    fiche d'un bâtiment et amélioration.
-   Les bâtiments restent alignés sur les cases (pas de 1 P). Tourner (étape 1.9) : pendant la pose, « ↻ Tourner »
-   fait faire un quart de tour au bâtiment (b.rot) ; sa porte regarde en bas, à gauche, en haut ou à droite, une
-   marque orange montre la case devant elle, qui doit rester libre. */
+   Les bâtiments restent alignés sur les cases (pas de 1 P). Une marque orange sur le fantôme montre la case devant
+   la porte, qui doit rester libre. Tourner les bâtiments (v1.9.3) : retiré à la demande de Yo le 9 octobre 2026 (la
+   vue reste la même, ça ne sert à rien) ; un bâtiment tourné pendant l'essai reprend sa porte en bas (voir plus bas). */
 import { $ } from "./outils.js";
 import { RES, B, ORDER } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
@@ -19,8 +19,6 @@ import { renderHUD, toast, openSheet, closeSheet } from "./interface.js";
 /* ----- Pose d'un bâtiment : nouveau (menu Construire) ou déjà posé (appui long) ----- */
 export let placing = null;           // type du bâtiment en cours de pose
 let moving = null;                   // bâtiment déjà posé qu'on déplace
-let rot = 0;                         // les quarts de tour du bâtiment en cours de pose (0 : la porte en bas)
-const COTE = ["en bas", "à droite", "en haut", "à gauche"];
 let ghost = null, ghostOk = false, ghostAt = null;
 const gc = new THREE.Vector3();      // centre du fantôme, qui suit le doigt (avant alignement sur les cases)
 const focus = new THREE.Vector3();   // point que regarde la caméra pendant la pose
@@ -45,24 +43,23 @@ function placeProblem(type, ax, az){
   if(!cells.every(([x,z]) => freeTile(x, z))) return "occupé";
   const mine = new Set(cells.map(([x,z]) => idx(x,z))), p = player.position;
   if([[-R,-R],[R,-R],[-R,R],[R,R]].some(([dx,dz]) => mine.has(idx(tileOf(p.x + dx), tileOf(p.z + dz))))) return "perso";
-  const [dx, dz] = doorTile(type, ax, az, rot);
+  const [dx, dz] = doorTile(type, ax, az);
   if(!freeTile(dx, dz)) return "porte";
   if(state.buildings.some(b => { if(b === moving) return false; const [x,z] = doorTile(b.type, b.x, b.z, b.rot); return inb(x,z) && mine.has(idx(x,z)); })) return "porte";
   return null;
 }
 export function startPlacing(type, b = null){
-  placing = type; moving = b; rot = b ? (b.rot || 0) & 3 : 0;
+  placing = type; moving = b;
   ghost = makeBuilding(type, b ? b.lvl : 1);
   ghost.traverse(o => { if(o.isMesh){ o.material = ghostMat; o.castShadow = false; o.receiveShadow = false; } });
   const s = sizeOf(type);
   const base = new THREE.Mesh(new THREE.PlaneGeometry(s, s), baseMat);
   base.rotation.x = -Math.PI/2; base.position.y = .02;
   ghost.add(base);
-  /* la case devant la porte (sans tourner : en bas) ; elle tourne avec le fantôme */
+  /* la case devant la porte, qui restera libre */
   const marque = new THREE.Mesh(new THREE.PlaneGeometry(.9, .9), porteMat);
   marque.rotation.x = -Math.PI/2; marque.position.set(Math.floor(s/2 + (B[type].door || 0)) + .5 - s/2, .03, s/2 + .5);
   ghost.add(marque);
-  ghost.rotation.y = rot * Math.PI / 2;
   scene.add(ghost);
   const [ax, az] = b ? [b.x, b.z] : anchorFor(type);
   gc.set(ax - H + s/2, 0, az - H + s/2);
@@ -70,14 +67,6 @@ export function startPlacing(type, b = null){
   resetJoy();
   $("#actions").hidden = true; $("#place-actions").hidden = false; $("#place-hint").hidden = false; $("#joy").hidden = true;
 }
-/* Un quart de tour dans le sens des aiguilles d'une montre, vu d'en haut : la porte passe d'en bas à gauche, en haut, à droite */
-function tourner(){
-  if(!placing) return;
-  rot = (rot + 3) & 3;
-  ghost.rotation.y = rot * Math.PI / 2;
-}
-$("#btn-tourner").addEventListener("click", tourner);
-window.addEventListener("keydown", e => { if(placing && e.code === "KeyR") tourner(); });
 export function stopPlacing(){
   if(ghost) scene.remove(ghost);
   if(moving){                        // annulé : le bâtiment reprend sa place
@@ -108,7 +97,7 @@ function liftBuilding(){
   soulever(b);
   startDrag(pid);
 }
-/* Soulever un bâtiment posé pour le déplacer ou le tourner (aussi pour la vérification automatique) */
+/* Soulever un bâtiment posé pour le déplacer (aussi pour la vérification automatique) */
 export function soulever(b){
   footprint(b.type, b.x, b.z).forEach(([x,z]) => occ.delete(idx(x,z)));
   setMeshVisible(b.id, false);
@@ -162,7 +151,7 @@ export function updateInteraction(dt){
     ghost.position.set(ax - H + s/2, 0, az - H + s/2);
     ghostMat.color.setHex(ghostOk ? 0xFFFFFF : 0xE4776C); baseMat.color.setHex(ghostOk ? 0xFFE27A : 0xE4776C);
     const hint = $("#place-hint"), btn = $("#btn-place");
-    const txt = ghostOk ? `${B[placing].emoji} ${B[placing].nom} : place libre, porte ${COTE[rot]}`
+    const txt = ghostOk ? `${B[placing].emoji} ${B[placing].nom} : place libre`
       : problem === "porte" ? `${B[placing].emoji} Une porte serait bloquée, décale-le`
       : problem === "perso" ? `${B[placing].emoji} Tu es dessous, décale-le`
       : `${B[placing].emoji} Terrain occupé, décale-le`;
@@ -190,8 +179,8 @@ $("#btn-place").addEventListener("click", () => {
   if(moving){                        // bâtiment déplacé : gratuit, il garde tout (niveau, intérieur)
     const b = moving;
     moving = null;
-    b.x = ax; b.z = az; b.rot = rot;
-    clearHerbes(b.type, ax, az, rot);
+    b.x = ax; b.z = az; delete b.rot;                // déplacé, un bâtiment tourné pendant l'essai reprend sa porte en bas
+    clearHerbes(b.type, ax, az);
     footprint(b.type, ax, az).forEach(([x,z]) => occ.set(idx(x,z), b.id));
     placeMesh(b);
     stopPlacing(); save();
@@ -201,9 +190,9 @@ $("#btn-place").addEventListener("click", () => {
   const type = placing, d = B[type];
   if(!canAfford(d.cost)){ toast("Ressources insuffisantes"); stopPlacing(); return; }
   pay(d.cost);
-  const b = {id:state.nextId++, type, lvl:1, x:ax, z:az, rot};
+  const b = {id:state.nextId++, type, lvl:1, x:ax, z:az};
   state.buildings.push(b);
-  clearHerbes(type, ax, az, rot);
+  clearHerbes(type, ax, az);
   footprint(type, ax, az).forEach(([x,z]) => occ.set(idx(x,z), b.id));
   placeMesh(b);
   stopPlacing(); save(); renderHUD();
@@ -215,6 +204,16 @@ $("#btn-place").addEventListener("click", () => {
       <button class="btn primary" data-close>Admirer mon île</button></div>`), 600);
   }
 });
+
+/* Les bâtiments tournés pendant l'essai de la v1.9.3 reprennent leur porte en bas, si la case devant elle est libre
+   (sinon, la prochaine fois qu'on les déplace) */
+if(state.buildings.some(b => b.rot)){
+  for(const b of state.buildings) if(b.rot){
+    const [x, z] = doorTile(b.type, b.x, b.z);
+    if(freeTile(x, z)){ delete b.rot; clearHerbes(b.type, b.x, b.z); placeMesh(b); }
+  }
+  save();
+}
 
 /* Menu « Construire » */
 $("#btn-build").addEventListener("click", () => {

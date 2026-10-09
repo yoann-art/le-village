@@ -12,12 +12,12 @@
    village, toute sa vie revenue), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
    creuser et combler à la pelle, tracer un chemin en marchant et l'enlever à la pelle,
-   tourner un bâtiment et entrer par sa porte tournée, ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
-import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, doorTile } from "../js/regles.js";
+import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
@@ -34,7 +34,7 @@ import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
 import { checkDoors, isInside, currentPlace, doorOf } from "../js/lieux.js";
-import { startPlacing, updateInteraction, soulever } from "../js/construire.js";
+import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
 import { renderHUD } from "../js/interface.js";
@@ -47,7 +47,7 @@ const frames = (n, dt = .05) => { for(let k = 0; k < n; k++) updateRecolte(dt, t
 /* Attendre qu'un changement de lieu soit vraiment fini (le jeu peut être lent sur la machine de GitHub) */
 async function attendre(test, ms = 6000){ const t0 = performance.now(); while(!test() && performance.now() - t0 < ms) await wait(100); await wait(300); return test(); }
 async function entrer(b){
-  const d = doorOf(b);                                 // juste devant la porte, tournée ou non, en marchant vers elle
+  const d = doorOf(b);                                 // juste devant la porte, en marchant vers elle
   placePlayer(d.x + d.n.x * R, d.z + d.n.z * R, -d.n.x, -d.n.z);
   checkDoors(true);
   if(!await attendre(() => isInside() && currentPlace().b === b)) throw new Error(`on n'est pas entré dans ${B[b.type].nom}`);
@@ -295,21 +295,6 @@ export async function verifier(){
     if(owned("planche") !== pl + 1) throw new Error("la planche du chemin enlevé n'est pas rendue");
     hold(null);
     return `${poses} cases de planches en marchant, une enlevée à la pelle`;
-  });
-  if(scierie) await etape("Tourner un bâtiment, et entrer par sa porte tournée", async () => {
-    const b = scierie, avant = b.rot || 0;
-    soulever(b);
-    let essais = 0;
-    do { $("#btn-tourner").click(); updateInteraction(.016); essais++; } while($("#btn-place").disabled && essais < 3);
-    if($("#btn-place").disabled){ $("#btn-cancel").click(); throw new Error("aucun autre sens où poser la Scierie à sa place"); }
-    const dit = $("#place-hint").textContent;
-    $("#btn-place").click();
-    if((b.rot || 0) === avant) throw new Error("la Scierie n'a pas tourné");
-    await entrer(b);
-    await sortir();
-    const p = player.position, [tx, tz] = doorTile(b.type, b.x, b.z, b.rot);
-    if(tileOf(p.x) !== tx || tileOf(p.z) !== tz) throw new Error("en sortant, on n'est pas sur la case devant la porte tournée");
-    return `« ${dit} », entré et ressorti par la porte`;
   });
   await etape("Attraper un insecte au filet", async () => {
     place(2);
