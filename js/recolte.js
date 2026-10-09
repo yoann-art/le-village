@@ -50,8 +50,8 @@ import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 
 const btn = $("#btn-act");
-const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
-  return h ? `${h} h${m ? " " + String(m).padStart(2, "0") : ""}` : `${Math.max(1, Math.ceil(s / 60))} min`; };
+const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);   // espaces insécables : « 2 h 59 » reste sur une ligne
+  return h ? `${h} h${m ? " " + String(m).padStart(2, "0") : ""}` : `${Math.max(1, Math.ceil(s / 60))} min`; };
 const nomDe = (k, n) => { const o = objet(k); return n > 1 ? o.pluriel || o.nom : o.nom.toLowerCase(); };
 /* Le sac a-t-il la place ? Sinon un message : on range dans un coffre (demande de Yo) */
 const PLEIN = "🎒 Ton sac est plein : range tes affaires dans un coffre de réserve (il se fabrique à l'établi de la Scierie)";
@@ -207,10 +207,10 @@ function actionOf(t){
   }
   if(FLEURS[t.o]){                                  // une fleur (étape 1.9) : en fleur à sa saison, elle se cueille
     const f = FLEURS[t.o], nom = f.nom.toLowerCase(), il = f.une ? "elle" : "il";
-    if(g < 1) return info(`🌱 Jeune ${nom} : ${il} sera grand${f.une ? "e" : ""} dans ${duree(growthLeft(t.i))}, et fleurira ${quandFleur(f)}`);
-    if(!enFleur(f)) return info(`🌿 ${f.nom} : ${il} fleurit ${quandFleur(f)}`);
+    if(g < 1) return info(`🌱 Jeune ${nom} : encore ${duree(growthLeft(t.i))}`);
+    if(!enFleur(f)) return info(`🌿 ${f.nom} : fleurit ${quandFleur(f)}`);
     const r = fleurLeft(t.i);
-    return r > 0 ? info(`🌿 ${f.nom} : ${il} refleurit dans ${duree(r)}`) : {label: `✋ Cueillir : ${nom}`, run: () => cueillirFleur(t)};
+    return r > 0 ? info(`🌿 ${f.nom} : refleurit dans ${duree(r)}`) : {label: `✋ Cueillir : ${nom}`, run: () => cueillirFleur(t)};
   }
   if(t.o === "thym"){
     if(g < 1) return info(`🌱 Jeune thym : prêt dans ${duree(growthLeft(t.i))}`);

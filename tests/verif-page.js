@@ -329,6 +329,12 @@ export async function verifier(){
     if(!$("#btn-act").textContent.includes("Planter")) throw new Error(`la graine en main, le bouton dit « ${$("#btn-act").textContent} »`);
     $("#btn-act").click(); frames(1);
     if(map.obj[t.i] !== k) throw new Error("la graine n'est pas plantée");
+    /* bug de Yo (v1.9.8) : le bouton d'un long message ne doit jamais aller sous le joystick (le texte de sa capture) */
+    const bt = $("#btn-act"), avantTexte = bt.textContent;
+    bt.hidden = false; bt.textContent = "🌱 Jeune tulipe : elle sera grande dans 2 h 37, et fleurira au printemps";
+    const ba = bt.getBoundingClientRect(), jo = $("#joy").getBoundingClientRect();
+    bt.textContent = avantTexte; frames(1);
+    if(ba.right > jo.left && ba.bottom > jo.top && ba.top < jo.bottom) throw new Error("un bouton au long texte passe sous le joystick");
     hold(null);
     return `${sauvages} touffes sauvages ; ${FLEURS[k].nom.toLowerCase()} : cueilli${FLEURS[k].une ? "e" : ""}, déterré${FLEURS[k].une ? "e" : ""}, replanté${FLEURS[k].une ? "e" : ""}`;
   });
