@@ -71,6 +71,15 @@ function signaler(nom, e){
 function garde(nom, f){ try{ return f(); }catch(e){ signaler(nom, e); } }
 window.addEventListener("error", e => signaler("page", e.error || {message: e.message}));
 window.addEventListener("unhandledrejection", e => signaler("page", e.reason || {message: "promesse"}));
+/* Le téléphone peut retirer l'affichage 3D au jeu (contexte WebGL perdu, par exemple quand la mémoire manque) : l'image
+   se fige pour de bon, même si le jeu tourne derrière. On garde la partie et on recharge la page (v1.9.7) */
+renderer.domElement.addEventListener("webglcontextlost", e => {
+  e.preventDefault();
+  console.error("[affichage] contexte WebGL perdu");
+  save();
+  toast("⚠️ L'affichage s'est arrêté : le jeu redémarre, ta partie est gardée.", 4000);
+  setTimeout(() => location.reload(), 1500);
+});
 
 let last = performance.now();
 function tick(now){
