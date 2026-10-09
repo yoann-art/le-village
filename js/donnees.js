@@ -597,6 +597,56 @@ export const MONSTRES = {
    descend les paliers, et plus on s'éloigne de la lumière, plus ils sont nombreux et forts ») */
 export const PALIER_MONSTRES = {1:[["loup", 2], ["chauveSouris", 3]], 2:[["loup", 2], ["sanglier", 1], ["chauveSouris", 4]],
   3:[["loup", 3], ["sanglier", 1], ["chauveSouris", 4], ["sanglier", 1]]};
+/* Les fleurs des prés de l'île (étape 1.9, morceau 4 ; Grand Carnet, « Les fleurs », les prés de l'île) : leurs couleurs
+   (rares : seulement par croisement, plus tard), saison, rareté, à quoi elles servent (note, du carnet), forme (le
+   dessin : etoile, coupe, boule, epi, clochette), coeur (le milieu de la fleur), taille (hauteur en P), prix au
+   comptoir (choisi par Claude, à régler). Cueillie : la fleur, et parfois sa graine (FLEUR_RARETE.graine, carnet :
+   « les mêmes chances que les plantes du potager ») ; sans graine, elle refleurit sur place (refleurit, en secondes) */
+export const FLEURS = {
+  paquerette:{nom:"Pâquerette", pluriel:"pâquerettes", une:true, couleurs:[0xFFFFFF, 0xF4B8C8], coeur:0xF2C94C, saisons:["printemps"], rarete:"commun", forme:"etoile", taille:.32, prix:1, note:"Couronnes et petits bouquets"},
+  coquelicot:{nom:"Coquelicot", pluriel:"coquelicots", couleurs:[0xE03A2E, 0xF08A30, 0xF4F0E8], coeur:0x2A2A2A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.55, prix:1, note:"Bouquets ; il attire les abeilles"},
+  bleuet:    {nom:"Bleuet", pluriel:"bleuets", couleurs:[0x3A6FD8, 0xE88AB0, 0xF4F0E8], coeur:0x2A3A8A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:.5, prix:1, note:"Bouquets, encre bleue"},
+  pissenlit: {nom:"Pissenlit", pluriel:"pissenlits", couleurs:[0xF4C430], saisons:["printemps"], rarete:"commun", forme:"boule", taille:.35, prix:1, note:"En salade ; on souffle ses graines au vent"},
+  marguerite:{nom:"Marguerite", pluriel:"marguerites", une:true, couleurs:[0xFFFFFF, 0xF4D44A], coeur:0xF2B930, saisons:["ete"], rarete:"commun", forme:"etoile", taille:.55, prix:1, note:"Bouquets"},
+  tournesol: {nom:"Tournesol", pluriel:"tournesols", couleurs:[0xF4C430, 0xC8642A], coeur:0x5A3A1A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:1.2, prix:1, note:"Graines à grignoter ; grand décor"},
+  capucine:  {nom:"Capucine", pluriel:"capucines", une:true, couleurs:[0xF08A30, 0xE03A2E, 0xF4C430], coeur:0xF4D44A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.3, prix:1, note:"Fleurs à manger en salade"},
+  cosmos:    {nom:"Cosmos", pluriel:"cosmos", couleurs:[0xF08AB8, 0xF4F0E8, 0xA03A8A], coeur:0xF2C94C, saisons:["automne"], rarete:"commun", forme:"etoile", taille:.6, prix:1, note:"Il attire les papillons"},
+  tulipe:    {nom:"Tulipe", pluriel:"tulipes", une:true, couleurs:[0xE03A2E, 0xF4C430, 0xF4F0E8, 0x8A4AC8], rares:[0x2A1A2A], saisons:["printemps"], rarete:"peuCommun", forme:"coupe", taille:.5, prix:2, note:"Massifs et pots"},
+  rose:      {nom:"Rose", pluriel:"roses", une:true, couleurs:[0xD8283A, 0xF4A0B8, 0xF4F0E8, 0xF4D44A], rares:[0x4A7AE0], saisons:["ete"], rarete:"peuCommun", forme:"boule", taille:.55, prix:2, note:"Bouquets ; eau de rose pour les potions"},
+  lavande:   {nom:"Lavande", pluriel:"lavandes", une:true, couleurs:[0x9A6AD0], saisons:["ete"], rarete:"peuCommun", forme:"epi", taille:.5, prix:2, note:"Parfum, potions apaisantes ; elle attire les papillons"},
+  violette:  {nom:"Violette", pluriel:"violettes", une:true, couleurs:[0x7A3AB8, 0xF4F0E8], coeur:0xF2C94C, saisons:["printemps"], rarete:"peuCommun", forme:"etoile", taille:.25, prix:2, note:"Bonbons, potions"},
+  perceNeige:{nom:"Perce-neige", pluriel:"perce-neige", couleurs:[0xFFFFFF], saisons:["hiver"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Il annonce la fin de l'hiver"},
+  muguet:    {nom:"Muguet", pluriel:"muguets", couleurs:[0xFFFFFF], saisons:["printemps"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Porte-bonheur, à offrir"}
+};
+export const FLEUR_RARETE = {commun:{graine:.75, refleurit:43200, pousse:3600}, peuCommun:{graine:.5, refleurit:86400, pousse:10800}, rare:{graine:.2, refleurit:259200, pousse:21600}};
+/* La saison d'une date (hémisphère nord, en attendant l'étape 1.10) ; quand fleurit une fleur, en toutes lettres */
+const SAISON_DU_MOIS = ["hiver", "hiver", "printemps", "printemps", "printemps", "ete", "ete", "ete", "automne", "automne", "automne", "hiver"];
+export const saisonDu = d => SAISON_DU_MOIS[d.getMonth()];
+const QUAND_FLEUR = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
+export const quandFleur = f => f.saisons.map(s => QUAND_FLEUR[s]).join(" et ");
+export const enFleur = f => f.saisons.includes(saisonDu(new Date()));
+/* On traverse les herbes hautes, le thym et les fleurs */
+export const traversable = o => !o || o === "herbe" || o === "thym" || !!FLEURS[o];
+const majuscule = t => t[0].toUpperCase() + t.slice(1);
+for(const [k, f] of Object.entries(FLEURS)){
+  const hex = c => "#" + c.toString(16).padStart(6, "0"), c0 = hex(f.couleurs[0]), coeur = hex(f.coeur || 0xF2C94C);
+  const tete = f.forme === "coupe" ? `<path d="M7 7Q7 15 12 15Q17 15 17 7L14.5 9.5L12 6L9.5 9.5Z" fill="${c0}" stroke="#1C2230" stroke-opacity=".35"/>`
+    : f.forme === "boule" ? `<circle cx="12" cy="10" r="5" fill="${c0}" stroke="#1C2230" stroke-opacity=".35"/><path d="M9.5 9.5Q12 7 14.5 9.5" stroke="#1C2230" stroke-opacity=".25" fill="none"/>`
+    : f.forme === "epi" ? [4, 7, 10, 13].map(y => `<ellipse cx="12" cy="${y}" rx="2.4" ry="2" fill="${c0}" stroke="#1C2230" stroke-opacity=".3"/>`).join("")
+    : f.forme === "clochette" ? `<path d="M12 4Q18 4 17 8" stroke="#4E8A3A" stroke-width="1.4" fill="none"/>` + [[9, 9], [13, 12], [16.5, 10]].map(([x, y]) => `<path d="M${x - 2.4} ${y + 2.6}Q${x} ${y - 3.6} ${x + 2.4} ${y + 2.6}Z" fill="${c0}" stroke="#1C2230" stroke-opacity=".35"/>`).join("")
+    : [0, 60, 120, 180, 240, 300].map(a => `<ellipse cx="12" cy="5.5" rx="2.3" ry="3.6" fill="${c0}" stroke="#1C2230" stroke-opacity=".3" transform="rotate(${a} 12 10)"/>`).join("") + `<circle cx="12" cy="10" r="2.6" fill="${coeur}"/>`;
+  f.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 13V22" stroke="#4E8A3A" stroke-width="1.6"/><path d="M12 19Q8 16 6 17Q8 20 12 19Z" fill="#6FA85A"/>${tete}</svg>`;
+  f.emoji = "🌸";
+  const r = {commun:"commune", peuCommun:"peu commune", rare:"rare"}[f.rarete];
+  f.aide = `${f.une ? "La" : "Le"} ${f.nom.toLowerCase()} se cueille dans les prés de l'île, ${quandFleur(f)}.`;
+  f.usage = `${f.note}. Fleur ${r} des prés de l'île, qui fleurit ${quandFleur(f)}. Elle se vend au comptoir ; bientôt, en bouquet ou en pot.`;
+  /* sa graine : en main, « Planter » ; la fleur pousse en temps réel, et ne fleurit qu'à sa saison */
+  GRAINES["graine" + majuscule(k)] = {nom:`Graine de ${f.nom.toLowerCase()}`, pluriel:`graines de ${f.nom.toLowerCase()}`, emoji:"🌱", plante:k,
+    pousse:FLEUR_RARETE[f.rarete].pousse, sachet:f.couleurs[0],
+    usage:`Prends-la en main, puis « Planter » devant une case d'herbe libre : ${f.une ? "une" : "un"} ${f.nom.toLowerCase()} y poussera, et fleurira ${quandFleur(f)}.`};
+}
+export const graineDeFleur = k => "graine" + majuscule(k);
+
 /* Les chemins (étape 1.9, morceau 2 ; Grand Carnet : « Chemins : gravier, pavés ou planches, se tracent librement sur
    l'île ») : avec = ce qu'il faut tenir en main pour les tracer (une pièce par case, prise dans le sac, rendue quand
    la pelle enlève le chemin) ; la terre se trace à la pelle, gratuitement (décidé avec Yo) */
@@ -654,6 +704,6 @@ for(const [k, p] of Object.entries(GIBIER)){
     `${p.une ? "Elle" : "Il"} ${k === "cerfBlanc" ? "offre" : "donne"} : ${Object.entries(p.donne).map(([d, n]) => `${n} ${(n > 1 ? PRODUITS[d].pluriel : PRODUITS[d].nom).toLowerCase()}`).join(", ")}.`;
   p.emoji = p.forme === "lapin" ? "🐇" : p.forme === "renard" ? "🦊" : p.forme === "oiseau" ? "🐦" : p.forme === "sanglier" ? "🐗" : "🦌";
 }
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k] || GIBIER[k];
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k] || GIBIER[k] || FLEURS[k];
 /* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
 export const icone = k => objet(k).icone || objet(k).emoji;

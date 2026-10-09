@@ -17,7 +17,7 @@ import { G, part } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, porte } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau } from "./monde/ile.js";
+import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau, fleurie } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
@@ -125,7 +125,7 @@ function places(ou){
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
     if(!inb(x, z) || Math.hypot(x - px, z - pz) < 2) continue;
     const i = idx(x, z), o = map.obj[i], cx = centerOf(x), cz = centerOf(z), a = Math.random() * 6.28;
-    if(ou === "fleurs" && (o === "thym" && !thymLeft(i) || o === "buisson") && growth(i) >= 1) out.push({x: cx, y: o === "thym" ? .35 : .65, z: cz});
+    if(ou === "fleurs" && ((o === "thym" && !thymLeft(i) || o === "buisson") && growth(i) >= 1 || fleurie(i))) out.push({x: cx, y: o === "thym" ? .35 : o === "buisson" ? .65 : .55, z: cz});   // un jardin fleuri attire les papillons (carnet)
     else if(ou === "herbes" && o === "herbe") out.push({x: cx, y: .15, z: cz});
     else if(ou === "arbres" && ARBRES.has(o) && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .3, y: .45 + Math.random() * .5, z: cz + Math.sin(a) * .3, tronc: true});
     else if(ou === "sol" && map.type[i] === "grass" && !o && !occ.has(i)) out.push({x: cx, y: .03, z: cz});

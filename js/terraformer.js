@@ -13,12 +13,12 @@
    en main, face à un chemin : « 🪏 Enlever le chemin » (la pièce revient dans le sac). Rien ne pousse sur un chemin
    (recolte.js) ; sous un bâtiment, il est caché. */
 import { $ } from "./outils.js";
-import { OUTILS, CHEMINS, CHEMIN_DE, objet } from "./donnees.js";
+import { OUTILS, CHEMINS, CHEMIN_DE, FLEURS, graineDeFleur, traversable, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { doorTile, sacCount, sacTake, sacAdd, sacPlace } from "./regles.js";
-import { syncBarre } from "./barre.js";
+import { syncBarre, barreAuto } from "./barre.js";
 import { dessinerChemins } from "./monde/chemins.js";
-import { map, idx, inb, N, tileOf, comblable, setTerrain, terreDe, entamer } from "./monde/ile.js";
+import { map, idx, inb, N, tileOf, comblable, setTerrain, terreDe, entamer, setObj } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { solAt } from "./monde/sol.js";
 import { passageCases, entrees } from "./monde/ponton.js";
@@ -33,12 +33,13 @@ export function cibleTerrain(){
   if(!inb(x, z)) return null;
   const i = idx(x, z);
   if(state.chemins[i] && !occ.has(i)) return {i, x, z, pelle: "enlever"};
+  if(FLEURS[map.obj[i]]) return {i, x, z, pelle: "deterrer"};
   if(map.type[i] === "water") return passageCases.has(i) ? null : {i, x, z, pelle: "combler"};
   if(!map.obj[i] && !occ.has(i) && !solAt(i)) return {i, x, z, pelle: "creuser"};
   return null;
 }
 /* Peut-on encore rejoindre le pont de la forêt (ou le ponton) si la case eau devient de l'eau (-1 : rien ne change) ? */
-const marche = (j, eau) => j !== eau && (map.type[j] !== "water" || passageCases.has(j)) && (!map.obj[j] || map.obj[j] === "herbe" || map.obj[j] === "thym") && !occ.has(j);
+const marche = (j, eau) => j !== eau && (map.type[j] !== "water" || passageCases.has(j)) && traversable(map.obj[j]) && !occ.has(j);
 function relie(eau){
   if(!entrees.size) return true;
   const d = idx(tileOf(player.position.x), tileOf(player.position.z)), vu = new Uint8Array(N * N), file = [d];
@@ -64,7 +65,7 @@ export function terrainProbleme(t){
   return memo.r;
 }
 function probleme(t){
-  if(t.pelle === "enlever") return null;
+  if(t.pelle === "enlever" || t.pelle === "deterrer") return null;
   if(t.pelle === "combler") return comblable(t.i) ? null : "🌊 La mer ne se comble pas : l'île garde sa forme";
   const i = t.i;
   if(map.type[i] !== "grass") return "🏖️ Le sable s'écroule : on ne creuse que dans l'herbe";
@@ -78,6 +79,7 @@ function probleme(t){
 /* ----- Le bouton d'action (recolte.js) ----- */
 const coups = new Map();        // la case qu'on est en train de creuser → coups de pelle déjà donnés
 export function actionTerrain(t){
+  if(t.pelle === "deterrer") return {label: `🪏 Déterrer : ${FLEURS[map.obj[t.i]].nom.toLowerCase()}`, run: () => deterrer(t)};
   if(t.pelle === "enlever") return {label: `🪏 Enlever le chemin de ${CHEMINS[state.chemins[t.i]].nom}`, run: () => enlever(t)};
   if(t.pelle === "combler") return {label: "🪏 Combler", run: () => combler(t)};
   const n = coups.get(t.i) || 0, reste = (OUTILS[state.main].coups || 1) - n;
@@ -101,6 +103,16 @@ function combler(t){
   geste();
   setTerrain(t.i, terreDe(t.i)); memo.cle = "";
   save();
+}
+
+/* Déterrer une fleur (morceau 4) : elle quitte sa case, et sa graine revient dans le sac, pour la replanter ailleurs */
+function deterrer(t){
+  const k = graineDeFleur(map.obj[t.i]);
+  if(sacPlace(k) < 1){ toast("🎒 Ton sac est plein : fais de la place pour la graine", 2600); return; }
+  geste();
+  setObj(t.i, null); sacAdd(k, 1); barreAuto(k); syncBarre();
+  memo.cle = ""; save();
+  toast(`🪏 Déterrée : +1 ${objet(k).nom.toLowerCase()}, à replanter où tu veux`, 2600);
 }
 
 /* ----- Les chemins (morceau 2) ----- */

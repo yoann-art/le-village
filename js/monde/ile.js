@@ -4,7 +4,8 @@ import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
-import { GRAINES, RECOLTE } from "../donnees.js";
+import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, enFleur } from "../donnees.js";
+import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
@@ -85,6 +86,21 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
     const i = idx(x, z), r = rnd();
     if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || i === entreeF || Math.hypot(x-c, z-c) < 9) continue;
     if(r < .04) map.obj[i] = "thym";
+  }
+}
+/* Les fleurs des prés (étape 1.9, morceau 4 ; Grand Carnet : « Les fleurs de tous les jours, et les grandes classiques
+   du jardin ») : des touffes sauvages, posées après coup avec leur propre tirage (comme le thym, pour ne rien déplacer),
+   hors de la place du village, jamais sur un chemin ni devant le ponton ; les communes trois fois plus souvent.
+   Chacune fleurit à sa saison ; le reste de l'année, ce sont des feuilles */
+{
+  const rnd = mulberry32(state.seed * 13 + 7), c = (N-1)/2, sous = new Set();
+  state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
+  const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1, F = state.pontForet, entreeF = F ? idx(F.x, F.z + 1) : -1;
+  const sortes = Object.keys(FLEURS).flatMap(k => Array(FLEURS[k].rarete === "commun" ? 3 : 1).fill(k));
+  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
+    const i = idx(x, z), r = rnd(), r2 = rnd();
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || i === entreeF || state.chemins[i] || Math.hypot(x-c, z-c) < 9) continue;
+    if(r < .08) map.obj[i] = sortes[Math.floor(r2 * sortes.length)];
   }
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
@@ -172,8 +188,21 @@ export function baiesLeft(i){                         // -1 : vide, pas arrosé 
   if(!c.arrose) return -1;
   return Math.max(0, RECOLTE.buisson.retour - (Date.now() - c.arrose) / 1000);
 }
+/* Les fleurs (étape 1.9) : cueillie, elle refleurit sur place (FLEUR_RARETE.refleurit) ; temps restant en secondes */
+export function fleurLeft(i){
+  const c = state.ile[i], f = FLEURS[map.obj[i]];
+  return f && c && c.cueilli ? Math.max(0, FLEUR_RARETE[f.rarete].refleurit - (Date.now() - c.cueilli) / 1000) : 0;
+}
+/* En fleur : adulte, à sa saison, et pas cueillie depuis peu */
+export const fleurie = i => !!FLEURS[map.obj[i]] && growth(i) >= 1 && enFleur(FLEURS[map.obj[i]]) && !(fleurLeft(i) > 0);
+/* Sa couleur : tirée parmi celles de la fleur, la même tant qu'elle est là (les sauvages selon leur case, les plantées
+   selon l'heure où on les a plantées) */
+export function couleurDe(i){
+  const f = FLEURS[map.obj[i]], c = state.ile[i], h = Math.abs(Math.imul(i + 1, 2654435761) ^ (c && c.plante ? Math.floor(c.plante / 1000) : 0));
+  return f.couleurs[h % f.couleurs.length];
+}
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
-const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "");
+const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
@@ -216,6 +245,9 @@ function buildObj(i){
     if(st === 2 && !ras) [[.12,.36,.06],[-.15,.32,.12],[.02,.4,-.15],[.22,.27,-.08],[-.06,.42,.02],[-.22,.25,-.1],[.1,.3,.2]].forEach(([x, y, z]) =>
       g.add(part(G.head, 0xA77BD8, .24, .24, .24, x, y, z)));
     if(st < 2) g.scale.setScalar(st === 0 ? .45 : .75);
+  } else if(FLEURS[o]){                             // une fleur (étape 1.9) : pousse, feuilles, ou en fleur à sa couleur
+    const st = stageOf(i);
+    g.add(fleurModele(o, couleurDe(i), st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre");
     c.scale.setScalar(.75); g.add(c);

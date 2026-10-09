@@ -5,6 +5,7 @@ import { scene } from "./scene.js";
 import { map, idx, inb, tileOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state } from "../sauvegarde.js";
+import { traversable } from "../donnees.js";
 import { jv, keys } from "../commandes.js";
 import { makeOutil } from "./outils3d.js";
 import { passageCases } from "./ponton.js";
@@ -60,7 +61,7 @@ export function islandWalkable(wx, wz){
   const x = tileOf(wx), z = tileOf(wz);
   if(!inb(x,z)) return false;
   const i = idx(x,z);
-  return (map.type[i] !== "water" || passageCases.has(i)) && (!map.obj[i] || map.obj[i] === "herbe" || map.obj[i] === "thym") && !occ.has(i);   // on traverse les herbes hautes et le thym
+  return (map.type[i] !== "water" || passageCases.has(i)) && traversable(map.obj[i]) && !occ.has(i);   // on traverse les herbes hautes, le thym et les fleurs
 }
 let walkable = islandWalkable;
 export function setWalkable(fn){ walkable = fn; }

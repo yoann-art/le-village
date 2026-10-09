@@ -19,6 +19,7 @@ import { OISEAUX, OU_OISEAU, HEURES, PECHE, OUTILS, B } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, sizeOf, porte } from "./regles.js";
 import { map, idx, inb, H, tileOf, centerOf, growth, lieuEau } from "./monde/ile.js";
+import { traversable } from "./donnees.js";
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { pontonCases, eauLibre } from "./monde/ponton.js";
@@ -113,7 +114,7 @@ function places(ou){
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
     if(!inb(x, z) || Math.hypot(x - px, z - pz) < 2.5) continue;
     const i = idx(x, z), o = map.obj[i], cx = centerOf(x), cz = centerOf(z), a = Math.random() * 6.28;
-    const solLibre = map.type[i] !== "water" && (!o || o === "herbe" || o === "thym") && !occ.has(i);
+    const solLibre = map.type[i] !== "water" && traversable(o) && !occ.has(i);
     if(ou === "sol" && map.type[i] === "grass" && solLibre) out.push({x: cx, y: 0, z: cz});
     else if(ou === "arbres" && ARBRES.has(o) && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .75, y: 2.25, z: cz + Math.sin(a) * .75, perche: true});
     else if(ou === "buissons" && o === "buisson" && growth(i) >= 1) out.push({x: cx, y: .85, z: cz, perche: true});

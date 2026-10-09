@@ -10,7 +10,7 @@
    Le comptoir vend aussi les poissons et les plats qu'on possède (étape 1.6) : un par un, ou tous d'un coup
    (sauf les légendaires) ; une recette peut demander un ingrédient « au choix » (un poisson : voir payer). */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, objet, icone } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
@@ -43,6 +43,7 @@ function chain(q){
 /* Les recettes d'un plan de travail (key : pour les retrouver au toucher) ; le comptoir y ajoute la vente des
    poissons et des plats qu'on possède, avec leur prix (POISSONS, PRODUITS) */
 const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf"];
+const FLEURS_VENTE = Object.keys(FLEURS);
 const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse"];
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
@@ -59,6 +60,8 @@ function recettesDe(b){
   for(const k of FORET_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La Forêt profonde", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* la chasse (morceau 5) : la viande et les peaux, en attendant le potager et l'équipement (décidé par Yo) */
   for(const k of CHASSE_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La chasse", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
+  /* les fleurs cueillies (étape 1.9), en attendant les bouquets et les pots */
+  for(const k of FLEURS_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Les fleurs", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* ce que laissent les monstres de la grotte (étape 1.8), en attendant l'équipement et les potions */
   for(const k of MONSTRES_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Les monstres", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   return list;

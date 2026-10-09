@@ -63,6 +63,17 @@ export const porte = () => [...state.sac, ...state.barre.filter(Boolean)];
 export const sacCount = k => slotsCount(porte(), k);
 /* La place pour k sur soi : ce qui manque à la pile de sa case rapide, puis le sac */
 export const sacPlace = k => state.barre.reduce((n, it) => n + (it && it.k === k ? pileOf(k) - it.n : 0), 0) + slotsPlace(state.sac, SAC.places, k);
+/* Tout cela tient-il sur soi, ensemble ? (gains : {sorte: combien}) ; on essaie sur une copie du sac et des cases
+   (v1.9.6 : vérifier chaque sorte à part laissait passer un gibier dont le cuir ne tenait plus) */
+export function tientSurSoi(gains){
+  const sac = state.sac.map(it => ({...it})), barre = state.barre.map(it => it && {...it});
+  for(const [k, n] of Object.entries(gains)){
+    let left = n;
+    for(const it of barre) if(it && it.k === k && left > 0){ const m = Math.min(pileOf(k) - it.n, left); it.n += m; left -= m; }
+    if(left > 0 && slotsAdd(sac, SAC.places, k, left) < left) return false;
+  }
+  return true;
+}
 /* Ajoute sur soi : d'abord dans la case rapide qui a déjà k (les graines qu'on ramasse), puis dans le sac */
 export function sacAdd(k, n){
   let left = n;

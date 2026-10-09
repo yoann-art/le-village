@@ -5,7 +5,7 @@
    la porte, qui doit rester libre. Tourner les bâtiments (v1.9.3) : retiré à la demande de Yo le 9 octobre 2026 (la
    vue reste la même, ça ne sert à rien) ; un bâtiment tourné pendant l'essai reprend sa porte en bas (voir plus bas). */
 import { $ } from "./outils.js";
-import { RES, B, ORDER } from "./donnees.js";
+import { RES, B, ORDER, traversable } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
@@ -35,9 +35,9 @@ function anchorFor(type){
 /* Peut-on poser ici ? null si oui ; sinon « occupé » (terrain déjà pris), « perso » (le personnage
    est dessous) ou « porte » (sa porte serait bloquée, ou il bloquerait celle d'un autre bâtiment) */
 /* Une case libre pour bâtir : terre ferme, rien dessus (les herbes hautes, elles, s'en vont sous le bâtiment) */
-const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && (!map.obj[idx(x,z)] || map.obj[idx(x,z)] === "herbe" || map.obj[idx(x,z)] === "thym") && !occ.has(idx(x,z)) && !entrees.has(idx(x,z));   // le passage vers le ponton ou le pont reste libre
+const freeTile = (x, z) => inb(x,z) && map.type[idx(x,z)] !== "water" && traversable(map.obj[idx(x,z)]) && !occ.has(idx(x,z)) && !entrees.has(idx(x,z));   // le passage vers le ponton ou le pont reste libre
 const clearHerbes = (type, ax, az, r) => [...footprint(type, ax, az), doorTile(type, ax, az, r)]
-  .forEach(([x,z]) => { if(inb(x,z) && (map.obj[idx(x,z)] === "herbe" || map.obj[idx(x,z)] === "thym")) setObj(idx(x,z), null); });   // rien ne pousse devant la porte
+  .forEach(([x,z]) => { if(inb(x,z) && map.obj[idx(x,z)] && traversable(map.obj[idx(x,z)])) setObj(idx(x,z), null); });   // rien ne pousse devant la porte
 function placeProblem(type, ax, az){
   const cells = footprint(type, ax, az);
   if(!cells.every(([x,z]) => freeTile(x, z))) return "occupé";

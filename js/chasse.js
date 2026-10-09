@@ -20,7 +20,7 @@ import { G, part } from "./monde/formes.js";
 import { GIBIER, HEURES, PECHE, OUTILS, MONSTRES, objet } from "./donnees.js";
 import { modeleMonstre, enrager } from "./monstres.js";
 import { state, save } from "./sauvegarde.js";
-import { sacAdd, sacTake, sacCount, sacPlace, porte } from "./regles.js";
+import { sacAdd, sacTake, sacCount, sacPlace, porte, tientSurSoi } from "./regles.js";
 import { foret, foretObj, walk, W, CHEMIN_BLANC } from "./monde/foret.js";
 import { ARBRES } from "./monde/essences.js";
 import { player, placePlayer, allure, ALLURE_DOUCE, pencheMain } from "./monde/personnage.js";
@@ -329,7 +329,7 @@ function cible(){
 function tirer(a){
   const p = GIBIER[a.k];
   if(sacCount("fleche") < 1){ toast("🏹 Plus de flèches : fabrique-en à l'établi de la Scierie (2 planches et 1 pierre pour 10 flèches)", 3600); return; }
-  if(Object.entries(p.donne).some(([k, n]) => sacPlace(k) < n)){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre avant de chasser", 3200); return; }
+  if(!tientSurSoi(p.donne)){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre avant de chasser", 3200); return; }
   const k = arcDuSac();
   if(state.main !== k){ barreAuto(k); hold(k); }
   sacTake("fleche", 1);

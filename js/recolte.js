@@ -14,6 +14,8 @@
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
      du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés ;
    - du thym : « ✋ Cueillir le thym » (des brins, parfois sa graine ; il repousse sur place) ;
+   - une fleur en fleur (étape 1.9, FLEURS) : « ✋ Cueillir : … » (la fleur, parfois sa graine ; elle refleurit sur
+     place) ; hors de sa saison, des feuilles ; on les traverse, comme les herbes hautes et le thym ;
    - un insecte tout près : « 🥅 Attraper » (le filet ; voir insectes.js), avant tout le reste ; un oiseau posé :
      « 🥅 Lancer le filet » (voir oiseaux.js) ;
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
@@ -25,10 +27,10 @@
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, objet } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, enFleur, quandFleur, graineDeFleur, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
+import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi } from "./regles.js";
+import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
@@ -124,7 +126,7 @@ function target(){
   const [x, z] = frontTile(.8);
   if((GRAINES[state.main] || POSABLES[state.main]) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
   const ici = inb(...own) && map.obj[idx(...own)];
-  if(ici === "herbe" || ici === "thym") return {w: ILE, i: idx(...own), x: own[0], z: own[1], o: ici};
+  if(ici === "herbe" || ici === "thym" || FLEURS[ici]) return {w: ILE, i: idx(...own), x: own[0], z: own[1], o: ici};
   return inb(x, z) ? {i: idx(x, z), x, z, o: null} : null;
 }
 
@@ -203,6 +205,13 @@ function actionOf(t){
     if(g < 1) return info(`🌱 Jeunes herbes : hautes dans ${duree(growthLeft(t.i))}`);
     return herbeLeft(t.i) > 0 ? {label: "✋ Arracher (+1 graine)", run: () => arracher(t)} : {label: "✋ Cueillir", run: () => cueillirHerbe(t)};
   }
+  if(FLEURS[t.o]){                                  // une fleur (étape 1.9) : en fleur à sa saison, elle se cueille
+    const f = FLEURS[t.o], nom = f.nom.toLowerCase(), il = f.une ? "elle" : "il";
+    if(g < 1) return info(`🌱 Jeune ${nom} : ${il} sera grand${f.une ? "e" : ""} dans ${duree(growthLeft(t.i))}, et fleurira ${quandFleur(f)}`);
+    if(!enFleur(f)) return info(`🌿 ${f.nom} : ${il} fleurit ${quandFleur(f)}`);
+    const r = fleurLeft(t.i);
+    return r > 0 ? info(`🌿 ${f.nom} : ${il} refleurit dans ${duree(r)}`) : {label: `✋ Cueillir : ${nom}`, run: () => cueillirFleur(t)};
+  }
   if(t.o === "thym"){
     if(g < 1) return info(`🌱 Jeune thym : prêt dans ${duree(growthLeft(t.i))}`);
     const r = thymLeft(t.i);
@@ -263,7 +272,7 @@ function ouvrirTresor(t){
   const choix = [["cuivre", 2 + Math.floor(Math.random() * 3)], ["fleche", 5], ["torche", 2], ["cuivre", 3 * p]];
   const gains = [choix[Math.floor(Math.random() * choix.length)]];
   if(p > 1) gains.push(choix[Math.floor(Math.random() * choix.length)]);
-  if(gains.some(([k, n]) => sacPlace(k) < n)){ toast("🎒 Ton sac est plein : fais de la place pour ouvrir le coffre", 3000); return; }
+  if(!tientSurSoi(Object.fromEntries(gains.reduce((m, [k, n]) => m.set(k, (m.get(k) || 0) + n), new Map())))){ toast("🎒 Ton sac est plein : fais de la place pour ouvrir le coffre", 3000); return; }
   for(const [k, n] of gains){ sacAdd(k, n); barreAuto(k); }
   addOwned("or", or);
   t.w.set(t.i, null);
@@ -313,6 +322,16 @@ function cueillirThym(t){
   const graine = Math.random() < R.chance, ou = graine ? giveSeed(R.graine) : "";
   save();
   toast(`🌿 +${R.n} ${nomDe(R.cueille, R.n)}${graine ? `, +1 ${nomDe(R.graine, 1)} ${ou}` : ""}. Il repousse ici dans ${duree(R.repousse)}`, 3200);
+}
+/* Une fleur (étape 1.9, Grand Carnet : « cueillir une fleur sauvage donne toujours la fleur ; elle donne parfois sa
+   graine, selon sa rareté ; sans graine, on attend qu'elle refleurisse sur place ») */
+function cueillirFleur(t){
+  const f = FLEURS[t.o], R = FLEUR_RARETE[f.rarete];
+  if(!sacOk(t.o, 1)) return;
+  sacAdd(t.o, 1);
+  const graine = Math.random() < R.graine, ou = graine ? giveSeed(graineDeFleur(t.o)) : "";
+  setEtat(t.i, {cueilli: Date.now()}); save();
+  toast(`🌸 +1 ${f.nom.toLowerCase()}${graine ? `, +1 ${nomDe(graineDeFleur(t.o), 1)} ${ou}` : ""}. ${f.une ? "Elle" : "Il"} refleurit ici dans ${duree(R.refleurit)}`, 3200);
 }
 function cueillirBaies(t){
   const R = RECOLTE.buisson, n = gain(R.n, R.cueille);
@@ -407,5 +426,7 @@ function planter(t){
   if(!sacTake(k, 1)) return;
   setObj(t.i, gr.plante, Date.now());
   syncBarre(); save();
+  const f = FLEURS[gr.plante];
+  if(f){ toast(`🌱 ${gr.nom} plantée : ${f.une ? "elle" : "il"} sera grand${f.une ? "e" : ""} dans ${duree(gr.pousse)}, et fleurira ${quandFleur(f)}`, 3400); return; }
   toast(`🌱 ${gr.nom} planté${gr.nom.startsWith("Gland") ? "" : "e"} : ${DEVIENT[gr.plante] || RECOLTE[gr.plante].nom.replace(/^le /, "un ").replace(/^l'/, "un ") + " adulte"} dans ${duree(gr.pousse)}`, 3000);
 }

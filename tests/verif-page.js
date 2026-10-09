@@ -12,13 +12,13 @@
    village, toute sa vie revenue), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
    creuser et combler à la pelle, tracer un chemin en marchant et l'enlever à la pelle,
-   ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   les fleurs (cueillir une fleur de la saison, la déterrer à la pelle, replanter sa graine), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
-import { map, idx, N, H, centerOf, tileOf } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj } from "../js/monde/ile.js";
 import { occ } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
@@ -296,6 +296,42 @@ export async function verifier(){
     hold(null);
     return `${poses} cases de planches en marchant, une enlevée à la pelle`;
   });
+  await etape("Les fleurs : cueillir, déterrer à la pelle, replanter la graine", async () => {
+    place(3);
+    const sauvages = map.obj.filter(o => FLEURS[o]).length;
+    if(sauvages < 10) throw new Error(`seulement ${sauvages} fleurs sauvages sur l'île`);
+    /* une fleur de la saison, plantée il y a longtemps (en fleur), sur une case libre de la place du village */
+    const k = Object.keys(FLEURS).find(f => enFleur(FLEURS[f]));
+    const c = Math.floor(N / 2), libre = j => map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j] && !state.chemins[j];
+    let t = null;
+    for(let r = 2; r < 9 && !t; r++) for(const [dx, dz] of [[0, -r], [r, 0], [-r, 0], [0, r], [r, r], [-r, -r], [r, -r], [-r, r]]){
+      const x = c + dx, z = c + dz, i = idx(x, z);
+      if(libre(i) && libre(idx(x, z + 1))){ t = {x, z, i}; break; }
+    }
+    if(!t) throw new Error("pas de case libre sur la place");
+    setObj(t.i, k, Date.now() - FLEUR_RARETE[FLEURS[k].rarete].pousse * 1000 - 1000);
+    hold(null); keys.u = keys.d = keys.l = keys.r = 0;
+    placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
+    if(!$("#btn-act").textContent.includes("Cueillir")) throw new Error(`face à ${FLEURS[k].nom.toLowerCase()} en fleur, le bouton dit « ${$("#btn-act").textContent} »`);
+    const avant = owned(k);
+    $("#btn-act").click(); frames(1);
+    if(owned(k) !== avant + 1) throw new Error("la fleur cueillie n'est pas dans le sac");
+    if(!$("#btn-act").textContent.includes("refleurit")) throw new Error(`cueillie, le bouton dit « ${$("#btn-act").textContent} »`);
+    /* la pelle la déterre : sa graine revient dans le sac */
+    if(!owned("pelleBois")) sacAdd("pelleBois", 1);
+    hold("pelleBois"); frames(1);
+    const g = graineDeFleur(k), gAvant = owned(g);
+    if(!$("#btn-act").textContent.includes("Déterrer")) throw new Error(`pelle en main, face à la fleur, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click(); frames(1);
+    if(map.obj[t.i] || owned(g) !== gAvant + 1) throw new Error("déterrée, la fleur ne rend pas sa graine");
+    /* la graine replantée */
+    hold(g); frames(1);
+    if(!$("#btn-act").textContent.includes("Planter")) throw new Error(`la graine en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click(); frames(1);
+    if(map.obj[t.i] !== k) throw new Error("la graine n'est pas plantée");
+    hold(null);
+    return `${sauvages} touffes sauvages ; ${FLEURS[k].nom.toLowerCase()} : cueilli${FLEURS[k].une ? "e" : ""}, déterré${FLEURS[k].une ? "e" : ""}, replanté${FLEURS[k].une ? "e" : ""}`;
+  });
   await etape("Attraper un insecte au filet", async () => {
     place(2);
     sacAdd("filet", 1); hold(null);
@@ -371,7 +407,7 @@ export async function verifier(){
     return `un phasme, un pic vert et ${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()}`;
   });
   await etape("Chasser à l'arc : un chevreuil, et le présent du Cerf blanc", async () => {
-    place(4);
+    place(5);
     pauseChasse(true);
     await entrer(state.buildings.find(b => b.type === "foret"));
     sacAdd("arcIf", 1); sacAdd("fleche", 5); hold(null);
