@@ -45,6 +45,7 @@ function chain(q){
 const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf"];
 const FLEURS_VENTE = Object.keys(FLEURS);
 const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse"];
+const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "bronze", "verre"];
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 function recettesDe(b){
@@ -64,6 +65,8 @@ function recettesDe(b){
   for(const k of FLEURS_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Les fleurs", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* ce que laissent les monstres de la grotte (étape 1.8), en attendant l'équipement et les potions */
   for(const k of MONSTRES_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Les monstres", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
+  /* ce qu'on rapporte de la mine (étape 1.11, morceau 3) : les pierres précieuses valent cher */
+  for(const k of MINE_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La mine", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   return list;
 }
 /* Vendre au comptoir : tout de suite (demande de Yo) ; l'or va dans la bourse, avec le bonus du Marché */

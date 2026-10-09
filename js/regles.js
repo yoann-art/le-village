@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet } from "./donnees.js";
+import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet, NIVEAU3 } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -145,6 +145,7 @@ export const mineOuverte = () => !state.entreeMine;          // 3 niveaux pour t
 export function upCost(t, lvl){
   const c = {};
   for(const [r,v] of Object.entries(B[t].cost)) c[r] = Math.ceil(v * 1.5 * lvl);
+  if(lvl === 2 && NIVEAU3[t]) Object.assign(c, NIVEAU3[t]);         // le niveau 3 : une pierre dure de la mine (étape 1.11)
   return c;
 }
 export const canAfford = hasAll;

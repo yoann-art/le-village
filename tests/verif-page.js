@@ -18,7 +18,7 @@
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
-import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
+import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
@@ -218,6 +218,7 @@ export async function verifier(){
     bouton.click(); await wait(300);
     if(scierie.lvl !== 2) throw new Error(`la Scierie est au niveau ${scierie.lvl}`);
     if(!(toitDe(scierie) > avant)) throw new Error("le modèle de la Scierie n'a pas changé");
+    if(upCost("scierie", 2).granit !== 8) throw new Error("le niveau 3 de la Scierie ne demande pas de granit");
     if($("#sheetWrap [data-close]")) $("#sheetWrap [data-close]").click();
     await wait(300);
     return `niveau 2 : toit à ${toitDe(scierie).toFixed(2)} P (au lieu de ${avant.toFixed(2)})`;
@@ -505,6 +506,23 @@ export async function verifier(){
     frames(40);
     return "une fourmi, inscrite au carnet";
   });
+  await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
+    place(2);
+    sacAdd("bocal", 1); hold(null);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
+    const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1));
+    if(i < 0) throw new Error("pas de place libre");
+    placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
+    lacherInsecte("luciole", player.position.x, player.position.z + .7, .03);
+    frames(2);
+    if(!$("#btn-act").textContent.includes("🫙")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    const avant = owned("luciole");
+    $("#btn-act").click();
+    if(owned("luciole") <= avant) throw new Error("pas de luciole dans le sac");
+    frames(40);
+    return "une luciole, prise au bocal";
+  });
   await etape("Attraper un oiseau au filet", async () => {
     place(1);
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
@@ -706,6 +724,10 @@ export async function verifier(){
       b.click();
       if(owned(poisson.k) !== n - 1) throw new Error("le poisson n'est pas parti");
       if(state.res.or <= or) throw new Error("pas d'or tout de suite");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+      place(1); sacAdd("granit", 1);                        // ce qu'on rapporte de la mine se vend aussi (étape 1.11)
+      openAtelier(marche); await wait(200);
+      if(!$("#sheet [data-fab='v:granit']")) throw new Error("pas de ligne pour vendre le granit");
       $("#sheetWrap [data-close]").click(); await wait(300);
       return `+${state.res.or - or} or`;
     } finally {

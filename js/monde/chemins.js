@@ -35,6 +35,21 @@ const DESSINS = {
       x.fillStyle = "rgba(255,255,255,.18)"; x.fillRect(px + 5, py + 4, 16, 4);
     });
   },
+  granit: x => {                                       // deux grandes dalles roses et grises, piquetées (étape 1.11)
+    x.fillStyle = "#6E625A"; x.fillRect(0, 0, 64, 64);
+    [[2, 2, 60, 29], [2, 33, 60, 29]].forEach(([px, py, w, h], k) => {
+      x.fillStyle = k ? "#B8A89E" : "#AE9E94"; x.fillRect(px, py, w, h);
+      for(let n = 0; n < 40; n++) rond(x, px + hasard() * w, py + hasard() * h, .6 + hasard() * 1.1, ["#6E625A", "#D6C8BE", "#8E7E76"][n % 3]);
+    });
+  },
+  marbre: x => {                                       // quatre dalles blanches veinées de gris (étape 1.11)
+    x.fillStyle = "#B8B4AE"; x.fillRect(0, 0, 64, 64);
+    [[1, 1], [33, 1], [1, 33], [33, 33]].forEach(([px, py], k) => {
+      x.fillStyle = k % 3 ? "#F2F0EA" : "#ECE8E0"; x.fillRect(px, py, 30, 30);
+      x.strokeStyle = "rgba(120,116,110,.55)"; x.lineWidth = 1; x.beginPath();
+      x.moveTo(px + 3, py + 6 + k * 4); x.quadraticCurveTo(px + 15, py + 12, px + 27, py + 22 - k * 3); x.stroke();
+    });
+  },
   planches: x => {                                     // trois planches, leurs joints et leurs clous
     ["#C29462", "#B4864F", "#CB9E6B"].forEach((c, k) => { x.fillStyle = c; x.fillRect(0, k * 21 + 1, 64, 20); });
     x.fillStyle = "#6B4A2F"; for(const y of [0, 21, 42, 63]) x.fillRect(0, y, 64, 1.5);

@@ -14,7 +14,7 @@ const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
-  etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
+  chandelier:0xD8DCE2, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 const BUILD = {
   chaise(g, m){
@@ -37,6 +37,16 @@ const BUILD = {
     g.add(part(G.cyl, m, .08, 1.1, .08, 0, .6, 0));                                   // poteau
     g.add(part(G.box, glowMat, .22, .28, .22, 0, 1.28, 0));                            // lanterne allumée
     g.add(part(G.cone4, m, .36, .16, .36, 0, 1.5, 0));                                // chapeau
+  },
+  chandelier(g, m){                                                                  // l'argent de la mine (étape 1.11) : trois bougies
+    g.add(part(G.cyl, m, .34, .06, .34, 0, .03, 0));                                  // le pied
+    g.add(part(G.cyl, m, .06, .7, .06, 0, .4, 0));                                    // la tige
+    g.add(part(G.box, m, .6, .05, .06, 0, .72, 0));                                   // les bras
+    for(const x of [-.27, 0, .27]){
+      g.add(part(G.cyl, m, .12, .05, .12, x, .76, 0));                                // les coupelles
+      g.add(part(G.cyl, C.white, .07, .22, .07, x, .89 + (x ? 0 : .06), 0));          // les bougies
+      g.add(part(G.cone, fireMat, .06, .1, .06, x, 1.05 + (x ? 0 : .06), 0));         // les flammes
+    }
   },
   tonneau(g, m){
     g.add(part(G.cyl, m, .64, .7, .64, 0, .35, 0));                                   // douelles

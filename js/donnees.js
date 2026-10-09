@@ -28,6 +28,10 @@ export const ORDER = ["scierie","chaumiere","carriere","marche","taverne","forge
 /* L'entrée de la mine (étape 1.11, morceau 1 ; choix de Yo : on déblaie d'abord l'éboulement à la pioche, puis on pose
    les étais) : une partie neuve la trouve éboulée ; chaque coup rend des pierres. Chiffres choisis par Claude */
 export const ENTREE_MINE = {coups: 5, pierres: 2, cost: {planche: 15, pierre: 10, torche: 4}};
+/* Le niveau 3 des bâtiments demande une pierre dure de la mine, en plus (étape 1.11, morceau 3 ; une idée de la Boîte à
+   idées : « des matières plus dures selon le niveau ») : du granit, du marbre pour le Marché et le Château. Chiffres
+   choisis par Claude */
+export const NIVEAU3 = {scierie: {granit: 8}, chaumiere: {granit: 8}, carriere: {granit: 12}, marche: {marbre: 10}, taverne: {granit: 10}, forge: {granit: 12}, chateau: {marbre: 20}};
 /* Meubles du catalogue : gabarit de la bible (petit ≈ 1 P², moyen ≈ 2 P², grand ≈ 4 P²),
    taille au sol w × d en P (w de gauche à droite, d de l'arrière à l'avant),
    flat : posé à plat comme un tapis (on marche dessus, on pose des meubles dessus),
@@ -37,6 +41,7 @@ export const MEUBLES = {
   tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
   pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
   lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5},
+  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5},   // étape 1.11 : l'argent de la mine
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
@@ -103,6 +108,9 @@ export const OUTILS = {
   hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", emoji:"🪓", famille:"hache", force:2, tete:0xC8743C, usage:"Coupe les arbres : un bois de plus à chaque coup."},
   piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", emoji:"⛏️", famille:"pioche", force:2, tete:0xC8743C, usage:"Casse les rochers : une pierre de plus à chaque coup. Dans la mine, elle creuse la galerie de la salle de l'étain (la paroi marquée d'une croix) et en casse les roches."},
   /* Le bronze (étape 1.11, palier ajouté avec Yo entre le cuivre et le fer du Grand Carnet) */
+  hacheBronze: {nom:"Hache en bronze", pluriel:"haches en bronze", emoji:"🪓", famille:"hache", force:3, tete:0xB98A4A, usage:"Coupe les arbres : deux bois de plus à chaque coup."},
+  /* Le bocal (étape 1.11, morceau 3 ; Grand Carnet : la luciole se prend au bocal) : en verre, avec un couvercle de bois */
+  bocal:       {nom:"Bocal", pluriel:"bocaux", emoji:"🫙", famille:"bocal", force:1, usage:"Pour attraper la luciole et le frelon, qui ne se prennent pas au filet : approche-toi doucement, puis « 🫙 Attraper »."},
   piocheBronze:{nom:"Pioche en bronze", pluriel:"pioches en bronze", emoji:"⛏️", famille:"pioche", force:3, tete:0xB98A4A, usage:"La plus solide de l'île : deux pierres de plus à chaque coup. Dans la mine, elle creuse la galerie de la géode, au fond de la salle de l'étain, et casse l'argent, le marbre et les grenats."},
   pelleCuivre: {nom:"Pelle en cuivre", pluriel:"pelles en cuivre", emoji:"🪏", famille:"pelle", force:2, coups:1, tete:0xC8743C,
     usage:"Creuse plus vite que la pelle en bois : un seul coup par case. Face à l'eau douce : « Combler »."},
@@ -441,7 +449,8 @@ function pierreIco(forme, c1, c2){
     cristal: `<path d="M5 20L7 9L10 20Z" fill="${c2}" ${bord}/><path d="M9 20L12 3L15 20Z" fill="${c1}" ${bord}/><path d="M14 20L17 8L20 20Z" fill="${c2}" ${bord}/>`,
     gemme: `<path d="M5 9L8.5 4.5H15.5L19 9L12 20Z" fill="${c1}" ${bord}/><path d="M5 9H19M8.5 4.5L12 9L15.5 4.5M12 9V20M8 9L12 20L16 9" stroke="${c2}" stroke-opacity=".8" stroke-width=".8" fill="none"/>`,
     boule: `<circle cx="12" cy="12.5" r="8.5" fill="${c1}" ${bord}/><path d="M7 11Q12 7 17 11Q16 17 12 17Q8 17 7 11Z" fill="#3A2E46"/><path d="M8.5 12L10 9.5L11 12L12.5 9L13.5 12L15 10L15.5 12.5" fill="${c2}"/>`,
-    lingot: `<path d="M3 17L6 10H18L21 17Z" fill="${c1}" ${bord}/><path d="M6 10L7.5 7H16.5L18 10Z" fill="${c2}" ${bord}/>`
+    lingot: `<path d="M3 17L6 10H18L21 17Z" fill="${c1}" ${bord}/><path d="M6 10L7.5 7H16.5L18 10Z" fill="${c2}" ${bord}/>`,
+    vitre: `<rect x="5" y="4" width="14" height="16" rx="2" fill="${c1}" stroke="${c2}" stroke-width="1.2"/><path d="M8 8L11 11M8.5 13.5L14 8" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>`
   })[forme] + f;
 }
 export const PRODUITS = {
@@ -462,22 +471,24 @@ export const PRODUITS = {
     aide:"Le charbon se mine à la mine, dans la grande salle, sur les veines noires.", usage:"Il fait chauffer la forge : avec le cuivre et l'étain, il donne le bronze."},
   etain:   {nom:"Étain", pluriel:"étain", emoji:"⚪", icone: pierreIco("veine", "#D8DDE2", "#9EA3A8"), prix:2,
     aide:"L'étain se mine dans la salle de l'étain (la galerie se creuse avec une pioche en cuivre).", usage:"Avec le cuivre, fondu au charbon à l'enclume : le bronze."},
-  granit:  {nom:"Granit", pluriel:"granit", emoji:"🪨", icone: pierreIco("bloc", "#B4A49A", "#6E625A"), prix:2,
-    aide:"Le granit se taille dans la salle de l'étain (pioche en cuivre).", usage:"Une pierre très dure, pour bâtir solide : bientôt les bâtiments au niveau 3 et les dallages."},
+  granit:  {nom:"Granit", pluriel:"granit", emoji:"⛰️", icone: pierreIco("bloc", "#B4A49A", "#6E625A"), prix:2,
+    aide:"Le granit se taille dans la salle de l'étain (pioche en cuivre).", usage:"Une pierre très dure : il en faut pour améliorer les bâtiments au niveau 3. En main, « 👣 Tracer » fait un chemin de dalles de granit : un granit par case."},
   quartz:  {nom:"Quartz", pluriel:"quartz", emoji:"🤍", icone: pierreIco("cristal", "#F2F6FA", "#C8D4E0"), prix:3,
-    aide:"Le quartz se mine dans la salle de l'étain (pioche en cuivre).", usage:"Fondu à la forge, il donnera le verre : un bocal, des lanternes, des vitrines."},
+    aide:"Le quartz se mine dans la salle de l'étain (pioche en cuivre).", usage:"Fondu à l'enclume de la Forge avec du charbon : le verre (pour le bocal)."},
   amethyste:{nom:"Améthyste", pluriel:"améthystes", une:true, emoji:"💜", icone: pierreIco("gemme", "#9A5AD0", "#C9A0F0"), prix:12,
     aide:"L'améthyste est rare : un rocher à cristaux violets, de temps en temps, dans la salle de l'étain.", usage:"Une pierre précieuse : pour ta collection, une vitrine, ou le comptoir."},
   argent:  {nom:"Argent", pluriel:"argent", emoji:"🥈", icone: pierreIco("veine", "#EEF2F6", "#B8C0C8"), prix:4,
-    aide:"L'argent se mine dans la géode, la salle du fond (la galerie se creuse avec une pioche en bronze).", usage:"Un métal clair et précieux, pour de beaux objets de décoration."},
+    aide:"L'argent se mine dans la géode, la salle du fond (la galerie se creuse avec une pioche en bronze).", usage:"Un métal clair et précieux : le chandelier d'argent, à l'enclume de la Forge."},
   marbre:  {nom:"Marbre", pluriel:"marbre", emoji:"🏛️", icone: pierreIco("bloc", "#F2F0EA", "#A8A4A0"), prix:3,
-    aide:"Le marbre se taille dans la géode (pioche en bronze).", usage:"Pour les statues, les colonnes, les dallages, et le Château au niveau 3."},
+    aide:"Le marbre se taille dans la géode (pioche en bronze).", usage:"Le Marché et le Château en demandent pour passer au niveau 3. En main, « 👣 Tracer » fait un chemin de dalles de marbre : un marbre par case."},
   grenat:  {nom:"Grenat", pluriel:"grenats", emoji:"❤️", icone: pierreIco("gemme", "#A8203A", "#E0607A"), prix:15,
     aide:"Le grenat est rare : un rocher à cristaux rouges, de temps en temps, dans la géode.", usage:"Une pierre précieuse : pour ta collection, une vitrine, ou le comptoir."},
   geode:   {nom:"Géode", pluriel:"géodes", une:true, emoji:"🥚", icone: pierreIco("boule", "#8A7A6A", "#B48CE8"), prix:6,
     aide:"Les géodes se trouvent dans la salle du fond de la mine (pioche en bronze).", usage:"Une pierre ronde qui cache des cristaux : bientôt, on l'ouvrira à la table de taille."},
   bronze:  {nom:"Bronze", pluriel:"bronze", emoji:"🟫", icone: pierreIco("lingot", "#C8924A", "#9A6A2E"), prix:5,
-    aide:"Le bronze se fond à l'enclume de la Forge : 2 cuivre, 1 étain et 1 charbon.", usage:"Pour la pioche en bronze, qui ouvre la géode, au fond de la mine."},
+    aide:"Le bronze se fond à l'enclume de la Forge : 2 cuivre, 1 étain et 1 charbon.", usage:"Pour la pioche en bronze, qui ouvre la géode, au fond de la mine, et la hache en bronze."},
+  verre:   {nom:"Verre", pluriel:"verre", emoji:"🪟", icone: pierreIco("vitre", "#CFE6F2", "#6E8CA0"), prix:2,
+    aide:"Le verre se fond à l'enclume de la Forge : 1 quartz et 1 charbon font 2 verres.", usage:"Pour le bocal, qui attrape la luciole et le frelon."},
   /* Étape 1.6, d'après le Grand Carnet : le thym des prés de l'île, et le poisson grillé (un poisson + du thym, il soigne).
      prix : en or au comptoir */
   /* Les bois de la Forêt profonde (étape 1.7, demande de Yo : chaque essence donne son bois, comme le dit le Grand
@@ -602,13 +613,17 @@ export const ATELIERS = {
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
   forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
-    pour:"forger des outils et des armes en métal", recettes:[
-    {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze, fondu au charbon
+    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire le bocal et le chandelier d'argent", recettes:[
+    {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze et le verre, fondus au charbon
+    {out:"verre", n:2, in:{quartz:1, charbon:1}, t:20, lvl:1},
     {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1, cat:"Outils"},
-    {out:"piocheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
     {out:"hacheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
     {out:"epeeCuivre", in:{cuivre:5, planche:1}, t:60, lvl:1},
-    {out:"pelleCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1}
+    {out:"pelleCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
+    {out:"piocheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
+    {out:"hacheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
+    {out:"bocal", in:{verre:2, planche:1}, t:40, lvl:1},
+    {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1, cat:"Décoration"}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",
     pour:"lancer les grands chantiers et les quêtes", note:"La salle du trône : c'est d'ici que tu lanceras les grands chantiers.", recettes:[
@@ -632,7 +647,7 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","chandelier","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;
@@ -739,10 +754,12 @@ export const CHEMINS = {
   terre:   {nom:"terre", avec:null},
   gravier: {nom:"gravier", avec:"gravier"},
   paves:   {nom:"pavés", avec:"bloc"},
-  planches:{nom:"planches", avec:"planche"}
+  planches:{nom:"planches", avec:"planche"},
+  granit:  {nom:"dalles de granit", avec:"granit"},             // étape 1.11 : les pierres de la mine
+  marbre:  {nom:"dalles de marbre", avec:"marbre"}
 };
 /* La matière tenue en main → le chemin qu'elle trace */
-export const CHEMIN_DE = {gravier:"gravier", bloc:"paves", planche:"planches"};
+export const CHEMIN_DE = {gravier:"gravier", bloc:"paves", planche:"planches", granit:"granit", marbre:"marbre"};
 /* Tout ce qui peut aller dans le sac ou un coffre : sa fiche (nom, emoji…) */
 /* Les dessins des bois, des graines, des baies et des fleurs de la forêt */
 {

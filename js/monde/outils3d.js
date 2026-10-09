@@ -47,6 +47,11 @@ const BUILD = {
     g.add(part(G.box, C.dark, .14, .04, .04, 0, -.1, 0));                              // la poignée
     g.add(part(G.head, o.tete || C.wood, .62, .9, .18, 0, .6, .02));                   // la lame (bois, cuivre…)
   },
+  bocal(g){                                                                          // un bocal de verre, son couvercle de bois
+    const v = part(G.cyl, 0xB8DCEE, .26, .3, .26, 0, .05, .08);
+    v.material = new THREE.MeshLambertMaterial({color: 0xB8DCEE, emissive: 0x4A7A9A, emissiveIntensity: .25, transparent: true, opacity: .8}); g.add(v);
+    g.add(part(G.cyl, C.dark, .2, .05, .2, 0, .22, .08));
+  },
   torche(g){                                                                         // la torche éteinte : un bâton, une tête de résine
     g.add(part(G.cyl, C.wood, .05, .5, .05, 0, .16, 0));
     g.add(part(G.cyl, C.dark, .09, .14, .09, 0, .44, 0));
@@ -73,6 +78,7 @@ function graine(g){
 function matiere(g, k){
   if(k === "planche") g.add(part(G.box, 0xC29462, .09, .05, .46, 0, .1, .12));
   else if(k === "bloc") g.add(part(G.box, 0x9EA3A8, .2, .15, .2, 0, .08, .05));
+  else if(k === "granit" || k === "marbre") g.add(part(G.box, k === "granit" ? 0xB4A49A : 0xF2F0EA, .22, .08, .22, 0, .08, .05));   // une dalle
   else {
     g.add(part(G.head, 0xD8CDB4, .7, .5, .7, 0, .06, .05));
     for(const [x, z] of [[-.05, .02], [.05, .08], [0, -.04]]) g.add(part(G.dode, 0x8E8678, .05, .04, .05, x, .12, z));
