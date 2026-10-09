@@ -16,14 +16,14 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
-import { map, idx, N, H, centerOf, tileOf, setObj, rafraichirSaison } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre, presents } from "../js/peche.js";
-import { forcerMeteo, updateMeteo, couvertIci } from "../js/monde/meteo.js";
+import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
 import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
@@ -140,6 +140,38 @@ export async function verifier(){
     if(!$("#sheet").textContent.includes("Station météo") || !$("#sheet").textContent.includes("Prévisions")) throw new Error("la fiche de la station ne s'ouvre pas");
     $("#sheetWrap [data-close]").click(); await wait(300);
     return `badge « ${$("#meteo").textContent.trim()} » ; sous la pluie : le ciel se couvre, l'anguille sort, les papillons se cachent`;
+  });
+  await etape("Ce que le temps change : la pluie arrose, l'hiver ralentit les plantations, la neige blanchit l'herbe", async () => {
+    const c = Math.floor(N / 2), herbe = j => scene.children.find(o => o.isInstancedMesh && o.count === N * N && o.instanceColor).instanceColor.array.slice(j * 3, j * 3 + 3);
+    let i = -1;
+    for(let r = 3; r < 12 && i < 0; r++) for(let dx = -r; dx <= r && i < 0; dx++){
+      const j = idx(c + dx, c + r);
+      if(map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j]) i = j;
+    }
+    if(i < 0) throw new Error("pas de case d'herbe libre pour l'essai");
+    const blancheur = () => { const v = herbe(i); return v[0] + v[1] + v[2]; };
+    try {
+      forcerMeteo("beau");
+      setObj(i, "buisson"); setEtat(i, {vide: Date.now()});
+      if(baiesLeft(i) !== -1) throw new Error("le buisson est arrosé sans pluie");
+      forcerMeteo("pluie");
+      if(baiesLeft(i) < 0) throw new Error("la pluie n'arrose pas le buisson vide");
+      const pousse = Object.values(GRAINES).find(g => g.plante === "tree").pousse;
+      setObj(i, "tree", Date.now() - pousse * 750);
+      forcerSaison("ete"); const ete = growth(i);
+      forcerSaison("hiver"); const hiver = growth(i);
+      if(!(hiver < ete - .2)) throw new Error(`l'arbre pousse aussi vite l'hiver (${hiver.toFixed(2)}) que l'été (${ete.toFixed(2)})`);
+      setObj(i, null); rafraichirSaison();
+      const avant = blancheur();
+      forcerMeteo("neige");
+      for(let k = 0; k < 50; k++) updateMeteo(.5, null, 0, 0);
+      await wait(600);
+      if(neigeAuSol() < .8 || !(blancheur() > avant + .2)) throw new Error("la neige ne blanchit pas l'herbe");
+      return `buisson arrosé par la pluie ; arbre à ${Math.round(ete * 100)} % l'été, ${Math.round(hiver * 100)} % l'hiver ; herbe blanchie par la neige`;
+    } finally {
+      forcerMeteo(null); forcerSaison(null); rafraichirSaison();
+      for(let k = 0; k < 50; k++) updateMeteo(.5, null, 0, 0);
+    }
   });
   await etape("Ouvrir le sac", async () => {
     $("#btn-sac").click(); await wait(300);

@@ -29,9 +29,9 @@ function lune(d){
 const EFFET = {
   beau: "Par beau temps, la carpe koï se montre à l'étang au printemps, et les papillons volettent.",
   nuages: "Un temps calme : tout le monde est de sortie.",
-  pluie: "Sous la pluie, l'anguille sort de l'étang la nuit, et les papillons se cachent.",
-  orage: "Une nuit d'orage, le Vieux Silure rôde dans l'étang… Les papillons se cachent.",
-  neige: "Sous la neige, les papillons se cachent."
+  pluie: "La pluie arrose les buissons : leurs baies reviennent. L'anguille sort de l'étang la nuit, et les papillons se cachent.",
+  orage: "L'orage arrose les buissons. Une nuit d'orage, le Vieux Silure rôde dans l'étang… Les papillons se cachent.",
+  neige: "La neige blanchit l'herbe, et les papillons se cachent."
 };
 
 function majBadge(){
@@ -51,7 +51,7 @@ function ouvrir(){
       <p class="st-heure" id="st-heure">${heureDe(d)}</p>
       <p>${EMOJI_SAISON[s]} ${NOM_SAISON[s][0].toUpperCase() + NOM_SAISON[s].slice(1)}, hémisphère ${state.hemisphere || "nord"} · ${lune(d)}</p>
       <div class="st-maintenant"><span class="st-gros">${emojiDe(maintenant.m)}</span><div><b>${METEO[maintenant.m].nom}</b><br>jusqu'à ${heureRonde(maintenant.fin)}</div></div>
-      <p class="muted" style="margin:6px 0">${EFFET[maintenant.m]}</p>
+      <p class="muted" style="margin:6px 0">${EFFET[maintenant.m]}${s === "hiver" ? " ❄️ L'hiver, ce que tu plantes pousse deux fois moins vite." : ""}</p>
       <h3>Prévisions</h3>
       <ul class="st-prev">${p.slice(1).map(x => `<li><span>${heureRonde(x.debut)} – ${heureRonde(x.fin)}</span><span>${METEO[x.m].emoji} ${METEO[x.m].nom}</span></li>`).join("")}</ul>
       <p class="muted" style="margin:8px 0 0">Le temps change toutes les 3 heures. C'est le même pour tout le monde au même moment.</p>

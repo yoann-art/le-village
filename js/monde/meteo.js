@@ -33,6 +33,25 @@ let forcee = null;
 export const forcerMeteo = m => { forcee = m; };             // pour la vérification et les essais (null : la vraie)
 export const meteo = () => forcee || meteoA(Date.now());
 export const mouille = (m = meteo()) => m === "pluie" || m === "orage";
+/* La pluie arrose (étape 1.10, morceau 4) : le premier moment de pluie (ou d'orage) depuis t0, jusqu'à maintenant (même
+   jeu fermé), ou null */
+export function pluieDepuis(t0){
+  const now = Date.now(), k1 = Math.floor(now / PERIODE);
+  for(let k = Math.max(Math.floor(t0 / PERIODE), k1 - 3000); k <= k1; k++){
+    if(mouille(k === k1 ? meteo() : meteoA(k * PERIODE))) return Math.max(t0, k * PERIODE);
+  }
+  return null;
+}
+/* La neige au sol (étape 1.10, morceau 4) : elle blanchit l'herbe pendant qu'il neige, et encore 3 heures après ;
+   la pluie la fait fondre. 0 : pas de neige ; 1 : tout blanc (ile.js) */
+let neigeSol = -1;                                           // -1 : pas encore calculée (au démarrage, elle est déjà là)
+export const neigeAuSol = () => Math.max(0, neigeSol);
+function neigeCible(){
+  const m = meteo();
+  if(m === "neige") return 1;
+  if(mouille(m) || saisonDu(new Date()) !== "hiver") return 0;
+  return meteoA(Date.now() - PERIODE) === "neige" ? 1 : 0;
+}
 /* Les prochaines tranches : [{debut, fin, m}], la première est celle de maintenant */
 export function previsions(n){
   const k0 = Math.floor(Date.now() / PERIODE), out = [];
@@ -65,6 +84,8 @@ export function updateMeteo(dt, ou, cx, cz){
   couv += ((ou ? info.couvert : 0) - couv) * v;
   force += ((ou && info.pluie || 0) - force) * v;
   flocons += ((ou && info.neige || 0) - flocons) * v;
+  const nc = neigeCible();                                  // la neige au sol, même quand on est dedans
+  neigeSol = neigeSol < 0 ? nc : neigeSol + (nc - neigeSol) * Math.min(1, dt * .12);
   if(ici !== ou){ if(groupe.parent) groupe.parent.remove(groupe); if(ou) ou.add(groupe); ici = ou; }
   if(!ou) return;
   groupe.position.set(cx, 0, cz);

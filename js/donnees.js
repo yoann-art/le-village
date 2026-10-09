@@ -631,6 +631,18 @@ export const reglerHemisphere = h => { sud = h === "sud"; };
 export const forcerSaison = s => { forcee = s; };            // pour la vérification et les essais (null : la vraie)
 export const saisonDu = d => forcee || SAISON_DU_MOIS[(d.getMonth() + (sud ? 6 : 0)) % 12];
 export const saison = () => saisonDu(new Date());
+/* En hiver, ce qu'on a planté pousse deux fois moins vite (étape 1.10, morceau 4) : le temps passé en hiver compte
+   pour moitié ; tempsDePousse compte mois par mois, la saison change avec le mois */
+export const POUSSE_HIVER = .5;
+export const vitessePousse = (d = new Date()) => saisonDu(d) === "hiver" ? POUSSE_HIVER : 1;
+export function tempsDePousse(debut, fin){
+  let t = debut, s = 0;
+  while(t < fin){
+    const d = new Date(t), suivant = Math.min(fin, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime());
+    s += (suivant - t) * vitessePousse(d); t = suivant;
+  }
+  return s;
+}
 const QUAND_FLEUR = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
 export const quandFleur = f => f.saisons.map(s => QUAND_FLEUR[s]).join(" et ");
 export const enFleur = f => f.saisons.includes(saisonDu(new Date()));

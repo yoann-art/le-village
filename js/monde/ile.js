@@ -4,7 +4,8 @@ import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
-import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, enFleur, saison } from "../donnees.js";
+import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
+import { pluieDepuis, neigeAuSol } from "./meteo.js";
 import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
@@ -132,8 +133,11 @@ const enSaison = () => SAISONS[saison()];
 const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), new THREE.MeshLambertMaterial({color:0xffffff}), N*N);
 const dirt = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.8,1), mat(0xA8774C), N*N);
 const m4 = new THREE.Matrix4(), col = new THREE.Color(), RIEN = new THREE.Matrix4().makeScale(0, 0, 0);
-/* entame : une case qu'on a commencé à creuser (de la terre retournée, un peu plus bas) */
-function poserCase(i, entame){
+/* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige des dalles peintes */
+const NEIGE = [new THREE.Color(0xEEF3F6), new THREE.Color(0xF6F9FB)], entamees = new Set();
+let peinteNeige = 0;
+/* entame : une case qu'on a commencé à creuser (de la terre retournée, un peu plus bas) ; sans le dire, elle le reste */
+function poserCase(i, entame = entamees.has(i)){
   const x = i % N, z = Math.floor(i / N), wx = centerOf(x), wz = centerOf(z), alt = (x+z) % 2;
   if(map.type[i] === "water"){ slabs.setMatrixAt(i, RIEN); dirt.setMatrixAt(i, RIEN); }
   else {
@@ -141,6 +145,7 @@ function poserCase(i, entame){
     m4.makeTranslation(wx, -.64, wz); dirt.setMatrixAt(i, m4);
   }
   col.setHex(entame ? 0x9A6B45 : map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : enSaison().herbe[alt]);
+  if(!entame && peinteNeige > 0 && map.type[i] !== "water") col.lerp(NEIGE[alt], peinteNeige * (map.type[i] === "sand" ? .6 : 1));   // le sable, un peu moins
   slabs.setColorAt(i, col);
 }
 for(let i = 0; i < N*N; i++) poserCase(i);
@@ -151,14 +156,14 @@ const terrainChange = () => { slabs.instanceMatrix.needsUpdate = dirt.instanceMa
 /* Creuser, combler (étape 1.9) : la case devient de l'eau (« water ») ou de la terre (son herbe ou son sable d'origine,
    de l'herbe pour l'étang comblé) ; gardé dans la partie. Rien n'y repousse tout seul ensuite */
 export function setTerrain(i, t){
-  map.type[i] = t;
+  map.type[i] = t; entamees.delete(i);
   if(t === ORIGINE[i]) delete state.terrain[i]; else state.terrain[i] = t;
   if(!state.ile[i]) state.ile[i] = {o: null};
   poserCase(i); terrainChange();
 }
 export const terreDe = i => ORIGINE[i] === "water" ? "grass" : ORIGINE[i];
 /* Une case qu'on commence à creuser, ou qu'on laisse (entame = false) */
-export function entamer(i, entame){ poserCase(i, entame); terrainChange(); }
+export function entamer(i, entame){ if(entame) entamees.add(i); else entamees.delete(i); poserCase(i, entame); terrainChange(); }
 export const water = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90),
   new THREE.MeshPhongMaterial({color:0x58C3D8, transparent:true, opacity:.8, shininess:90, specular:0x99DDEE}));
 water.rotation.x = -Math.PI/2; water.position.y = -.2; water.receiveShadow = true;
@@ -173,10 +178,12 @@ for(const g of Object.values(GRAINES)) POUSSE[g.plante] = g.pousse;
 export function growth(i){
   const c = state.ile[i];
   if(!c || !c.plante || !POUSSE[c.o]) return 1;
-  return Math.min(1, (Date.now() - c.plante) / (POUSSE[c.o] * 1000));
+  const ms = POUSSE[c.o] * 1000, now = Date.now();
+  if(now - c.plante >= ms / POUSSE_HIVER) return 1;          // assez vieux : adulte, même s'il n'a poussé qu'en hiver
+  return Math.min(1, tempsDePousse(c.plante, now) / ms);     // en hiver, il pousse deux fois moins vite (étape 1.10)
 }
-/* Temps restant avant l'âge adulte, en secondes */
-export const growthLeft = i => { const c = state.ile[i]; return c && c.plante ? Math.max(0, POUSSE[c.o] * (1 - growth(i))) : 0; };
+/* Temps restant avant l'âge adulte, en secondes (à la vitesse de la saison de maintenant) */
+export const growthLeft = i => { const c = state.ile[i]; return c && c.plante ? Math.max(0, POUSSE[c.o] * (1 - growth(i)) / vitessePousse()) : 0; };
 /* Étape de pousse : 0 pousse, 1 jeune plant, 2 adulte */
 const stageOf = i => { const g = growth(i); return g < .5 ? 0 : g < 1 ? 1 : 2; };
 /* Herbes cueillies une fois : rases, elles repoussent ; temps restant en secondes (0 = hautes) */
@@ -199,8 +206,9 @@ export function thymLeft(i){
 export function baiesLeft(i){                         // -1 : vide, pas arrosé ; 0 : plein ; sinon secondes avant le retour
   const c = state.ile[i];
   if(!c || !c.vide) return 0;
-  if(!c.arrose) return -1;
-  return Math.max(0, RECOLTE.buisson.retour - (Date.now() - c.arrose) / 1000);
+  const a = c.arrose || pluieDepuis(c.vide);          // la pluie arrose aussi (étape 1.10, morceau 4), même jeu fermé
+  if(!a) return -1;
+  return Math.max(0, RECOLTE.buisson.retour - (Date.now() - a) / 1000);
 }
 /* Les fleurs (étape 1.9) : cueillie, elle refleurit sur place (FLEUR_RARETE.refleurit) ; temps restant en secondes */
 export function fleurLeft(i){
@@ -310,6 +318,14 @@ export function rafraichirSaison(){
   slabs.instanceColor.needsUpdate = true;
 }
 /* Ce qui a été planté grandit, les herbes repoussent, les baies reviennent : on regarde régulièrement */
+/* La neige au sol : on repeint l'herbe quand elle a assez changé (elle tombe et fond en douceur) */
+setInterval(() => {
+  const s = neigeAuSol();
+  if(Math.abs(s - peinteNeige) < .03 && !(s === 0 && peinteNeige > 0)) return;
+  peinteNeige = s < .01 ? 0 : s;
+  for(let i = 0; i < N*N; i++) if(map.type[i] !== "water") poserCase(i);
+  slabs.instanceColor.needsUpdate = true;
+}, 250);
 setInterval(() => {
   if(saison() !== peinte){ rafraichirSaison(); return; }
   for(const i of Object.keys(state.ile)) if(map.obj[+i] && looks.get(+i) !== lookOf(+i)) refreshObj(+i);

@@ -27,7 +27,7 @@
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, enFleur, quandFleur, graineDeFleur, objet } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
@@ -337,8 +337,8 @@ function cueillirBaies(t){
   const R = RECOLTE.buisson, n = gain(R.n, R.cueille);
   if(!sacOk(R.cueille, n)) return;
   sacAdd(R.cueille, n);
-  setEtat(t.i, {vide: true, arrose: undefined}); save();
-  toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le buisson pour qu'elles reviennent`, 3000);
+  setEtat(t.i, {vide: Date.now(), arrose: undefined}); save();      // l'heure de la cueillette : la pluie qui tombe ensuite l'arrose
+  toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le buisson pour qu'elles reviennent (la pluie l'arrose aussi)`, 3000);
 }
 function arroser(t){
   const k = takeTool("arrosoir");
@@ -426,7 +426,7 @@ function planter(t){
   if(!sacTake(k, 1)) return;
   setObj(t.i, gr.plante, Date.now());
   syncBarre(); save();
-  const f = FLEURS[gr.plante];
-  if(f){ toast(`🌱 ${gr.nom} plantée : ${f.une ? "elle" : "il"} sera grand${f.une ? "e" : ""} dans ${duree(gr.pousse)}, et fleurira ${quandFleur(f)}`, 3400); return; }
-  toast(`🌱 ${gr.nom} planté${gr.nom.startsWith("Gland") ? "" : "e"} : ${DEVIENT[gr.plante] || RECOLTE[gr.plante].nom.replace(/^le /, "un ").replace(/^l'/, "un ") + " adulte"} dans ${duree(gr.pousse)}`, 3000);
+  const f = FLEURS[gr.plante], v = vitessePousse(), hiver = v < 1 ? " (l'hiver, ça pousse deux fois moins vite)" : "";   // étape 1.10, morceau 4
+  if(f){ toast(`🌱 ${gr.nom} plantée : ${f.une ? "elle" : "il"} sera grand${f.une ? "e" : ""} dans ${duree(gr.pousse / v)}${hiver}, et fleurira ${quandFleur(f)}`, 3800); return; }
+  toast(`🌱 ${gr.nom} planté${gr.nom.startsWith("Gland") ? "" : "e"} : ${DEVIENT[gr.plante] || RECOLTE[gr.plante].nom.replace(/^le /, "un ").replace(/^l'/, "un ") + " adulte"} dans ${duree(gr.pousse / v)}${hiver}`, 3400);
 }

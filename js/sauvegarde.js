@@ -33,7 +33,9 @@ export let state, migrationMsg = null;
   if(!state.carnet.monstres) state.carnet.monstres = {};    // étape 1.8, morceau 3
   if(!state.terrain) state.terrain = {};                    // étape 1.9 : les cases creusées ou comblées
   if(!state.chemins) state.chemins = {};                    // étape 1.9, morceau 2 : les chemins {case: sorte}
-  reglerHemisphere(state.hemisphere);                       // étape 1.10 : « nord » ou « sud », demandé une fois (saisons.js)
+  reglerHemisphere(state.hemisphere);
+  /* Un buisson vide garde l'heure où il a été cueilli (étape 1.10, morceau 4 : la pluie qui tombe ensuite l'arrose) */
+  for(const c of Object.values(state.ile)) if(c.vide === true) c.vide = Date.now();                       // étape 1.10 : « nord » ou « sud », demandé une fois (saisons.js)
   /* Les cases rapides (demande de Yo, v1.7.6) : elles gardaient le nom d'un objet du sac ; elles gardent
      maintenant l'objet lui-même, sorti du sac (un outil, ou une pile de graines…) */
   state.barre = state.barre.map(k => {
