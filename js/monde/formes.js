@@ -19,7 +19,15 @@ export const G = {
   leaf2: new THREE.IcosahedronGeometry(.3,0),
   head: new THREE.SphereGeometry(.24,16,12),
   hair: new THREE.SphereGeometry(.255,16,8,0,Math.PI*2,0,Math.PI*.5),
-  eye: new THREE.SphereGeometry(.03,8,6)
+  eye: new THREE.SphereGeometry(.03,8,6),
+  /* un toit à deux pentes : le faîte va de gauche à droite (x), la base est à y = 0, le haut à y = 1 */
+  gable: (() => {
+    const s = new THREE.Shape(); s.moveTo(-.5, 0); s.lineTo(.5, 0); s.lineTo(0, 1); s.closePath();
+    return new THREE.ExtrudeGeometry(s, {depth: 1, bevelEnabled: false}).translate(0, 0, -.5).rotateY(Math.PI / 2);
+  })(),
+  /* un toit arrondi (chaume) : un demi-cylindre couché de gauche à droite, base à y = 0, haut à y = 1 */
+  vault: new THREE.CylinderGeometry(.5, .5, 1, 14, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).scale(1, 2, 1),
+  tore: new THREE.TorusGeometry(.5, .06, 6, 18)
 };
 export function part(geo, material, sx, sy, sz, x, y, z){
   const m = new THREE.Mesh(geo, typeof material === "number" ? mat(material) : material);

@@ -330,7 +330,7 @@ function openDetail(b){
   if(b.lvl < max){
     const c = upCost(b.type, b.lvl);
     const next = roomSide(b.type, b.lvl + 1);
-    up = `<div class="upbox"><div><p>Passer au niveau ${b.lvl + 1} : pièce de ${next} × ${next} P</p><div>${costHTML(c)}</div>${canAfford(c) ? "" : `<p class="manque">${missingHTML(c)}</p>`}</div>
+    up = `<div class="upbox"><div><p>Passer au niveau ${b.lvl + 1} : nouvelle allure, pièce de ${next} × ${next} P</p><div>${costHTML(c)}</div>${canAfford(c) ? "" : `<p class="manque">${missingHTML(c)}</p>`}</div>
       <button class="btn primary" data-up ${canAfford(c) ? "" : "disabled"}>Améliorer</button></div>`;
   }
   openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>

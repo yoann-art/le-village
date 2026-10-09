@@ -20,7 +20,7 @@ import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, sizeOf, porte } from "./regles.js";
 import { map, idx, inb, H, tileOf, centerOf, growth, lieuEau } from "./monde/ile.js";
 import { traversable } from "./donnees.js";
-import { occ } from "./monde/batiments.js";
+import { occ, toitDe } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { pontonCases, eauLibre } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
@@ -77,7 +77,6 @@ function modele(k){
 }
 
 /* ----- Où se poser, près du personnage ----- */
-const MUR = 2;
 /* Dans la Forêt profonde : au bord du feuillage de chaque essence ([écart au centre, hauteur], avant sa taille) */
 const CANOPEE = {charme: [.9, 2.3], frene: [.8, 2.6], if: [.85, 1.3], chene: [1.3, 2.3], sureau: [.8, 1.4], houx: [.65, 1]};
 function placesForet(ou){
@@ -106,7 +105,7 @@ function places(ou){
     for(const b of state.buildings){
       if(B[b.type].fixe) continue;
       const s = sizeOf(b.type), x = b.x - H + s/2, z = b.z - H + s/2;
-      if(Math.hypot(x - pp.x, z - pp.z) < R) out.push({x: x + (Math.random() - .5) * .8, y: MUR + 1.05, z: z + (Math.random() - .5) * .5, perche: true});
+      if(Math.hypot(x - pp.x, z - pp.z) < R) out.push({x: x + (Math.random() - .5) * .8, y: toitDe(b), z: z + (Math.random() - .5) * .5, perche: true});
     }
     return out;
   }

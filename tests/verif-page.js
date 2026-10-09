@@ -20,7 +20,7 @@ import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, enFleur, gr
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj } from "../js/monde/ile.js";
-import { occ } from "../js/monde/batiments.js";
+import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre } from "../js/peche.js";
 import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
@@ -137,6 +137,19 @@ export async function verifier(){
     if(!scierie.atelier.queue.length) throw new Error("rien en fabrication");
     $("#sheetWrap [data-close]").click(); await wait(300);
     await sortir();
+  });
+  if(scierie) await etape("Améliorer la Scierie : elle change d'allure au niveau 2", async () => {
+    sacAdd("bois", 18); sacAdd("pierre", 9); sacAdd("fibre", 6);
+    const avant = toitDe(scierie);
+    $("#btn-ctx").dataset.id = String(scierie.id); $("#btn-ctx").click(); await wait(300);
+    const bouton = $("#sheet [data-up]");
+    if(!bouton || bouton.disabled) throw new Error("le bouton « Améliorer » manque ou reste grisé");
+    bouton.click(); await wait(300);
+    if(scierie.lvl !== 2) throw new Error(`la Scierie est au niveau ${scierie.lvl}`);
+    if(!(toitDe(scierie) > avant)) throw new Error("le modèle de la Scierie n'a pas changé");
+    if($("#sheetWrap [data-close]")) $("#sheetWrap [data-close]").click();
+    await wait(300);
+    return `niveau 2 : toit à ${toitDe(scierie).toFixed(2)} P (au lieu de ${avant.toFixed(2)})`;
   });
   await etape("Couper un arbre", async () => {
     sacAdd("hachePierre", 1); hold("hachePierre");
