@@ -12,7 +12,8 @@
    village, toute sa vie revenue), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
    creuser et combler à la pelle, tracer un chemin en marchant et l'enlever à la pelle,
-   les fleurs (cueillir une fleur de la saison, la déterrer à la pelle, replanter sa graine), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
+   les fleurs (cueillir une fleur de la saison, la déterrer à la pelle, replanter sa graine), le jour et la nuit (la
+   lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
@@ -28,6 +29,8 @@ import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.j
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../js/monstres.js";
 import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee } from "../js/torche.js";
+import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
+import { scene } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
@@ -88,6 +91,17 @@ export async function verifier(){
     const z = player.position.z;
     keys.d = 1; for(let k = 0; k < 30; k++) updatePlayer(.016); keys.d = 0;
     if(player.position.z - z < .3) throw new Error("le personnage n'avance pas");
+  });
+  await etape("Le jour et la nuit : la lumière suit l'heure, les vitres s'allument la nuit", async () => {
+    try {
+      forcerHeure(12.5); updateCiel(0, 0);
+      const midi = scene.background.getHexString(), vitreMidi = VITRE.emissiveIntensity;
+      forcerHeure(23.5); updateCiel(0, 0);
+      const nuit = scene.background.getHexString(), vitreNuit = VITRE.emissiveIntensity;
+      if(midi === nuit) throw new Error("le ciel est le même à midi et la nuit");
+      if(vitreMidi > .05 || vitreNuit < .5) throw new Error(`les vitres ne s'allument pas la nuit (${vitreMidi} à midi, ${vitreNuit} la nuit)`);
+      return `ciel #${midi} à midi, #${nuit} la nuit ; vitres allumées la nuit`;
+    } finally { forcerHeure(null); }
   });
   await etape("Ouvrir le sac", async () => {
     $("#btn-sac").click(); await wait(300);

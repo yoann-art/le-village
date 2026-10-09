@@ -51,16 +51,28 @@ interior.add(floor);
 
 let room = null;
 const itemMeshes = new Map();                    // meubles de la pièce : id → modèle
+/* La Forêt profonde suit l'heure (étape 1.10) : ses couleurs et ses lumières de jour (base), mêlées à la nuit (nuitForet) */
+let base = null;
+const NUIT_FORET = {fond: 0x121C2E, sky: 0x4A5E8E, ground: 0x1E2A3A}, c1 = new THREE.Color();
+export function nuitForet(n){
+  if(!base) return;
+  interior.background.setHex(base.fond).lerp(c1.setHex(NUIT_FORET.fond), n * .85);
+  if(interior.fog) interior.fog.color.copy(interior.background);
+  hemi.color.setHex(base.sky).lerp(c1.setHex(NUIT_FORET.sky), n * .7);
+  hemi.groundColor.setHex(base.ground).lerp(c1.setHex(NUIT_FORET.ground), n * .7);
+  hemi.intensity = base.hemi * (1 - .35 * n);
+  lamp.intensity = base.power * (1 - .55 * n);
+}
 /* La lumière suit le personnage dans un grand lieu (la forêt), pour que les ombres l'accompagnent */
 export function lampeSur(x, z){ lamp.position.set(x - 3, 9, z + 5); lamp.target.position.set(x, 0, z); }
 export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
-  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0);
+  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null;
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
     const m = makeForet();
-    room = m.group; floor.count = 0;
+    room = m.group; floor.count = 0; base = m;
     interior.background.setHex(m.fond); interior.fog = new THREE.Fog(m.fond, m.brume[0], m.brume[1]);
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
     interior.add(room); lampeSur(0, D_FORET / 2);

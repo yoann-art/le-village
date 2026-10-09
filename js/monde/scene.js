@@ -18,7 +18,8 @@ export const scene = new THREE.Scene();
 scene.background = new THREE.Color(SKY);
 scene.fog = new THREE.Fog(SKY, 30, 55);
 export const camera = new THREE.PerspectiveCamera(40, 1, .1, 200);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x7a9a6a, .62));
+export const hemi = new THREE.HemisphereLight(0xffffff, 0x7a9a6a, .62);   // sa couleur suit l'heure (ciel.js)
+scene.add(hemi);
 export const sun = new THREE.DirectionalLight(0xfff3dc, .82);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);

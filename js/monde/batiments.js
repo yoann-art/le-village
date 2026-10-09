@@ -9,6 +9,7 @@ import { H, idx } from "./ile.js";
 import { B } from "../donnees.js";
 import { state } from "../sauvegarde.js";
 import { sizeOf, maxLvl } from "../regles.js";
+import { VITRE, lanterne } from "./ciel.js";
 
 const MUR = 2 * P, PORTE = 1.5 * P;
 const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8553D, white:0xF4EFE6, blue:0x4E6DB3, stone:0xAEB0B3, stone2:0x8E9195, gold:0xE2B24D, lit:0xF6D27A};
@@ -23,9 +24,10 @@ function door(g, x, z){
   g.add(part(G.box, C.wood, P, PORTE, .06, x, PORTE/2, z + .03));
   g.add(part(G.dode, C.gold, .09,.09,.09, x + .32, PORTE/2, z + .08));
 }
+/* Une fenêtre : sa vitre s'allume la nuit (VITRE, ciel.js ; bible : « la nuit […] avec les fenêtres allumées ») */
 function windowOn(g, color, x, y, z){
   g.add(part(G.box, C.dark, .5,.5,.04, x, y, z + .01));
-  g.add(part(G.box, color, .38,.38,.05, x, y, z + .03));
+  const v = part(G.box, VITRE, .38,.38,.05, x, y, z + .03); v.castShadow = false; g.add(v);
 }
 
 const BUILD = {
@@ -101,8 +103,10 @@ BUILD.mine = g => {
   g.add(part(G.box, C.dark, 1.75, .2, .24, 0, 1.75, f));
   for(const x of [-.3, .3]) g.add(part(G.box, 0x6F7884, .06, .05, 1.1, x, .03, f + .2));   // les rails qui sortent
   g.add(part(G.cyl, C.dark, .06, 1.3, .06, 1.15, .65, f + .15));                      // la lanterne
-  g.add(part(G.box, new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8}), .2, .24, .2, 1.15, 1.2, f + .15));
+  g.add(part(G.box, LANTERNE_MINE, .2, .24, .2, 1.15, 1.2, f + .15));
 };
+const LANTERNE_MINE = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
+lanterne(null, 0, 0, LANTERNE_MINE);                 // elle brille plus fort la nuit
 /* L'orée de la Forêt profonde (étape 1.7), au bout du pont : un bout de terre moussue sur l'eau, de grands arbres
    sombres et une arche de bois ; on passe dessous pour entrer dans la forêt */
 BUILD.foret = g => {

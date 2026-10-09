@@ -9,6 +9,7 @@ import { scene } from "./scene.js";
 import { state, save } from "../sauvegarde.js";
 import { map, idx, inb, N, centerOf, tileOf, setObj } from "./ile.js";
 import { occ } from "./batiments.js";
+import { lanterne } from "./ciel.js";
 
 const LONG = 4;
 const eau = (x, z) => inb(x, z) && map.type[idx(x, z)] === "water";
@@ -97,6 +98,7 @@ if(P){
   const glow = new THREE.MeshLambertMaterial({color: 0xFFE3A3, emissive: 0xFFB347, emissiveIntensity: .7});
   const l = part(G.box, glow, .18, .22, .18, x0 - .38, .95, bout); l.castShadow = false; g.add(l);
   lanternes.push({x: x0 - .38, y: .95, z: bout});
+  lanterne(x0 - .38, .95, bout, glow);                 // la nuit, elle éclaire le bout du ponton (ciel.js)
   scene.add(g);
 }
 /* Le pont de la forêt : des planches entre deux rambardes de bois, vers le nord */

@@ -24,7 +24,8 @@ import { updateCoffrePiece } from "./coffres.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
-import { lampeSur } from "./monde/interieurs.js";
+import { lampeSur, nuitForet } from "./monde/interieurs.js";
+import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
 import "./barre.js";
@@ -114,9 +115,9 @@ function camera_(now, dt){
   camera.lookAt(camT.x, .4, camT.z);
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
   if(foret) lampeSur(camT.x, camT.z);
+  updateCiel(camT.x, camT.z);                              // le jour et la nuit (étape 1.10) : le ciel, le soleil, les vitres
+  if(foret && currentPlace().b.type === "foret") nuitForet(nuitIci());
   if(!isInside()){
-    sun.position.set(camT.x + 6, 16, camT.z + 5);
-    sun.target.position.copy(camT);
     water.position.y = -.2 + Math.sin(now * .0012) * .02;
     updateInteraction(dt);
   }
