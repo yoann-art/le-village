@@ -5,12 +5,12 @@
    la porte, qui doit rester libre. Tourner les bâtiments (v1.9.3) : retiré à la demande de Yo le 9 octobre 2026 (la
    vue reste la même, ça ne sert à rien) ; un bâtiment tourné pendant l'essai reprend sa porte en bas (voir plus bas). */
 import { $ } from "./outils.js";
-import { RES, B, ORDER, traversable } from "./donnees.js";
+import { RES, B, ORDER, ATELIERS, FABRIQUE_A, COFFRE, traversable } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML } from "./regles.js";
+import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
-import { H, idx, inb, map, tileOf, setObj } from "./monde/ile.js";
-import { makeBuilding, occ, footprint, placeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
+import { H, N, idx, inb, map, tileOf, setObj, setEtat } from "./monde/ile.js";
+import { makeBuilding, occ, footprint, placeMesh, removeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
 import { entrees } from "./monde/ponton.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
@@ -188,6 +188,7 @@ $("#btn-place").addEventListener("click", () => {
     return;
   }
   const type = placing, d = B[type];
+  if(dejaBati(type)){ toast(`${d.emoji} ${d.nom} : déjà sur ton île, améliore-${MASC.has(type) ? "le" : "la"} depuis sa fiche`); stopPlacing(); return; }
   if(!canAfford(d.cost)){ toast("Ressources insuffisantes"); stopPlacing(); return; }
   pay(d.cost);
   const b = {id:state.nextId++, type, lvl:1, x:ax, z:az};
@@ -215,16 +216,95 @@ if(state.buildings.some(b => b.rot)){
   save();
 }
 
+/* Un seul bâtiment de chaque sorte (demande de Yo, v1.10.2) : ensuite, on l'améliore depuis sa fiche, jusqu'au
+   niveau 3. Avant, on pouvait en bâtir plusieurs, et leurs bonus s'additionnaient. */
+const dejaBati = t => state.buildings.some(v => v.type === t);
+const MASC = new Set(["marche", "chateau"]);      // pour accorder : « déjà bâti », « déjà bâtie »
+/* Les doubles d'une partie déjà commencée sont démontés une fois (choix de Yo, v1.10.2). On garde le plus haut niveau
+   (à égalité, celui qui a le plus de meubles, puis le plus ancien). Tout ce que les autres ont coûté revient dans le
+   sac et les coffres : la construction et les améliorations, le plan de travail, les meubles, ce qu'ils fabriquaient
+   (fini : l'objet ; pas fini : ses ingrédients). Ce qui ne rentre pas attend dans un coffre posé sur la place du
+   village, comme les coffres qui étaient posés dans leur pièce. */
+function caseLibre(){            // la case libre la plus proche du milieu de la place du village
+  const c = (N - 1) / 2, portes = new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return idx(x, z); }));
+  let best = -1, dist = Infinity;
+  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
+    const i = idx(x, z), d = Math.hypot(x - c, z - c);
+    if(d >= dist || !freeTile(x, z) || map.obj[i] || portes.has(i) || (state.sol && state.sol[i])
+      || (x === tileOf(player.position.x) && z === tileOf(player.position.z))) continue;
+    best = i; dist = d;
+  }
+  return best;
+}
+function demonterDoubles(){
+  const rang = b => [b.lvl, ((b.deco && b.deco.items) || []).length, -b.id];
+  const mieux = (a, b) => { const x = rang(a), y = rang(b); for(let i = 0; i < 3; i++) if(x[i] !== y[i]) return x[i] > y[i]; return false; };
+  const garde = new Map();
+  for(const b of state.buildings) if(!B[b.type].fixe && (!garde.has(b.type) || mieux(b, garde.get(b.type)))) garde.set(b.type, b);
+  const partis = state.buildings.filter(b => !B[b.type].fixe && garde.get(b.type) !== b);
+  if(!partis.length) return;
+  const rendu = {}, plus = (k, n) => { if(n > 0) rendu[k] = (rendu[k] || 0) + n; }, ajoute = c => Object.entries(c).forEach(([k, v]) => plus(k, v));
+  const aPoser = [], now = Date.now();
+  for(const b of partis){
+    const a = ATELIERS[b.type];
+    ajoute(B[b.type].cost);
+    for(let l = 1; l < b.lvl; l++) ajoute(upCost(b.type, l));
+    for(const it of (b.deco && b.deco.items) || []){
+      if(it.reserve){ const co = state.coffres.find(c => c.id === it.reserve); if(co) aPoser.push(co); }
+      else if(a && it.type === a.meuble) ajoute(a.cost);
+      else if(FABRIQUE_A[it.type]) plus(it.type, 1);
+    }
+    for(const j of (b.atelier && b.atelier.queue) || []){
+      if(j.end && j.end <= now) plus(j.out, j.n || 1);
+      else ajoute(j.in || {});
+    }
+    footprint(b.type, b.x, b.z).forEach(([x, z]) => occ.delete(idx(x, z)));
+    removeMesh(b.id);
+    state.buildings.splice(state.buildings.indexOf(b), 1);
+  }
+  /* dans le sac et les coffres ; le reste dans de nouveaux coffres */
+  const nouveaux = [];
+  let id = Math.max(state.coffreId || 0, ...state.coffres.map(c => c.id));
+  for(const [k, n] of Object.entries(rendu)){
+    let left = addOwned(k, n).reste || 0;
+    while(left > 0){
+      let co = nouveaux[nouveaux.length - 1];
+      if(!co || !slotsPlace(co.items, COFFRE.places, k)){ co = {id: ++id, items: []}; nouveaux.push(co); state.coffres.push(co); }
+      left -= slotsAdd(co.items, COFFRE.places, k, left);
+    }
+  }
+  state.coffreId = id;
+  for(const co of [...aPoser, ...nouveaux]){
+    const i = caseLibre();
+    if(i < 0) break;                     // l'île pleine : il reste rangé (sans place), on ne perd rien
+    delete co.b; co.i = i;
+    setObj(i, "coffre"); setEtat(i, {id: co.id});
+  }
+  state.coffres.sort((a, b) => a.id - b.id);
+  save();
+  const n = {};
+  partis.forEach(b => { n[b.type] = (n[b.type] || 0) + 1; });
+  const liste = Object.entries(n).map(([t, k]) => `${B[t].emoji} ${B[t].nom}${k > 1 ? ` × ${k}` : ""}`).join(", ");
+  setTimeout(() => openSheet(`<div class="crown"><div class="intro-emoji">🔨</div><h2 class="display">Un seul bâtiment de chaque sorte</h2>
+    <p>Désormais, on bâtit chaque bâtiment une seule fois, puis on l'améliore depuis sa fiche, jusqu'au niveau 3.</p>
+    <p>Démonté${partis.length > 1 ? "s" : ""}, car en double : ${liste}. Tu as gardé le plus avancé de chaque sorte.</p>
+    <p>Tout ce qu'${partis.length > 1 ? "ils avaient" : "il avait"} coûté, ${partis.length > 1 ? "leurs" : "ses"} meubles et ce qu'${partis.length > 1 ? "ils" : "il"} fabriquai${partis.length > 1 ? "ent" : "t"} sont dans ton sac et tes coffres.</p>
+    ${aPoser.length ? `<p>🗃️ Le coffre qui était dans ${partis.length > 1 ? "leur" : "sa"} pièce est maintenant sur la place du village.</p>` : ""}
+    ${nouveaux.length ? `<p>🗃️ Ce qui ne rentrait pas t'attend dans un coffre, sur la place du village.</p>` : ""}
+    <button class="btn primary" data-close>D'accord</button></div>`), 900);
+}
+demonterDoubles();
+
 /* Menu « Construire » */
 $("#btn-build").addEventListener("click", () => {
   openSheet(`<div class="sh-head"><h2 class="display">Que veux-tu bâtir ?</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Tu choisis : le bâtiment apparaît devant toi, fais-le glisser du doigt. Pour déplacer un bâtiment déjà posé, garde le doigt appuyé dessus.</p>` +
+    <p class="muted" style="margin:0 0 6px">Tu choisis : le bâtiment apparaît devant toi, fais-le glisser du doigt. Un seul de chaque sorte : ensuite, améliore-le depuis sa fiche (niveaux 2 et 3). Pour déplacer un bâtiment déjà posé, garde le doigt appuyé dessus.</p>` +
     ORDER.map(t => {
-      const b = B[t], built = b.unique && state.buildings.some(v => v.type === t), ok = !built && canAfford(b.cost);
+      const b = B[t], built = dejaBati(t), ok = !built && canAfford(b.cost);
       return `<div class="brow"><div class="be" aria-hidden="true">${b.emoji}</div>
         <div class="bt"><span class="bn">${b.nom}</span><span class="st">★ ${b.stars}</span><p>${b.desc}</p><div>${costHTML(b.cost)}</div>
           ${built || ok ? "" : `<p class="manque">${missingHTML(b.cost)}</p>`}</div>
-        <button class="btn primary" data-pick="${t}" ${ok ? "" : "disabled"}>${built ? "Déjà bâti" : "Choisir"}</button></div>`;
+        <button class="btn primary" data-pick="${t}" ${ok ? "" : "disabled"}>${built ? `Déjà bâti${MASC.has(t) ? "" : "e"}` : "Choisir"}</button></div>`;
     }).join(""));
 });
 

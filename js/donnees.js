@@ -9,7 +9,8 @@ export const RES = {
    taille : taille de la pièce intérieure selon la bible (petite, moyenne, grande).
    cost : une suite logique (décidée avec Yo le 1er octobre 2026) : d'abord ce qu'on ramasse à la main (bois,
    pierre, fibres), puis ce que fabriquent les plans de travail des bâtiments d'avant (planches, blocs, or),
-   puis le cuivre de la mine. Dans l'ordre de ORDER. Chiffres à régler en jouant. */
+   puis le cuivre de la mine. Dans l'ordre de ORDER. Chiffres à régler en jouant.
+   Un seul bâtiment de chaque sorte (demande de Yo, v1.10.2), qu'on améliore ensuite jusqu'au niveau 3, le Château aussi. */
 export const B = {
   chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:20, pierre:10, fibre:12}, stars:1, size:3, door:0, taille:"moyenne", desc:"Loge des villageois. Rapporte des étoiles."},
   scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:12, pierre:6, fibre:4}, stars:1, size:3, door:-.45, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois en coupant les arbres, par niveau."},
@@ -17,7 +18,7 @@ export const B = {
   marche:   {nom:"Marché", emoji:"⚖️", cost:{planche:25, bloc:15, fibre:10}, stars:2, size:4, door:0, taille:"grande", bonus:{res:"or", pct:25}, desc:"+25 % d'or aux ventes du comptoir, par niveau."},
   taverne:  {nom:"Taverne", emoji:"🍺", cost:{planche:30, bloc:25, or:20}, stars:3, size:4, door:0, taille:"grande", all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
   forge:    {nom:"Forge", emoji:"⚒️", cost:{bloc:30, cuivre:15, or:20}, stars:3, size:3, door:-.4, taille:"moyenne", desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
-  chateau:  {nom:"Château", emoji:"🏰", cost:{bloc:60, planche:40, cuivre:30, or:80}, stars:10, unique:true, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."},
+  chateau:  {nom:"Château", emoji:"🏰", cost:{bloc:60, planche:40, cuivre:30, or:80}, stars:10, size:4, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."},
   /* La mine (étape 1.5, demande de Yo : on y entre) : posée une fois sur l'île, ni construite, ni déplacée, ni améliorée */
   mine:     {nom:"Mine", emoji:"⛰️", cost:{}, stars:0, size:3, door:0, taille:"mine", fixe:true, desc:"L'entrée de la mine. Dedans, des rochers de pierre et de cuivre, qui reviennent chaque jour."},
   /* L'orée de la Forêt profonde (étape 1.7), au bout du pont du nord de l'île : on y entre à pied (voir monde/foret.js) */

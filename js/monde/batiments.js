@@ -151,6 +151,8 @@ export function placeMesh(b){
   g.rotation.y = (b.rot || 0) * Math.PI / 2;          // tourné (étape 1.9) : la porte regarde vers b.rot
   scene.add(g); bMeshes.set(b.id, g);
 }
+/* Retire le modèle d'un bâtiment démonté */
+export function removeMesh(id){ if(bMeshes.has(id)){ scene.remove(bMeshes.get(id)); bMeshes.delete(id); } }
 /* Montre ou cache le modèle d'un bâtiment posé (caché pendant qu'on le déplace) */
 export function setMeshVisible(id, v){ const g = bMeshes.get(id); if(g) g.visible = v; }
 /* Le bâtiment touché par un rayon (celui du doigt), ou null */

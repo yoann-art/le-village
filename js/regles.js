@@ -139,7 +139,7 @@ export function addOwned(k, n){
 export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
 /* File d'attente d'un plan de travail : 3 places au niveau 1, une de plus par niveau */
 export const queueSlots = lvl => 2 + lvl;
-export const maxLvl = t => B[t].unique || B[t].fixe ? 1 : 3;
+export const maxLvl = t => B[t].fixe ? 1 : 3;          // 3 niveaux pour tous, le Château aussi (demande de Yo, v1.10.2)
 export function upCost(t, lvl){
   const c = {};
   for(const [r,v] of Object.entries(B[t].cost)) c[r] = Math.ceil(v * 1.5 * lvl);

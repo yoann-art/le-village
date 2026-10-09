@@ -119,6 +119,13 @@ export async function verifier(){
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
   });
+  if(scierie) await etape("Un seul bâtiment de chaque sorte : pas de deuxième Scierie", async () => {
+    $("#btn-build").click(); await wait(300);
+    const bouton = $("#sheet [data-pick='scierie']");
+    if(!bouton || !bouton.disabled) throw new Error("le menu Construire propose encore une Scierie");
+    $("#sheetWrap [data-close]").click(); await wait(300);
+    return `« ${bouton.textContent} » dans le menu Construire`;
+  });
   if(scierie) await etape("Entrer dans la Scierie, construire l'établi, fabriquer des planches", async () => {
     await entrer(scierie);
     $("#btn-deco").click(); $("#deco-cat").click(); await wait(200);
