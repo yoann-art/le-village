@@ -24,12 +24,13 @@ import { foret, ftile, fcx, fcz, sources } from "./monde/foret.js";
 import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
+import { meteo, mouille } from "./monde/meteo.js";
 
 /* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, l'hémisphère du joueur) ----- */
 export const saisonDe = saisonDu;
-/* La météo : elle arrive à l'étape 1.10 ; en attendant, il fait toujours beau (décidé par Yo) : l'anguille
-   (pluie) et le Vieux Silure (orage) attendent la météo */
-export const meteo = () => "beau";
+/* La météo (étape 1.10, morceau 3) : la carpe koï par beau temps, l'anguille sous la pluie (l'orage compris), le
+   Vieux Silure une nuit d'orage */
+const temps = p => !p.meteo || (p.meteo === "pluie" ? mouille() : p.meteo === meteo());
 /* La lune (Grand Carnet : « les nuits de pleine lune ») : la vraie, comptée depuis une nouvelle lune connue
    (6 janvier 2000) ; pleine à un jour et demi près, soit environ trois nuits par mois */
 const LUNAISON = 29.530588853;
@@ -43,7 +44,7 @@ export function presents(lieu, ponton, d = new Date()){
   return Object.keys(POISSONS).filter(k => { const p = POISSONS[k], l = lieuxDe(p);
     return (l.includes(lieu) || lieu === "source" && l.includes("ruisseau")) && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
       && (!p.lune || lune)
-      && (!p.meteo || p.meteo === meteo()) && (!p.depuis || p.depuis === "ponton" && ponton)
+      && temps(p) && (!p.depuis || p.depuis === "ponton" && ponton)
       && !(p.rarete === "legendaire" && (dejaPris(k) || ombres.some(o => o.k === k))); });
 }
 /* Un poisson : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille penche

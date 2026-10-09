@@ -16,14 +16,15 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
-import { lacherOmbre } from "../js/peche.js";
-import { lacherInsecte, pauseInsectes } from "../js/insectes.js";
+import { lacherOmbre, presents } from "../js/peche.js";
+import { forcerMeteo, updateMeteo, couvertIci } from "../js/monde/meteo.js";
+import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../js/monstres.js";
@@ -120,6 +121,25 @@ export async function verifier(){
     } finally { reglerHemisphere(state.hemisphere); }
     if(saisonDu(janvier) !== "hiver") throw new Error(`au nord, janvier est en ${saisonDu(janvier)}`);
     return "l'herbe de l'été n'est pas celle de l'hiver ; janvier : hiver au nord, été au sud";
+  });
+  await etape("La météo et la station météo : la pluie tombe, l'anguille sort, les papillons se cachent", async () => {
+    const juillet = new Date(2027, 6, 15, 14), nuit = new Date(2027, 6, 15, 23);
+    try {
+      forcerMeteo("pluie");
+      for(let k = 0; k < 60; k++) updateMeteo(.05, scene, 0, 0);
+      if(couvertIci() < .3) throw new Error("le ciel ne se couvre pas sous la pluie");
+      if(!scene.children.some(o => o.isGroup && o.children.some(c => c.isLineSegments && c.visible))) throw new Error("la pluie ne tombe pas");
+      if(insectesPresents("ile", juillet).some(k => INSECTES[k].forme === "papillon")) throw new Error("des papillons sous la pluie");
+      if(!presents("etang", false, nuit).includes("anguille")) throw new Error("pas d'anguille sous la pluie");
+      forcerMeteo("beau");
+      if(presents("etang", false, nuit).includes("anguille")) throw new Error("l'anguille sort aussi par beau temps");
+      if(!insectesPresents("ile", juillet).some(k => INSECTES[k].forme === "papillon")) throw new Error("pas de papillons par beau temps, en été");
+    } finally { forcerMeteo(null); }
+    if(!/\d h \d\d/.test($("#meteo").textContent)) throw new Error(`le badge de la station dit « ${$("#meteo").textContent} »`);
+    $("#meteo").click(); await wait(300);
+    if(!$("#sheet").textContent.includes("Station météo") || !$("#sheet").textContent.includes("Prévisions")) throw new Error("la fiche de la station ne s'ouvre pas");
+    $("#sheetWrap [data-close]").click(); await wait(300);
+    return `badge « ${$("#meteo").textContent.trim()} » ; sous la pluie : le ciel se couvre, l'anguille sort, les papillons se cachent`;
   });
   await etape("Ouvrir le sac", async () => {
     $("#btn-sac").click(); await wait(300);

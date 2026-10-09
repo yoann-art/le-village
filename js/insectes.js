@@ -23,6 +23,7 @@ import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe, pleineLune } from "./peche.js";
+import { meteo } from "./monde/meteo.js";
 import { toast } from "./interface.js";
 import { barreAuto, hold } from "./barre.js";
 
@@ -31,11 +32,13 @@ export const INSECTE = {max: 6, rayon: 9, vie: [50, 110], portee: 1.3};
 const PEUR = {papillon: 2.6, libellule: 3, bourdon: 2.2, sauteur: 2.6, coleo: 1.8, fourmi: 1.6, cloporte: 1.6, araignee: 1.8, mante: 2, cigale: 2.4, phasme: 1.4, lucane: 1.8};
 const VOLE = {papillon: true, libellule: true, bourdon: true};
 
-/* ----- Qui vit ici (zone : « ile » ou « foret ») et maintenant (vraie horloge du téléphone, hémisphère nord) ----- */
+/* ----- Qui vit ici (zone : « ile » ou « foret ») et maintenant (vraie horloge du téléphone, l'hémisphère du joueur) ;
+   sous la pluie et la neige, les papillons se cachent (étape 1.10, morceau 3) ----- */
 export function insectesPresents(zone = "ile", d = new Date()){
-  const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d);
+  const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d), abri = meteo() !== "beau" && meteo() !== "nuages";
   return Object.keys(INSECTES).filter(k => { const p = INSECTES[k];
-    return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.lune || lune); });
+    return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.lune || lune)
+      && !(abri && p.forme === "papillon"); });
 }
 const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`;
   return maj ? s[0].toUpperCase() + s.slice(1) : s; };

@@ -26,10 +26,12 @@ import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
 import { lampeSur, nuitForet } from "./monde/interieurs.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
+import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
 import "./sac.js";
 import "./barre.js";
 import "./saisons.js";
+import "./station.js";
 
 /* Touche Échap : ferme ce qui est ouvert */
 window.addEventListener("keydown", e => {
@@ -116,8 +118,10 @@ function camera_(now, dt){
   camera.lookAt(camT.x, .4, camT.z);
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
   if(foret) lampeSur(camT.x, camT.z);
+  const sousLeCiel = !isInside() || currentPlace().b.type === "foret";
+  garde("météo", () => updateMeteo(dt, sousLeCiel ? currentScene() : null, camT.x, camT.z));   // la pluie, la neige, les éclairs (étape 1.10)
   updateCiel(camT.x, camT.z);                              // le jour et la nuit (étape 1.10) : le ciel, le soleil, les vitres
-  if(foret && currentPlace().b.type === "foret") nuitForet(nuitIci());
+  if(foret && currentPlace().b.type === "foret") nuitForet(Math.max(nuitIci(), couvertIci() * .6));   // la forêt s'assombrit aussi sous la pluie
   if(!isInside()){
     water.position.y = -.2 + Math.sin(now * .0012) * .02;
     updateInteraction(dt);

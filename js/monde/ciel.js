@@ -7,6 +7,7 @@
    batiments.js) et les lanternes brillent et éclairent autour d'elles. La Forêt profonde suit aussi l'heure
    (nuitForet, dans interieurs.js) ; rien ne change dans les maisons, la mine ni la grotte. */
 import { scene, sun, hemi } from "./scene.js";
+import { couvertIci, eclairIci } from "./meteo.js";
 
 /* Les moments clés (heure : 0 à 24) ; ciel = fond et brume ; haut et bas = la lumière qui vient du ciel et du sol ;
    force : la lumière ambiante ; astre : la couleur et la force du soleil (ou de la lune) */
@@ -73,6 +74,15 @@ export function updateCiel(cx, cz){
   const sx = nuit >= 1 ? 4 : Math.cos(a) * 10, sy = nuit >= 1 ? 14 : 5 + Math.sin(a) * 11;
   sun.position.set(cx + sx, sy, cz + 5);
   sun.target.position.set(cx, 0, cz);
+  /* la météo (étape 1.10, morceau 3) : un ciel couvert grisaille et cache le soleil ; un éclair illumine tout */
+  const cv = couvertIci(), ec = eclairIci();
+  if(cv > .005){
+    cb.setHex(nuit > .5 ? 0x2C3242 : 0x9AA3AC);
+    scene.background.lerp(cb, cv * .8); scene.fog.color.copy(scene.background);
+    hemi.color.lerp(cb.setHex(nuit > .5 ? 0x5A6278 : 0xD8DEE4), cv * .5);
+    hemi.intensity *= 1 - cv * .12; sun.intensity *= 1 - cv * .75;
+  }
+  if(ec > 0){ scene.background.lerp(cb.setHex(0xF4F6FF), ec * .7); scene.fog.color.copy(scene.background); hemi.intensity += ec * .9; }
   /* les vitres et les lanternes */
   VITRE.emissiveIntensity = nuit * .95;
   for(const l of lampes){
