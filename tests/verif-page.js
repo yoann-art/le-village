@@ -3,7 +3,7 @@
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
-   arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
+   arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
@@ -32,7 +32,7 @@ import { updateVitrine } from "../js/vitrine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
 import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
-import { lacherGibier, lacherCerfBlanc, pauseChasse, vent } from "../js/chasse.js";
+import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../js/monstres.js";
 import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee } from "../js/torche.js";
@@ -717,6 +717,30 @@ export async function verifier(){
     if(!owned("boisArgent") || !state.cerfBlanc) throw new Error("le bois d'argent n'est pas dans le sac");
     await sortir();
     return "un chevreuil (2 viandes, 1 cuir, la flèche reprise), puis le bois d'argent";
+  });
+  await etape("Les flèches à pointe de métal : le tir est plus sûr, et la même flèche revient", async () => {
+    if(!(chanceDe(6, "flecheBronze") > chanceDe(6, "flecheCuivre") && chanceDe(6, "flecheCuivre") > chanceDe(6, "fleche"))) throw new Error("une pointe de métal ne rend pas le tir plus sûr");
+    if(!["flecheCuivre", "flecheBronze"].every(r => ATELIERS.forge.recettes.some(x => x.out === r))) throw new Error("pas de flèches à pointe de métal à l'enclume");
+    place(3); pauseChasse(true);
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    try {
+      if(!owned("arcIf")) sacAdd("arcIf", 1);
+      sacAdd("flecheBronze", 2); hold(null);
+      keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016); frames(2);
+      const p = player.position, w = vent(), pierre = owned("fleche"), bronze = owned("flecheBronze");
+      lacherGibier("chevreuil", p.x - w.x * 5, p.z - w.z * 5); frames(2);
+      const attendu = `(${Math.round(chanceDe(5, "flecheBronze") * 100)} %)`;
+      if(!$("#btn-act").textContent.includes(attendu)) throw new Error(`à 5 P avec une flèche en bronze, le bouton dit « ${$("#btn-act").textContent} » (attendu ${attendu})`);
+      lacherGibier("chevreuil", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
+      const avant = state.carnet.gibier.chevreuil ? state.carnet.gibier.chevreuil.n : 0;
+      $("#btn-act").click();
+      let k = 0;
+      while((state.carnet.gibier.chevreuil ? state.carnet.gibier.chevreuil.n : 0) === avant && k < 60){ frames(1); k++; }
+      if((state.carnet.gibier.chevreuil ? state.carnet.gibier.chevreuil.n : 0) === avant) throw new Error("le chevreuil n'est pas touché");
+      if(owned("flecheBronze") !== bronze || owned("fleche") !== pierre) throw new Error("ce n'est pas la flèche en bronze qui est partie et revenue");
+      frames(40);
+      return `à 5 P : ${Math.round(chanceDe(5) * 100)} % avec une pointe de pierre, ${attendu.slice(1, -1)} avec une pointe de bronze ; la flèche en bronze reprise`;
+    } finally { pauseChasse(true); await sortir(); }
   });
   await etape("La grotte : y entrer depuis la forêt, descendre d'un palier, remonter", async () => {
     place(2);

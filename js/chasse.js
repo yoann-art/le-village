@@ -17,7 +17,7 @@
 import { $ } from "./outils.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
-import { GIBIER, HEURES, PECHE, OUTILS, MONSTRES, objet } from "./donnees.js";
+import { GIBIER, HEURES, PECHE, OUTILS, MONSTRES, FLECHES, objet } from "./donnees.js";
 import { modeleMonstre, enrager } from "./monstres.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacTake, sacCount, sacPlace, porte, tientSurSoi } from "./regles.js";
@@ -306,13 +306,17 @@ function vivre(a, dt){
 
 /* ----- Tirer à l'arc ----- */
 const arcDuSac = () => { const it = porte().find(it => OUTILS[it.k] && OUTILS[it.k].famille === "arc"); return it ? it.k : null; };
-export const chanceDe = d => d <= CHASSE.sur ? 1 : Math.max(.35, 1 - (d - CHASSE.sur) / (CHASSE.portee - CHASSE.sur) * .65);
+/* La chance de toucher à une distance d, avec la flèche f : une pointe de métal enlève une part du risque de rater */
+export const chanceDe = (d, f = "fleche") => { const c = d <= CHASSE.sur ? 1 : Math.max(.35, 1 - (d - CHASSE.sur) / (CHASSE.portee - CHASSE.sur) * .65); return c + (1 - c) * (FLECHES[f] || 0); };
+/* La meilleure flèche qu'on porte (bronze, puis cuivre, puis pierre) */
+const flecheDuSac = () => Object.keys(FLECHES).sort((a, b) => FLECHES[b] - FLECHES[a]).find(f => sacCount(f) > 0) || null;
+const POINTE = {fleche: 0x8E949C, flecheCuivre: 0xC8743C, flecheBronze: 0xB98A4A};
 let tir = null;          // la flèche en vol : {mesh, de, a, t, T, bete, touche}
 export const tirEnCours = () => !!tir;
-function flecheMesh(){
+function flecheMesh(f){
   const g = new THREE.Group();
   const tige = part(G.cyl, 0x8A5A32, .02, .5, .02, 0, 0, 0); tige.rotation.x = Math.PI / 2; g.add(tige);
-  const pointe = part(G.cone, 0x8E949C, .05, .1, .05, 0, 0, .28); pointe.rotation.x = Math.PI / 2; g.add(pointe);
+  const pointe = part(G.cone, POINTE[f] || 0x8E949C, .05, .1, .05, 0, 0, .28); pointe.rotation.x = Math.PI / 2; g.add(pointe);
   for(const r of [0, Math.PI / 2]){ const pl = part(G.box, 0xE4574C, .005, .06, .1, 0, 0, -.22); pl.rotation.z = r; g.add(pl); }
   return g;
 }
@@ -329,26 +333,27 @@ function cible(){
 }
 function tirer(a){
   const p = GIBIER[a.k];
-  if(sacCount("fleche") < 1){ toast("🏹 Plus de flèches : fabrique-en à l'établi de la Scierie (2 planches et 1 pierre pour 10 flèches)", 3600); return; }
+  const f = flecheDuSac();
+  if(!f){ toast("🏹 Plus de flèches : fabrique-en à l'établi de la Scierie (2 planches et 1 pierre pour 10 flèches), ou à pointe de métal à l'enclume de la Forge", 3600); return; }
   if(!tientSurSoi(p.donne)){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre avant de chasser", 3200); return; }
   const k = arcDuSac();
   if(state.main !== k){ barreAuto(k); hold(k); }
-  sacTake("fleche", 1);
+  sacTake(f, 1);
   const pp = player.position, d = Math.hypot(a.x - pp.x, a.z - pp.z) || 1, dx = (a.x - pp.x) / d, dz = (a.z - pp.z) / d;
   placePlayer(pp.x, pp.z, dx, dz);                    // face à la bête
   pencheMain(.5);
-  const touche = Math.random() < chanceDe(d), s = Math.random() < .5 ? 1 : -1;
+  const touche = Math.random() < chanceDe(d, f), s = Math.random() < .5 ? 1 : -1;
   const fin = touche ? {x: a.x, y: .3 * (p.taille || 1), z: a.z}
     : {x: a.x + dx * 1.2 - dz * s * (.5 + Math.random() * .6), y: .04, z: a.z + dz * 1.2 + dx * s * (.5 + Math.random() * .6)};
-  tir = {mesh: flecheMesh(), de: {x: pp.x + dx * .3, y: .85, z: pp.z + dz * .3}, a: fin, t: 0, T: Math.max(.18, d / 16), bete: a, touche, fini: 0};
+  tir = {mesh: flecheMesh(f), de: {x: pp.x + dx * .3, y: .85, z: pp.z + dz * .3}, a: fin, t: 0, T: Math.max(.18, d / 16), bete: a, touche, fini: 0, fleche: f};
   groupe.add(tir.mesh);
   renderHUD();
   user(k);                                            // chaque tir use l'arc (usure.js)
 }
-function donner(a){
+function donner(a, f = "fleche"){
   const p = GIBIER[a.k], gains = Object.entries(p.donne);
   for(const [k, n] of gains) sacAdd(k, n);
-  sacAdd("fleche", 1);                                // la flèche reprise
+  sacAdd(f, 1);                                       // la flèche reprise (la même)
   const c = state.carnet.gibier, e = c[a.k] || (c[a.k] = {n: 0}), nouveau = !e.n;
   e.n++;
   save(); renderHUD();
@@ -372,14 +377,14 @@ function voler(dt){
   const a = T.bete;
   if(T.touche && betes.includes(a) && a.etat !== "fuite" && GIBIER[a.k].charge){   // le sanglier blessé se retourne et charge
     retirer(a);
-    enrager(a.x, a.z, MONSTRES.sanglier.vie - 1);
+    enrager(a.x, a.z, MONSTRES.sanglier.vie - 1, T.fleche);
     toast("🐗 Touché, le sanglier se retourne, furieux ! Il gratte le sol : roule (🤸). Puis l'épée (⚔️)", 4600);
     groupe.remove(T.mesh); tir = null; pencheMain();
     return;
   }
   if(T.touche && betes.includes(a) && a.etat !== "fuite"){
     a.etat = "tombe"; a.t = 0;
-    donner(a);
+    donner(a, T.fleche);
     groupe.remove(T.mesh); tir = null; pencheMain();
   } else {
     if(betes.includes(a)) alerte(a, "rate");
@@ -474,7 +479,7 @@ export function chasseAction(){
   const a = cible();
   if(!a) return null;
   const d = Math.hypot(a.x - p.x, a.z - p.z);
-  return {label: `🏹 Tirer : ${GIBIER[a.k].nom.toLowerCase()} (${Math.round(chanceDe(d) * 100)} %)`, run: () => { if(betes.includes(a) && !tir) tirer(a); }};
+  return {label: `🏹 Tirer : ${GIBIER[a.k].nom.toLowerCase()} (${Math.round(chanceDe(d, flecheDuSac() || "fleche") * 100)} %)`, run: () => { if(betes.includes(a) && !tir) tirer(a); }};
 }
 
 /* ----- À chaque image (recolte.js) ; ou : le milieu, la chasse n'a lieu que dans la forêt ----- */

@@ -262,6 +262,9 @@ export function tirerCristal(r = Math.random()){
 /* Le Cœur de la mine (légendaire, une seule fois dans le jeu) : il se réveille quand on a trouvé toutes les pierres des
    trois salles, puis se dégage à la pioche en bronze, en quelques coups */
 export const COEUR_MINE = {coups: 6, force: 3};
+/* Les flèches (morceau 4 de l'usure) : la part du risque de rater que la pointe enlève (chasse.js, chanceDe) ; à 7 P,
+   35 % avec une pointe de pierre, 48 % de cuivre, 61 % de bronze. Chiffres choisis par Claude, à régler en jouant */
+export const FLECHES = {fleche: 0, flecheCuivre: .2, flecheBronze: .4};
 
 /* La pêche (étape 1.6) : les poissons de l'île d'après le Grand Carnet (pages « Les poissons », décision de Yo
    le 5 octobre 2026), plus la truite, le congre et la Vieille Carpe d'or gardés par Yo, et quatre poissons du
@@ -583,6 +586,14 @@ export const PRODUITS = {
   fleche: {nom:"Flèche", pluriel:"flèches", emoji:"🏹", aide:"Les flèches se fabriquent à l'établi de la Scierie : 2 planches et 1 pierre pour 10 flèches.",
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20L19 5" stroke="#8A5A32" stroke-width="2" stroke-linecap="round"/><path d="M20.5 3.5l-1 5-4-4z" fill="#8E949C"/><path d="M4 20l-1-4 3 1zM4 20l4 1-1-3z" fill="#E4574C"/></svg>',
     usage:"Pour l'arc : une flèche par tir. Un tir réussi te la rend ; ratée, elle se perd dans les bois."},
+  /* Les flèches à pointe de métal (morceau 4 de l'usure, validé par Yo ; Grand Carnet : « pointes de métal ») : à
+     l'enclume de la Forge, par 10 ; plus sûres (FLECHES) ; on tire toujours la meilleure qu'on porte */
+  flecheCuivre:{nom:"Flèche à pointe de cuivre", pluriel:"flèches à pointe de cuivre", emoji:"🏹", aide:"Les flèches à pointe de cuivre se forgent à l'enclume de la Forge : 2 planches et 1 cuivre pour 10 flèches.",
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20L19 5" stroke="#8A5A32" stroke-width="2" stroke-linecap="round"/><path d="M20.5 3.5l-1 5-4-4z" fill="#C8743C"/><path d="M4 20l-1-4 3 1zM4 20l4 1-1-3z" fill="#E4574C"/></svg>',
+    usage:"Pour l'arc : un tir plus sûr qu'avec une pointe de pierre. Tu tires toujours ta meilleure flèche ; un tir réussi te la rend."},
+  flecheBronze:{nom:"Flèche à pointe de bronze", pluriel:"flèches à pointe de bronze", emoji:"🏹", aide:"Les flèches à pointe de bronze se forgent à l'enclume de la Forge : 2 planches et 1 bronze pour 10 flèches.",
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20L19 5" stroke="#8A5A32" stroke-width="2" stroke-linecap="round"/><path d="M20.5 3.5l-1 5-4-4z" fill="#B98A4A"/><path d="M4 20l-1-4 3 1zM4 20l4 1-1-3z" fill="#E4574C"/></svg>',
+    usage:"Pour l'arc : le tir le plus sûr. Tu tires toujours ta meilleure flèche ; un tir réussi te la rend."},
   viandeGibier:{nom:"Viande de gibier", pluriel:"viandes de gibier", emoji:"🍖", prix:2, aide:"La viande de gibier se rapporte de la chasse, dans la Forêt profonde.",
     usage:"Pour la cuisine : le ragoût de gibier viendra avec le potager (carottes, oignons). En attendant, elle se vend au comptoir."},
   fourrureDouce:{nom:"Fourrure douce", pluriel:"fourrures douces", emoji:"🐇", prix:2, aide:"La fourrure douce vient du lapin de garenne, chassé dans les clairières de la Forêt profonde.",
@@ -702,6 +713,8 @@ export const ATELIERS = {
     {out:"canneBronze", in:{bronze:2, planche:3, fibre:3}, t:90, lvl:1},
     {out:"filetCuivre", in:{cuivre:2, fibre:4}, t:60, lvl:1},
     {out:"filetBronze", in:{bronze:2, fibre:4}, t:90, lvl:1},
+    {out:"flecheCuivre", n:10, in:{planche:2, cuivre:1}, t:40, lvl:1},
+    {out:"flecheBronze", n:10, in:{planche:2, bronze:1}, t:60, lvl:1},
     {out:"bocal", in:{verre:2, planche:1}, t:40, lvl:1},
     {out:"bocalCuivre", in:{verre:2, cuivre:2}, t:60, lvl:1},
     {out:"bocalBronze", in:{verre:2, bronze:2}, t:90, lvl:1},

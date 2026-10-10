@@ -441,7 +441,7 @@ export function frapper(m, n, dx, dz){
 function vaincre(m){
   m.etat = "tombe"; m.t = 0; m.bulle.visible = false; vaincus++;
   if(m.grp.attaquant === m) m.grp.attaquant = null;
-  const L = MONSTRES[m.k], donne = m.foret ? {...GIBIER.sanglier.donne, fleche: 1} : L.donne, gains = [];
+  const L = MONSTRES[m.k], donne = m.foret ? {...GIBIER.sanglier.donne, [m.fleche || "fleche"]: 1} : L.donne, gains = [];
   let perdu = false;
   for(const [k, n] of Object.entries(donne)){
     const q = Math.min(n, sacPlace(k));
@@ -456,9 +456,9 @@ function vaincre(m){
 }
 
 /* ----- Le sanglier de la forêt, touché à l'arc (chasse.js) : il se retourne et charge ----- */
-export function enrager(x, z, vie){
+export function enrager(x, z, vie, fleche = "fleche"){
   const m = ajouter("sanglier", x, z, null, true);
-  m.vie = vie; m.etat = "approche"; m.t = 0;
+  m.vie = vie; m.etat = "approche"; m.t = 0; m.fleche = fleche;       // la flèche qui l'a touché, rendue à la fin
   return m;
 }
 
