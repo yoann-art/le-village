@@ -729,8 +729,12 @@ export async function verifier(){
       keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016); frames(2);
       const p = player.position, w = vent(), pierre = owned("fleche"), bronze = owned("flecheBronze");
       lacherGibier("chevreuil", p.x - w.x * 5, p.z - w.z * 5); frames(2);
-      const attendu = `(${Math.round(chanceDe(5, "flecheBronze") * 100)} %)`;
-      if(!$("#btn-act").textContent.includes(attendu)) throw new Error(`à 5 P avec une flèche en bronze, le bouton dit « ${$("#btn-act").textContent} » (attendu ${attendu})`);
+      /* la bête peut avoir bougé un peu (machine de GitHub lente) : une petite marge autour de 5 P */
+      const m = $("#btn-act").textContent.match(/\((\d+) %\)/), pct = m ? +m[1] : 0;
+      const bas = Math.round(chanceDe(5.3, "flecheBronze") * 100), haut = Math.round(chanceDe(4.7, "flecheBronze") * 100);
+      if(pct < bas || pct > haut) throw new Error(`à 5 P avec une flèche en bronze, le bouton dit « ${$("#btn-act").textContent} » (attendu entre ${bas} et ${haut} %)`);
+      if(pct <= Math.round(chanceDe(4.7, "fleche") * 100)) throw new Error("la flèche en bronze n'est pas plus sûre que celle en pierre");
+      const attendu = `${pct} %`;
       lacherGibier("chevreuil", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
       const avant = state.carnet.gibier.chevreuil ? state.carnet.gibier.chevreuil.n : 0;
       $("#btn-act").click();
@@ -739,7 +743,7 @@ export async function verifier(){
       if((state.carnet.gibier.chevreuil ? state.carnet.gibier.chevreuil.n : 0) === avant) throw new Error("le chevreuil n'est pas touché");
       if(owned("flecheBronze") !== bronze || owned("fleche") !== pierre) throw new Error("ce n'est pas la flèche en bronze qui est partie et revenue");
       frames(40);
-      return `à 5 P : ${Math.round(chanceDe(5) * 100)} % avec une pointe de pierre, ${attendu.slice(1, -1)} avec une pointe de bronze ; la flèche en bronze reprise`;
+      return `à 5 P : ${Math.round(chanceDe(5) * 100)} % avec une pointe de pierre, ${attendu} avec une pointe de bronze ; la flèche en bronze reprise`;
     } finally { pauseChasse(true); await sortir(); }
   });
   await etape("La grotte : y entrer depuis la forêt, descendre d'un palier, remonter", async () => {
