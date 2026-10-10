@@ -26,6 +26,7 @@ import { saisonDe, pleineLune } from "./peche.js";
 import { meteo } from "./monde/meteo.js";
 import { toast } from "./interface.js";
 import { barreAuto, hold } from "./barre.js";
+import { user } from "./usure.js";
 
 /* Combien, où, combien de temps (à régler en jouant) ; peur : à quelle distance une bête fuit qui nous voit arriver trop vite */
 export const INSECTE = {max: 6, rayon: 9, vie: [50, 110], portee: 1.3};
@@ -277,6 +278,7 @@ function attraper(b){
   retirer(b);
   montre = {mesh: modele(b.k), t: 0}; montre.mesh.scale.multiplyScalar(1.8); sceneIci().add(montre.mesh);
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(b.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
+  user(k);                                            // une prise use le filet ou le bocal (usure.js)
 }
 /* Le bouton d'action pour la bête à portée (recolte.js l'affiche, avant le reste) */
 export function insecteAction(){

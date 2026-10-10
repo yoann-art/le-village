@@ -28,6 +28,7 @@ import { currentPlace, isBusy, reveilVillage } from "./lieux.js";
 import { barreAuto, hold, syncBarre } from "./barre.js";
 import { toast, wrap, openSheet } from "./interface.js";
 import { updateMonstres, plusProche, frapper, monstresIci, oublierMonstres } from "./monstres.js";
+import { user } from "./usure.js";
 
 const coeurs = $("#coeurs"), boutons = $("#combat"), bRoul = $("#btn-roulade"), bObj = $("#btn-objet"), nObj = $("#objet-n");
 const aie = $("#aie"), but = $("#goal");
@@ -64,7 +65,7 @@ function attaquer(){
   placePlayer(p.x, p.z, ux, uz);                        // la visée automatique : face au monstre
   const pas = Math.min(COMBAT.pas, Math.max(0, c.d - .9));
   if(pas > .05) elan(ux * pas / .12, uz * pas / .12, .12, false);
-  if(c.d - pas <= COMBAT.portee){ frapper(c.m, OUTILS[k].force, ux, uz); vibre(25); }
+  if(c.d - pas <= COMBAT.portee){ frapper(c.m, OUTILS[k].force, ux, uz); vibre(25); user(k); }   // un coup qui touche use l'épée (usure.js)
 }
 
 /* ----- 🤸 Roulade ----- */

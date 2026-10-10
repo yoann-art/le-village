@@ -50,6 +50,7 @@ import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 import { entreeAction } from "./entreeMine.js";
+import { user } from "./usure.js";
 
 const btn = $("#btn-act");
 const duree = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);   // espaces insécables : « 2 h 59 » reste sur une ligne
@@ -361,6 +362,7 @@ function arroser(t){
   setEtat(t.i, {arrose: Date.now()}); renderBarre(); save();
   anim = {w: ILE, i: t.i, t: 0, kind: "shake"};
   toast(`💧 Arrosé : les baies reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
+  user(k);
 }
 function remplir(){
   const max = OUTILS[state.main].eau;
@@ -386,7 +388,7 @@ function couper(t){
   if(R.force && OUTILS[k].force < R.force){ toast(`🪨 Roche trop dure : il te faut ${PIOCHE[R.force]}`, 2800); return; }
   const h = (hits.get(hk(t)) || 0) + 1;
   if(R.auBout && h >= R.coups && !sacOk(R.res, R.auBout)) return;     // une pierre précieuse : seulement au dernier coup
-  const n = R.res && !R.auBout ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
+  const n = R.res && !R.auBout ? gain(R.parCoup, R.res) : 0;         // une ressource par coup, quel que soit l'outil (demande de Yo)
   if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); trouve(R.res, n); } renderHUD(); }   // l'or va dans la bourse
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {
@@ -395,6 +397,7 @@ function couper(t){
     anim = {w: t.w, i: t.i, t: 0, kind: t.o.startsWith("rock") ? "break" : "fall", o: t.o, R, n: R.auBout || n, side: Math.sign(player.position.x - t.w.cx(t.x)) || 1};
   }
   save();
+  user(k);                                            // l'outil s'use (usure.js)
 }
 /* Une pierre trouvée s'inscrit au carnet (étape 1.11, morceau 4) ; la dernière des trois salles réveille le Cœur de la mine */
 function trouve(k, n){
@@ -415,8 +418,9 @@ function degagerCoeur(){
   const k = piocheAssez(takeTool("pioche"), COEUR_MINE.force);
   if(!k || OUTILS[k].force < COEUR_MINE.force || !coeurEveille()) return;
   const h = (state.coeurCoups || 0) + 1;
-  if(h < COEUR_MINE.coups){ state.coeurCoups = h; save(); toast(`⛏️ La roche s'effrite autour du Cœur… (encore ${COEUR_MINE.coups - h})`, 1600); return; }
+  if(h < COEUR_MINE.coups){ state.coeurCoups = h; save(); toast(`⛏️ La roche s'effrite autour du Cœur… (encore ${COEUR_MINE.coups - h})`, 1600); user(k); return; }
   if(!sacOk("coeurMine", 1)) return;
+  user(k);
   delete state.coeurCoups; state.coeurMine = Date.now();
   sacAdd("coeurMine", 1); noterPierre("coeurMine", 1);
   majCoeur(); renderHUD(); save();
@@ -434,6 +438,7 @@ function creuserGalerie(g){
   const r = creuser(g), place = sacPlace("pierre") >= 1;
   if(place) sacAdd("pierre", 1);
   renderHUD(); save();
+  user(k);
   toast(r === "ouverte" ? `✨ La galerie est ouverte : voici ${c.salle} ! ${g === 2 ? "Étain, granit, quartz… et peut-être une améthyste." : "Argent, marbre, grenats, géodes…"}`
     : r === "troncon" ? `⛏️ La galerie avance : encore ${coupsRestants(g)} coups${place ? " (+1 pierre)" : ""}` : "🪨 +1 pierre", r === "ouverte" ? 4600 : r === "troncon" ? 2400 : 900);
 }

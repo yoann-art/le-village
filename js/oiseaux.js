@@ -27,6 +27,7 @@ import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js"
 import { saisonDe } from "./peche.js";
 import { toast } from "./interface.js";
 import { barreAuto, hold } from "./barre.js";
+import { user } from "./usure.js";
 
 /* Combien, où, combien de temps, la peur (à régler en jouant) */
 export const OISEAU = {max: 4, rayon: 10, vie: [60, 150], portee: 1.8, peur: 3.5, tropPres: .8, revient: .7};
@@ -245,6 +246,7 @@ function lancerFilet(o){
   montre = {mesh: modele(o.k), t: 0}; sceneIci().add(montre.mesh);
   const p = OISEAUX[o.k];
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(o.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
+  user(k);                                            // une prise use le filet (usure.js)
 }
 /* Le bouton d'action pour l'oiseau à portée (recolte.js), avec un filet dans le sac */
 export function oiseauAction(){

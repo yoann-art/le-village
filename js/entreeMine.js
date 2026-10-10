@@ -12,6 +12,7 @@ import { doorOf } from "./lieux.js";
 import { player, dir4 } from "./monde/personnage.js";
 import { hold, barreAuto, syncBarre } from "./barre.js";
 import { toast, renderHUD, closeSheet, wrap } from "./interface.js";
+import { user } from "./usure.js";
 
 const mine = () => state.buildings.find(b => b.type === "mine");
 const nomDe = (k, n) => (n > 1 && objet(k).pluriel || objet(k).nom).toLowerCase();
@@ -34,9 +35,10 @@ export function deblayer(){
   const fini = reste() <= 0;
   if(fini){ state.entreeMine = "deblayee"; delete state.deblai; }
   placeMesh(mine()); syncBarre(); renderHUD(); save();
-  const pierres = place ? ` +${n} pierres.` : " Ton sac est plein : les pierres restent là.";
+  const pierres = place ? ` +${n} pierre${n > 1 ? "s" : ""}.` : " Ton sac est plein : les pierres restent là.";
   toast(fini ? `⛏️ L'éboulement est dégagé !${pierres} Pose maintenant les étais : ${liste(ENTREE_MINE.cost)}.`
     : `⛏️ Un rocher de moins (encore ${reste()}).${pierres}`, fini ? 4600 : 2000);
+  user(k);
 }
 /* Poser les étais : l'entrée est construite, la mine est ouverte */
 export function poserEtais(){

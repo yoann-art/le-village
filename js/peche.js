@@ -25,6 +25,7 @@ import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
 import { meteo, mouille } from "./monde/meteo.js";
+import { user } from "./usure.js";
 
 /* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, l'hémisphère du joueur) ----- */
 export const saisonDe = saisonDu;
@@ -346,6 +347,7 @@ function ferrer(){
   if(sacPlace(k) < 1){ remonter(`🎒 Ton sac est plein : tu relâches ${leNom(k)}`); return; }
   sacAdd(k, 1);
   retirer(o); ligne.ombre = null;
+  const canne = state.main && OUTILS[state.main] && OUTILS[state.main].famille === "canne" ? state.main : null;
   const c = state.carnet.poissons, e = c[k] || (c[k] = {n: 0, max: 0});
   const nouveau = !e.n, record = e.n > 0 && cm > e.max;
   e.n++; e.max = Math.max(e.max, cm);
@@ -362,6 +364,7 @@ function ferrer(){
     : nouveau ? `🐟 ${nom} Nouveau poisson pour ton carnet, dans ton sac`
     : record ? `🐟 ${nom} C'est ton record, dans ton sac`
     : `🐟 ${nom} Dans ton sac`, 3200);
+  if(canne) user(canne);                              // un poisson pris use la canne (usure.js)
 }
 
 /* Le bouton d'action pendant la pêche (recolte.js l'affiche) ; alerte : le bouton « Ferrer » se fait voir */

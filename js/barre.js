@@ -72,11 +72,16 @@ export function mettreEnCase(i, k){
   renderBarre();
   return true;
 }
-/* La jauge d'eau d'un arrosoir (vide si ce n'est pas un arrosoir) */
-export const jauge = k => OUTILS[k] && OUTILS[k].eau
+/* La jauge de solidité d'un outil entamé (usure.js : state.usure) : verte, puis rouge quand il est presque usé */
+const solide = k => { const s = OUTILS[k] && OUTILS[k].solidite, u = state.usure && state.usure[k];
+  if(!s || !u) return "";
+  const f = Math.max(0, 1 - u / s);
+  return `<span class="jauge usure${f <= .2 ? " bas" : ""}" aria-hidden="true"><i style="width:${Math.round(100 * f)}%"></i></span>`; };
+/* La jauge d'eau d'un arrosoir (vide si ce n'est pas un arrosoir), et celle de la solidité */
+export const jauge = k => solide(k) + (OUTILS[k] && OUTILS[k].eau
   ? `<span class="jauge" aria-hidden="true"><i style="width:${Math.round(100 * Math.min(state.eau, OUTILS[k].eau) / OUTILS[k].eau)}%"></i></span>`
   : OUTILS[k] && OUTILS[k].duree && state.torche > 0                 // la torche allumée : ce qui lui reste à brûler
-  ? `<span class="jauge feu" aria-hidden="true"><i style="width:${Math.round(100 * state.torche / OUTILS[k].duree)}%"></i></span>` : "";
+  ? `<span class="jauge feu" aria-hidden="true"><i style="width:${Math.round(100 * state.torche / OUTILS[k].duree)}%"></i></span>` : "");
 export function renderBarre(){
   bar.innerHTML = state.barre.map((it, i) => { const k = it && it.k;
     return k

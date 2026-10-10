@@ -27,6 +27,7 @@ import { player, placePlayer, allure, ALLURE_DOUCE, pencheMain } from "./monde/p
 import { saisonDe, pleineLune } from "./peche.js";
 import { toast, renderHUD } from "./interface.js";
 import { barreAuto, hold } from "./barre.js";
+import { user } from "./usure.js";
 
 /* Combien, où, à quelle distance ils sentent, entendent, voient ; la portée de l'arc (à régler en jouant) */
 export const CHASSE = {max: 2, de: 8, a: 14, rayon: 20, flair: 9, ouie: 6, vue: 2.2, portee: 7, sur: 3, ponte: 12};
@@ -342,6 +343,7 @@ function tirer(a){
   tir = {mesh: flecheMesh(), de: {x: pp.x + dx * .3, y: .85, z: pp.z + dz * .3}, a: fin, t: 0, T: Math.max(.18, d / 16), bete: a, touche, fini: 0};
   groupe.add(tir.mesh);
   renderHUD();
+  user(k);                                            // chaque tir use l'arc (usure.js)
 }
 function donner(a){
   const p = GIBIER[a.k], gains = Object.entries(p.donne);

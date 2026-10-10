@@ -24,6 +24,7 @@ import { solAt } from "./monde/sol.js";
 import { passageCases, entrees } from "./monde/ponton.js";
 import { player, frontTile, pencheMain } from "./monde/personnage.js";
 import { toast } from "./interface.js";
+import { user } from "./usure.js";
 
 const pelleTenue = () => !!(state.main && OUTILS[state.main] && OUTILS[state.main].famille === "pelle");
 /* Ce que vise la pelle : la case juste devant ; null si ce n'est ni de la terre libre ni de l'eau */
@@ -85,14 +86,14 @@ export function actionTerrain(t){
   const n = coups.get(t.i) || 0, reste = (OUTILS[state.main].coups || 1) - n;
   return {label: `🪏 Creuser${n ? ` (${reste})` : ""}`, run: () => creuser(t)};
 }
-function geste(){ pencheMain(1.3); setTimeout(() => pencheMain(), 220); }
+function geste(){ pencheMain(1.3); setTimeout(() => pencheMain(), 220); user(state.main); }   // chaque coup de pelle l'use (usure.js)
 function creuser(t){
   const pourquoi = terrainProbleme(t);
   if(pourquoi){ toast(pourquoi, 2600); return; }
   for(const [j] of coups) if(j !== t.i){ entamer(j, false); coups.delete(j); }   // une seule case entamée à la fois
-  const n = (coups.get(t.i) || 0) + 1;
+  const n = (coups.get(t.i) || 0) + 1, max = OUTILS[state.main].coups || 1;   // lu avant le coup : la pelle peut s'y casser
   geste();
-  if(n < (OUTILS[state.main].coups || 1)){ coups.set(t.i, n); entamer(t.i, true); return; }   // la terre se retourne
+  if(n < max){ coups.set(t.i, n); entamer(t.i, true); return; }   // la terre se retourne
   coups.delete(t.i);
   setTerrain(t.i, "water"); memo.cle = "";
   save();
@@ -159,6 +160,7 @@ function poser(i){
   const rend = ancien && CHEMINS[ancien].avec;           // on change la sorte d'une case : l'ancienne pièce revient
   if(rend && sacPlace(rend) > 0) sacAdd(rend, 1);
   state.chemins[i] = trace.sorte; trace.n++;
+  if(trace.sorte === "terre") user(state.main);          // un chemin de terre : un coup de pelle par case
   syncBarre(); dessinerChemins();
 }
 /* À chaque image (main.js) ; actif : sur l'île, rien d'ouvert, pas de pose de bâtiment ni de décoration */

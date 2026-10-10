@@ -27,7 +27,7 @@ export const B = {
 export const ORDER = ["scierie","chaumiere","carriere","marche","taverne","forge","chateau"];
 /* L'entrée de la mine (étape 1.11, morceau 1 ; choix de Yo : on déblaie d'abord l'éboulement à la pioche, puis on pose
    les étais) : une partie neuve la trouve éboulée ; chaque coup rend des pierres. Chiffres choisis par Claude */
-export const ENTREE_MINE = {coups: 5, pierres: 2, cost: {planche: 15, pierre: 10, torche: 4}};
+export const ENTREE_MINE = {coups: 5, pierres: 1, cost: {planche: 15, pierre: 10, torche: 4}};
 /* Le niveau 3 des bâtiments demande une pierre dure de la mine, en plus (étape 1.11, morceau 3 ; une idée de la Boîte à
    idées : « des matières plus dures selon le niveau ») : du granit, du marbre pour le Marché et le Château. Chiffres
    choisis par Claude */
@@ -87,36 +87,43 @@ export const POSABLES = {
 /* Outils (étape 1.4) : rangés dans le sac, ils ne s'usent pas. Prévus en familles avec une force
    (demande de Yo : des outils et des armes de plus en plus puissants au fil de la partie) ;
    les versions en cuivre viendront à l'enclume, après l'étape 1.5. usage : à quoi il servira. */
+/* L'usure (demande de Yo, 10 octobre 2026 ; usure.js) : solidite = le nombre d'usages avant que l'outil se casse
+   (chiffres divisés par deux à la demande de Yo) ; un meilleur matériau dure plus longtemps (Grand Carnet : pierre ★,
+   cuivre ★★, bronze ★★★, fer ★★★★, obsidienne ★★★★★). Le tableau complet, pour les outils à venir :
+   hache, pioche 30 · 75 · 150 · fer 250 · obsidienne 400 ; pelle 20 · 50 · 100 · fer 100 ; épée 20 · 50 · 100 · fer 170 ·
+   obsidienne 270 ; arrosoir 25 · 60 · 125 ; canne, filet 15 · 40 · 80 ; bocal 8 · 20 · 40 ; arc 20. Les armes et les
+   armures à venir suivront la même règle. une : nom féminin (« ta hache », « ton filet ») */
 export const OUTILS = {
-  hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", emoji:"🪓", famille:"hache", force:1, usage:"Servira à couper les arbres."},
-  piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", emoji:"⛏️", famille:"pioche", force:1, usage:"Servira à casser les rochers."},
-  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", emoji:"🎣", famille:"canne", force:1, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
+  hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", une:true, emoji:"🪓", famille:"hache", force:1, solidite:30, usage:"Coupe les arbres : un bois à chaque coup."},
+  piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", une:true, emoji:"⛏️", famille:"pioche", force:1, solidite:30, usage:"Casse les rochers : une pierre à chaque coup."},
+  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", une:true, emoji:"🎣", famille:"canne", force:1, solidite:15, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
   /* Le filet (étape 1.7, Grand Carnet : « Établi, avec du lin » ; des fibres en attendant le lin) */
-  filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, usage:"Pour attraper les insectes et les oiseaux : approche à pas de loup, en poussant le joystick doucement, puis « Attraper » ou « Lancer le filet »."},
-  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", emoji:"🗡️", famille:"arme", force:1, usage:"Pour te défendre dans la grotte : le bouton ⚔️ Attaquer la prend en main tout seul."},
+  filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, solidite:15, usage:"Pour attraper les insectes et les oiseaux : approche à pas de loup, en poussant le joystick doucement, puis « Attraper » ou « Lancer le filet »."},
+  epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", une:true, emoji:"🗡️", famille:"arme", force:1, solidite:20, usage:"Pour te défendre dans la grotte : le bouton ⚔️ Attaquer la prend en main tout seul."},
   /* La chasse (étape 1.7, morceau 5, carnet : « Arc et flèches | Établi, en bois d'if ») */
   /* La grotte (étape 1.8, carnet : « Torche, puis lanterne : éclairer les grottes ; la torche s'use ») : elles
      s'empilent (pile), chacune brûle duree secondes, seulement dans la grotte */
-  torche:      {nom:"Torche", pluriel:"torches", emoji:"🔥", famille:"torche", force:1, pile:10, duree:600, usage:"Dans la grotte, elle s'allume toute seule et éclaire loin autour de toi. Elle brûle 10 minutes, puis la suivante prend le relais. Elle se refait à l'établi."},
-  arcIf:       {nom:"Arc en if", pluriel:"arcs en if", emoji:"🏹", famille:"arc", force:1, usage:"Dans la Forêt profonde : suis les traces, approche le gibier à pas de loup et sous le vent, puis « Tirer ». Il lui faut des flèches."},
+  torche:      {nom:"Torche", pluriel:"torches", une:true, emoji:"🔥", famille:"torche", force:1, pile:10, duree:600, usage:"Dans la grotte, elle s'allume toute seule et éclaire loin autour de toi. Elle brûle 10 minutes, puis la suivante prend le relais. Elle se refait à l'établi."},
+  arcIf:       {nom:"Arc en if", pluriel:"arcs en if", emoji:"🏹", famille:"arc", force:1, solidite:20, usage:"Dans la Forêt profonde : suis les traces, approche le gibier à pas de loup et sous le vent, puis « Tirer ». Il lui faut des flèches."},
   /* La pelle (étape 1.9 ; Grand Carnet : « creuser, combler, déterrer, tracer des chemins », « les paliers : creuse
      plus vite ») : en bois à l'établi, puis en cuivre à l'enclume (décidé avec Yo, le carnet la met à l'enclume) ;
      coups : les coups de pelle pour creuser une case */
-  pelleBois:   {nom:"Pelle en bois", pluriel:"pelles en bois", emoji:"🪏", famille:"pelle", force:1, coups:2,
+  pelleBois:   {nom:"Pelle en bois", pluriel:"pelles en bois", une:true, emoji:"🪏", famille:"pelle", force:1, coups:2, solidite:20,
     usage:"Pelle en main, face à l'herbe : « Creuser » (la case devient de l'eau douce : un étang, une rivière…) ; face à l'eau douce : « Combler ». La mer ne se comble pas."},
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
-  /* Outils en cuivre (enclume de la Forge) : plus forts, ils donnent un de plus à chaque coup ; tete : couleur du fer */
-  hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", emoji:"🪓", famille:"hache", force:2, tete:0xC8743C, usage:"Coupe les arbres : un bois de plus à chaque coup."},
-  piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", emoji:"⛏️", famille:"pioche", force:2, tete:0xC8743C, usage:"Casse les rochers : une pierre de plus à chaque coup. Dans la mine, elle creuse la galerie de la salle de l'étain (la paroi marquée d'une croix) et en casse les roches."},
+  /* Outils en cuivre (enclume de la Forge) : plus solides (ils durent plus longtemps) ; chaque coup donne toujours une
+     seule ressource (demande de Yo) ; tete : couleur du fer */
+  hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", une:true, emoji:"🪓", famille:"hache", force:2, solidite:75, tete:0xC8743C, usage:"Coupe les arbres : un bois à chaque coup. Plus solide que la hache en pierre."},
+  piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", une:true, emoji:"⛏️", famille:"pioche", force:2, solidite:75, tete:0xC8743C, usage:"Casse les rochers : une pierre à chaque coup, et dure plus longtemps. Dans la mine, elle creuse la galerie de la salle de l'étain (la paroi marquée d'une croix) et en casse les roches."},
   /* Le bronze (étape 1.11, palier ajouté avec Yo entre le cuivre et le fer du Grand Carnet) */
-  hacheBronze: {nom:"Hache en bronze", pluriel:"haches en bronze", emoji:"🪓", famille:"hache", force:3, tete:0xB98A4A, usage:"Coupe les arbres : deux bois de plus à chaque coup."},
+  hacheBronze: {nom:"Hache en bronze", pluriel:"haches en bronze", une:true, emoji:"🪓", famille:"hache", force:3, solidite:150, tete:0xB98A4A, usage:"Coupe les arbres : un bois à chaque coup. La plus solide de l'île."},
   /* Le bocal (étape 1.11, morceau 3 ; Grand Carnet : la luciole se prend au bocal) : en verre, avec un couvercle de bois */
-  bocal:       {nom:"Bocal", pluriel:"bocaux", emoji:"🫙", famille:"bocal", force:1, usage:"Pour attraper la luciole et le frelon, qui ne se prennent pas au filet : approche-toi doucement, puis « 🫙 Attraper »."},
-  piocheBronze:{nom:"Pioche en bronze", pluriel:"pioches en bronze", emoji:"⛏️", famille:"pioche", force:3, tete:0xB98A4A, usage:"La plus solide de l'île : deux pierres de plus à chaque coup. Dans la mine, elle creuse la galerie de la géode, au fond de la salle de l'étain, et casse l'argent, le marbre et les grenats."},
-  pelleCuivre: {nom:"Pelle en cuivre", pluriel:"pelles en cuivre", emoji:"🪏", famille:"pelle", force:2, coups:1, tete:0xC8743C,
+  bocal:       {nom:"Bocal", pluriel:"bocaux", emoji:"🫙", famille:"bocal", force:1, solidite:8, usage:"Pour attraper la luciole et le frelon, qui ne se prennent pas au filet : approche-toi doucement, puis « 🫙 Attraper »."},
+  piocheBronze:{nom:"Pioche en bronze", pluriel:"pioches en bronze", une:true, emoji:"⛏️", famille:"pioche", force:3, solidite:150, tete:0xB98A4A, usage:"La plus solide de l'île : une pierre à chaque coup, et elle dure longtemps. Dans la mine, elle creuse la galerie de la géode, au fond de la salle de l'étain, et casse l'argent, le marbre et les grenats."},
+  pelleCuivre: {nom:"Pelle en cuivre", pluriel:"pelles en cuivre", une:true, emoji:"🪏", famille:"pelle", force:2, coups:1, solidite:50, tete:0xC8743C,
     usage:"Creuse plus vite que la pelle en bois : un seul coup par case. Face à l'eau douce : « Combler »."},
-  epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", emoji:"🗡️", famille:"arme", force:2, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
-  arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5,
+  epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", une:true, emoji:"🗡️", famille:"arme", force:2, solidite:50, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
+  arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5, solidite:25,
     usage:"Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."}
 };
 
@@ -156,11 +163,11 @@ export const GRAINES = {
    2e cueillette de suite (une graine, plus de repousse) ; buisson : vide après la cueillette, les baies
    reviennent « retour » secondes après l'arrosage (décidé par Yo). Les bonus des bâtiments s'ajoutent. */
 export const RECOLTE = {
-  tree:   {nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:2, graine:"graineArbre"},
+  tree:   {nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:1, graine:"graineArbre"},
   /* Les rochers de l'île ne reviennent jamais (décidé par Yo) : ensuite, la pierre se trouve à la mine */
-  rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:2, prendre:"rocher"},
-  rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:2, prendre:"rocherCuivre"},
-  rockOr: {nom:"la veine d'or", outil:"pioche", coups:4, res:"or", parCoup:2},           // la grotte (étape 1.8) : l'or va dans la bourse
+  rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:1, prendre:"rocher"},
+  rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:1, prendre:"rocherCuivre"},
+  rockOr: {nom:"la veine d'or", outil:"pioche", coups:4, res:"or", parCoup:1},           // la grotte (étape 1.8) : l'or va dans la bourse
   /* Les roches des trois salles de la mine (étape 1.11, morceau 2) : force, la pioche qu'il faut au moins (2 : cuivre,
      3 : bronze) ; auBout : une pierre précieuse ne se donne qu'au dernier coup, une seule */
   rockCharbon:{nom:"la veine de charbon", outil:"pioche", coups:3, res:"charbon", parCoup:1},
@@ -182,12 +189,12 @@ export const RECOLTE = {
      dans la forêt, ils repoussent sur place (repousse en secondes : 1 jour, 3 jours, 1 semaine) ; sur l'île, ils
      tombent et disparaissent. Le houx et le sureau n'ont pas de bois : on cueille leurs baies ou leurs fleurs (n),
      qui reviennent (retour, en secondes). Le Grand Chêne millénaire, lui, ne s'abat pas. */
-  charme: {nom:"le charme", outil:"hache", coups:3, res:"boisCharme", parCoup:2, graine:"graineCharme", chance:.75, repousse:86400},
-  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"boisFrene", parCoup:2, graine:"graineFrene", chance:.75, repousse:86400},
+  charme: {nom:"le charme", outil:"hache", coups:3, res:"boisCharme", parCoup:1, graine:"graineCharme", chance:.75, repousse:86400},
+  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"boisFrene", parCoup:1, graine:"graineFrene", chance:.75, repousse:86400},
   sureau: {nom:"le sureau", outil:"hache", coups:2, parCoup:0, graine:"graineSureau", chance:.75, repousse:86400, n:3, retour:43200},
   if:     {nom:"l'if", outil:"hache", coups:3, res:"boisIf", parCoup:1, graine:"graineIf", chance:.5, repousse:259200},
   houx:   {nom:"le houx", outil:"hache", coups:2, parCoup:0, graine:"graineHoux", chance:.5, repousse:259200, n:2, retour:43200},
-  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:3, graine:"graineChene", chance:.2, repousse:604800}
+  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:1, graine:"graineChene", chance:.2, repousse:604800}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi

@@ -70,6 +70,9 @@ button{font:inherit;color:inherit}
 .jauge{position:absolute;left:6px;right:6px;bottom:4px;height:5px;border-radius:3px;background:rgba(0,0,0,.28);overflow:hidden}
 .jauge i{display:block;height:100%;background:#4FA3E0}
 .jauge.feu i{background:#F0A040}
+.jauge.usure{bottom:auto;top:4px;height:4px}
+.jauge.usure i{background:#6BBE5A}
+.jauge.usure.bas i{background:#E4574C}
 .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 3px 8px rgba(0,0,0,.25);pointer-events:none}
 .actions{position:absolute;left:14px;bottom:24px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 /* Le combat (étape 1.8) : les cœurs en haut, à la place de l'objectif ; trois boutons ronds en bas à gauche, sous les autres */

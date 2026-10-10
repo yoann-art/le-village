@@ -1,7 +1,7 @@
 /* ================= Vérification automatique =================
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
-   couper un arbre, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
+   couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
@@ -48,7 +48,7 @@ import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
 import { renderHUD } from "../js/interface.js";
-import { hold, mettreEnCase } from "../js/barre.js";
+import { hold, mettreEnCase, jauge } from "../js/barre.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => document.querySelector(s);
@@ -226,20 +226,42 @@ export async function verifier(){
     await wait(300);
     return `niveau 2 : toit à ${toitDe(scierie).toFixed(2)} P (au lieu de ${avant.toFixed(2)})`;
   });
+  /* un arbre qu'on peut couper en se tenant juste en dessous */
+  const arbreLibre = () => {
+    for(let z = 1; z < N - 1; z++) for(let x = 1; x < N - 1; x++){
+      const i = idx(x, z), s = idx(x, z + 1);
+      if(map.obj[i] === "tree" && growth(i) >= 1 && !map.obj[s] && map.type[s] === "grass" && !state.sol[s] && !occ.has(s)) return [x, z];
+    }
+    return null;
+  };
   await etape("Couper un arbre", async () => {
     sacAdd("hachePierre", 1); hold("hachePierre");
-    let t = null;
-    for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
-      const i = idx(x, z), s = idx(x, z + 1);
-      if(map.obj[i] === "tree" && !map.obj[s] && map.type[s] === "grass" && !state.sol[s]){ t = [x, z]; break; }
-    }
+    const t = arbreLibre();
     if(!t) throw new Error("aucun arbre accessible");
     const bois = owned("bois");
     placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1);
     for(let k = 0; k < 3; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
     if(map.obj[idx(...t)]) throw new Error("l'arbre est toujours là");
-    if(owned("bois") <= bois) throw new Error("pas de bois gagné");
-    return `+${owned("bois") - bois} bois`;
+    const n = owned("bois") - bois;
+    if(n <= 0) throw new Error("pas de bois gagné");
+    if(n > 6) throw new Error(`${n} bois pour 3 coups : un coup ne donne plus qu'un bois (avec le bonus de la Scierie, 2 au plus)`);
+    return `+${n} bois en 3 coups`;
+  });
+  await etape("L'usure : un outil s'use à chaque coup, sa jauge baisse, puis il se casse et disparaît", async () => {
+    const k = "hachePierre";
+    if(!(state.usure[k] > 0)) throw new Error("la hache ne s'est pas usée en coupant l'arbre");
+    if(!jauge(k).includes("usure")) throw new Error("pas de jauge de solidité");
+    const n = owned(k);
+    state.usure[k] = OUTILS[k].solidite - 1;                 // le dernier coup
+    const t = arbreLibre();
+    if(!t) throw new Error("aucun arbre accessible");
+    hold(k);
+    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1);
+    frames(1, .016); $("#btn-act").click(); frames(25);
+    if(owned(k) !== n - 1) throw new Error("la hache usée ne s'est pas cassée");
+    if(state.usure[k]) throw new Error("l'usure n'est pas remise à zéro");
+    if(state.main === k && !owned(k)) throw new Error("la hache cassée est encore en main");
+    return `une hache en pierre se casse au bout de ${OUTILS[k].solidite} coups`;
   });
   await etape("Une case rapide : ce qu'on y met sort du sac", async () => {
     const k = "piochePierre";
