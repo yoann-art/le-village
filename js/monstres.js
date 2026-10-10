@@ -15,14 +15,19 @@
    Chaque palier a ses bandes (PALIER_MONSTRES), chacune dans sa salle ; elles changent à chaque visite, comme la
    grotte. Vaincu : ce qu'il laisse va dans le sac (MONSTRES.donne), il s'inscrit au carnet (state.carnet.monstres ;
    le sanglier de la forêt : son trophée de gibier, state.carnet.gibier). Le personnage, ses cœurs et ses coups :
-   combat.js. */
+   combat.js.
+   Étape 1.13, morceau 1 : le Gardien d'écorce (Grand Carnet : « esprit de l'arbre au fond de la grotte ; ses racines
+   s'illuminent sous le sol »), au fond du dernier palier, à chaque visite. Il dort jusqu'à ce qu'on approche, puis, tour
+   à tour : de loin, un cercle s'illumine sous le personnage (ses racines) et elles en jaillissent ; de près, il lève ses
+   branches et balaie. Après chaque attaque, il reprend son souffle : le moment de frapper. Vaincu, il laisse un cœur de
+   bois, et la première fois la carte du Marais (state.cartes). */
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
-import { MONSTRES, PALIER_MONSTRES, GIBIER, objet } from "./donnees.js";
+import { MONSTRES, PALIER_MONSTRES, GIBIER, CARTES, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
 import { player } from "./monde/personnage.js";
-import { tanieres, walk as walkGrotte, visiteEnCours, palierEnCours } from "./monde/grotte.js";
+import { tanieres, walk as walkGrotte, visiteEnCours, palierEnCours, antre } from "./monde/grotte.js";
 import { walk as walkForet } from "./monde/foret.js";
 import { toast, renderHUD } from "./interface.js";
 
@@ -120,7 +125,36 @@ function chauveMesh(){
   g.userData = {corps, tete, ailes, yeux, oeil: ROUGE, pattes: [], mats: [...Object.values(mats), AILES, yeux]};
   return g;
 }
-const MODELES = {loup: loupMesh, sanglier: sanglierMesh, chauveSouris: chauveMesh};
+/* Le Gardien d'écorce : un tronc massif à l'écorce sombre, deux yeux verts qui luisent, une couronne de branches
+   pointues et de mousse, deux bras-branches, des racines au pied (environ 2,5 P) */
+function gardienMesh(){
+  const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
+  const ECORCE = 0x6A4A32, FONCE = 0x3E2A1C, MOUSSE = 0x5E7A3A;
+  g.add(corps);
+  corps.add(part(G.cyl, m(ECORCE), .95, 1.5, .85, 0, .75, 0));                                // le tronc
+  corps.add(part(G.cyl, m(ECORCE), 1.15, .35, 1.05, 0, .17, 0));                              // son pied, plus large
+  for(const [x, z, r] of [[-.4, -.2, .1], [.38, -.25, -.1], [0, -.44, 0], [-.2, .38, .2], [.3, .35, -.2]]){   // l'écorce en lames
+    const l = part(G.box, m(FONCE), .1, 1.2, .08, x, .8, z); l.rotation.y = Math.atan2(x, z); l.rotation.z = r; corps.add(l);
+  }
+  tete.position.set(0, 1.15, -.42); corps.add(tete);
+  tete.add(part(G.box, m(FONCE), .5, .07, .04, 0, -.22, 0));                                  // la bouche, une fente sombre
+  const yeux = yeuxDe(tete, 0x9AF060, 0, 0, .17, 1.6);
+  for(const [x, y, z, s] of [[0, 1.75, 0, 1.1], [-.4, 1.6, .1, .8], [.42, 1.62, -.05, .85], [0, 1.95, .3, .7]])   // la couronne de mousse
+    corps.add(part(G.dode, m(MOUSSE), .7 * s, .55 * s, .7 * s, x, y, z));
+  for(const [x, z, rz, rx, h] of [[-.3, -.1, .6, 0, .9], [.32, 0, -.6, 0, .85], [0, .25, 0, -.6, .8], [-.1, -.3, .2, .5, .7], [.2, .2, -.3, -.3, .6]]){   // les branches pointues
+    const b = part(G.cone4, m(FONCE), .14, h, .14, x, 2.05 + h / 3, z); b.rotation.set(rx, 0, rz); corps.add(b);
+  }
+  const bras = [-1, 1].map(s => {                                                                // les bras-branches
+    const piv = new THREE.Group(); piv.position.set(s * .5, 1.3, 0);
+    const b = part(G.cone4, m(FONCE), .16, .9, .16, s * .1, -.4, 0); b.rotation.z = s * .25; piv.add(b);
+    for(const [dy, a] of [[-.55, .8], [-.75, -.5]]){ const d = part(G.cone4, m(FONCE), .07, .3, .07, s * .18, dy, 0); d.rotation.z = s * a; piv.add(d); }   // les doigts
+    corps.add(piv); return piv;
+  });
+  for(let k = 0; k < 5; k++){ const a = k / 5 * 6.28 + .3, r = part(G.cone4, m(FONCE), .16, .9, .16, Math.cos(a) * .6, .08, Math.sin(a) * .6); r.rotation.set(0, -a, Math.PI / 2); corps.add(r); }   // les racines au pied
+  g.userData = {corps, tete, bras, pattes: [], yeux, oeil: 0x9AF060, mats: [...Object.values(mats), yeux]};
+  return g;
+}
+const MODELES = {loup: loupMesh, sanglier: sanglierMesh, chauveSouris: chauveMesh, gardien: gardienMesh};
 /* Le modèle d'un monstre, aussi pour le sanglier de la chasse (chasse.js) */
 export const modeleMonstre = k => MODELES[k]();
 
@@ -179,9 +213,14 @@ function retirer(m){
   const g = m.grp; g.membres.splice(g.membres.indexOf(m), 1);
   if(g.attaquant === m) g.attaquant = null;
 }
-function vider(){ for(const m of [...monstres]) retirer(m); for(const n of nuages) groupe.remove(n.s); nuages.length = 0; }
+function vider(){
+  for(const m of [...monstres]) retirer(m); for(const n of nuages) groupe.remove(n.s); nuages.length = 0;
+  for(const e of effets){ groupe.remove(e.cercle); if(e.pics) groupe.remove(e.pics); } effets.length = 0;
+}
 /* Les bandes d'un palier, chacune dans sa salle, ses membres autour de la tanière */
 function peupler(palier){
+  const a = antre();                                   // le Gardien d'écorce, endormi au fond de son antre (étape 1.13)
+  if(a){ const g = ajouter("gardien", a.x, a.z); g.etat = "dort"; g.ang = Math.PI / 2; }
   const bandes = PALIER_MONSTRES[palier] || [], lieux = tanieres(bandes.length);
   bandes.forEach(([k, n], j) => {
     const t = lieux[j];
@@ -224,7 +263,8 @@ const presentes = new Set();
 const CONSEIL = {
   loup: "🐺 Des loups ! L'un grogne : roule sur le côté (🤸). Il souffle : frappe (⚔️)",
   sanglier: "🐗 Un sanglier ! Il gratte le sol : roule sur le côté (🤸). Étourdi : frappe (⚔️)",
-  chauveSouris: "🦇 Des chauves-souris ! Elles fuient la torche. L'une couine : roule (🤸)"
+  chauveSouris: "🦇 Des chauves-souris ! Elles fuient la torche. L'une couine : roule (🤸)",
+  gardien: "🌳 Le Gardien d'écorce s'éveille ! Un cercle s'illumine sous toi : écarte-toi (🤸). Il lève ses branches : recule. Puis frappe (⚔️)"
 };
 function alerter(m){
   for(const o of m.grp.membres) if(o.etat === "rode" || o.etat === "dort"){ o.etat = o.k === "chauveSouris" ? "vole" : "approche"; o.t = 0; }
@@ -356,7 +396,76 @@ function chauve(m, L, d, versP, dt, blesser){
   }
   return 1;
 }
-const COMPORTE = {loup, sanglier, chauveSouris: chauve};
+/* ----- Le Gardien d'écorce (étape 1.13) : ses racines, qu'on voit s'illuminer avant qu'elles jaillissent ----- */
+const effets = [];        // {cercle, pics, t, x, z}
+const LUEUR = new THREE.MeshBasicMaterial({color: 0x9AF060, transparent: true, opacity: .4, depthWrite: false});
+function illuminer(x, z, r){
+  const cercle = new THREE.Group();
+  const disque = new THREE.Mesh(new THREE.CircleGeometry(r, 24), LUEUR.clone()); disque.rotation.x = -Math.PI / 2; disque.position.y = .015; cercle.add(disque);
+  for(let k = 0; k < 5; k++){                                                                    // les racines qui luisent sous la terre
+    const l = new THREE.Mesh(new THREE.PlaneGeometry(.07, r * 1.7), disque.material); l.rotation.set(-Math.PI / 2, 0, k / 5 * Math.PI); l.position.y = .02; cercle.add(l);
+  }
+  cercle.position.set(x, 0, z); groupe.add(cercle);
+  const e = {cercle, disque, pics: null, t: 0, x, z, r}; effets.push(e);
+  return e;
+}
+function jaillir(e){
+  e.pics = new THREE.Group(); e.t = 0;
+  for(let k = 0; k < 7; k++){
+    const a = k / 7 * 6.28, d = k ? e.r * .6 : 0, p = part(G.cone4, 0x5A4030, .22, 1, .22, Math.cos(a) * d, .5, Math.sin(a) * d);
+    p.rotation.set((Math.random() - .5) * .5, 0, (Math.random() - .5) * .5); e.pics.add(p);
+  }
+  e.pics.position.set(e.x, -1, e.z); groupe.add(e.pics);
+}
+function effetsVivent(dt){
+  for(const e of [...effets]){
+    e.t += dt;
+    if(!e.pics){ e.disque.material.opacity = .3 + .3 * Math.abs(Math.sin(e.t * 9)); continue; }   // le cercle palpite : attention !
+    e.cercle.visible = false;
+    e.pics.position.y = e.t < .12 ? -1 + e.t / .12 : e.t < .5 ? 0 : -(e.t - .5) / .3;            // elles jaillissent, puis rentrent sous terre
+    if(e.t > .8){ groupe.remove(e.cercle, e.pics); e.disque.material.dispose(); effets.splice(effets.indexOf(e), 1); }
+  }
+}
+function gardien(m, L, d, versP, dt, blesser){
+  const p = player.position, u = m.mesh.userData;
+  const bras = a => u.bras.forEach((b, n) => { b.rotation.z += ((n ? -1 : 1) * a - b.rotation.z) * Math.min(1, dt * 10); });
+  if(m.etat === "dort"){                               // endormi, les yeux éteints
+    u.yeux.color.setHex(0x2E4A20);
+    if(d < L.flair){ m.etat = "approche"; m.t = 0; if(!presentes.has("gardien")){ presentes.add("gardien"); toast(CONSEIL.gardien, 5600); } }
+    return 0;
+  }
+  if(m.etat === "approche"){                           // il se tourne vers lui, avance lentement, puis choisit son attaque
+    m.ang = versP; bras(0);
+    if(d > L.flair * 2.5){ m.etat = "dort"; m.t = 0; return 0; }
+    if(d > L.balaie.portee - .2) avancer(m, versP, L.vitesse, dt, versP);
+    if(m.t > L.pause){
+      m.attaque = d < L.balaie.portee ? "balaie" : "racines"; m.etat = "signe"; m.t = 0; m.mord = false;
+      if(m.attaque === "racines") m.racine = illuminer(p.x, p.z, L.racines.r);   // le signe : le sol s'illumine sous lui
+    }
+    return 0;
+  }
+  if(m.etat === "signe"){
+    m.ang = versP;
+    if(m.attaque === "balaie"){ bras(-2.2); if(m.t > L.balaie.signe){ m.etat = "frappe"; m.t = 0; } }   // il lève ses branches
+    else if(m.t > L.racines.signe){ jaillir(m.racine); m.etat = "frappe"; m.t = 0; }
+    return 0;
+  }
+  if(m.etat === "frappe"){
+    if(m.attaque === "balaie"){                        // il balaie devant lui
+      bras(.9);
+      if(!m.mord && d < L.balaie.portee){ m.mord = true; blesser(L.degats, m); }
+      if(m.t > .35){ m.etat = "souffle"; m.t = 0; }
+    } else {                                          // les racines jaillissent : il ne fallait pas rester dans le cercle
+      const e = m.racine;
+      if(!m.mord && e && Math.hypot(p.x - e.x, p.z - e.z) < e.r){ m.mord = true; blesser(L.racines.degats, e); }
+      if(m.t > L.racines.t){ m.etat = "souffle"; m.t = 0; }
+    }
+    return 0;
+  }
+  if(m.etat === "souffle"){ bras(.3); if(m.t > L.souffle){ m.etat = "approche"; m.t = 0; } }   // il reprend son souffle : le moment de frapper
+  return 0;
+}
+const COMPORTE = {loup, sanglier, chauveSouris: chauve, gardien};
 
 /* ----- Ce que fait chaque monstre, à chaque image ; blesser(degats, monstre) : il touche le personnage ----- */
 function vivre(m, dt, actif, blesser){
@@ -404,7 +513,7 @@ function poser(m, vit, dt){
     m.mesh.position.set(m.x + tremble, 0, m.z);
     if(u.etoiles){ u.etoiles.visible = m.etat === "etourdi"; u.etoiles.rotation.y = m.t * 5; }
   }
-  u.yeux.color.setHex(signe || charge ? ROUGE : u.oeil);
+  if(m.etat !== "dort" || m.k !== "gardien") u.yeux.color.setHex(signe || charge ? ROUGE : u.oeil);
   for(const x of u.mats) if(x.emissive) x.emissive.setScalar(m.flash > 0 ? .9 : 0);
   m.mesh.rotation.y = -m.ang - Math.PI / 2;
   if(m.etat === "part") for(const x of u.mats){ x.transparent = true; x.opacity = Math.max(0, m.alpha); }
@@ -450,7 +559,11 @@ function vaincre(m){
   }
   const c = m.foret ? state.carnet.gibier : state.carnet.monstres, e = c[m.k] || (c[m.k] = {n: 0}), nouveau = !e.n;
   e.n++;
+  if(m.racine && effets.includes(m.racine)){ groupe.remove(m.racine.cercle); effets.splice(effets.indexOf(m.racine), 1); }
+  const carte = L.carte && !(state.cartes && state.cartes[L.carte]);         // la carte de la destination suivante : une seule fois
+  if(carte) (state.cartes || (state.cartes = {}))[L.carte] = Date.now();
   save(); renderHUD();
+  if(carte){ toast(`🗺️ ${leNom(m.k, true)} s'effondre… et laisse la ${CARTES[L.carte].nom.toLowerCase()} ! Elle est rangée dans ton carnet (🗺️ Cartes).${gains.length ? " " + gains.join(", ") + "." : ""}`, 6500); return; }
   toast(`${L.emoji} ${leNom(m.k, true)} est vaincu${L.une ? "e" : ""}${gains.length ? " : " + gains.join(", ") : ""}.` +
     `${perdu ? " Ton sac est plein : le reste est perdu." : ""}${nouveau ? (m.foret ? " 🏆 Nouveau trophée au carnet !" : " 👹 Nouveau monstre au carnet !") : ""}`, 3600);
 }
@@ -479,6 +592,7 @@ export function updateMonstres(dt, ou, actif, blesser){
   if(actif){ const bandes = new Set(monstres.map(m => m.grp)); for(const g of bandes) g.base += dt * .35; }   // la meute tourne lentement
   for(const m of [...monstres]) if(monstres.includes(m)) vivre(m, dt, actif, blesser);
   nuagesVolent(dt);
+  if(actif) effetsVivent(dt);
 }
 /* Ceux qui se battent encore (le combat de la forêt s'arrête quand il n'y en a plus) */
 export const monstresIci = () => monstres.filter(visable);
@@ -487,6 +601,8 @@ export function oublierMonstres(){ vider(); }
 
 /* ----- Pour la vérification automatique ----- */
 export const monstresVaincus = () => vaincus;
+export const racinesIci = () => effets.length;
+export const gardienIci = () => monstres.some(m => m.k === "gardien");
 /* Plus de monstres : ceux qui sont là s'en vont, aucun n'arrive aux paliers suivants */
 export function pauseMonstres(oui){ enPause = oui; if(oui) vider(); }
 /* Un monstre à un endroit précis, dans un état donné (sinon : il rôde, ou il dort) */

@@ -12,7 +12,8 @@
    la grotte (y entrer depuis la forêt, la torche allumée, descendre d'un palier, remonter par la corde),
    le combat (un loup qui mord, la roulade qui esquive, l'épée qui le vainc et ce qu'il laisse, une chauve-souris,
    le poisson grillé qui soigne, vaincu : la moitié du butin de la grotte perdue, jamais l'équipement, le réveil au
-   village, toute sa vie revenue), le sanglier de la forêt
+   village, toute sa vie revenue), le Gardien d'écorce (au fond du troisième palier ; ses racines s'illuminent, la roulade
+   les évite ; vaincu, la carte du Marais et un cœur de bois), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
    creuser et combler à la pelle, tracer un chemin en marchant et l'enlever à la pelle,
    les fleurs (cueillir une fleur de la saison, la déterrer à la pelle, replanter sa graine), le jour et la nuit (la
@@ -33,7 +34,8 @@ import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/me
 import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
-import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci } from "../js/monstres.js";
+import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci } from "../js/monstres.js";
+import { antre } from "../js/monde/grotte.js";
 import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
@@ -820,6 +822,48 @@ export async function verifier(){
     $("#sheetWrap [data-close]").click(); await wait(300);
     if(vieCombat() !== COMBAT.vie || !$("#coeurs").hidden) throw new Error("la vie ne revient pas au réveil");
     return `mordu (${COMBAT.vie - vie} cœur), esquivé, un loup vaincu en ${coups} coups, une chauve-souris, soigné ; vaincu : 2 pierres perdues sur 4, l'épée gardée, réveil au village`;
+  });
+  await etape("Le Gardien d'écorce : au fond du troisième palier, ses racines s'illuminent, la roulade les évite, vaincu il laisse la carte du Marais", async () => {
+    place(4);
+    const sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));   // rendus à la fin : les essais suivants ont besoin de place
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    sacAdd("epeeBronze", 1); hold(null);
+    const E = ENTREE_GROTTE;
+    placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
+    if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte");
+    try {
+      for(const n of [2, 3]){                                    // descendre jusqu'au fond
+        const bas = currentPlace().room.passages.find(p => p.vers === "bas");
+        if(!bas) throw new Error(`pas de trou pour descendre au palier ${n}`);
+        if(n === 3) pauseMonstres(false);                        // au dernier palier, ses habitants (dont le Gardien)
+        placePlayer(bas.x, bas.z + .3, 0, -1); checkDoors(true);
+        if(!await attendre(() => currentPlace().b.palier === n)) throw new Error(`on ne descend pas au palier ${n}`);
+      }
+      const a = antre();
+      if(!a) throw new Error("pas d'antre du Gardien au troisième palier");
+      if(!gardienIci()) throw new Error("le Gardien d'écorce n'est pas au fond de la grotte");
+      pauseMonstres(true);                                       // les autres s'en vont : le Gardien seul, réveillé tout près
+      placePlayer(a.x, a.z + 3.2, 0, -1);
+      const g = lacherMonstre("gardien", a.x, a.z, "approche");
+      if(!await attendre(() => racinesIci() > 0, 4000)) throw new Error("ses racines ne s'illuminent pas sous le personnage");
+      const vie = vieCombat();
+      combat.rouler();
+      await wait(1600);
+      if(vieCombat() < vie) throw new Error("la roulade n'évite pas ses racines");
+      g.vie = 3;                                                 // pour aller vite : un coup d'épée en bronze
+      const avant = monstresVaincus();
+      let coups = 0;
+      while(monstresVaincus() === avant && coups < 12){ combat.attaquer(); coups++; await wait(COMBAT.coup * 1000 + 100); }
+      if(monstresVaincus() === avant) throw new Error("le Gardien n'est pas vaincu à l'épée");
+      if(!state.cartes || !state.cartes.marais) throw new Error("vaincu, il ne laisse pas la carte du Marais");
+      if(!owned("coeurDeBois") || !state.carnet.monstres.gardien) throw new Error("pas de cœur de bois, ou le Gardien n'est pas au carnet");
+      return `le Gardien endormi au fond du palier 3 ; ses racines évitées d'une roulade ; vaincu en ${coups} coup${coups > 1 ? "s" : ""} : la carte du Marais et un cœur de bois`;
+    } finally {
+      const haut = currentPlace() && currentPlace().room.passages && currentPlace().room.passages.find(p => p.vers === "haut");
+      if(haut){ placePlayer(haut.x, haut.z + .3, 0, -1); checkDoors(true); await attendre(() => currentPlace().b.type === "foret"); }
+      if(currentPlace() && currentPlace().b.type === "foret") await sortir();
+      state.sac = sac0; state.barre = barre0; hold(null);
+    }
   });
   await etape("Le sanglier de la forêt : touché à l'arc, il charge ; vaincu à l'épée", async () => {
     place(6);                                          // l'arc, les flèches, l'épée, et ce que laisse le sanglier

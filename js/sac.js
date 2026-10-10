@@ -13,7 +13,7 @@
    on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
    est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, CARTES, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { coffresCount, pierresTrouvees } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
@@ -130,9 +130,21 @@ function carnetHTML(){
       <button class="sh-tab" role="tab" data-carnet-page="gibier" aria-selected="${page === "gibier"}">🦌 Gibier</button>
       <button class="sh-tab" role="tab" data-carnet-page="monstres" aria-selected="${page === "monstres"}">👹 Monstres</button>
       <button class="sh-tab" role="tab" data-carnet-page="pierres" aria-selected="${page === "pierres"}">💎 Pierres</button>
+      <button class="sh-tab" role="tab" data-carnet-page="cartes" aria-selected="${page === "cartes"}">🗺️ Cartes</button>
     </div>`;
   return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : page === "gibier" ? gibierHTML()
-    : page === "monstres" ? monstresHTML() : page === "pierres" ? pierresHTML() : poissonsHTML());
+    : page === "monstres" ? monstresHTML() : page === "pierres" ? pierresHTML() : page === "cartes" ? cartesHTML() : poissonsHTML());
+}
+/* Les cartes des destinations (étape 1.13 ; bible : une destination s'ouvre avec sa carte, trouvée au fond de la grotte
+   précédente, et son transport) : trouvées (state.cartes), la prochaine à chercher, puis les autres, encore cachées */
+function cartesHTML(){
+  const c = state.cartes || {}, ks = Object.keys(CARTES), n = ks.filter(k => c[k]).length;
+  const prochaine = ks.find(k => !c[k]);
+  return `<p class="muted" style="margin:0 0 8px">🗺️ Cartes : ${n} sur ${ks.length}. Chaque carte ouvre une destination sauvage ; il faut aussi son transport.</p>` +
+    ks.map(k => { const C = CARTES[k];
+      return c[k] ? `<div class="pick"><span class="pe" aria-hidden="true">🗺️</span><div class="pt"><b>${C.nom}</b><p>Trouvée. Pour y aller : ${C.transport}.</p></div></div>`
+        : k === prochaine ? `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>La prochaine carte à trouver</b><p>Elle est ${C.ou}.</p></div></div>`
+        : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>???</b><p>Une carte encore cachée.</p></div></div>`; }).join("");
 }
 /* Les pierres (étape 1.11, morceau 4 ; Grand Carnet, « Les pierres et minerais ») : chaque pierre trouvée à la mine,
    rangée par salle, les cristaux des géodes, et le légendaire : le Cœur de la mine */
@@ -168,9 +180,10 @@ function monstresHTML(){
   const detail = !L ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche un monstre pour voir sa fiche.</p>`
     : vu(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${L.emoji}</span><div class="pt"><b>${L.nom}</b><p>${L.comportement}. Taille : ${L.taille}.</p>` +
       `<p>⚠️ Son signe avant l'attaque : ${L.annonce.toLowerCase()}.</p><p>${L.une ? "Elle" : "Il"} laisse : ${laisse}. Vaincu${e} ${c[fiche].n} fois.</p></div></div>`
-    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore vaincu${e}</b><p>On ${L.une ? "la" : "le"} rencontre dans la grotte de la Forêt profonde, sous les racines du vieux chêne. Observe bien son signe avant l'attaque !</p></div></div>`;
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore vaincu${e}</b><p>On ${L.une ? "la" : "le"} rencontre dans la grotte de la Forêt profonde, sous les racines du vieux chêne${L.gardien ? ", tout au fond du troisième palier" : ""}. Observe bien son signe avant l'attaque !</p></div></div>`;
   return `<p class="muted" style="margin:0 0 8px">👹 Monstres : ${ks.filter(vu).length} sur ${ks.length}. Chaque attaque s'annonce par un signe : on gagne en observant.</p>` + detail +
-    `<h3 style="margin:8px 0 4px">🌲 La grotte de la Forêt profonde</h3><div class="res-grid">${ks.map(tuile).join("")}</div>`;
+    `<h3 style="margin:8px 0 4px">🌲 La grotte de la Forêt profonde</h3><div class="res-grid">${ks.filter(k => !MONSTRES[k].gardien).map(tuile).join("")}</div>` +
+    `<h3 style="margin:8px 0 4px">👑 Son gardien</h3><div class="res-grid">${ks.filter(k => MONSTRES[k].gardien).map(tuile).join("")}</div>`;
 }
 /* Le gibier (étape 1.7, morceau 5) : chaque espèce chassée met son trophée au carnet (carnet) ; le Cerf blanc,
    qui ne se chasse pas, s'y inscrit quand il a offert son bois d'argent */

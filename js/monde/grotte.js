@@ -10,7 +10,9 @@
    fond de la grotte, où viendra le Gardien d'écorce). Au premier palier, le tunnel d'entrée ramène à la forêt ;
    aux suivants, une corde remonte à la surface depuis la salle d'arrivée.
    Le butin : des rochers (pierre), des veines de cuivre, de rares veines d'or, et des coffres au trésor ; plus on
-   descend, plus il y en a. La grotte change à chaque visite : rien n'est gardé dans la sauvegarde. */
+   descend, plus il y en a. La grotte change à chaque visite : rien n'est gardé dans la sauvegarde.
+   Étape 1.13, morceau 1 : au dernier palier, le fond est l'antre du Gardien d'écorce, une salle dessinée à la main tout
+   en haut (10 × 8), au sol moussu, aux grosses racines le long des parois ; ni butin ni autre monstre dedans (antre). */
 import { G, part } from "./formes.js";
 import { rockMesh } from "./rochers.js";
 
@@ -39,8 +41,11 @@ function genere(palier){
   const A = {x0: W / 2 - 4, z0: D - 9, x1: W / 2 + 3, z1: D - 4};
   creuse(A.x0, A.z0, A.x1, A.z1);
   if(palier === 1) for(let z = A.z1; z < D; z++){ sol[z * W + W / 2 - 1] = 1; sol[z * W + W / 2] = 1; }   // le tunnel d'entrée, jusqu'au bord
+  /* au dernier palier, l'antre du Gardien d'écorce, dessinée à la main, tout en haut */
+  const antre = palier === PALIERS ? {x0: W / 2 - 5, z0: 1, x1: W / 2 + 4, z1: 8} : null;
+  if(antre) creuse(antre.x0, antre.z0, antre.x1, antre.z1);
   /* les autres salles, au hasard, sans se toucher */
-  const salles = [A];
+  const salles = antre ? [A, antre] : [A];
   for(let essai = 0; essai < 80 && salles.length < 6; essai++){
     const w = 5 + Math.floor(rnd() * 4), d = 4 + Math.floor(rnd() * 4);
     const x0 = 1 + Math.floor(rnd() * (W - w - 2)), z0 = 1 + Math.floor(rnd() * (D - d - 12));
@@ -60,7 +65,7 @@ function genere(palier){
     reliees.push(s);
   }
   /* le fond : la salle la plus loin de l'arrivée ; le trou pour descendre (sauf au dernier palier) */
-  const fond = salles.slice(1).reduce((m, s) => dist(s, A) > dist(m, A) ? s : m, salles[1] || A);
+  const fond = antre || salles.slice(1).reduce((m, s) => dist(s, A) > dist(m, A) ? s : m, salles[1] || A);
   const [fx, fz] = centre(fond), passages = [];
   if(palier < PALIERS) passages.push({x: cx(fx) + .5, z: cz(fz) + .5, vers: "bas"});
   /* l'arrivée : par le tunnel au premier palier ; aux suivants, au pied de l'échelle, avec la corde qui remonte */
@@ -68,7 +73,7 @@ function genere(palier){
   if(palier > 1) passages.push({x: cx(A.x0 + 1), z: cz(A.z0 + 1), vers: "haut"});
   /* le butin : dans les salles, loin des bords (on peut toujours en faire le tour), jamais dans la salle d'arrivée */
   const places = [];
-  for(const s of salles.slice(1)) for(let z = s.z0 + 1; z < s.z1; z++) for(let x = s.x0 + 1; x < s.x1; x++){
+  for(const s of salles.slice(1)) if(s !== antre) for(let z = s.z0 + 1; z < s.z1; z++) for(let x = s.x0 + 1; x < s.x1; x++){
     const i = z * W + x;
     if(passages.some(p => Math.hypot(gcx(i) - p.x, gcz(i) - p.z) < 1.6)) continue;
     places.push(i);
@@ -84,7 +89,7 @@ function genere(palier){
     if(!sol[i] || objets.has(i) || ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, c]) => !sol[(z + c) * W + x + a])) continue;
     lueurs.push(i);
   }
-  return {palier, sol, objets, passages, depart, porte: palier === 1, lueurs, salles, visite: ++visites, rnd: [...Array(W * D)].map(() => rnd())};
+  return {palier, sol, objets, passages, depart, porte: palier === 1, lueurs, salles, antre, visite: ++visites, rnd: [...Array(W * D)].map(() => rnd())};
 }
 
 /* ----- Ce qu'il y a sur une case ; le miner, l'ouvrir ----- */
@@ -137,7 +142,9 @@ export function makeGrotte(palier){
   const cases = [];
   for(let i = 0; i < W * D; i++) if(sol[i]) cases.push(i);
   const fond = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), new THREE.MeshLambertMaterial({color: 0xffffff}), cases.length), col = new THREE.Color();
-  cases.forEach((i, k) => { m4.makeTranslation(gcx(i), -.1, gcz(i)); fond.setMatrixAt(k, m4); fond.setColorAt(k, col.setHex((i + Math.floor(i / W)) % 2 ? 0x4A3A2E : 0x52412F)); });
+  const dansAntre = (x, z) => plan.antre && x >= plan.antre.x0 && x <= plan.antre.x1 && z >= plan.antre.z0 && z <= plan.antre.z1;
+  cases.forEach((i, k) => { m4.makeTranslation(gcx(i), -.1, gcz(i)); fond.setMatrixAt(k, m4);
+    fond.setColorAt(k, col.setHex(dansAntre(i % W, Math.floor(i / W)) ? ((i + Math.floor(i / W)) % 2 ? 0x3E4630 : 0x454E34) : (i + Math.floor(i / W)) % 2 ? 0x4A3A2E : 0x52412F)); });   // l'antre : un sol moussu
   fond.instanceColor.needsUpdate = true; fond.receiveShadow = true; group.add(fond);
   /* les parois : des blocs de roche arrondis tout autour ; ceux de devant restent bas pour voir dedans */
   const murs = [];
@@ -162,6 +169,17 @@ export function makeGrotte(palier){
     if(r > .12 || estSol(x, z - 1)) return;
     const rac = part(G.cyl, 0x5A4030, .08, 1.4, .08, cx(x) + (r - .06) * 4, 1.4, cz(z) + .5); rac.rotation.z = (r - .06) * 4; group.add(rac);
   });
+  /* l'antre du Gardien : de grosses racines qui descendent des parois et rampent sur le sol */
+  if(plan.antre){
+    const a = plan.antre, RACINE = 0x5A4030;
+    for(let x = a.x0; x <= a.x1; x += 2){
+      const r = plan.rnd[x], h = 1.6 + r * .8, rac = part(G.cyl, RACINE, .2, h, .2, cx(x) + .3, h / 2, cz(a.z0) - .2); rac.rotation.z = (r - .5) * .5; group.add(rac);
+      const sol = part(G.cyl, RACINE, .16, 1.4, .16, cx(x) + .3, .08, cz(a.z0) + .5); sol.rotation.x = Math.PI / 2 - .12; group.add(sol);
+    }
+    for(const x of [a.x0, a.x1]) for(let z = a.z0 + 1; z < a.z1; z += 3){
+      const rac = part(G.cyl, RACINE, .16, 1.2, .16, cx(x) + (x === a.x0 ? .5 : -.5), .08, cz(z)); rac.rotation.z = Math.PI / 2; rac.rotation.y = (plan.rnd[z] - .5) * .6; group.add(rac);
+    }
+  }
   /* les champignons lumineux */
   const luit = new THREE.MeshLambertMaterial({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
   for(const i of plan.lueurs){
@@ -197,10 +215,10 @@ export function makeGrotte(palier){
   return {group, w: W, d: D, doorX: plan.porte ? 0 : null, walk, passages: plan.passages, depart: plan.depart,
     fond: 0x050407, light: 0x8090A8, power: .06, sky: 0x2A2E3A, ground: 0x0E0B08, hemi: .14};   // pas de brume : la pénombre vient de la lumière
 }
-/* Les tanières des monstres (étape 1.8) : le milieu de n salles tirées au hasard, jamais la salle d'arrivée ;
-   une salle chacun ; {x, z} dans le monde */
+/* Les tanières des monstres (étape 1.8) : le milieu de n salles tirées au hasard, jamais la salle d'arrivée ni l'antre
+   du Gardien ; une salle chacun ; {x, z} dans le monde */
 export function tanieres(n){
-  const out = [], salles = plan.salles.slice(1).sort(() => Math.random() - .5);
+  const out = [], salles = plan.salles.slice(1).filter(s => s !== plan.antre).sort(() => Math.random() - .5);
   for(const s of salles){
     if(out.length >= n) break;
     for(let essai = 0; essai < 12; essai++){
@@ -210,6 +228,8 @@ export function tanieres(n){
   }
   return out;
 }
+/* Où se tient le Gardien d'écorce : au fond de son antre (au dernier palier), sinon null */
+export const antre = () => plan && plan.antre ? {x: cx((plan.antre.x0 + plan.antre.x1) / 2), z: cz(plan.antre.z0 + 2)} : null;
 /* Où l'on marche : le sol, sans les rochers ni les coffres */
 export function walk(x, z){
   const i = gtile(x, z);

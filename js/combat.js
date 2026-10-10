@@ -20,7 +20,7 @@
      où l'on se réveille, ce qui est perdu et ce qu'on garde.
    Sur ordinateur : Espace pour attaquer, E pour rouler, F pour manger. Les monstres : monstres.js. */
 import { $ } from "./outils.js";
-import { COMBAT, OUTILS, objet, icone } from "./donnees.js";
+import { COMBAT, OUTILS, MONSTRES, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { porte, sacCount, sacTake } from "./regles.js";
 import { player, placePlayer, regard, elan, enRoulade, clignoter, pencheMain } from "./monde/personnage.js";
@@ -63,9 +63,10 @@ function attaquer(){
   if(!c) return;                                        // personne : un coup dans le vide
   const p = player.position, ux = (c.m.x - p.x) / (c.d || 1), uz = (c.m.z - p.z) / (c.d || 1);
   placePlayer(p.x, p.z, ux, uz);                        // la visée automatique : face au monstre
-  const pas = Math.min(COMBAT.pas, Math.max(0, c.d - .9));
+  const taille = MONSTRES[c.m.k].rayon || 0;           // un grand monstre (le Gardien d'écorce) se touche de plus loin
+  const pas = Math.min(COMBAT.pas, Math.max(0, c.d - .9 - taille));
   if(pas > .05) elan(ux * pas / .12, uz * pas / .12, .12, false);
-  if(c.d - pas <= COMBAT.portee){ frapper(c.m, OUTILS[k].force, ux, uz); vibre(25); user(k); }   // un coup qui touche use l'épée (usure.js)
+  if(c.d - pas - taille <= COMBAT.portee){ frapper(c.m, OUTILS[k].force, ux, uz); vibre(25); user(k); }   // un coup qui touche use l'épée (usure.js)
 }
 
 /* ----- 🤸 Roulade ----- */

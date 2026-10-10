@@ -623,6 +623,11 @@ export const PRODUITS = {
     usage:"Le cuir du sanglier, solide : pour les armures (plus tard)."},
   aileMembraneuse:{nom:"Aile membraneuse", pluriel:"ailes membraneuses", emoji:"🦇", prix:2, aide:"Les ailes membraneuses viennent des chauves-souris, dans le noir de la grotte de la Forêt profonde.",
     usage:"L'aile d'une chauve-souris, pour les potions (plus tard)."},
+  /* Le Gardien d'écorce (étape 1.13, morceau 1 ; Grand Carnet : « Carte du Marais, cœur de bois ») */
+  coeurDeBois:{nom:"Cœur de bois", pluriel:"cœurs de bois", emoji:"🪵", prix:12,
+    icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C6 17 3 13.5 3 9.5 3 6.5 5.4 4.5 8 4.5c1.7 0 3.1.9 4 2.2.9-1.3 2.3-2.2 4-2.2 2.6 0 5 2 5 5 0 4-3 7.5-9 11.5z" fill="#7A5232" stroke="#1C2230" stroke-opacity=".35"/><path d="M8 8.5c1.5 1 2 3 1.5 5M15.5 8c-1 1.4-1 3.4 0 5.2M12 9v8" stroke="#4A3020" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="1.6" fill="#9AF060"/></svg>',
+    aide:"Le Gardien d'écorce le laisse, au fond de la grotte de la Forêt profonde (le troisième palier).",
+    usage:"Le cœur du Gardien d'écorce : il servira à graver la rune des racines, à la Pierre de gravure de la Tour des runes (Grand Carnet). En attendant, il se vend au comptoir."},
   boisArgent:{nom:"Bois d'argent", pluriel:"bois d'argent", emoji:"✨", aide:"Le bois d'argent est le présent du Cerf blanc, une seule fois dans tout le jeu.",
     usage:"Le présent du Cerf blanc, qu'on a suivi jusqu'au bout une nuit de pleine lune. Un seul dans tout le jeu."},
   thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
@@ -766,7 +771,26 @@ export const MONSTRES = {
   sanglier:{nom:"Sanglier", pluriel:"sangliers", emoji:"🐗", taille:"Moyen (environ 1 P)", vie:5, degats:2, vitesse:2, flair:5, distance:3.6, signe:1, charge:{v:8, t:1.1}, etourdi:1.8, souffle:.8,
     comportement:"Charge en ligne droite, à esquiver sur le côté", annonce:"Gratte le sol", donne:{defense:1, cuirEpais:1}},
   chauveSouris:{nom:"Chauve-souris", pluriel:"chauves-souris", une:true, emoji:"🦇", taille:"Petit (environ ½ P)", vie:1, degats:1, vitesse:3.2, flair:4.5, tourne:2.3, loin:4.6, signe:.55, pique:{v:6.5, t:.4}, souffle:.8,
-    comportement:"Attaquent en essaim dans le noir, fuient la torche", annonce:"Couinement aigu", donne:{aileMembraneuse:1}}
+    comportement:"Attaquent en essaim dans le noir, fuient la torche", annonce:"Couinement aigu", donne:{aileMembraneuse:1}},
+  /* Le gardien de la grotte (étape 1.13, morceau 1 ; Grand Carnet : « Esprit de l'arbre au fond de la grotte ; ses
+     racines s'illuminent sous le sol ; carte du Marais, cœur de bois »). Au fond du dernier palier, à chaque visite ; la
+     carte ne se donne qu'une fois (CARTES). racines : il les fait jaillir sous le personnage (le signe : un cercle qui
+     s'illumine au sol, signe secondes ; r : son rayon ; t : le temps qu'elles restent) ; balaie : de près, ses branches
+     (le signe : il les lève) ; rayon : sa taille au sol (combat.js frappe de plus loin). Chiffres choisis par Claude */
+  gardien:{nom:"Gardien d'écorce", pluriel:"Gardiens d'écorce", emoji:"🌳", taille:"Gardien (environ 2,5 P)", gardien:true, vie:14, degats:1, vitesse:.7, flair:6, pause:1,
+    racines:{degats:2, signe:1.1, r:.95, t:.6}, balaie:{signe:.8, portee:1.9}, souffle:1.3, rayon:.75, carte:"marais",
+    comportement:"L'esprit de l'arbre, au fond de la grotte : il fait jaillir ses racines sous tes pieds et balaie de ses branches", annonce:"Ses racines s'illuminent sous le sol (ou il lève ses branches)", donne:{coeurDeBois:1}}
+};
+/* Les cartes des destinations (étape 1.13 ; bible : « deux conditions pour ouvrir une destination : trouver sa carte au fond
+   de la grotte précédente, puis construire ou apprivoiser son transport sur l'île »). Gardées dans la partie
+   (state.cartes = {carte: heure}), jamais perdues ; la page « 🗺️ Cartes » du carnet. Dans l'ordre d'ouverture (bible) */
+export const CARTES = {
+  marais:   {nom:"Carte du Marais brumeux", ou:"au fond de la grotte de la Forêt profonde : le Gardien d'écorce la garde", transport:"la barque, construite au ponton"},
+  recif:    {nom:"Carte du Récif et des îles du Sud", ou:"au fond de la grotte du Marais brumeux : l'Hydre des brumes la garde", transport:"le navire à voile, un grand chantier du trône"},
+  montagnes:{nom:"Carte des Montagnes enneigées", ou:"au fond des galeries inondées du Récif : le Crabe-forteresse la garde", transport:"le wagonnet de mine"},
+  desert:   {nom:"Carte du Désert et des ruines anciennes", ou:"au fond de la grotte glacée des Montagnes : le Wyrm de givre la garde", transport:"la montgolfière"},
+  celestes: {nom:"Carte des Îles célestes", ou:"au fond des tombeaux du Désert", transport:"le griffon"},
+  volcan:   {nom:"Carte du Volcan", ou:"au fond de la grotte des Îles célestes", transport:"le dragon apprivoisé"}
 };
 /* Qui vit à chaque palier de la grotte : des bandes [sorte, combien], chacune dans sa salle (Grand Carnet : « plus on
    descend les paliers, et plus on s'éloigne de la lumière, plus ils sont nombreux et forts ») */
