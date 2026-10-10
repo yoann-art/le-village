@@ -20,24 +20,24 @@ const BUILD = {
     const head = part(G.cyl, o.tete || C.stone, .07, .38, .07, 0, .36, 0);                      // tête à deux pointes arrondies
     head.rotation.x = Math.PI/2; g.add(head);
   },
-  canne(g){
+  canne(g, o){
     const rod = part(G.cyl, C.wood, .035, .9, .035, 0, .38, 0);                       // gaule
     g.add(rod);
-    g.add(part(G.cyl, C.dark, .09, .05, .09, 0, .02, .04));                            // moulinet
+    g.add(part(G.cyl, o.tete || C.dark, .09, .05, .09, 0, .02, .04));                 // moulinet (bois, cuivre, bronze)
     g.add(part(G.cyl, C.cream, .008, .3, .008, 0, .7, .03));                           // fil
     const bout = new THREE.Object3D(); bout.name = "bout"; bout.position.set(0, .84, 0); g.add(bout);   // le bout de la gaule : le fil de la pêche en part
   },
-  filet(g){
+  filet(g, o){
     g.add(part(G.cyl, C.wood, .04, .7, .04, 0, .28, 0));                              // manche
-    const cercle = new THREE.Mesh(new THREE.TorusGeometry(.13, .015, 6, 16), new THREE.MeshLambertMaterial({color: C.dark}));
+    const cercle = new THREE.Mesh(new THREE.TorusGeometry(.13 + (o.plusLoin || 0) * .04, .015, 6, 16), new THREE.MeshLambertMaterial({color: o.tete || C.dark}));
     cercle.position.set(0, .7, 0); cercle.rotation.y = Math.PI/2; g.add(cercle);       // le cercle
     const poche = part(G.cone, 0xF4EFE6, .26, .22, .26, 0, .7, .1);                   // la poche du filet
     poche.rotation.x = -Math.PI/2; poche.material = new THREE.MeshLambertMaterial({color: 0xF4EFE6, transparent: true, opacity: .7}); g.add(poche);
   },
-  arrosoir(g){
-    g.add(part(G.cyl, C.wood, .28, .26, .28, 0, .02, .1));                            // le seau, tenu par son anse
+  arrosoir(g, o){
+    g.add(part(G.cyl, o.tete || C.wood, .28, .26, .28, 0, .02, .1));                 // le seau (bois, cuivre, bronze), tenu par son anse
     g.add(part(G.cyl, C.dark, .3, .03, .3, 0, .15, .1));                              // cerclage
-    const bec = part(G.cyl, C.wood, .05, .3, .05, 0, .1, .32);                       // bec verseur
+    const bec = part(G.cyl, o.tete || C.wood, .05, .3, .05, 0, .1, .32);            // bec verseur
     bec.rotation.x = 1.1; g.add(bec);
     const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
     anse.rotation.x = Math.PI/2; g.add(anse);
@@ -47,10 +47,11 @@ const BUILD = {
     g.add(part(G.box, C.dark, .14, .04, .04, 0, -.1, 0));                              // la poignée
     g.add(part(G.head, o.tete || C.wood, .62, .9, .18, 0, .6, .02));                   // la lame (bois, cuivre…)
   },
-  bocal(g){                                                                          // un bocal de verre, son couvercle de bois
+  bocal(g, o){                                                                       // un bocal de verre, son couvercle de bois
     const v = part(G.cyl, 0xB8DCEE, .26, .3, .26, 0, .05, .08);
     v.material = new THREE.MeshLambertMaterial({color: 0xB8DCEE, emissive: 0x4A7A9A, emissiveIntensity: .25, transparent: true, opacity: .8}); g.add(v);
     g.add(part(G.cyl, C.dark, .2, .05, .2, 0, .22, .08));
+    if(o.tete) for(const y of [-.06, .14]) g.add(part(G.cyl, o.tete, .28, .03, .28, 0, y, .08));   // cerclé de cuivre ou de bronze
   },
   torche(g){                                                                         // la torche éteinte : un bâton, une tête de résine
     g.add(part(G.cyl, C.wood, .05, .5, .05, 0, .16, 0));

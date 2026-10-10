@@ -96,7 +96,7 @@ export const POSABLES = {
 export const OUTILS = {
   hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", une:true, emoji:"🪓", famille:"hache", force:1, solidite:30, usage:"Coupe les arbres de l'île, l'if, le houx et le sureau : un bois à chaque coup. Le frêne et le charme demandent une hache en cuivre."},
   piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", une:true, emoji:"⛏️", famille:"pioche", force:1, solidite:30, usage:"Casse les rochers : une pierre à chaque coup."},
-  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", une:true, emoji:"🎣", famille:"canne", force:1, solidite:15, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
+  canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", une:true, emoji:"🎣", famille:"canne", force:1, solidite:15, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge. Un poisson légendaire casse son fil : il faut une canne en cuivre."},
   /* Le filet (étape 1.7, Grand Carnet : « Établi, avec du lin » ; des fibres en attendant le lin) */
   filet:       {nom:"Filet", pluriel:"filets", emoji:"🥅", famille:"filet", force:1, solidite:15, usage:"Pour attraper les insectes et les oiseaux : approche à pas de loup, en poussant le joystick doucement, puis « Attraper » ou « Lancer le filet »."},
   epeeBois:    {nom:"Épée en bois", pluriel:"épées en bois", une:true, emoji:"🗡️", famille:"arme", force:1, solidite:20, usage:"Pour te défendre dans la grotte : le bouton ⚔️ Attaquer la prend en main tout seul."},
@@ -126,7 +126,29 @@ export const OUTILS = {
     usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe trois fois plus fort que l'épée en bois, et dure longtemps."},
   epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", une:true, emoji:"🗡️", famille:"arme", force:2, solidite:50, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
   arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5, solidite:25,
-    usage:"Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."}
+    usage:"5 arrosages quand il est plein. Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."},
+  /* Chaque outil dans chaque matière (morceau 3 de l'usure, validé par Yo) : à l'enclume de la Forge ; chaque matière
+     dure plus longtemps, et apporte un petit avantage. eau : arrosages quand il est plein ; autour : arrose aussi les
+     buissons vides tout près (3 au plus d'un coup) ; plusLoin : le filet attrape de plus loin (en P) ; pour la canne, la
+     force 2 retient les poissons légendaires, la force 3 fait mordre deux fois plus vite (peche.js) */
+  pelleBronze: {nom:"Pelle en bronze", pluriel:"pelles en bronze", une:true, emoji:"🪏", famille:"pelle", force:3, coups:1, solidite:100, tete:0xB98A4A,
+    usage:"La plus solide des pelles : un seul coup par case, et elle dure longtemps. Face à l'eau douce : « Combler »."},
+  arrosoirCuivre:{nom:"Arrosoir en cuivre", pluriel:"arrosoirs en cuivre", emoji:"🪣", famille:"arrosoir", force:2, eau:10, solidite:60, tete:0xC8743C,
+    usage:"10 arrosages quand il est plein. Remplis-le au bord de l'eau, puis arrose les buissons de baies vides."},
+  arrosoirBronze:{nom:"Arrosoir en bronze", pluriel:"arrosoirs en bronze", emoji:"🪣", famille:"arrosoir", force:3, eau:15, solidite:125, autour:true, tete:0xB98A4A,
+    usage:"15 arrosages quand il est plein, et il arrose d'un coup les buissons vides tout près (3 au plus)."},
+  canneCuivre: {nom:"Canne en cuivre", pluriel:"cannes en cuivre", une:true, emoji:"🎣", famille:"canne", force:2, solidite:40, tete:0xC8743C,
+    usage:"Son moulinet de cuivre retient les poissons légendaires, qui cassent le fil de la canne en bois."},
+  canneBronze: {nom:"Canne en bronze", pluriel:"cannes en bronze", une:true, emoji:"🎣", famille:"canne", force:3, solidite:80, tete:0xB98A4A,
+    usage:"Elle retient les poissons légendaires, et le poisson mord deux fois plus vite."},
+  filetCuivre: {nom:"Filet en cuivre", pluriel:"filets en cuivre", emoji:"🥅", famille:"filet", force:2, solidite:40, plusLoin:.5, tete:0xC8743C,
+    usage:"Son cercle de cuivre attrape les insectes et les oiseaux d'un demi-pas plus loin."},
+  filetBronze: {nom:"Filet en bronze", pluriel:"filets en bronze", emoji:"🥅", famille:"filet", force:3, solidite:80, plusLoin:1, tete:0xB98A4A,
+    usage:"Son cercle de bronze attrape les insectes et les oiseaux d'un pas plus loin."},
+  bocalCuivre: {nom:"Bocal cerclé de cuivre", pluriel:"bocaux cerclés de cuivre", emoji:"🫙", famille:"bocal", force:2, solidite:20, tete:0xC8743C,
+    usage:"Un bocal plus solide : il tient 20 prises (la luciole, le frelon)."},
+  bocalBronze: {nom:"Bocal cerclé de bronze", pluriel:"bocaux cerclés de bronze", emoji:"🫙", famille:"bocal", force:3, solidite:40, tete:0xB98A4A,
+    usage:"Le plus solide des bocaux : il tient 40 prises (la luciole, le frelon)."}
 };
 
 /* Graines (étape 1.5) : un arbre abattu, des herbes arrachées, un buisson coupé en donnent une ;
@@ -663,7 +685,7 @@ export const ATELIERS = {
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
   forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
-    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire le bocal et le chandelier d'argent", recettes:[
+    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux et le chandelier d'argent", recettes:[
     {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze et le verre, fondus au charbon
     {out:"verre", n:2, in:{quartz:1, charbon:1}, t:20, lvl:1},
     {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1, cat:"Outils"},
@@ -673,7 +695,16 @@ export const ATELIERS = {
     {out:"piocheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
     {out:"hacheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
     {out:"epeeBronze", in:{bronze:3, planche:1}, t:90, lvl:1},
+    {out:"pelleBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
+    {out:"arrosoirCuivre", in:{cuivre:4}, t:60, lvl:1},
+    {out:"arrosoirBronze", in:{bronze:3}, t:90, lvl:1},
+    {out:"canneCuivre", in:{cuivre:2, planche:3, fibre:3}, t:60, lvl:1},
+    {out:"canneBronze", in:{bronze:2, planche:3, fibre:3}, t:90, lvl:1},
+    {out:"filetCuivre", in:{cuivre:2, fibre:4}, t:60, lvl:1},
+    {out:"filetBronze", in:{bronze:2, fibre:4}, t:90, lvl:1},
     {out:"bocal", in:{verre:2, planche:1}, t:40, lvl:1},
+    {out:"bocalCuivre", in:{verre:2, cuivre:2}, t:60, lvl:1},
+    {out:"bocalBronze", in:{verre:2, bronze:2}, t:90, lvl:1},
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1, cat:"Décoration"}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",

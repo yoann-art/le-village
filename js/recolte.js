@@ -361,9 +361,18 @@ function arroser(t){
   if(!k){ toast(`💧 Il te faut un arrosoir dans ton sac : fabrique-le à l'établi de la Scierie, ou reprends-le dans un coffre`, 3200); return; }
   if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
   state.eau--;
-  setEtat(t.i, {arrose: Date.now()}); renderBarre(); save();
+  const cases = [t.i];
+  if(OUTILS[k].autour){                              // l'arrosoir en bronze : les buissons vides tout près, 3 au plus d'un coup
+    for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++){
+      if(!inb(t.x + dx, t.z + dz)) continue;
+      const j = idx(t.x + dx, t.z + dz);
+      if(cases.length < 3 && j !== t.i && map.obj[j] === "buisson" && growth(j) >= 1 && baiesLeft(j) < 0) cases.push(j);   // vide, pas encore arrosé
+    }
+  }
+  for(const j of cases) setEtat(j, {arrose: Date.now()});
+  renderBarre(); save();
   anim = {w: ILE, i: t.i, t: 0, kind: "shake"};
-  toast(`💧 Arrosé : les baies reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
+  toast(`💧 ${cases.length > 1 ? `${cases.length} buissons arrosés` : "Arrosé"} : les baies reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
   user(k);
 }
 function remplir(){

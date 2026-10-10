@@ -226,10 +226,11 @@ function vivre(o, dt){
 /* ----- Lancer le filet ----- */
 let montre = null;
 export const oiseauEnCours = () => !!montre;
-const filetDuSac = () => { const it = porte().find(it => OUTILS[it.k] && OUTILS[it.k].famille === "filet"); return it ? it.k : null; };
+/* Le meilleur filet qu'on porte ; en cuivre ou en bronze, il attrape de plus loin */
+const filetDuSac = () => porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === "filet").sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
 function aPortee(){
-  const p = player.position;
-  let mieux = null, md = OISEAU.portee;
+  const p = player.position, f = filetDuSac();
+  let mieux = null, md = OISEAU.portee + (f && OUTILS[f].plusLoin || 0);
   for(const o of oiseaux){ if(o.etat !== "pose" || o.alpha < .5) continue; const d = Math.hypot(o.x - p.x, o.z - p.z); if(d < md){ md = d; mieux = o; } }
   return mieux;
 }

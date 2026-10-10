@@ -201,6 +201,8 @@ function pondre(){
   }
 }
 /* Pour la vérification automatique : une ombre à un endroit précis (sur l'île ou dans la forêt) */
+/* Pour la vérification : les ombres qui nagent */
+export const ombresIci = () => ombres;
 export function lacherOmbre(x, z){
   const fi = ftile(x, z), lieu = ici === "foret" ? (sources.has(fi) ? "source" : "ruisseau") : lieuEau(idx(tileOf(x), tileOf(z)));
   const f = tirer(lieu, presDuPonton(x, z));
@@ -345,6 +347,9 @@ function remonter(msg){
 function ferrer(){
   const o = ligne.ombre, {k, cm} = o;
   if(sacPlace(k) < 1){ remonter(`🎒 Ton sac est plein : tu relâches ${leNom(k)}`); return; }
+  const tenue = canneEnMain() ? state.main : null;
+  if(POISSONS[k].rarete === "legendaire" && !(tenue && OUTILS[tenue].force >= 2)){   // morceau 3 de l'usure : il faut une canne en cuivre
+    remonter(`💥 Le fil casse ! ${leNom(k, true)} est trop fort${POISSONS[k].une ? "e" : ""} pour la canne en bois : il te faut une canne en cuivre (enclume de la Forge)`); return; }
   sacAdd(k, 1);
   retirer(o); ligne.ombre = null;
   const canne = state.main && OUTILS[state.main] && OUTILS[state.main].famille === "canne" ? state.main : null;
@@ -404,7 +409,8 @@ export function updatePeche(dt, actif, ou){
     else if(L.ombre.etat === "mord"){
       if(L.ombre.arrive){                             // il arrive au bouchon : de 0 à 3 grignotages, puis la touche
         L.ombre.arrive = false;
-        const total = PECHE.morsure[0] + Math.random() * (PECHE.morsure[1] - PECHE.morsure[0]);
+        const vite = canneEnMain() && OUTILS[state.main].force >= 3 ? .5 : 1;   // la canne en bronze : il mord deux fois plus vite
+        const total = (PECHE.morsure[0] + Math.random() * (PECHE.morsure[1] - PECHE.morsure[0])) * vite;
         L.frem = [];
         for(let n = Math.floor(Math.random() * 4); n > 0; n--){ const f = .5 + Math.random() * (total - 1); if(L.frem.every(g => Math.abs(g - f) > .6)) L.frem.push(L.t + f); }
         L.frem.sort((a, b) => a - b); L.reste = L.t + total;

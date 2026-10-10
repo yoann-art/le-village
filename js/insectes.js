@@ -255,13 +255,16 @@ function vivre(b, dt){
 /* ----- Attraper ----- */
 let montre = null;                 // la bête attrapée, montrée au-dessus de la tête : {mesh, t}
 export const attrapeEnCours = () => !!montre;
-const outilDuSac = f => { const it = porte().find(it => OUTILS[it.k] && OUTILS[it.k].famille === f); return it ? it.k : null; };
+/* Le meilleur outil de la famille qu'on porte (le plus solide) */
+const outilDuSac = f => porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === f).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
 const filetDuSac = () => outilDuSac("filet");
 /* La bête la plus proche, à portée de filet */
 function aPortee(){
   const p = player.position;
-  let mieux = null, md = INSECTE.portee;
-  for(const b of betes){ if(b.etat !== "vit" || b.alpha < .5) continue; const d = Math.hypot(b.x - p.x, b.z - p.z); if(d < md){ md = d; mieux = b; } }
+  const f = filetDuSac(), loin = INSECTE.portee + (f && OUTILS[f].plusLoin || 0);   // un filet en cuivre ou en bronze attrape de plus loin
+  let mieux = null, md = Infinity;
+  for(const b of betes){ if(b.etat !== "vit" || b.alpha < .5) continue; const d = Math.hypot(b.x - p.x, b.z - p.z);
+    if(d < (INSECTES[b.k].bocal ? INSECTE.portee : loin) && d < md){ md = d; mieux = b; } }
   return mieux;
 }
 function attraper(b){

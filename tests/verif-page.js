@@ -2,7 +2,8 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
-   demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
+   demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
+   arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
@@ -24,7 +25,7 @@ import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noter
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
-import { lacherOmbre, presents } from "../js/peche.js";
+import { lacherOmbre, presents, ombresIci } from "../js/peche.js";
 import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde/mine.js";
 import { footOf } from "../js/monde/meubles.js";
 import { updateVitrine } from "../js/vitrine.js";
@@ -574,6 +575,65 @@ export async function verifier(){
     if(owned("luciole") <= avant) throw new Error("pas de luciole dans le sac");
     frames(40);
     return "une luciole, prise au bocal";
+  });
+  await etape("Les outils en cuivre et en bronze : un filet qui attrape de plus loin, un arrosoir qui arrose plusieurs buissons, le fil de la canne en bois qui casse", async () => {
+    place(3);
+    const sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));   // rendus à la fin : les essais suivants ont besoin de place
+    try {
+    const sans = f => { state.sac = state.sac.filter(it => !OUTILS[it.k] || OUTILS[it.k].famille !== f); state.barre = state.barre.map(it => it && OUTILS[it.k] && OUTILS[it.k].famille === f ? null : it); };
+    const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j] && !state.chemins[j];
+    /* le filet en cuivre : un demi-pas plus loin */
+    sans("filet"); sacAdd("filet", 1); hold(null);
+    keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1) && libre(j - 2 * N));
+    if(i < 0) throw new Error("pas de place libre");
+    placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
+    lacherInsecte("fourmi", player.position.x, player.position.z + 1.6, .03); frames(2);
+    if(!$("#btn-act").hidden && $("#btn-act").textContent.includes("Attraper")) throw new Error("le filet en bois attrape déjà à 1,6 P");
+    sacAdd("filetCuivre", 1); frames(2);
+    if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`avec le filet en cuivre, à 1,6 P, le bouton dit « ${$("#btn-act").textContent} »`);
+    const fourmis = owned("fourmi");
+    $("#btn-act").click(); frames(40);
+    if(owned("fourmi") <= fourmis) throw new Error("la fourmi n'est pas prise au filet en cuivre");
+    /* l'arrosoir en bronze : trois buissons vides côte à côte, arrosés d'un coup */
+    forcerMeteo("beau");
+    const b = map.obj.findIndex((o, j) => libre(j) && libre(j - 1) && libre(j + 1) && libre(j + N) && libre(j + N - 1) && libre(j + N + 1));
+    if(b < 0) throw new Error("pas de place pour trois buissons");
+    const buissons = [b - 1, b, b + 1];
+    try {
+      for(const j of buissons){ setObj(j, "buisson"); setEtat(j, {vide: Date.now()}); }
+      sans("arrosoir"); sacAdd("arrosoirBronze", 1); hold("arrosoirBronze"); state.eau = OUTILS.arrosoirBronze.eau;
+      placePlayer(centerOf(b % N), centerOf(Math.floor(b / N) + 1) + .1, 0, -1); frames(1, .016);
+      if(!$("#btn-act").textContent.includes("Arroser")) throw new Error(`devant un buisson vide, le bouton dit « ${$("#btn-act").textContent} »`);
+      $("#btn-act").click(); frames(10);
+      const arroses = buissons.filter(j => state.ile[j] && state.ile[j].arrose).length;
+      if(arroses !== 3) throw new Error(`l'arrosoir en bronze a arrosé ${arroses} buisson(s) au lieu de 3`);
+      if(state.eau !== OUTILS.arrosoirBronze.eau - 1) throw new Error("un seul arrosage aurait dû servir");
+    } finally { for(const j of buissons) setObj(j, null); forcerMeteo(null); hold(null); }
+    /* la canne en bois : le fil casse sur un poisson légendaire */
+    sans("canne"); sacAdd("canneBois", 1);
+    let t = null;
+    for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
+      const a = idx(x, z), s2 = idx(x, z + 1);
+      if(map.type[a] !== "water" && a !== entreePonton && !map.obj[a] && !occ.has(a) && !state.sol[a] && eauLibre(s2)){ t = [x, z]; break; }
+    }
+    if(!t) throw new Error("aucun bord de l'eau");
+    placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
+    const o = lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2);
+    if(!o) throw new Error("pas d'ombre de poisson possible ici");
+    for(const s2 of ombresIci()){ s2.k = "carpeOr"; s2.cm = 100; }       // toutes les ombres d'ici : légendaires
+    try {
+      $("#btn-act").click();
+      let k = 0;
+      while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+      if(k >= 400) throw new Error("le poisson ne mord jamais");
+      $("#btn-act").click();
+      if(owned("carpeOr")) throw new Error("la canne en bois a retenu un poisson légendaire");
+      if(!$("#toast").textContent.includes("fil casse")) throw new Error(`pas de message de fil cassé (« ${$("#toast").textContent} »)`);
+    } finally { hold(null); frames(20); }
+    if(!["pelleBronze", "arrosoirCuivre", "canneCuivre", "canneBronze", "filetBronze", "bocalCuivre", "bocalBronze"].every(r => ATELIERS.forge.recettes.some(x => x.out === r))) throw new Error("des outils manquent à l'enclume");
+    return "une fourmi prise à 1,6 P au filet en cuivre ; 3 buissons arrosés d'un coup ; la Vieille Carpe d'or casse le fil de la canne en bois";
+    } finally { state.sac = sac0; state.barre = barre0; hold(null); }
   });
   await etape("Attraper un oiseau au filet", async () => {
     place(1);
