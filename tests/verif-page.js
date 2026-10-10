@@ -1,7 +1,8 @@
 /* ================= Vérification automatique =================
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
-   couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
+   couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
+   demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, vendre au comptoir, les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
@@ -334,7 +335,7 @@ export async function verifier(){
     let t = null;
     for(let z = WF - 3; z > WF / 2 + 2 && !t; z--) for(const [x, dx] of [[WF / 2 - 2, -1], [WF / 2 + 1, 1]]){
       const i = z * WF + x, o = foretObj(i);
-      if(o && RECOLTE[o] && RECOLTE[o].res){ t = {i, dx}; break; }   // un arbre qui donne du bois
+      if(o && RECOLTE[o] && RECOLTE[o].res && !(RECOLTE[o].force > 1)){ t = {i, dx}; break; }   // un arbre qui donne du bois (pas un bois dur)
     }
     if(!t) throw new Error("aucun arbre au bord du sentier");
     if(!owned("hachePierre")) sacAdd("hachePierre", 1);
@@ -420,6 +421,32 @@ export async function verifier(){
     for(const k of ["graineArbre", "graineThym", "fibre", "pierre", "bois", "planche"]) if(state.sac.length > 12 - n) state.sac = state.sac.filter(it => it.k !== k);
     while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => !OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }   // puis les prises des essais d'avant
   };
+  await etape("La hache selon l'essence : le frêne demande une hache en cuivre, le chêne séculaire une hache en bronze", async () => {
+    let i = -1;
+    for(let z = 2; z < N - 2 && i < 0; z++) for(let x = 2; x < N - 2; x++){
+      const a = idx(x, z), s = idx(x, z + 1);
+      if(map.type[a] === "grass" && !map.obj[a] && !occ.has(a) && !state.sol[a] && map.type[s] === "grass" && !map.obj[s] && !occ.has(s) && !state.sol[s] && !state.chemins[a]){ i = a; break; }
+    }
+    if(i < 0) throw new Error("pas de place pour un frêne");
+    const x = i % N, z = Math.floor(i / N);
+    const face = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(1, .016); return $("#btn-act").textContent; };
+    state.sac = state.sac.filter(it => !OUTILS[it.k] || OUTILS[it.k].famille !== "hache");
+    state.barre = state.barre.map(it => it && OUTILS[it.k] && OUTILS[it.k].famille === "hache" ? null : it);
+    place(2); sacAdd("hachePierre", 1); hold("hachePierre");
+    setObj(i, "frene");
+    if(!face().includes("hache en cuivre")) throw new Error(`avec une hache en pierre, devant le frêne, le bouton dit « ${face()} »`);
+    sacAdd("hacheCuivre", 1);
+    if(!face().includes("Couper le frêne")) throw new Error(`avec une hache en cuivre, le bouton dit « ${face()} »`);
+    const avant = owned("boisFrene");
+    for(let k = 0; k < RECOLTE.frene.coups; k++){ face(); $("#btn-act").click(); frames(25); }
+    if(map.obj[i]) throw new Error("le frêne est toujours là");
+    if(owned("boisFrene") <= avant) throw new Error("pas de bois de frêne");
+    setObj(i, "chene");
+    if(!face().includes("hache en bronze")) throw new Error(`avec une hache en cuivre, devant le chêne séculaire, le bouton dit « ${face()} »`);
+    setObj(i, null);
+    if(!(OUTILS.epeeBronze && OUTILS.epeeBronze.force === 3) || !ATELIERS.forge.recettes.some(r => r.out === "epeeBronze")) throw new Error("pas d'épée en bronze à l'enclume");
+    return `le frêne coupé à la hache en cuivre (+${owned("boisFrene") - avant} bois de frêne) ; le chêne séculaire attend la hache en bronze ; l'épée en bronze à l'enclume`;
+  });
   await etape("Creuser et combler à la pelle", async () => {
     place(1);
     sacAdd("pelleBois", 1); hold("pelleBois");

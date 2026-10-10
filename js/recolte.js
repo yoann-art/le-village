@@ -201,6 +201,8 @@ function actionOf(t){
       if(reste > 0) return info(`🌿 ${objet(k).nom} : de retour dans ${duree(reste)}`);
       return {label: `✋ Cueillir : ${objet(k).nom.toLowerCase()}`, run: () => cueillirFruits(t, k)};
     }
+    const k = bestTool("hache");                     // la hache selon l'essence : les bois durs et les géants demandent mieux
+    if(R.force && (!k || OUTILS[k].force < R.force)) return info(TROP_DUR.hache(R.force, R.nom));
     return {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
   }
   if(t.o === "tree")
@@ -211,7 +213,7 @@ function actionOf(t){
       : {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)};
   if(RECOLTE[t.o] && RECOLTE[t.o].outil === "pioche"){   // les roches des salles de la mine (étape 1.11)
     const R = RECOLTE[t.o], k = bestTool("pioche");
-    if(R.force && (!k || OUTILS[k].force < R.force)) return info(`🪨 Roche trop dure : il te faut ${PIOCHE[R.force]}`);
+    if(R.force && (!k || OUTILS[k].force < R.force)) return info(TROP_DUR.pioche(R.force));
     return {label: `⛏️ Miner ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
   }
   if(t.o === "herbe"){
@@ -375,17 +377,22 @@ const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coup
   rockAmethyste: "💜 Le rocher s'ouvre sur une améthyste", rockGrenat: "❤️ Le rocher s'ouvre sur un grenat", rockGeode: "🥚 Une géode se détache"};
 const IL_FAUT = {hache: "🪓 Il te faut une hache dans ton sac : fabrique-la", pioche: "⛏️ Il te faut une pioche dans ton sac : fabrique-la"};
 const PIOCHE = {2: "une pioche en cuivre", 3: "une pioche en bronze"};
-/* Une roche dure (étape 1.11) : la pioche tenue est trop faible, mais une plus solide est sur soi : on la prend */
-function piocheAssez(k, force){
+/* Trop dur pour l'outil qu'on a : une roche de la mine (étape 1.11), un bois dur ou un géant (la hache selon l'essence) */
+const TROP_DUR = {
+  pioche: f => `🪨 Roche trop dure : il te faut ${PIOCHE[f]}`,
+  hache: (f, nom) => { const n = nom[0].toUpperCase() + nom.slice(1);
+    return f >= 3 ? `🌳 ${n}, un géant millénaire : il te faut une hache en bronze` : `🪵 ${n}, un bois dur : il te faut une hache en cuivre`; }};
+/* L'outil tenu est trop faible, mais un plus solide de la même famille est sur soi : on le prend */
+function assez(k, force, famille = "pioche"){
   if(!k || !force || OUTILS[k].force >= force) return k;
-  const b = bestTool("pioche");
+  const b = bestTool(famille);
   if(b && OUTILS[b].force >= force){ barreAuto(b); hold(b); return b; }
   return k;
 }
 function couper(t){
-  const R = RECOLTE[t.o], k = piocheAssez(takeTool(R.outil), R.force);
+  const R = RECOLTE[t.o], k = assez(takeTool(R.outil), R.force, R.outil);
   if(!k){ toast(`${IL_FAUT[R.outil]} à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
-  if(R.force && OUTILS[k].force < R.force){ toast(`🪨 Roche trop dure : il te faut ${PIOCHE[R.force]}`, 2800); return; }
+  if(R.force && OUTILS[k].force < R.force){ toast(TROP_DUR[R.outil](R.force, R.nom) + " (enclume de la Forge)", 2800); return; }
   const h = (hits.get(hk(t)) || 0) + 1;
   if(R.auBout && h >= R.coups && !sacOk(R.res, R.auBout)) return;     // une pierre précieuse : seulement au dernier coup
   const n = R.res && !R.auBout ? gain(R.parCoup, R.res) : 0;         // une ressource par coup, quel que soit l'outil (demande de Yo)
@@ -415,7 +422,7 @@ function coeurAction(){
   return {label: `⛏️ Dégager le Cœur de la mine (${COEUR_MINE.coups - (state.coeurCoups || 0)})`, run: degagerCoeur};
 }
 function degagerCoeur(){
-  const k = piocheAssez(takeTool("pioche"), COEUR_MINE.force);
+  const k = assez(takeTool("pioche"), COEUR_MINE.force);
   if(!k || OUTILS[k].force < COEUR_MINE.force || !coeurEveille()) return;
   const h = (state.coeurCoups || 0) + 1;
   if(h < COEUR_MINE.coups){ state.coeurCoups = h; save(); toast(`⛏️ La roche s'effrite autour du Cœur… (encore ${COEUR_MINE.coups - h})`, 1600); user(k); return; }
@@ -433,7 +440,7 @@ function galerieAction(g){
   return {label: `⛏️ Creuser la galerie (${coupsRestants(g)})`, run: () => creuserGalerie(g)};
 }
 function creuserGalerie(g){
-  const c = GALERIES[g], k = piocheAssez(takeTool("pioche"), c.force);
+  const c = GALERIES[g], k = assez(takeTool("pioche"), c.force);
   if(!k || OUTILS[k].force < c.force) return;
   const r = creuser(g), place = sacPlace("pierre") >= 1;
   if(place) sacAdd("pierre", 1);

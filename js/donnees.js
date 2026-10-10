@@ -94,7 +94,7 @@ export const POSABLES = {
    obsidienne 270 ; arrosoir 25 · 60 · 125 ; canne, filet 15 · 40 · 80 ; bocal 8 · 20 · 40 ; arc 20. Les armes et les
    armures à venir suivront la même règle. une : nom féminin (« ta hache », « ton filet ») */
 export const OUTILS = {
-  hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", une:true, emoji:"🪓", famille:"hache", force:1, solidite:30, usage:"Coupe les arbres : un bois à chaque coup."},
+  hachePierre: {nom:"Hache en pierre", pluriel:"haches en pierre", une:true, emoji:"🪓", famille:"hache", force:1, solidite:30, usage:"Coupe les arbres de l'île, l'if, le houx et le sureau : un bois à chaque coup. Le frêne et le charme demandent une hache en cuivre."},
   piochePierre:{nom:"Pioche en pierre", pluriel:"pioches en pierre", une:true, emoji:"⛏️", famille:"pioche", force:1, solidite:30, usage:"Casse les rochers : une pierre à chaque coup."},
   canneBois:   {nom:"Canne à pêche", pluriel:"cannes à pêche", une:true, emoji:"🎣", famille:"canne", force:1, solidite:15, usage:"Face à la mer ou à l'étang : « Lancer », puis « Ferrer ! » dès que le bouchon plonge."},
   /* Le filet (étape 1.7, Grand Carnet : « Établi, avec du lin » ; des fibres en attendant le lin) */
@@ -113,15 +113,17 @@ export const OUTILS = {
   /* eau : nombre d'arrosages quand il est plein (demande de Yo : on le remplit au bord de l'eau, une jauge montre ce qu'il reste) */
   /* Outils en cuivre (enclume de la Forge) : plus solides (ils durent plus longtemps) ; chaque coup donne toujours une
      seule ressource (demande de Yo) ; tete : couleur du fer */
-  hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", une:true, emoji:"🪓", famille:"hache", force:2, solidite:75, tete:0xC8743C, usage:"Coupe les arbres : un bois à chaque coup. Plus solide que la hache en pierre."},
+  hacheCuivre: {nom:"Hache en cuivre", pluriel:"haches en cuivre", une:true, emoji:"🪓", famille:"hache", force:2, solidite:75, tete:0xC8743C, usage:"Plus solide que la hache en pierre, elle coupe aussi les bois durs : le frêne et le charme. Un bois à chaque coup."},
   piocheCuivre:{nom:"Pioche en cuivre", pluriel:"pioches en cuivre", une:true, emoji:"⛏️", famille:"pioche", force:2, solidite:75, tete:0xC8743C, usage:"Casse les rochers : une pierre à chaque coup, et dure plus longtemps. Dans la mine, elle creuse la galerie de la salle de l'étain (la paroi marquée d'une croix) et en casse les roches."},
   /* Le bronze (étape 1.11, palier ajouté avec Yo entre le cuivre et le fer du Grand Carnet) */
-  hacheBronze: {nom:"Hache en bronze", pluriel:"haches en bronze", une:true, emoji:"🪓", famille:"hache", force:3, solidite:150, tete:0xB98A4A, usage:"Coupe les arbres : un bois à chaque coup. La plus solide de l'île."},
+  hacheBronze: {nom:"Hache en bronze", pluriel:"haches en bronze", une:true, emoji:"🪓", famille:"hache", force:3, solidite:150, tete:0xB98A4A, usage:"La plus solide de l'île : elle abat même le chêne séculaire, le géant de la Forêt profonde. Un bois à chaque coup."},
   /* Le bocal (étape 1.11, morceau 3 ; Grand Carnet : la luciole se prend au bocal) : en verre, avec un couvercle de bois */
   bocal:       {nom:"Bocal", pluriel:"bocaux", emoji:"🫙", famille:"bocal", force:1, solidite:8, usage:"Pour attraper la luciole et le frelon, qui ne se prennent pas au filet : approche-toi doucement, puis « 🫙 Attraper »."},
   piocheBronze:{nom:"Pioche en bronze", pluriel:"pioches en bronze", une:true, emoji:"⛏️", famille:"pioche", force:3, solidite:150, tete:0xB98A4A, usage:"La plus solide de l'île : une pierre à chaque coup, et elle dure longtemps. Dans la mine, elle creuse la galerie de la géode, au fond de la salle de l'étain, et casse l'argent, le marbre et les grenats."},
   pelleCuivre: {nom:"Pelle en cuivre", pluriel:"pelles en cuivre", une:true, emoji:"🪏", famille:"pelle", force:2, coups:1, solidite:50, tete:0xC8743C,
     usage:"Creuse plus vite que la pelle en bois : un seul coup par case. Face à l'eau douce : « Combler »."},
+  epeeBronze:  {nom:"Épée en bronze", pluriel:"épées en bronze", une:true, emoji:"🗡️", famille:"arme", force:3, solidite:100, tete:0xB98A4A,
+    usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe trois fois plus fort que l'épée en bois, et dure longtemps."},
   epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", une:true, emoji:"🗡️", famille:"arme", force:2, solidite:50, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
   arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5, solidite:25,
     usage:"Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."}
@@ -158,7 +160,8 @@ export const GRAINES = {
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : du thym y poussera."}
 };
 /* Récolter sur l'île. Couper : l'outil qu'il faut (sa famille), le nombre de coups pour abattre, ce que
-   donne chaque coup avec un outil de force 1 (+1 par force en plus) et la graine du dernier coup.
+   donne chaque coup (une seule ressource, quel que soit l'outil : demande de Yo) et la graine du dernier coup ;
+   force : l'outil qu'il faut au moins (2 : cuivre, 3 : bronze, 4 : fer, plus tard).
    Cueillir (à la main) : ce que ça donne (cueille, n) ; herbes : repousse en secondes, ou arrachées à la
    2e cueillette de suite (une graine, plus de repousse) ; buisson : vide après la cueillette, les baies
    reviennent « retour » secondes après l'arrosage (décidé par Yo). Les bonus des bâtiments s'ajoutent. */
@@ -188,13 +191,18 @@ export const RECOLTE = {
      bois (res) et sa graine selon sa rareté (chance : commun 3 fois sur 4, peu commun 1 fois sur 2, rare 1 fois sur 5) ;
      dans la forêt, ils repoussent sur place (repousse en secondes : 1 jour, 3 jours, 1 semaine) ; sur l'île, ils
      tombent et disparaissent. Le houx et le sureau n'ont pas de bois : on cueille leurs baies ou leurs fleurs (n),
-     qui reviennent (retour, en secondes). Le Grand Chêne millénaire, lui, ne s'abat pas. */
-  charme: {nom:"le charme", outil:"hache", coups:3, res:"boisCharme", parCoup:1, graine:"graineCharme", chance:.75, repousse:86400},
-  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"boisFrene", parCoup:1, graine:"graineFrene", chance:.75, repousse:86400},
+     qui reviennent (retour, en secondes). Le Grand Chêne millénaire, lui, ne s'abat pas.
+     La hache selon l'essence (demande de Yo, 10 octobre 2026 ; une règle pour tous les arbres du jeu, d'après la
+     solidité des bois du Grand Carnet) : hache en pierre, les bois fragiles, tendres et solides (les arbres de l'île,
+     l'if, le houx, le sureau ; plus tard le chêne, le hêtre, le pommier, le pin…) ; en cuivre (force 2), les bois durs
+     (le frêne, le charme ; plus tard l'acacia) ; en bronze (force 3), les géants millénaires (le chêne séculaire) ; en
+     fer (force 4, plus tard), les bois exceptionnels (l'arbre pétrifié, l'arbre de braise). */
+  charme: {nom:"le charme", outil:"hache", coups:3, res:"boisCharme", parCoup:1, force:2, graine:"graineCharme", chance:.75, repousse:86400},
+  frene:  {nom:"le frêne", outil:"hache", coups:3, res:"boisFrene", parCoup:1, force:2, graine:"graineFrene", chance:.75, repousse:86400},
   sureau: {nom:"le sureau", outil:"hache", coups:2, parCoup:0, graine:"graineSureau", chance:.75, repousse:86400, n:3, retour:43200},
   if:     {nom:"l'if", outil:"hache", coups:3, res:"boisIf", parCoup:1, graine:"graineIf", chance:.5, repousse:259200},
   houx:   {nom:"le houx", outil:"hache", coups:2, parCoup:0, graine:"graineHoux", chance:.5, repousse:259200, n:2, retour:43200},
-  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:1, graine:"graineChene", chance:.2, repousse:604800}
+  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:1, force:3, graine:"graineChene", chance:.2, repousse:604800}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi
@@ -664,6 +672,7 @@ export const ATELIERS = {
     {out:"pelleCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1},
     {out:"piocheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
     {out:"hacheBronze", in:{bronze:3, planche:2}, t:90, lvl:1},
+    {out:"epeeBronze", in:{bronze:3, planche:1}, t:90, lvl:1},
     {out:"bocal", in:{verre:2, planche:1}, t:40, lvl:1},
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1, cat:"Décoration"}
   ]},
