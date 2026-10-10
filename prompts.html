@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Prompts Gemini</title>
+<title>Prompts des images</title>
 <!-- Les prompts Gemini du jeu, à copier d'un toucher depuis le téléphone, un onglet par famille.
      Bâtiments et Meubles : même contenu que les fiches « Prompts Gemini : bâtiments » et « Prompts Gemini : meubles »
      (docs Claude) : garder la page et les fiches d'accord. Les autres onglets (demande de Yo, 7 octobre 2026) :
@@ -57,7 +57,7 @@ h2{font-size:20px;margin:24px 0 8px}
 </head>
 <body>
 <main>
-  <h1>Prompts Gemini</h1>
+  <h1>Prompts des images</h1>
   <div class="tabs" role="tablist" id="tabs"></div>
   <p class="lead" id="lead"></p>
   <ol class="steps" id="steps"></ol>
@@ -179,10 +179,10 @@ const MEUBLES = [
 const CATS = {
   batiments:{label:"Bâtiments", families:parNiveau(FAMILIES),
     lead:"Trois prompts par bâtiment de la bible, un par niveau : 1 modeste, 2 solide, 3 prospère. Un seul pour les lieux de départ. Chacun commence par la phrase de style de la bible, mot pour mot.",
-    steps:["Touche <b>Copier</b>, puis colle dans Gemini. Commence par le niveau 2, puis colle le niveau 1 et le niveau 3 dans la même conversation : Gemini garde mieux le même bâtiment.", "Vérifie l'image : un seul bâtiment, entier, fond blanc, vu de trois quarts, porte bien visible. D'un niveau à l'autre, il garde la même place au sol : il grandit en hauteur et en richesse.", "Enregistre-la sous le nom du bâtiment et son niveau (par exemple scierie-1.png) et coche la case."]},
+    steps:["Touche <b>Copier</b>, puis colle dans ChatGPT. Commence par le niveau 2, puis colle le niveau 1 et le niveau 3 dans la même conversation : ChatGPT garde mieux le même bâtiment.", "Vérifie l'image : un seul bâtiment, entier, fond blanc, vu de trois quarts, porte bien visible. D'un niveau à l'autre, il garde la même place au sol : il grandit en hauteur et en richesse.", "Enregistre-la sous le nom du bâtiment et son niveau (par exemple scierie-1.png) et coche la case."]},
   meubles:{label:"Meubles", families:MEUBLES,
-    lead:"Un prompt par meuble et par plan de travail, prêt pour Gemini. Chacun commence par la phrase de style de la bible, mot pour mot. L'image montre la couleur d'origine du meuble.",
-    steps:["Touche <b>Copier</b>, puis colle dans Gemini.", "Vérifie l'image : un seul meuble, entier, fond blanc, vu de trois quarts, le devant bien visible.", "Enregistre-la sous le nom du meuble (par exemple chaise.png) et coche la case."]}
+    lead:"Un prompt par meuble et par plan de travail, prêt pour ChatGPT. Chacun commence par la phrase de style de la bible, mot pour mot. L'image montre la couleur d'origine du meuble.",
+    steps:["Touche <b>Copier</b>, puis colle dans ChatGPT.", "Vérifie l'image : un seul meuble, entier, fond blanc, vu de trois quarts, le devant bien visible.", "Enregistre-la sous le nom du meuble (par exemple chaise.png) et coche la case."]}
 };
 /* Tout le Grand Carnet (prompts-carnet.js) : un onglet par famille */
 (window.PROMPTS_CARNET || []).forEach(c => { CATS[c.key] = c; });

@@ -1,4 +1,4 @@
-/* Les prompts Gemini du Grand Carnet (doc Claude « Le Grand Carnet de Hearthwild »), pour la page prompts.html :
+/* Les prompts du Grand Carnet (ChatGPT, ou Gemini) (doc Claude « Le Grand Carnet de Hearthwild »), pour la page prompts.html :
    un onglet par famille. Chaque prompt = la phrase de style de la bible (objet, ou créature : vue de face), puis
    une ligne propre à l'objet. Fichier fait par Claude à la demande de Yo, le 7 octobre 2026. */
 window.PROMPTS_CARNET = [
@@ -340,7 +340,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les arbres du Grand Carnet, de l'île au Volcan.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul arbre, entier, fond blanc, vu de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple chene.png) et coche la case."
 ]
@@ -665,7 +665,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les plantes du potager du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule plante, entière, fond blanc, vue de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple carotte.png) et coche la case."
 ]
@@ -990,7 +990,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les fleurs du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule touffe de fleurs, entière, fond blanc, vue de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple coquelicot.png) et coche la case."
 ]
@@ -1231,7 +1231,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les champignons du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul champignon (ou une petite touffe), fond blanc, vu de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple cepe.png) et coche la case."
 ]
@@ -1484,7 +1484,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les animaux à élever du Grand Carnet. Ce sont des créatures (pour Meshy) : vue de face, corps entier, pose neutre (bible).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul animal, entier, fond blanc, vu de face.",
 "Enregistre-la sous le nom de l'objet (par exemple poule.png) et coche la case."
 ]
@@ -1851,7 +1851,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les poissons du Grand Carnet, et ceux du jeu qui n'y sont pas. Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo : on voit mieux leur forme).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul poisson, entier, fond blanc, vu de côté.",
 "Enregistre-la sous le nom de l'objet (par exemple gardon.png) et coche la case."
 ]
@@ -2056,7 +2056,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les créatures des fonds du Grand Carnet (plongée). Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule créature, entière, fond blanc, vue de côté.",
 "Enregistre-la sous le nom de l'objet (par exemple crabe.png) et coche la case."
 ]
@@ -2429,7 +2429,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les insectes du Grand Carnet. Créatures (pour Meshy) : vue de côté légèrement en hauteur, corps entier (choix de Yo).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul insecte, entier, fond blanc, vu de côté.",
 "Enregistre-la sous le nom de l'objet (par exemple coccinelle.png) et coche la case."
 ]
@@ -2730,7 +2730,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les oiseaux du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, ailes repliées (bible).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul oiseau, entier, fond blanc, vu de face.",
 "Enregistre-la sous le nom de l'objet (par exemple moineau.png) et coche la case."
 ]
@@ -2959,7 +2959,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Le gibier du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, pose neutre debout (bible).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul animal, entier, fond blanc, vu de face.",
 "Enregistre-la sous le nom de l'objet (par exemple chevreuil.png) et coche la case."
 ]
@@ -3248,9 +3248,296 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les monstres des grottes du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, silhouette pointue et anguleuse (bible).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul monstre, entier, fond blanc, vu de face, silhouette pointue.",
 "Enregistre-la sous le nom de l'objet (par exemple loup.png) et coche la case."
+]
+},
+{
+"key": "pierres",
+"label": "Pierres et minerais",
+"style": "objet",
+"lead": "Les pierres et minerais du Grand Carnet : les rochers tels qu'on les trouve dans la mine, ce qu'on en rapporte, les cristaux des géodes, puis les pierres des destinations à venir.",
+"steps": [
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
+"Vérifie l'image : un seul rocher (ou une seule pierre), entier, fond blanc, vu de trois quarts.",
+"Enregistre-la sous le nom de l'objet (par exemple veine-de-cuivre.png ou amethyste.png) et coche la case."
+],
+"families": [
+{
+"name": "Les rochers de la mine de l'île",
+"note": "Tels qu'on les trouve dans la mine, avant de les casser à la pioche : environ 1 P de large, ronds et doux (style jouet).",
+"items": [
+{
+"id": "pie-roc-pierre",
+"name": "Rocher de pierre",
+"size": "commun",
+"line": "Un rocher gris arrondi de la mine, environ 1 P de large, quelques facettes douces et de petits éclats plus clairs."
+},
+{
+"id": "pie-roc-cuivre",
+"name": "Veine de cuivre",
+"size": "commun",
+"line": "Un rocher gris arrondi de la mine, environ 1 P de large, parsemé d'éclats de cuivre orangé brillant qui dépassent de la roche."
+},
+{
+"id": "pie-roc-charbon",
+"name": "Veine de charbon",
+"size": "commun",
+"line": "Un rocher gris foncé arrondi de la mine, environ 1 P de large, couvert de morceaux de charbon noir mat aux arêtes douces."
+},
+{
+"id": "pie-roc-etain",
+"name": "Veine d'étain",
+"size": "commun",
+"line": "Un rocher gris arrondi de la mine, environ 1 P de large, tacheté de plaques d'étain gris argenté un peu terne."
+},
+{
+"id": "pie-roc-granit",
+"name": "Bloc de granit",
+"size": "commun",
+"line": "Un gros bloc de granit arrondi, environ 1 P de large, rose-gris piqueté de petits points noirs et blancs."
+},
+{
+"id": "pie-roc-quartz",
+"name": "Rocher à quartz",
+"size": "peu commun",
+"line": "Un rocher gris arrondi, environ 1 P de large, d'où sortent quatre cristaux de quartz blanc laiteux en pointes douces."
+},
+{
+"id": "pie-roc-amethyste",
+"name": "Rocher à améthyste",
+"size": "rare",
+"line": "Un rocher gris arrondi, environ 1 P de large, d'où sortent quatre cristaux d'améthyste violets qui luisent doucement."
+},
+{
+"id": "pie-roc-argent",
+"name": "Veine d'argent",
+"size": "peu commun",
+"line": "Un rocher gris bleuté arrondi, environ 1 P de large, parsemé d'éclats d'argent clair qui brillent."
+},
+{
+"id": "pie-roc-marbre",
+"name": "Bloc de marbre",
+"size": "peu commun",
+"line": "Un gros bloc de marbre arrondi, environ 1 P de large, blanc crème veiné de gris doux."
+},
+{
+"id": "pie-roc-grenat",
+"name": "Rocher à grenats",
+"size": "rare",
+"line": "Un rocher gris arrondi, environ 1 P de large, d'où sortent quatre cristaux de grenat rouge sombre qui luisent doucement."
+},
+{
+"id": "pie-roc-geode",
+"name": "Géode dans la roche",
+"size": "rare",
+"line": "Une géode : une boule de roche brun-gris d'environ 0,7 P, fendue sur le devant, de petits cristaux violets brillent dans la fente."
+},
+{
+"id": "pie-roc-coeur",
+"name": "Le Cœur de la mine, sur son pilier",
+"size": "légendaire",
+"line": "Une roche violette basse et ronde d'environ 2 P de large ; posé dessus, un gros cœur de cristal rouge aux reflets dorés qui rayonne, entouré de petits éclats de cristal rouge."
+}
+]
+},
+{
+"name": "Ce qu'on rapporte de la mine",
+"note": "Ce qui va dans le sac, le coffre ou la vitrine : petit (environ 0,3 P), bien lisible.",
+"items": [
+{
+"id": "pie-pierre",
+"name": "Pierre",
+"size": "commun",
+"line": "Un petit tas de trois pierres grises arrondies comme des galets, environ 0,3 P."
+},
+{
+"id": "pie-cuivre",
+"name": "Cuivre",
+"size": "commun",
+"line": "Un morceau de minerai de cuivre, environ 0,3 P, roche grise couverte de pépites orangées brillantes."
+},
+{
+"id": "pie-charbon",
+"name": "Charbon",
+"size": "commun",
+"line": "Trois morceaux de charbon noir mat aux arêtes douces, environ 0,3 P."
+},
+{
+"id": "pie-etain",
+"name": "Étain",
+"size": "commun",
+"line": "Un morceau de minerai d'étain, environ 0,3 P, roche grise avec des plaques gris argenté un peu ternes."
+},
+{
+"id": "pie-granit",
+"name": "Granit",
+"size": "commun",
+"line": "Une dalle de granit taillée, carrée aux coins arrondis, environ 0,4 P, rose-gris piquetée de noir et de blanc."
+},
+{
+"id": "pie-quartz",
+"name": "Quartz",
+"size": "peu commun",
+"line": "Un petit bouquet de trois cristaux de quartz blanc laiteux en pointes douces, environ 0,3 P."
+},
+{
+"id": "pie-amethyste",
+"name": "Améthyste",
+"size": "rare",
+"line": "Une améthyste brute : un bouquet de cristaux violets aux pointes douces, environ 0,3 P, avec un éclat de lumière."
+},
+{
+"id": "pie-argent",
+"name": "Argent",
+"size": "peu commun",
+"line": "Un morceau de minerai d'argent, environ 0,3 P, avec des pépites d'argent clair qui brillent."
+},
+{
+"id": "pie-marbre",
+"name": "Marbre",
+"size": "peu commun",
+"line": "Une dalle de marbre taillée, carrée aux coins arrondis, environ 0,4 P, blanc crème veiné de gris."
+},
+{
+"id": "pie-grenat",
+"name": "Grenat",
+"size": "rare",
+"line": "Un grenat brut : un petit bouquet de cristaux rouge sombre aux pointes douces, environ 0,3 P, avec un éclat de lumière."
+},
+{
+"id": "pie-geode",
+"name": "Géode",
+"size": "rare",
+"line": "Une géode fermée : une boule de roche brun-gris rugueuse d'environ 0,3 P, avec une fine fente qui laisse deviner des cristaux violets."
+},
+{
+"id": "pie-bronze",
+"name": "Lingot de bronze",
+"size": "fondu à la forge",
+"line": "Un lingot de bronze doré-brun aux coins arrondis, environ 0,3 P, la surface lisse avec un petit reflet."
+},
+{
+"id": "pie-verre",
+"name": "Verre",
+"size": "fondu à la forge",
+"line": "Une petite plaque de verre transparent bleuté aux coins arrondis, environ 0,3 P, avec deux reflets blancs."
+}
+]
+},
+{
+"name": "Dans les géodes",
+"note": "Ce qu'on trouve en ouvrant une géode à la table de taille, et le légendaire de la mine.",
+"items": [
+{
+"id": "pie-geode-ouverte",
+"name": "Géode ouverte",
+"size": "rare",
+"line": "Une géode coupée en deux, une moitié vue de face, environ 0,4 P : l'extérieur brun-gris rugueux, l'intérieur creux tapissé de cristaux violets qui brillent."
+},
+{
+"id": "pie-quartz-rose",
+"name": "Quartz rose",
+"size": "commun",
+"line": "Un petit bouquet de cristaux de quartz rose pâle en pointes douces, environ 0,3 P, avec un éclat de lumière."
+},
+{
+"id": "pie-citrine",
+"name": "Citrine",
+"size": "peu commun",
+"line": "Une citrine brute : un petit bouquet de cristaux jaune miel transparents aux pointes douces, environ 0,3 P."
+},
+{
+"id": "pie-oeil-de-tigre",
+"name": "Œil-de-tigre",
+"size": "rare",
+"line": "Un œil-de-tigre poli en forme de galet ovale, environ 0,3 P, doré et brun, avec des bandes de reflets soyeux qui ondulent."
+},
+{
+"id": "pie-coeur",
+"name": "Le Cœur de la mine",
+"size": "légendaire",
+"line": "Un cœur de cristal rouge profond aux reflets dorés, environ 0,4 P, poli et rond, qui rayonne d'une lumière chaude, comme s'il battait."
+}
+]
+},
+{
+"name": "Les Montagnes enneigées (plus tard)",
+"note": "Les pierres des destinations à venir (Grand Carnet : idées).",
+"items": [
+{
+"id": "pie-fer",
+"name": "Fer",
+"size": "commun",
+"line": "Un morceau de minerai de fer, environ 0,3 P, roche gris foncé avec des veines couleur rouille et des éclats gris métal."
+},
+{
+"id": "pie-cristal-de-roche",
+"name": "Cristal de roche",
+"size": "peu commun",
+"line": "Un bouquet de cristaux de roche parfaitement transparents, en longues pointes douces, environ 0,4 P, qui accrochent la lumière."
+},
+{
+"id": "pie-cristal-de-glace",
+"name": "Cristal de glace",
+"size": "rare",
+"line": "Un cristal de glace bleu très pâle en pointes givrées, environ 0,3 P, entouré d'un léger halo de froid."
+},
+{
+"id": "pie-saphir",
+"name": "Saphir",
+"size": "rare",
+"line": "Un saphir taillé bleu profond, aux facettes douces et arrondies, environ 0,25 P, avec un éclat de lumière blanche."
+}
+]
+},
+{
+"name": "Le Désert et les ruines anciennes (plus tard)",
+"items": [
+{
+"id": "pie-or",
+"name": "Or",
+"size": "peu commun",
+"line": "Une pépite d'or brut, environ 0,3 P, jaune chaud, bosselée et brillante."
+},
+{
+"id": "pie-rubis",
+"name": "Rubis",
+"size": "rare",
+"line": "Un rubis taillé rouge vif, aux facettes douces et arrondies, environ 0,25 P, avec un éclat de lumière."
+},
+{
+"id": "pie-emeraude",
+"name": "Émeraude",
+"size": "rare",
+"line": "Une émeraude taillée en rectangle aux coins arrondis, vert profond, environ 0,25 P, avec un éclat de lumière."
+},
+{
+"id": "pie-turquoise",
+"name": "Turquoise",
+"size": "peu commun",
+"line": "Une turquoise polie en galet arrondi, bleu-vert opaque veiné de fines lignes brun clair, environ 0,3 P."
+}
+]
+},
+{
+"name": "Le Volcan (plus tard)",
+"items": [
+{
+"id": "pie-obsidienne",
+"name": "Obsidienne",
+"size": "peu commun",
+"line": "Un éclat d'obsidienne noir et brillant comme du verre, aux arêtes arrondies, environ 0,35 P, avec un reflet violet."
+},
+{
+"id": "pie-opale-de-feu",
+"name": "Opale de feu",
+"size": "rare",
+"line": "Une opale de feu polie en goutte arrondie, environ 0,25 P, orange et rouge, avec des éclats de couleurs qui dansent à l'intérieur."
+}
+]
+}
 ]
 },
 {
@@ -3387,7 +3674,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les outils du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul outil, entier, fond blanc, vu de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple hache.png) et coche la case."
 ]
@@ -3550,7 +3837,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les armes et les runes du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule arme (ou une seule rune), entière, fond blanc, vue de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple epee-courte.png) et coche la case."
 ]
@@ -3653,7 +3940,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les armures du Grand Carnet, présentées seules sur un support de bois.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule armure, entière, fond blanc, vue de trois quarts, personne dedans.",
 "Enregistre-la sous le nom de l'objet (par exemple armure-de-cuir.png) et coche la case."
 ]
@@ -4068,7 +4355,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les meubles et la décoration du Grand Carnet (ceux qui ne sont pas déjà dans l'onglet Meubles), les trophées, les fêtes et les ensembles merveilleux.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul objet, entier, fond blanc, vu de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple fauteuil.png) et coche la case."
 ]
@@ -4405,7 +4692,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les plats et les boissons du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul plat, entier, fond blanc, vu de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple pain.png) et coche la case."
 ]
@@ -4664,7 +4951,7 @@ window.PROMPTS_CARNET = [
 ],
 "lead": "Les potions, huiles et bombes du Grand Carnet.",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans Gemini.",
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule fiole (ou une seule bombe), entière, fond blanc, vue de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple potion-de-soin.png) et coche la case."
 ]
