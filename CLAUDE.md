@@ -61,7 +61,9 @@ Phase 1 : « tout jouable en formes simples ». On suit les étapes 1.1 à 1.12 
 
 Étape 1.2 (décorer l'intérieur) terminée et validée par Yo le 1er octobre 2026 (v1.2.4).
 
-En cours : étape 1.12, test de la boucle (plan : « Faire jouer 5 à 10 personnes et noter où elles décrochent », « Corriger avant de passer à la phase 2 ») ; découpage proposé à Yo le 10 octobre 2026, en attente de son accord.
+Étape 1.12 (test de la boucle) reportée par Yo le 10 octobre 2026 : « on fera tester le jeu quand il y aura les vrais graphismes, le son, la musique du jeu » (avec le test joueurs de l'étape 2.7). Propositions de Claude gardées pour ce moment-là : un carnet de test automatique sur le téléphone du testeur (les grands moments avec le temps de jeu, le dernier geste, les erreurs ; rien sur Internet ; « 🧪 Mon test » pour le copier et l'envoyer à Yo), un petit questionnaire de 5 questions, une page d'explication pour les testeurs, puis le bilan.
+
+En cours : la phase 2 (« la tranche parfaite » : la Scierie finie au niveau final ; étapes 2.1 le décor autour, 2.2 la Scierie dehors, 2.3 dedans, 2.4 la chaîne complète, 2.5 le personnage, 2.6 le choix technique web ou Godot, 2.7 test joueurs) ; découpage de l'étape 2.1 proposé à Yo le 10 octobre 2026, en attente de son accord.
 
 Étapes 1.10, 1.11 et l'usure des outils terminées et validées par Yo le 10 octobre 2026 (v1.11.8 ; « Pour l'instant c'est tout bon. On reviendra certainement sur plein de choses à changer ou améliorer pour cette phase 1, mais pour l'instant tu peux passer à la suite »).
 
