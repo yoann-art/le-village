@@ -21,21 +21,22 @@
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
    - un coffre de réserve : « 🗃️ Ouvrir le coffre » ; un coffre en main : « 🗃️ Poser le coffre » (voir coffres.js) ;
    - la pelle en main (étape 1.9) : « 🪏 Creuser » l'herbe devant soi, « 🪏 Combler » l'eau douce (voir terraformer.js) ;
-   - dans la mine, ses rochers (voir monde/mine.js) ; dans la Forêt profonde, ses arbres et ses rochers, qui
+   - dans la mine, ses rochers (voir monde/mine.js), ses galeries, et le Cœur de la mine (étape 1.11 : chaque pierre de
+     la mine trouvée s'inscrit au carnet, noterPierre) ; dans la Forêt profonde, ses arbres et ses rochers, qui
      repoussent (voir monde/foret.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi } from "./regles.js";
+import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
-import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser } from "./monde/mine.js";
+import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser, coeurEn, majCoeur } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
@@ -94,6 +95,7 @@ function targetMine(){
   for(const dist of [.8, 1.3]){
     const t = mineTile(p.x + d.x * dist, p.z + d.z * dist);
     if(t >= 0 && mineRock(t)) return {w: MINE, i: t, o: mineRock(t)};
+    if(coeurEn(t)) return {w: MINE, i: t, coeur: true};      // le pilier de la géode, où dort le Cœur de la mine
     const g = galerieEn(t);                          // la paroi d'une galerie à creuser (étape 1.11)
     if(g) return {w: MINE, i: t, galerie: g};
   }
@@ -182,6 +184,7 @@ function actionOf(t){
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
   const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
   if(t.galerie) return galerieAction(t.galerie);
+  if(t.coeur) return coeurAction();
   if(t.o === "tresor") return {label: "🎁 Ouvrir le coffre au trésor", run: () => ouvrirTresor(t)};
   if(t.o === "rockOr"){ const h2 = hits.get(hk(t)); return {label: `⛏️ Miner la veine d'or${h2 ? ` (${RECOLTE.rockOr.coups - h2})` : ""}`, run: () => couper(t)}; }
   if(t.o === "racines") return info("🕳️ La grotte, sous les racines du vieux chêne : avance dans l'ouverture pour y descendre");
@@ -384,14 +387,40 @@ function couper(t){
   const h = (hits.get(hk(t)) || 0) + 1;
   if(R.auBout && h >= R.coups && !sacOk(R.res, R.auBout)) return;     // une pierre précieuse : seulement au dernier coup
   const n = R.res && !R.auBout ? gain(R.parCoup + OUTILS[k].force - 1, R.res) : 0;
-  if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); } renderHUD(); }   // l'or va dans la bourse
+  if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); trouve(R.res, n); } renderHUD(); }   // l'or va dans la bourse
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {
     hits.delete(hk(t));
-    if(R.auBout) sacAdd(R.res, R.auBout);
+    if(R.auBout){ sacAdd(R.res, R.auBout); trouve(R.res, R.auBout); }
     anim = {w: t.w, i: t.i, t: 0, kind: t.o.startsWith("rock") ? "break" : "fall", o: t.o, R, n: R.auBout || n, side: Math.sign(player.position.x - t.w.cx(t.x)) || 1};
   }
   save();
+}
+/* Une pierre trouvée s'inscrit au carnet (étape 1.11, morceau 4) ; la dernière des trois salles réveille le Cœur de la mine */
+function trouve(k, n){
+  const avant = coeurEveille();
+  noterPierre(k, n);
+  if(avant || !coeurEveille()) return;
+  majCoeur();
+  setTimeout(() => toast("✨ Toutes les pierres des trois salles sont à ton carnet… Au fond de la géode, dans le pilier, une lueur s'est mise à battre.", 6000), 3800);
+}
+/* ----- Le Cœur de la mine (morceau 4) : légendaire, une seule fois dans le jeu ----- */
+function coeurAction(){
+  if(!coeurEveille()){ const [n, tot] = pierresTrouvees(); return info(`✨ Une lueur dort dans la roche… Trouve toutes les pierres des trois salles pour la réveiller (${n} sur ${tot})`); }
+  const k = bestTool("pioche");
+  if(!k || OUTILS[k].force < COEUR_MINE.force) return info("💖 Le Cœur de la mine bat dans la roche : il te faut une pioche en bronze pour le dégager");
+  return {label: `⛏️ Dégager le Cœur de la mine (${COEUR_MINE.coups - (state.coeurCoups || 0)})`, run: degagerCoeur};
+}
+function degagerCoeur(){
+  const k = piocheAssez(takeTool("pioche"), COEUR_MINE.force);
+  if(!k || OUTILS[k].force < COEUR_MINE.force || !coeurEveille()) return;
+  const h = (state.coeurCoups || 0) + 1;
+  if(h < COEUR_MINE.coups){ state.coeurCoups = h; save(); toast(`⛏️ La roche s'effrite autour du Cœur… (encore ${COEUR_MINE.coups - h})`, 1600); return; }
+  if(!sacOk("coeurMine", 1)) return;
+  delete state.coeurCoups; state.coeurMine = Date.now();
+  sacAdd("coeurMine", 1); noterPierre("coeurMine", 1);
+  majCoeur(); renderHUD(); save();
+  toast("💖 Le Cœur de la mine ! Une pierre chaude qui bat comme un cœur, la seule de tout le jeu. Il est dans ton sac et à ton carnet : expose-le dans une vitrine.", 7000);
 }
 /* ----- Les galeries de la mine (étape 1.11, morceau 2) : la paroi marquée d'une croix, à creuser avec la bonne pioche ----- */
 function galerieAction(g){

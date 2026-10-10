@@ -4,16 +4,19 @@
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
 import { G, part } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS } from "../donnees.js";
+import { pierreMesh } from "./rochers.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
   red:0xA9322A, cream:0xE8C48A, stone:0xAEB0B3, stone2:0x8E9195, soot:0x2A2522, clay:0xC8643C, leaf:0x57B25C, yellow:0xF2C14E};
 /* Ce qui brille : les flammes et la lumière des lanternes */
 const fireMat = new THREE.MeshLambertMaterial({color:0xFF8A3D, emissive:0xFF5A00, emissiveIntensity:.9});
 const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
+/* Le verre de la vitrine : on voit au travers */
+const verreMat = new THREE.MeshLambertMaterial({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
-  etagere:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
+  etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 const BUILD = {
@@ -47,6 +50,19 @@ const BUILD = {
       g.add(part(G.cyl, C.white, .07, .22, .07, x, .89 + (x ? 0 : .06), 0));          // les bougies
       g.add(part(G.cone, fireMat, .06, .1, .06, x, 1.05 + (x ? 0 : .06), 0));         // les flammes
     }
+  },
+  /* La vitrine (étape 1.11, morceau 4 ; Grand Carnet : bois et verre) : un meuble bas, une cage de verre (le dessus
+     aussi : la caméra regarde d'en haut), et la pierre exposée sur un coussin de velours */
+  vitrine(g, m, pierre){
+    g.add(part(G.box, m, 1.1, .42, .6, 0, .21, 0));                                   // le meuble du bas
+    for(const x of [-.27, .27]) g.add(part(G.box, C.dark, .44, .3, .02, x, .22, .305));   // ses deux portes
+    g.add(part(G.box, C.dark, 1.16, .05, .66, 0, .445, 0));                            // le plateau
+    g.add(part(G.box, C.red, .46, .05, .34, 0, .495, 0));                              // le coussin de velours
+    const v = part(G.box, verreMat, 1.02, .42, .56, 0, .68, 0); v.castShadow = false; v.receiveShadow = false; g.add(v);   // la cage de verre
+    for(const [x, z] of [[-.51, -.28], [.51, -.28], [-.51, .28], [.51, .28]]) g.add(part(G.box, m, .05, .42, .05, x, .68, z));   // les montants
+    for(const z of [-.28, .28]) g.add(part(G.box, m, 1.07, .04, .04, 0, .9, z));      // le cadre du dessus
+    for(const x of [-.51, .51]) g.add(part(G.box, m, .04, .04, .6, x, .9, 0));
+    if(pierre){ const p = pierreMesh(pierre); p.scale.setScalar(1.35); p.position.y = .52; g.add(p); }
   },
   tonneau(g, m){
     g.add(part(G.cyl, m, .64, .7, .64, 0, .35, 0));                                   // douelles
@@ -190,10 +206,11 @@ const BUILD = {
     g.add(part(G.head, C.gold, .6, .6, .6, 0, 1.75, -.26));                            // ornement doré
   }
 };
-/* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine */
-export function makeMeuble(type, color){
+/* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine ; pierre : ce qu'expose
+   une vitrine */
+export function makeMeuble(type, color, pierre){
   const g = new THREE.Group();
-  BUILD[type](g, COULEURS[color] ? COULEURS[color].hex : ORIGIN[type]);
+  BUILD[type](g, COULEURS[color] ? COULEURS[color].hex : ORIGIN[type], pierre);
   return g;
 }
 

@@ -254,9 +254,10 @@ function demonterDoubles(){
       if(it.reserve){ const co = state.coffres.find(c => c.id === it.reserve); if(co) aPoser.push(co); }
       else if(a && it.type === a.meuble) ajoute(a.cost);
       else if(FABRIQUE_A[it.type]) plus(it.type, 1);
+      if(it.pierre) plus(it.pierre, 1);                                  // la pierre exposée dans une vitrine (étape 1.11)
     }
     for(const j of (b.atelier && b.atelier.queue) || []){
-      if(j.end && j.end <= now) plus(j.out, j.n || 1);
+      if(j.end && j.end <= now && !j.hasard) plus(j.out, j.n || 1);      // une géode pas encore ouverte : on la rend
       else ajoute(j.in || {});
     }
     footprint(b.type, b.x, b.z).forEach(([x, z]) => occ.delete(idx(x, z)));

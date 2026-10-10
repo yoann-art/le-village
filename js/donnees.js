@@ -47,6 +47,7 @@ export const MEUBLES = {
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
   banc:     {nom:"Banc", emoji:"🛋️", gabarit:"moyen", w:1.6, d:.6},
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
+  vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
@@ -210,6 +211,20 @@ export const MINE = {salles: {
 export const GALERIES = {
   2: {force: 2, segments: 4, coups: 3, salle: "la salle de l'étain", pioche: "une pioche en cuivre (enclume de la Forge)"},
   3: {force: 3, segments: 4, coups: 4, salle: "la géode", pioche: "une pioche en bronze (enclume de la Forge : du bronze et des planches)"}};
+/* La page « 💎 Pierres » du carnet (étape 1.11, morceau 4) : chaque pierre de la mine et la salle où on la trouve
+   (4 : dans les géodes, ouvertes à la table de taille). La pierre ordinaire n'y est pas : on la trouve partout */
+export const PIERRES = {charbon:1, cuivre:1, etain:2, granit:2, quartz:2, amethyste:2, argent:3, marbre:3, grenat:3, geode:3,
+  quartzRose:4, citrine:4, oeilTigre:4};
+/* Le cristal d'une géode, tiré au sort : [pierre, chances sur 100]. Chiffres choisis par Claude, à régler en jouant */
+export const CRISTAUX = [["quartzRose", 50], ["citrine", 35], ["oeilTigre", 15]];
+export function tirerCristal(r = Math.random()){
+  let reste = r * 100;
+  for(const [k, p] of CRISTAUX) if((reste -= p) < 0) return k;
+  return CRISTAUX[0][0];
+}
+/* Le Cœur de la mine (légendaire, une seule fois dans le jeu) : il se réveille quand on a trouvé toutes les pierres des
+   trois salles, puis se dégage à la pioche en bronze, en quelques coups */
+export const COEUR_MINE = {coups: 6, force: 3};
 
 /* La pêche (étape 1.6) : les poissons de l'île d'après le Grand Carnet (pages « Les poissons », décision de Yo
    le 5 octobre 2026), plus la truite, le congre et la Vieille Carpe d'or gardés par Yo, et quatre poissons du
@@ -439,7 +454,8 @@ for(const p of Object.values(OISEAUX)){
 
 /* Produits fabriqués ou récoltés qui ne sont pas des meubles */
 /* Le dessin d'une matière de la mine (étape 1.11), dans le sac et les coffres : morceaux (charbon), veine (un rocher et
-   ses éclats), bloc (taillé), cristal, gemme (taillée), boule (géode, ouverte sur ses cristaux), lingot ; c1, c2 : couleurs */
+   ses éclats), bloc (taillé), cristal, gemme (taillée), boule (géode, ouverte sur ses cristaux), lingot ; morceau 4 :
+   cabochon (une pierre polie, à bandes), coeur (le Cœur de la mine) ; c1, c2 : couleurs */
 function pierreIco(forme, c1, c2){
   const t = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">', f = '</svg>', bord = 'stroke="#1C2230" stroke-opacity=".32"';
   return t + ({
@@ -450,7 +466,9 @@ function pierreIco(forme, c1, c2){
     gemme: `<path d="M5 9L8.5 4.5H15.5L19 9L12 20Z" fill="${c1}" ${bord}/><path d="M5 9H19M8.5 4.5L12 9L15.5 4.5M12 9V20M8 9L12 20L16 9" stroke="${c2}" stroke-opacity=".8" stroke-width=".8" fill="none"/>`,
     boule: `<circle cx="12" cy="12.5" r="8.5" fill="${c1}" ${bord}/><path d="M7 11Q12 7 17 11Q16 17 12 17Q8 17 7 11Z" fill="#3A2E46"/><path d="M8.5 12L10 9.5L11 12L12.5 9L13.5 12L15 10L15.5 12.5" fill="${c2}"/>`,
     lingot: `<path d="M3 17L6 10H18L21 17Z" fill="${c1}" ${bord}/><path d="M6 10L7.5 7H16.5L18 10Z" fill="${c2}" ${bord}/>`,
-    vitre: `<rect x="5" y="4" width="14" height="16" rx="2" fill="${c1}" stroke="${c2}" stroke-width="1.2"/><path d="M8 8L11 11M8.5 13.5L14 8" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>`
+    vitre: `<rect x="5" y="4" width="14" height="16" rx="2" fill="${c1}" stroke="${c2}" stroke-width="1.2"/><path d="M8 8L11 11M8.5 13.5L14 8" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>`,
+    cabochon: `<ellipse cx="12" cy="13" rx="8.5" ry="6.5" fill="${c1}" ${bord}/><path d="M4.5 11.5Q12 8.5 19.5 11.5M4 14.5Q12 12 20 14.5M5.5 17.5Q12 15.5 18.5 17.5" stroke="${c2}" stroke-width="1.3" fill="none"/><ellipse cx="9" cy="10.2" rx="2.4" ry="1.1" fill="#fff" fill-opacity=".45"/>`,
+    coeur: `<path d="M12 20.5L4.2 12.6Q1.8 9.6 4 6.6Q6.6 3.6 9.6 5.4Q11 6.3 12 7.8Q13 6.3 14.4 5.4Q17.4 3.6 20 6.6Q22.2 9.6 19.8 12.6Z" fill="${c1}" ${bord}/><path d="M12 7.8V20.5M5.5 9.5L12 13.5L18.5 9.5" stroke="${c2}" stroke-opacity=".8" stroke-width=".9" fill="none"/><ellipse cx="7.8" cy="8.3" rx="1.8" ry="1" fill="#fff" fill-opacity=".55"/>`
   })[forme] + f;
 }
 export const PRODUITS = {
@@ -484,11 +502,25 @@ export const PRODUITS = {
   grenat:  {nom:"Grenat", pluriel:"grenats", emoji:"❤️", icone: pierreIco("gemme", "#A8203A", "#E0607A"), prix:15,
     aide:"Le grenat est rare : un rocher à cristaux rouges, de temps en temps, dans la géode.", usage:"Une pierre précieuse : pour ta collection, une vitrine, ou le comptoir."},
   geode:   {nom:"Géode", pluriel:"géodes", une:true, emoji:"🥚", icone: pierreIco("boule", "#8A7A6A", "#B48CE8"), prix:6,
-    aide:"Les géodes se trouvent dans la salle du fond de la mine (pioche en bronze).", usage:"Une pierre ronde qui cache des cristaux : bientôt, on l'ouvrira à la table de taille."},
+    aide:"Les géodes se trouvent dans la salle du fond de la mine (pioche en bronze).", usage:"Une pierre ronde qui cache un cristal : ouvre-la à la table de taille de la Carrière. Quartz rose, citrine… ou peut-être un œil-de-tigre !"},
   bronze:  {nom:"Bronze", pluriel:"bronze", emoji:"🟫", icone: pierreIco("lingot", "#C8924A", "#9A6A2E"), prix:5,
     aide:"Le bronze se fond à l'enclume de la Forge : 2 cuivre, 1 étain et 1 charbon.", usage:"Pour la pioche en bronze, qui ouvre la géode, au fond de la mine, et la hache en bronze."},
   verre:   {nom:"Verre", pluriel:"verre", emoji:"🪟", icone: pierreIco("vitre", "#CFE6F2", "#6E8CA0"), prix:2,
-    aide:"Le verre se fond à l'enclume de la Forge : 1 quartz et 1 charbon font 2 verres.", usage:"Pour le bocal, qui attrape la luciole et le frelon."},
+    aide:"Le verre se fond à l'enclume de la Forge : 1 quartz et 1 charbon font 2 verres.", usage:"Pour le bocal, qui attrape la luciole et le frelon, et pour la vitrine, qui expose tes pierres."},
+  /* Les cristaux des géodes (étape 1.11, morceau 4 ; Grand Carnet : « à ouvrir à la table de taille : un cristal
+     surprise ») : tirés au sort quand la géode s'ouvre (CRISTAUX) ; cristalGeode n'est que le nom de la recette */
+  quartzRose:{nom:"Quartz rose", pluriel:"quartz roses", emoji:"🩷", icone: pierreIco("cristal", "#F4B8C8", "#E890A8"), prix:8,
+    aide:"Le quartz rose dort dans les géodes : ouvre-les à la table de taille de la Carrière.", usage:"Un cristal rose et doux, le plus courant des géodes : pour ta collection, une vitrine, ou le comptoir."},
+  citrine:  {nom:"Citrine", pluriel:"citrines", une:true, emoji:"💛", icone: pierreIco("gemme", "#F2C440", "#FBE7A0"), prix:10,
+    aide:"La citrine dort dans les géodes : ouvre-les à la table de taille de la Carrière.", usage:"Un cristal jaune comme le miel, moins courant que le quartz rose : pour ta collection, une vitrine, ou le comptoir."},
+  oeilTigre:{nom:"Œil-de-tigre", pluriel:"œils-de-tigre", emoji:"🐯", icone: pierreIco("cabochon", "#B8782A", "#EAC46A"), prix:14,
+    aide:"L'œil-de-tigre est rare : une géode sur sept, à peu près, le cache.", usage:"Une pierre dorée aux reflets qui bougent quand on la tourne, la plus rare des géodes : pour ta collection, une vitrine, ou le comptoir."},
+  cristalGeode:{nom:"Cristal surprise", pluriel:"cristaux surprise", emoji:"🥚", icone: pierreIco("boule", "#8A7A6A", "#B48CE8"),
+    aide:"Ouvre une géode à la table de taille de la Carrière : un cristal surprise en sort."},
+  /* Le Cœur de la mine (morceau 4) : légendaire, une seule fois dans le jeu ; il ne se vend pas */
+  coeurMine:{nom:"Cœur de la mine", pluriel:"Cœurs de la mine", emoji:"💖", icone: pierreIco("coeur", "#E8403A", "#FFC060"),
+    aide:"Le Cœur de la mine dort dans le pilier de la géode, au fond de la mine. Il se réveille quand tu as trouvé toutes les pierres des trois salles.",
+    usage:"Une pierre chaude qui bat comme un cœur. Il n'y en a qu'un dans tout le jeu, et il ne se vend pas : expose-le dans une vitrine !"},
   /* Étape 1.6, d'après le Grand Carnet : le thym des prés de l'île, et le poisson grillé (un poisson + du thym, il soigne).
      prix : en or au comptoir */
   /* Les bois de la Forêt profonde (étape 1.7, demande de Yo : chaque essence donne son bois, comme le dit le Grand
@@ -582,19 +614,22 @@ export const ATELIERS = {
     {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
   ]},
   chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{planche:6, fibre:4},
-    pour:"fabriquer des pots de fleurs, des lanternes et des tapis", recettes:[
+    pour:"fabriquer des pots de fleurs, des lanternes, des tapis et des vitrines", recettes:[
     {out:"pot", in:{pierre:2}, t:20, lvl:1},
     {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1},
-    {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2}
+    {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2},
+    {out:"vitrine", in:{planche:4, verre:2}, t:60, lvl:1}                // étape 1.11 : bois et verre (Grand Carnet)
   ]},
   carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{pierre:10, planche:4},
-    pour:"tailler des blocs, des statues et des cheminées", recettes:[
-    {out:"bloc", n:2, in:{pierre:1}, t:5, lvl:1},
+    pour:"tailler des blocs, des statues et des cheminées, et ouvrir les géodes", recettes:[
+    {out:"bloc", n:2, in:{pierre:1}, t:5, lvl:1, cat:"Matériaux"},
     {out:"gravier", n:4, in:{pierre:1}, t:5, lvl:1},
-    {out:"statue", in:{bloc:3}, t:40, lvl:1},
-    {out:"cheminee", in:{bloc:6, planche:2}, t:90, lvl:2}
+    {out:"statue", in:{bloc:3}, t:40, lvl:1, cat:"Décoration"},
+    {out:"cheminee", in:{bloc:6, planche:2}, t:90, lvl:2},
+    /* étape 1.11, morceau 4 : la géode s'ouvre sur un cristal tiré au sort quand elle est prête (CRISTAUX, ateliers.js) */
+    {out:"cristalGeode", nom:"Ouvrir une géode", hasard:true, in:{geode:1}, t:30, lvl:1, cat:"La mine"}
   ]},
   marche:{nom:"Comptoir", le:"le comptoir", emoji:"⚖️", meuble:"comptoir", cost:{planche:10, bloc:5}, vente:true,
     pour:"vendre ton surplus contre de l'or", recettes:[
@@ -647,7 +682,7 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","chandelier","tonneau","statue","coffre","banc","etagere","cheminee","petitTapis","table","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","chandelier","tonneau","statue","coffre","banc","etagere","vitrine","cheminee","petitTapis","table","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

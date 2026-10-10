@@ -21,6 +21,7 @@ import { isInside, isBusy, currentScene, checkDoors, cameraTarget, takeJump, isl
 import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from "./decorer.js";
 import { updatePlan } from "./ateliers.js";
 import { updateCoffrePiece } from "./coffres.js";
+import { updateVitrine } from "./vitrine.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
@@ -95,6 +96,7 @@ function tick(now){
   garde("caméra", () => camera_(now, dt));
   garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
+  garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
   garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
   garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
   garde("combat", () => updateCombat(dt, wrap.hidden && !isBusy()));   // dans la grotte : les cœurs, les coups, les monstres

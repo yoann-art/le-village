@@ -8,11 +8,13 @@
    sans file d'attente (demande de Yo, v1.6.5) ; le bonus du Marché compte.
    Une recette verrouillée (lock) est affichée avec sa raison, sans bouton (fourneau, enclume, trône).
    Le comptoir vend aussi les poissons et les plats qu'on possède (étape 1.6) : un par un, ou tous d'un coup
-   (sauf les légendaires) ; une recette peut demander un ingrédient « au choix » (un poisson : voir payer). */
+   (sauf les légendaires) ; une recette peut demander un ingrédient « au choix » (un poisson : voir payer).
+   Étape 1.11, morceau 4 : à la table de taille, « Ouvrir une géode » (hasard) : le cristal est tiré au sort quand la
+   géode est prête (tirerCristal), et s'inscrit au carnet. */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, objet, icone } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, objet, icone, tirerCristal } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer } from "./regles.js";
+import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
@@ -45,7 +47,7 @@ function chain(q){
 const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf"];
 const FLEURS_VENTE = Object.keys(FLEURS);
 const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse"];
-const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "bronze", "verre"];
+const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "quartzRose", "citrine", "oeilTigre", "bronze", "verre"];   // pas le Cœur de la mine
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 function recettesDe(b){
@@ -84,12 +86,13 @@ function fabriquer(b, r){
   const q = queueOf(b);
   if(r.lock || b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(r.in)) return;
   const pris = payer(r.in);                           // un poisson « au choix » : on note lequel, pour pouvoir le rendre
-  q.push({out: r.out, n: r.n || 1, in: pris, t: r.t, start: 0, end: 0, ...(r.nom ? {nom: r.nom} : {})});
+  q.push({out: r.out, n: r.n || 1, in: pris, t: r.t, start: 0, end: 0, ...(r.nom ? {nom: r.nom} : {}), ...(r.hasard ? {hasard: true} : {})});
   chain(q); save(); renderHUD();
 }
 function annuler(b, i){
   const q = queueOf(b), j = q[i];
   if(!j) return;
+  if(j.ouverte){ toast("🥚 Cette géode est déjà ouverte : fais de la place dans ton sac pour prendre son cristal", 3200); return; }
   if(Object.entries(j.in).some(([k, v]) => placeFor(k) < v)){ toast("Fais de la place dans ton sac ou un coffre pour reprendre les ingrédients", 3000); return; }
   for(const [k, v] of Object.entries(j.in)) addOwned(k, v);       // ingrédients rendus
   q.splice(i, 1);
@@ -106,6 +109,7 @@ function livrer(){
     while(q && q.length && (q[0].end <= now || ATELIERS[b.type].vente)){   // une vente d'avant la v1.6.5 : livrée tout de suite
       const j = q[0];
       if(ATELIERS[b.type].vente && !j.bonus){ j.n = gain(j.n, j.out); j.bonus = true; }   // une vente : le bonus du Marché
+      if(j.hasard){ j.out = tirerCristal(); j.ouverte = true; delete j.hasard; delete j.nom; noterPierre(j.out, j.n); }   // la géode s'ouvre
       const r = addOwned(j.out, j.n);
       if(r.sac && enCaseAuto(j.out)) barreAuto(j.out);     // un nouvel outil prend une case rapide libre
       if(r.sac || r.coffre || r.bourse) faits.push({b, j, sac: r.sac, coffre: r.coffre, bourse: r.bourse || 0});
@@ -123,12 +127,14 @@ function livrer(){
     const a = ATELIERS[b.type];
     if(!parAtelier.has(a)) parAtelier.set(a, {sac: new Map(), coffre: new Map(), bourse: new Map()});
     const d = parAtelier.get(a);
+    if(j.ouverte) d.geode = true;
     add(d.sac, j.out, sac); add(d.coffre, j.out, coffre); add(d.bourse, j.out, bourse);
   }
   for(const [a, d] of parAtelier){
     const list = m => [...m].map(([k, n]) => a.vente ? `${info(k).emoji} ${many(k, n)}` : label(k, n)).join(", ");
     const sac = list(d.sac), coffre = list(d.coffre);
-    toast(a.vente ? `${a.emoji} Vendu : tu gagnes ${list(d.bourse)}`
+    toast(d.geode ? `🥚 La géode s'ouvre : ${[sac, coffre].filter(Boolean).join(", ")} ! ${sac ? "Dans ton sac" : "Dans un coffre (ton sac est plein)"}, et à ton carnet.`
+      : a.vente ? `${a.emoji} Vendu : tu gagnes ${list(d.bourse)}`
       : sac && coffre ? `${a.emoji} C'est prêt : ${sac} dans ton sac, ${coffre} dans un coffre (sac plein)`
       : sac ? `${a.emoji} ${sac} : c'est prêt, dans ton sac`
       : `${a.emoji} ${coffre} : c'est prêt, dans un coffre (ton sac est plein)`, 3200);
@@ -193,7 +199,7 @@ function recetteHTML(b, a, r, full){
   const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-      ${a.vente ? "" : `<p>⏱ ${duree(r.t)} · tu en as : ${owned(r.out)}</p>`}
+      ${a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : `tu en as : ${owned(r.out)}`}</p>`}
       <div>${r.tout ? "" : Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
     <button class="btn primary" data-fab="${r.key}" ${ok ? "" : "disabled"}>${r.tout ? "Tout vendre" : why}</button></div>`;
 }

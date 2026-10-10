@@ -213,11 +213,13 @@ $("#deco-rot").addEventListener("click", () => {
 $("#deco-store").addEventListener("click", () => {
   if(!sel || MEUBLES[sel.type].plan || sel.reserve) return;           // le plan de travail reste dans son bâtiment ; un coffre de réserve s'emporte depuis le coffre
   if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
+  if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);
   let ou = "dans ton sac";
   if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
+  if(sel.pierre){ addOwned(sel.pierre, 1); ou += `, et sa pierre (${objet(sel.pierre).nom.toLowerCase()})`; }   // la pierre exposée dans une vitrine revient aussi
   toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`);
   sel = null; showSel(); save();
 });

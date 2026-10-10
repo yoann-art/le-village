@@ -10,14 +10,16 @@
    craie cache la galerie de la salle de l'étain (pioche en cuivre) ; au fond de la salle de l'étain, celle de la
    géode (pioche en bronze). Une galerie se creuse par tronçons (GALERIES dans donnees.js), gardés dans la partie :
    state.galeries = {2: {seg, coups}, 3: …}. Chaque salle a ses rochers du jour (MINE.salles) :
-   state.mine = {v: 2, jour, rocks: {case: sorte}} ; une case = 1 P, comptée dans le plan ci-dessous. */
+   state.mine = {v: 2, jour, rocks: {case: sorte}} ; une case = 1 P, comptée dans le plan ci-dessous.
+   Morceau 4 : le Cœur de la mine dort dans le pilier de la géode (une lueur faible) ; il bat quand on a trouvé toutes
+   les pierres des trois salles (coeurEveille), et se dégage à la pioche en bronze, une seule fois (recolte.js). */
 import { G, part } from "./formes.js";
 import { state, save } from "../sauvegarde.js";
 import { MINE, GALERIES } from "../donnees.js";
-import { doorTile, sizeOf } from "../regles.js";
+import { doorTile, sizeOf, coeurEveille } from "../regles.js";
 import { map, idx, inb, N, setObj } from "./ile.js";
 import { occ, footprint, placeMesh } from "./batiments.js";
-import { rockMesh } from "./rochers.js";
+import { rockMesh, pierreMesh } from "./rochers.js";
 
 /* Le plan de la mine, vu de dessus (« . » : sol, « # » : roche) : la grande salle en bas à droite (son entrée en bas),
    la salle de l'étain à gauche, la géode en haut à gauche ; les galeries (GAL) sont de la roche tant qu'on ne les a
@@ -154,7 +156,7 @@ function poserRoche(){
   for(let z = 0; z < D; z++) for(let x = 0; x < W; x++){
     if(floorAt(x, z) || prochain.has(z * W + x) || !NEAR.some(([dx, dz]) => floorAt(x + dx, z + dz))) continue;
     const devant = floorAt(x, z - 1) || floorAt(x - 1, z - 1) && floorAt(x + 1, z - 1), r = (x * 9301 + z * 49297) % 233 / 233;
-    const h = devant ? .55 : 1.7 + r * .9, [c1, c2] = PAROIS[salleDe(x, z)];
+    const h = PILIER.has(z * W + x) ? .8 : devant ? .55 : 1.7 + r * .9, [c1, c2] = PAROIS[salleDe(x, z)];   // le pilier de la géode : une roche basse, où dort le Cœur
     roche.add(part(G.dode, tint(x * 31 + z, c1, c2), 1.45, h, 1.45, cx(x) + (r - .5) * .2, h * .42, cz(z) + (r - .5) * .2));
   }
 }
@@ -189,6 +191,7 @@ export function makeMine(){
     for(const [dx, s] of [[0, 1], [.22, .7], [-.2, .6]]){ const c = part(G.cone4, cristal, .22 * s, .7 * s, .22 * s, ax + dx, .35 * s, az); c.rotation.z = r + dx; c.castShadow = false; g(c); }
   }
   for(const [x, z] of [[cx(3), cz(5)], [cx(11), cz(6)]]) lanterne(group, x, z);
+  majCoeur();
   /* Les rochers du jour */
   for(const t of Object.keys(state.mine.rocks)) addRock(+t);
   return {group, w: W, d: D, doorX: OX, light: 0xFFC98A, power: .55, ground: 0x2E241B, walk};
@@ -243,6 +246,29 @@ export function devantGalerie(g2){
 }
 /* La salle où se trouve une case (1, 2 ou 3) */
 export const salleEn = t => salleDe(t % W, Math.floor(t / W));
+
+/* ----- Le Cœur de la mine (étape 1.11, morceau 4) : posé sur le pilier de la géode, une roche basse ----- */
+const PILIER = new Set([[5, 5], [6, 5], [5, 6], [6, 6]].map(([x, z]) => z * W + x));
+export const coeurEn = t => !state.coeurMine && galerieOuverte(3) && PILIER.has(t);
+/* Où se tenir pour le dégager (pour la vérification) */
+export const devantCoeur = () => ({x: cx(5.5), z: cz(7) + .15, fx: 0, fz: -1});
+let coeur = null;
+/* Le Cœur tel qu'il est : endormi, réveillé (il bat, des éclats rouges autour), ou parti */
+export function majCoeur(){
+  if(!group) return;
+  if(coeur){ group.remove(coeur); coeur = null; }
+  if(state.coeurMine) return;
+  const eveil = coeurEveille(), x = cx(5.5), z = cz(5.5);
+  coeur = new THREE.Group();
+  const c = pierreMesh("coeurMine", {endormi: !eveil});
+  c.scale.setScalar(2.4); c.position.set(x, .68, z + .15);
+  coeur.add(c);
+  const eclat = eveil ? new THREE.MeshLambertMaterial({color: 0xD8384A, emissive: 0xA01A20, emissiveIntensity: .7}) : 0x6A4048;
+  for(const [dx, dz, s, r] of [[-.6, -.1, .9, -.45], [.6, -.05, .75, .5], [-.4, .45, .55, -.25], [.42, .5, .5, .3], [0, -.45, .7, 0]]){
+    const e = part(G.cone4, eclat, .18 * s, .5 * s, .18 * s, x + dx, .62 + .22 * s, z + dz); e.rotation.z = r; e.castShadow = false; coeur.add(e);
+  }
+  group.add(coeur);
+}
 
 /* ----- L'entrée de la mine sur l'île, posée une fois : la première place libre au nord de la place du village ----- */
 if(!state.buildings.some(b => b.type === "mine")){

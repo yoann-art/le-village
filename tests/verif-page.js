@@ -2,7 +2,8 @@
    Joue les gestes de base sur une partie neuve, comme un joueur pressé, et dit ce qui ne va pas :
    ramasser, marcher, ouvrir le sac, bâtir la Scierie, y entrer, construire l'établi, fabriquer,
    couper un arbre, une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
+   les ingrédients du poisson grillé, vendre au comptoir, les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
    chasser à l'arc (un chevreuil, approché sous le vent) et ramasser le présent du Cerf blanc,
@@ -16,14 +17,16 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
-import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost } from "../js/regles.js";
+import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre, presents } from "../js/peche.js";
-import { devantGalerie, galerieOuverte, salleEn } from "../js/monde/mine.js";
+import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde/mine.js";
+import { footOf } from "../js/monde/meubles.js";
+import { updateVitrine } from "../js/vitrine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
 import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
@@ -733,6 +736,76 @@ export async function verifier(){
     } finally {
       state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
     }
+  });
+  await etape("Les pierres : ouvrir une géode, la page du carnet, la vitrine, le Cœur de la mine", async () => {
+    /* une Carrière d'essai, avec sa table de taille, le temps d'ouvrir une géode (retirée ensuite) */
+    const carriere = {id: -2, type: "carriere", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "tableTaille", x: 0, z: 0, rot: 0}], next: 2}};
+    state.buildings.push(carriere);
+    let cristal;
+    try {
+      place(4); sacAdd("geode", 1);
+      openAtelier(carriere); await wait(200);
+      const b = $(`#sheet [data-fab='r${ATELIERS.carriere.recettes.findIndex(r => r.hasard)}']`);
+      if(!b || b.disabled) throw new Error("pas de bouton pour ouvrir la géode");
+      b.click();
+      const j = carriere.atelier.queue[0];
+      if(!j || owned("geode")) throw new Error("la géode n'est pas à la table de taille");
+      j.start = Date.now() - 31000; j.end = Date.now() - 1000;          // sans attendre ses 30 secondes
+      await attendre(() => !carriere.atelier.queue.length, 4000);
+      cristal = CRISTAUX.map(([k]) => k).find(k => owned(k) > 0);
+      if(!cristal) throw new Error("pas de cristal dans le sac");
+      if(!state.carnet.pierres[cristal]) throw new Error("le cristal n'est pas inscrit au carnet");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+    } finally { state.buildings.splice(state.buildings.indexOf(carriere), 1); renderHUD(); }
+    $("#btn-sac").click(); await wait(200);
+    $("[data-sac-tab='carnet']").click(); $("[data-carnet-page='pierres']").click();
+    if(!$("#sheet").textContent.includes("Pierres :") || !$(`#sheet .tile[data-carnet='${cristal}']:not(.inconnu)`)) throw new Error("la page « Pierres » du carnet ne montre pas le cristal");
+    $("#sheetWrap [data-close]").click(); await wait(300);
+    let vitrine = "";
+    if(scierie){
+      sacAdd("vitrine", 1);
+      await entrer(scierie);
+      try {
+        $("#btn-deco").click(); $("#deco-cat").click(); await wait(200);
+        const pose = $("#sheet [data-meuble='vitrine']");
+        if(!pose || pose.disabled) throw new Error("la vitrine ne se pose pas");
+        pose.click(); await wait(200);
+        $("#deco-done").click();
+        const it = scierie.deco.items.find(v => v.type === "vitrine");
+        if(!it) throw new Error("pas de vitrine dans la Scierie");
+        placePlayer(it.x, it.z + footOf(it)[1] / 2 + .45, 0, -1);
+        updateVitrine(true);
+        if($("#btn-vitrine").hidden) throw new Error("pas de bouton tout près de la vitrine");
+        $("#btn-vitrine").click(); await wait(200);
+        const n = owned(cristal);
+        $(`#sheet [data-vitrine='${cristal}']`).click();
+        if(it.pierre !== cristal || owned(cristal) !== n - 1) throw new Error("le cristal n'est pas dans la vitrine");
+        $("#sheet [data-vitrine-reprendre]").click();
+        if(it.pierre || owned(cristal) !== n) throw new Error("le cristal n'est pas revenu dans le sac");
+        $(`#sheet [data-vitrine='${cristal}']`).click();                   // il y reste, exposé
+        $("#sheetWrap [data-close]").click(); await wait(300);
+        vitrine = `, exposé dans une vitrine de la Scierie`;
+      } finally { await sortir(); }
+    }
+    /* le Cœur de la mine : endormi, puis réveillé quand toutes les pierres des trois salles sont au carnet */
+    state.galeries = {2: {seg: 4, coups: 0}, 3: {seg: 4, coups: 0}};
+    place(2); sacAdd("piocheBronze", 1);
+    await entrer(state.buildings.find(b => b.type === "mine"));
+    try {
+      const p = devantCoeur();
+      placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
+      if(!$("#btn-act").textContent.includes("Trouve toutes les pierres")) throw new Error(`devant le Cœur endormi, le bouton dit « ${$("#btn-act").textContent} »`);
+      for(const k of Object.keys(PIERRES)) if(PIERRES[k] <= 3 && !state.carnet.pierres[k]) noterPierre(k, 1);
+      for(let k = 0; k < 10 && !owned("coeurMine"); k++){
+        placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
+        if(!$("#btn-act").textContent.includes("Dégager le Cœur")) throw new Error(`devant le Cœur réveillé, le bouton dit « ${$("#btn-act").textContent} »`);
+        $("#btn-act").click();
+      }
+      if(owned("coeurMine") !== 1 || !state.coeurMine) throw new Error("le Cœur de la mine n'est pas dans le sac");
+      placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
+      if(!$("#btn-act").hidden && $("#btn-act").textContent.includes("Cœur")) throw new Error("le Cœur se dégage encore");
+    } finally { await sortir(); }
+    return `la géode s'ouvre sur : ${objet(cristal).nom.toLowerCase()}${vitrine} ; le Cœur de la mine dégagé`;
   });
   await etape("Les coffres : ranger, déplacer un coffre plein, un coffre dans un coffre", async () => {
     const clic = s => { const b = $(s); if(!b) throw new Error(`pas de bouton ${s}`); b.click(); };

@@ -14,6 +14,7 @@ export const G = {
   cone4: new THREE.ConeGeometry(.5,1,4),
   cone: new THREE.ConeGeometry(.5,1,10),
   dode: new THREE.DodecahedronGeometry(.5,0),
+  octa: new THREE.OctahedronGeometry(.5,0),
   trunk: new THREE.CylinderGeometry(.09,.13,.55,6),
   leaf: new THREE.IcosahedronGeometry(.46,0),
   leaf2: new THREE.IcosahedronGeometry(.3,0),

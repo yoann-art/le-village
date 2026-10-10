@@ -150,7 +150,7 @@ export function raiseItemMesh(id, y){
   if(g) g.position.y = y;
 }
 export function addItemMesh(it){
-  const g = makeMeuble(it.type, it.color);
+  const g = makeMeuble(it.type, it.color, it.pierre);
   room.add(g); itemMeshes.set(it.id, g);
   placeItemMesh(it);
 }

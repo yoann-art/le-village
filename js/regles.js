@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet, NIVEAU3 } from "./donnees.js";
+import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet, NIVEAU3, PIERRES } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -142,6 +142,18 @@ export const queueSlots = lvl => 2 + lvl;
 export const maxLvl = t => B[t].fixe ? 1 : 3;
 /* La mine est-elle ouverte ? Une partie neuve la trouve éboulée (étape 1.11 : entreeMine.js) */
 export const mineOuverte = () => !state.entreeMine;          // 3 niveaux pour tous, le Château aussi (demande de Yo, v1.10.2)
+/* La page « 💎 Pierres » du carnet (étape 1.11, morceau 4) : chaque pierre trouvée s'y inscrit (state.carnet.pierres) */
+export function noterPierre(k, n = 1){
+  if(!PIERRES[k] && k !== "coeurMine") return;
+  const c = state.carnet.pierres || (state.carnet.pierres = {});
+  (c[k] || (c[k] = {n: 0})).n += n;
+}
+/* Les pierres des trois salles déjà trouvées : [combien, sur combien] ; toutes trouvées, le Cœur de la mine se réveille */
+export function pierresTrouvees(){
+  const c = state.carnet.pierres || {}, ks = Object.keys(PIERRES).filter(k => PIERRES[k] <= 3);
+  return [ks.filter(k => c[k] && c[k].n > 0).length, ks.length];
+}
+export const coeurEveille = () => { const [n, tot] = pierresTrouvees(); return !state.coeurMine && n >= tot; };
 export function upCost(t, lvl){
   const c = {};
   for(const [r,v] of Object.entries(B[t].cost)) c[r] = Math.ceil(v * 1.5 * lvl);

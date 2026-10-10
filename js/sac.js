@@ -6,15 +6,16 @@
    - Carnet (le carnet de collection de la bible) : une page par collection, les poissons (étape 1.6 : chaque
      espèce prise, combien de fois et la plus grosse, state.carnet.poissons), les insectes et les oiseaux (étape 1.7,
      state.carnet.insectes, state.carnet.oiseaux), le gibier (state.carnet.gibier) et les monstres (étape 1.8 :
-     chaque espèce vaincue, son signe avant l'attaque, ce qu'elle laisse, state.carnet.monstres) ; ce qu'on n'a pas
-     encore pris reste un « ? ».
+     chaque espèce vaincue, son signe avant l'attaque, ce qu'elle laisse, state.carnet.monstres) et les pierres (étape
+     1.11 : chaque pierre de la mine trouvée, les cristaux des géodes, le Cœur de la mine, state.carnet.pierres) ; ce
+     qu'on n'a pas encore pris reste un « ? ».
    Pour ranger ou reprendre, on va à un coffre (voir coffres.js). Toucher un objet du sac le choisit :
    on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
    est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { coffresCount } from "./regles.js";
+import { coffresCount, pierresTrouvees } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
 import { toggleHold, hold, barreAuto, utilisable, jauge, dansCase, auSac, renderBarre, enCase } from "./barre.js";
 import { contenu } from "./coffres.js";
@@ -127,9 +128,31 @@ function carnetHTML(){
       <button class="sh-tab" role="tab" data-carnet-page="oiseaux" aria-selected="${page === "oiseaux"}">🐦 Oiseaux</button>
       <button class="sh-tab" role="tab" data-carnet-page="gibier" aria-selected="${page === "gibier"}">🦌 Gibier</button>
       <button class="sh-tab" role="tab" data-carnet-page="monstres" aria-selected="${page === "monstres"}">👹 Monstres</button>
+      <button class="sh-tab" role="tab" data-carnet-page="pierres" aria-selected="${page === "pierres"}">💎 Pierres</button>
     </div>`;
   return onglets + (page === "insectes" ? insectesHTML() : page === "oiseaux" ? oiseauxHTML() : page === "gibier" ? gibierHTML()
-    : page === "monstres" ? monstresHTML() : poissonsHTML());
+    : page === "monstres" ? monstresHTML() : page === "pierres" ? pierresHTML() : poissonsHTML());
+}
+/* Les pierres (étape 1.11, morceau 4 ; Grand Carnet, « Les pierres et minerais ») : chaque pierre trouvée à la mine,
+   rangée par salle, les cristaux des géodes, et le légendaire : le Cœur de la mine */
+const SALLES = [[1, "⛏️ La grande salle (pioche en pierre)"], [2, "⚪ La salle de l'étain (pioche en cuivre)"],
+  [3, "💜 La géode, au fond (pioche en bronze)"], [4, "🥚 Dans les géodes (ouvertes à la table de taille)"]];
+const OU_PIERRE = {1: "dans la grande salle de la mine", 2: "dans la salle de l'étain (la galerie se creuse avec une pioche en cuivre)",
+  3: "dans la géode, au fond de la mine (la galerie se creuse avec une pioche en bronze)", 4: "dans les géodes : ouvre-les à la table de taille de la Carrière"};
+function pierresHTML(){
+  const c = state.carnet.pierres || {}, ks = Object.keys(PIERRES), vu = k => c[k] && c[k].n > 0, [n, tot] = pierresTrouvees();
+  const tuile = k => { const on = fiche === k ? " on" : "";
+    return vu(k)
+      ? `<button class="tile${on}${k === "coeurMine" ? " legende" : ""}" data-carnet="${k}"><div class="te" aria-hidden="true">${icone(k)}</div><div class="tl">${objet(k).nom}</div>${k === "coeurMine" ? `<div class="tn">👑</div>` : ""}</button>`
+      : `<button class="tile inconnu${on}" data-carnet="${k}" aria-label="Pierre pas encore trouvée"><div class="te" aria-hidden="true">?</div><div class="tl">???</div></button>`; };
+  const f = fiche && objet(fiche), e = f && f.une ? "e" : "";
+  const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche une pierre pour voir sa fiche.</p>`
+    : vu(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(fiche)}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>${fiche === "coeurMine" ? "👑 Dégagé du pilier de la géode : il n'y en a pas d'autre" : `Trouvé${e} : ${c[fiche].n}`}</p></div></div>`
+    : fiche === "coeurMine" ? `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore trouvé</b><p>Une lueur dort dans le pilier de la géode, au fond de la mine. Elle se réveille quand tu as trouvé toutes les pierres des trois salles (${n} sur ${tot}).</p></div></div>`
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore trouvé${e}</b><p>On ${f.une ? "la" : "le"} trouve ${OU_PIERRE[PIERRES[fiche]]}.</p></div></div>`;
+  return `<p class="muted" style="margin:0 0 8px">💎 Pierres : ${ks.filter(vu).length} sur ${ks.length}. Chaque pierre que tu trouves à la mine s'inscrit ici ; expose les plus belles dans une vitrine.</p>` + detail +
+    SALLES.map(([s, titre]) => `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => PIERRES[k] === s).map(tuile).join("")}</div>`).join("") +
+    `<h3 style="margin:8px 0 4px">👑 Le légendaire</h3><div class="res-grid">${tuile("coeurMine")}</div>`;
 }
 /* Les monstres (étape 1.8, morceau 3 ; Grand Carnet : « chaque espèce vaincue s'inscrit au carnet ») : leur taille,
    leur comportement, le signe avant l'attaque, ce qu'ils laissent */
