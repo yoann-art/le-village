@@ -34,6 +34,7 @@ export let state, migrationMsg = null;
   if(!state.carnet.monstres) state.carnet.monstres = {};    // étape 1.8, morceau 3
   if(!state.terrain) state.terrain = {};                    // étape 1.9 : les cases creusées ou comblées
   if(!state.chemins) state.chemins = {};                    // étape 1.9, morceau 2 : les chemins {case: sorte}
+  if(!state.sacNiveau) state.sacNiveau = 0;                 // demande de Yo (11 octobre 2026) : le sac qui s'agrandit (SACS)
   reglerHemisphere(state.hemisphere);
   /* Un buisson vide garde l'heure où il a été cueilli (étape 1.10, morceau 4 : la pluie qui tombe ensuite l'arrose) */
   for(const c of Object.values(state.ile)) if(c.vide === true) c.vide = Date.now();                       // étape 1.10 : « nord » ou « sud », demandé une fois (saisons.js)

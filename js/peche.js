@@ -17,7 +17,7 @@ import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
 import { POISSONS, HEURES, PECHE, OUTILS, SAC, lieuxDe, saisonDu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sacAdd, sacPlace } from "./regles.js";
+import { sacAdd, sacPlace, placesSac } from "./regles.js";
 import { idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
 import { eauLibre, pontonCases } from "./monde/ponton.js";
 import { foret, ftile, fcx, fcz, sources } from "./monde/foret.js";
@@ -290,7 +290,7 @@ function boutDeCanne(){
   return bout;
 }
 /* Le sac a-t-il la place pour un poisson ? (un emplacement libre, ou une pile de poissons pas pleine) */
-const sacOk = () => state.sac.length < SAC.places || state.sac.some(it => POISSONS[it.k] && it.n < SAC.pile);
+const sacOk = () => state.sac.length < placesSac() || state.sac.some(it => POISSONS[it.k] && it.n < SAC.pile);
 /* Où tombe le bouchon en lançant dans une direction (dx, dz) : dans l'eau, entre le bord et 2,2 P ; null sinon */
 function pointDevant(dx, dz){
   const p = player.position;

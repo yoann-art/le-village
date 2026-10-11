@@ -12,9 +12,9 @@
    Étape 1.11, morceau 4 : à la table de taille, « Ouvrir une géode » (hasard) : le cristal est tiré au sort quand la
    géode est prête (tirerCristal), et s'inscrit au carnet. */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, objet, icone, tirerCristal } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, objet, icone, tirerCristal } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre } from "./regles.js";
+import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre, placesSac } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
@@ -50,8 +50,11 @@ const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMe
 const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "quartzRose", "citrine", "oeilTigre", "bronze", "verre"];   // pas le Cœur de la mine
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
+/* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : seul le sac suivant se fabrique, et pas s'il est déjà en cours */
+const sacEnCours = () => state.buildings.some(b => b.atelier && b.atelier.queue.some(j => objet(j.out).sac));
+const sacPropose = r => !objet(r.out).sac || (objet(r.out).sac === (state.sacNiveau || 0) + 1 && !sacEnCours());
 function recettesDe(b){
-  const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i}));
+  const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i})).filter(sacPropose);
   if(!a.vente) return list;
   const cat = "Prises et plats", aVendre = VENDABLES().filter(k => owned(k) > 0), tous = {};
   for(const k of aVendre) if(!(POISSONS[k] && POISSONS[k].rarete === "legendaire")) tous[k] = owned(k);
@@ -104,10 +107,15 @@ let attente = false;
 function livrer(){
   const now = Date.now(), faits = [];
   let bloque = false;
+  let sac = null;
   for(const b of state.buildings){
     const q = b.atelier && b.atelier.queue;
     while(q && q.length && (q[0].end <= now || ATELIERS[b.type].vente)){   // une vente d'avant la v1.6.5 : livrée tout de suite
       const j = q[0];
+      if(objet(j.out).sac){                                // un nouveau sac : il remplace l'ancien, rien à ranger
+        state.sacNiveau = Math.max(state.sacNiveau || 0, objet(j.out).sac);
+        sac = SACS[state.sacNiveau]; q.shift(); continue;
+      }
       if(ATELIERS[b.type].vente && !j.bonus){ j.n = gain(j.n, j.out); j.bonus = true; }   // une vente : le bonus du Marché
       if(j.hasard){ j.out = tirerCristal(); j.ouverte = true; delete j.hasard; delete j.nom; noterPierre(j.out, j.n); }   // la géode s'ouvre
       const r = addOwned(j.out, j.n);
@@ -119,7 +127,8 @@ function livrer(){
   }
   if(bloque && !attente) toast("🗃️ Ton sac et tes coffres sont pleins : ce qui est prêt attend au plan de travail. Fabrique un coffre de réserve.", 4200);
   attente = bloque;
-  if(!faits.length) return false;
+  if(sac){ save(); toast(`🎒 Ton nouveau sac est prêt : le ${sac.nom.toLowerCase()}, ${sac.places} emplacements !`, 3600); }
+  if(!faits.length) return !!sac;
   save(); renderHUD();
   const parAtelier = new Map();                       // un message par plan de travail, quantités additionnées
   const add = (m, k, n) => { if(n > 0) m.set(k, (m.get(k) || 0) + n); };
@@ -199,7 +208,7 @@ function recetteHTML(b, a, r, full){
   const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-      ${a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : `tu en as : ${owned(r.out)}`}</p>`}
+      ${a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : objet(r.out).sac ? `🎒 ${placesSac()} → ${SACS[objet(r.out).sac].places} emplacements` : `tu en as : ${owned(r.out)}`}</p>`}
       <div>${r.tout ? "" : Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
     <button class="btn primary" data-fab="${r.key}" ${ok ? "" : "disabled"}>${r.tout ? "Tout vendre" : why}</button></div>`;
 }

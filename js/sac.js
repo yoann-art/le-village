@@ -1,6 +1,6 @@
 /* ================= Le sac, les coffres et le carnet =================
    Le bouton « 🎒 Sac » ouvre un panneau à trois onglets :
-   - Sac : ce que le personnage porte sur lui, en SAC.places emplacements (state.sac = [{k, n}]).
+   - Sac : ce que le personnage porte sur lui, en placesSac() emplacements, selon le sac qu'on a (SACS ; state.sac = [{k, n}]).
      Un outil prend un emplacement ; le reste s'empile jusqu'à SAC.pile. Tout ce qu'on récolte arrive ici.
    - Coffres : ce que contiennent tous les coffres de réserve du village, pour s'y retrouver.
    - Carnet (le carnet de collection de la bible) : une page par collection, les poissons (étape 1.6 : chaque
@@ -13,9 +13,9 @@
    on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
    est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, CARTES, SAC, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, CARTES, SAC, SACS, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { coffresCount, pierresTrouvees } from "./regles.js";
+import { coffresCount, pierresTrouvees, placesSac, sacActuel } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
 import { toggleHold, hold, barreAuto, utilisable, jauge, dansCase, auSac, renderBarre, enCase } from "./barre.js";
 import { contenu } from "./coffres.js";
@@ -43,9 +43,12 @@ function sacHTML(){
       <div class="pt"><b>${it.n > 1 ? it.n + " × " : ""}${info(it.k).nom}</b>${enUneCase ? `<p>Dans la case rapide ${pick.j + 1}</p>` : ""}${it.items ? `<p>Contient : ${contenu(it)}</p>` : ""}${OUTILS[it.k] && OUTILS[it.k].eau ? `<p>💧 Eau : ${state.eau} sur ${OUTILS[it.k].eau}</p>` : ""}${solidite(it.k) ? `<p>🔧 Solidité : encore ${reste(it.k)} usages sur ${solidite(it.k)}${it.n > 1 ? " (le premier)" : ""}</p>` : ""}${info(it.k).usage ? `<p>${info(it.k).usage}</p>` : ""}</div>
       ${utilisable(it.k) ? `<div class="pa"><button class="btn primary" data-sac-main>${state.main === it.k ? "Lâcher" : "Prendre en main"}</button>${enUneCase ? `<button class="btn ghost" data-sac-remettre>Remettre dans le sac</button>` : ""}</div>` : ""}</div>`
     : `<p class="muted" style="margin:6px 0 0;font-size:14px">${items.length || state.barre.some(Boolean) ? "Touche un objet pour le choisir." : "Ce que tu récoltes et fabriques arrive ici."}</p>`;
-  return `<p class="muted" style="margin:0 0 8px">Ce que tu portes sur toi : ${items.length} emplacement${items.length > 1 ? "s" : ""} pris sur ${SAC.places}.
-    Ce que tu récoltes et fabriques arrive ici ; quand il est plein, range tes affaires dans un coffre de réserve.</p>
-    <div class="sac-grid">${grille(items, SAC.places, "sac")}</div>
+  const suivant = SACS[(state.sacNiveau || 0) + 1];
+  const agrandir = suivant ? `Pour l'agrandir : le ${suivant.nom.toLowerCase()} (${suivant.places} places) se fabrique à l'atelier de décoration de la Chaumière, avec ${Object.entries(suivant.in).map(([k, v]) => `${v} ${v > 1 ? objet(k).pluriel : objet(k).nom.toLowerCase()}`).join(", ")}.`
+    : "C'est le plus grand sac, pour l'instant.";
+  return `<p class="muted" style="margin:0 0 8px">🎒 <b>${sacActuel().nom}</b> : ${items.length} emplacement${items.length > 1 ? "s" : ""} pris sur ${placesSac()}.
+    Ce que tu récoltes et fabriques arrive ici ; quand il est plein, range tes affaires dans un coffre de réserve. ${agrandir}</p>
+    <div class="sac-grid">${grille(items, placesSac(), "sac")}</div>
     <h3 style="margin:10px 0 4px">Cases rapides</h3>
     <p class="muted" style="margin:0 0 6px;font-size:14px">En plus du sac : ce que tu y mets sort du sac.</p>
     <div class="sac-grid">${grille(state.barre, SAC.cases, "case")}</div>${detail}`;

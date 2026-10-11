@@ -13,7 +13,7 @@
 import { $ } from "./outils.js";
 import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sacCount, pileOf, slotsAdd, slotsPlace } from "./regles.js";
+import { sacCount, pileOf, slotsAdd, slotsPlace, placesSac } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
 import { openSheet, closeSheet, toast, wrap } from "./interface.js";
 
@@ -91,9 +91,9 @@ export function enCase(it){
 }
 /* Remet le contenu d'une case dans le sac ; false s'il n'y a pas la place */
 export function auSac(it){
-  if(it.items || pileOf(it.k) === 1){ if(state.sac.length >= SAC.places) return false; state.sac.push(it); return true; }
-  if(slotsPlace(state.sac, SAC.places, it.k) < it.n) return false;
-  slotsAdd(state.sac, SAC.places, it.k, it.n);
+  if(it.items || pileOf(it.k) === 1){ if(state.sac.length >= placesSac()) return false; state.sac.push(it); return true; }
+  if(slotsPlace(state.sac, placesSac(), it.k) < it.n) return false;
+  slotsAdd(state.sac, placesSac(), it.k, it.n);
   return true;
 }
 /* Met dans la case i l'objet k (pris dans le sac, ou dans une autre case) ; ce qu'il y avait retourne au sac */

@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, POSABLES, SAC, COFFRE, GROUPES, membres, objet, NIVEAU3, PIERRES } from "./donnees.js";
+import { RES, B, OUTILS, POSABLES, SAC, SACS, COFFRE, GROUPES, membres, objet, NIVEAU3, PIERRES } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -58,11 +58,14 @@ export function slotsTake(list, k, n){
   }
   return n - left;
 }
+/* Le sac qu'on a (demande de Yo, 11 octobre 2026 : il s'agrandit, SACS) et son nombre d'emplacements */
+export const sacActuel = () => SACS[state.sacNiveau || 0] || SACS[0];
+export const placesSac = () => sacActuel().places;
 /* Les fonctions « sac » comptent tout ce qu'on porte sur soi : le sac et les cases rapides ([{k, n} ou null] × 3) */
 export const porte = () => [...state.sac, ...state.barre.filter(Boolean)];
 export const sacCount = k => slotsCount(porte(), k);
 /* La place pour k sur soi : ce qui manque à la pile de sa case rapide, puis le sac */
-export const sacPlace = k => state.barre.reduce((n, it) => n + (it && it.k === k ? pileOf(k) - it.n : 0), 0) + slotsPlace(state.sac, SAC.places, k);
+export const sacPlace = k => state.barre.reduce((n, it) => n + (it && it.k === k ? pileOf(k) - it.n : 0), 0) + slotsPlace(state.sac, placesSac(), k);
 /* Tout cela tient-il sur soi, ensemble ? (gains : {sorte: combien}) ; on essaie sur une copie du sac et des cases
    (v1.9.6 : vérifier chaque sorte à part laissait passer un gibier dont le cuir ne tenait plus) */
 export function tientSurSoi(gains){
@@ -70,7 +73,7 @@ export function tientSurSoi(gains){
   for(const [k, n] of Object.entries(gains)){
     let left = n;
     for(const it of barre) if(it && it.k === k && left > 0){ const m = Math.min(pileOf(k) - it.n, left); it.n += m; left -= m; }
-    if(left > 0 && slotsAdd(sac, SAC.places, k, left) < left) return false;
+    if(left > 0 && slotsAdd(sac, placesSac(), k, left) < left) return false;
   }
   return true;
 }
@@ -78,7 +81,7 @@ export function tientSurSoi(gains){
 export function sacAdd(k, n){
   let left = n;
   for(const it of state.barre) if(it && it.k === k && left > 0){ const m = Math.min(pileOf(k) - it.n, left); it.n += m; left -= m; }
-  return n - left + slotsAdd(state.sac, SAC.places, k, left);
+  return n - left + slotsAdd(state.sac, placesSac(), k, left);
 }
 /* Retire de soi : d'abord de la case rapide (ce qu'on tient en main : la graine qu'on plante), puis du sac */
 export function sacTake(k, n){
@@ -92,7 +95,7 @@ export function sacTake(k, n){
 }
 /* Met sur soi un objet qui ne s'empile pas (un coffre rempli) : dans le sac, sinon dans une case libre */
 export function sacPut(it){
-  if(state.sac.length < SAC.places){ state.sac.push(it); return true; }
+  if(state.sac.length < placesSac()){ state.sac.push(it); return true; }
   const c = state.barre.indexOf(null);
   if(c < 0) return false;
   state.barre[c] = it;

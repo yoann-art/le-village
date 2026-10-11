@@ -4,7 +4,7 @@
    couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   les ingrédients du poisson grillé, vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -23,7 +23,7 @@
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
-import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre } from "../js/regles.js";
+import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
@@ -983,6 +983,42 @@ export async function verifier(){
       return `+${state.res.or - or} or`;
     } finally {
       state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
+    }
+  });
+  await etape("Le sac qui s'agrandit : tisser la toile, fabriquer le sac de cuir à l'atelier de décoration", async () => {
+    /* une Chaumière d'essai, avec son atelier de décoration (retirée ensuite) ; le sac revient ensuite à la besace */
+    const chaumiere = {id: -3, type: "chaumiere", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "atelierDeco", x: 0, z: 0, rot: 0}], next: 2}};
+    state.buildings.push(chaumiere);
+    const fini = async () => { const j = chaumiere.atelier.queue[0]; j.start = Date.now() - j.t * 1000 - 1000; j.end = Date.now() - 1000; await attendre(() => !chaumiere.atelier.queue.length, 4000); };
+    try {
+      place(3); sacAdd("fibre", 16); sacAdd("cuir", 3);
+      openAtelier(chaumiere); await wait(200);
+      const cle = k => `#sheet [data-fab='r${ATELIERS.chaumiere.recettes.findIndex(r => r.out === k)}']`;
+      if($(cle("sacRenforce"))) throw new Error("le sac renforcé est proposé avant le sac de cuir");
+      for(let n = 0; n < 4; n++){ $(cle("toile")).click(); await fini(); }
+      if(owned("toile") < 4) throw new Error(`${owned("toile")} toiles tissées au lieu de 4`);
+      openAtelier(chaumiere); await wait(200);
+      const b = $(cle("sacCuir"));
+      if(!b || b.disabled) throw new Error("pas de bouton pour fabriquer le sac de cuir");
+      b.click(); await wait(100);
+      if($(cle("sacCuir"))) throw new Error("le sac de cuir se propose encore, déjà en fabrication");
+      await fini();
+      if(state.sacNiveau !== 1 || placesSac() !== 16) throw new Error(`sac au niveau ${state.sacNiveau}, ${placesSac()} places`);
+      if(owned("sacCuir")) throw new Error("le sac de cuir est dans le sac au lieu de le remplacer");
+      openAtelier(chaumiere); await wait(200);
+      if($(cle("sacCuir")) || !$(cle("sacRenforce"))) throw new Error("l'atelier ne propose pas le sac suivant");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+      $("#btn-sac").click(); await wait(200);
+      $("[data-sac-tab='sac']").click(); await wait(100);
+      const cases = $("#sheet .sac-grid").children.length;
+      if(!$("#sheet").textContent.includes("Sac de cuir")) throw new Error("l'écran du sac ne dit pas « Sac de cuir »");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+      if(cases !== 16) throw new Error(`l'écran du sac montre ${cases} emplacements`);
+      return "4 toiles, puis le sac de cuir : 16 emplacements";
+    } finally {
+      state.buildings.splice(state.buildings.indexOf(chaumiere), 1); state.sacNiveau = 0;
+      while(state.sac.length > 12) state.sac.pop();
+      renderHUD();
     }
   });
   await etape("Les pierres : ouvrir une géode, la page du carnet, la vitrine, le Cœur de la mine", async () => {

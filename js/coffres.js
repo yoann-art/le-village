@@ -16,7 +16,7 @@
    porte o = "coffre" et l'id. */
 import { B, COFFRE, SAC, OUTILS, POSABLES, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { slotsAdd, slotsPlace, sacAdd, sacPlace, sacTake, sacPut, sacTakeObj, doorTile } from "./regles.js";
+import { placesSac, slotsAdd, slotsPlace, sacAdd, sacPlace, sacTake, sacPut, sacTakeObj, doorTile } from "./regles.js";
 import { map, inb, N, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { entrees } from "./monde/ponton.js";
@@ -135,7 +135,7 @@ function ficheHTML(){
   if(!sel) return `<p class="muted" style="margin:0;font-size:14px">Touche un objet pour voir sa fiche, puis choisis de le ranger ou de le prendre.</p>`;
   const it = sel.it, m = objet(it.k), prendre = sel.ou === "coffre";
   const ou = prendre ? "Dans le coffre" : sel.ou === "case" ? `Dans ta case rapide ${state.barre.indexOf(it) + 1}` : "Dans ton sac";
-  const place = it.items ? (prendre ? state.sac.length < SAC.places || state.barre.includes(null) : open.items.length < COFFRE.places) ? 1 : 0
+  const place = it.items ? (prendre ? state.sac.length < placesSac() || state.barre.includes(null) : open.items.length < COFFRE.places) ? 1 : 0
     : Math.min(it.n, prendre ? sacPlace(it.k) : slotsPlace(open.items, COFFRE.places, it.k));
   /* Demande de Yo (v1.7.9) : le bouton dit où va l'objet, « Ranger 1 sac » ou « Ranger tout coffre » */
   const vers = prendre ? "sac" : "coffre";
@@ -159,8 +159,8 @@ function render(){
       <button class="btn ghost" data-co-piles ${state.sac.some(it => co.items.some(c => c.k === it.k)) ? "" : "disabled"}>Compléter les piles</button>
     </div>
     <p class="muted" style="margin:4px 0 0;font-size:13px">« Tout ranger » : tout ton sac (tes cases rapides restent). « Compléter les piles » : seulement ce que ce coffre a déjà.</p>
-    <h3 style="margin:12px 0 6px">Ton sac (${state.sac.length} sur ${SAC.places})</h3>
-    <div class="sac-grid co">${grille("sac", SAC.places)}</div>
+    <h3 style="margin:12px 0 6px">Ton sac (${state.sac.length} sur ${placesSac()})</h3>
+    <div class="sac-grid co">${grille("sac", placesSac())}</div>
     <h3 style="margin:8px 0 6px">Tes cases rapides</h3>
     <div class="sac-grid co">${grille("case", SAC.cases)}</div>
     <button class="btn ghost" data-co-deplacer style="margin-top:10px;width:100%">🗃️ Déplacer le coffre${co.items.length ? ", avec ce qu'il contient" : ""}</button>

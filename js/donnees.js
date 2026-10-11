@@ -68,6 +68,15 @@ export const MEUBLES = {
    combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul),
    et le nombre de cases rapides au-dessus du joystick (demande de Yo : changer d'outil sans ouvrir le sac) */
 export const SAC = {places:12, pile:30, cases:3};
+/* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : une partie neuve commence avec la besace de toile ; chaque
+   sac suivant se fabrique à l'atelier de décoration de la Chaumière, avec ce qu'on rapporte de la chasse, de la grotte
+   et de la mine (chiffres choisis par Claude). Fini, il remplace l'ancien : state.sacNiveau (0 au départ). */
+export const SACS = [
+  {k:null,           nom:"Besace de toile",       places:12},
+  {k:"sacCuir",      nom:"Sac de cuir",           places:16, in:{cuir:3, toile:4}},
+  {k:"sacRenforce",  nom:"Sac de cuir renforcé",  places:20, in:{cuirEpais:2, fourrure:2, cuivre:2}},
+  {k:"sacVoyageur",  nom:"Sac du voyageur",       places:24, in:{cuirEpais:2, fourrureGrise:2, bronze:2}}
+];
 /* Un coffre de réserve (demande de Yo) : posé au village, on y range ce qu'on veut ; on peut en fabriquer
    plusieurs pour trier. places : ses emplacements (piles comme dans le sac) */
 export const COFFRE = {places:20};
@@ -626,6 +635,14 @@ export const PRODUITS = {
   aileMembraneuse:{nom:"Aile membraneuse", pluriel:"ailes membraneuses", emoji:"🦇", prix:2, aide:"Les ailes membraneuses viennent des chauves-souris, dans le noir de la grotte de la Forêt profonde.",
     usage:"L'aile d'une chauve-souris, pour les potions (plus tard)."},
   /* Le Gardien d'écorce (étape 1.13, morceau 1 ; Grand Carnet : « Carte du Marais, cœur de bois ») */
+  /* La toile (demande de Yo, 11 octobre 2026) : tissée à l'atelier de décoration avec des fibres, pour le sac de cuir */
+  toile:    {nom:"Toile", pluriel:"toiles", emoji:"🧶", icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h13v11H4z" fill="#E8D6A8" stroke="#1C2230" stroke-opacity=".35"/><path d="M7 7v11M10 7v11M13 7v11M4 10h13M4 13h13M4 16h13" stroke="#B89A62" stroke-width=".8"/><ellipse cx="18" cy="12.5" rx="2.6" ry="5.8" fill="#D9C28C" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="18" cy="12.5" rx="1" ry="2.4" fill="#B89A62"/></svg>', prix:1,
+    aide:"La toile se tisse à l'atelier de décoration de la Chaumière : 4 fibres pour 1 toile.",
+    usage:"Une toile tissée de fibres : pour agrandir ton sac (le sac de cuir), et plus tard les voiles et les tentures."},
+  /* Les sacs qui s'agrandissent (SACS) : on ne les porte pas, ils remplacent le sac qu'on a */
+  sacCuir:    {nom:"Sac de cuir", pluriel:"sacs de cuir", emoji:"🎒", sac:1},
+  sacRenforce:{nom:"Sac de cuir renforcé", pluriel:"sacs de cuir renforcés", emoji:"🎒", sac:2},
+  sacVoyageur:{nom:"Sac du voyageur", pluriel:"sacs du voyageur", emoji:"🎒", sac:3},
   coeurDeBois:{nom:"Cœur de bois", pluriel:"cœurs de bois", emoji:"🪵", prix:12,
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C6 17 3 13.5 3 9.5 3 6.5 5.4 4.5 8 4.5c1.7 0 3.1.9 4 2.2.9-1.3 2.3-2.2 4-2.2 2.6 0 5 2 5 5 0 4-3 7.5-9 11.5z" fill="#7A5232" stroke="#1C2230" stroke-opacity=".35"/><path d="M8 8.5c1.5 1 2 3 1.5 5M15.5 8c-1 1.4-1 3.4 0 5.2M12 9v8" stroke="#4A3020" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="1.6" fill="#9AF060"/></svg>',
     aide:"Le Gardien d'écorce le laisse, au fond de la grotte de la Forêt profonde (le troisième palier).",
@@ -669,13 +686,16 @@ export const ATELIERS = {
     {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
   ]},
   chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{planche:6, fibre:4},
-    pour:"fabriquer des pots de fleurs, des lanternes, des tapis et des vitrines", recettes:[
-    {out:"pot", in:{pierre:2}, t:20, lvl:1},
-    {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
+    pour:"tisser la toile, agrandir ton sac, fabriquer des pots de fleurs, des lanternes, des tapis et des vitrines", recettes:[
+    {out:"toile", in:{fibre:4}, t:20, lvl:1, cat:"Matériaux"},          // demande de Yo (11 octobre 2026)
+    /* Le sac qui s'agrandit (SACS) : seul le suivant est proposé (recettesDe dans ateliers.js) */
+    ...SACS.filter(s => s.k).map(s => ({out:s.k, in:s.in, t:120, lvl:1, cat:"Ton sac"})),
+    {out:"pot", in:{pierre:2}, t:20, lvl:1, cat:"Décoration"},
+    {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1, cat:"Décoration"},
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
-    {out:"petitTapis", in:{fibre:6}, t:40, lvl:1},
-    {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2},
-    {out:"vitrine", in:{planche:4, verre:2}, t:60, lvl:1}                // étape 1.11 : bois et verre (Grand Carnet)
+    {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
+    {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2, cat:"Décoration"},
+    {out:"vitrine", in:{planche:4, verre:2}, t:60, lvl:1, cat:"Décoration"}   // étape 1.11 : bois et verre (Grand Carnet)
   ]},
   carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{pierre:10, planche:4},
     pour:"tailler des blocs, des statues et des cheminées, et ouvrir les géodes", recettes:[
