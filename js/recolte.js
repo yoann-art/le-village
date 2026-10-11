@@ -30,12 +30,12 @@
    dit de le prendre (`avecOutil`, `outilPour` et `prendreAction` dans barre.js). */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, MEUBLES, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { addOwned, owned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
+import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
-import { occ } from "./monde/batiments.js";
+import { occ, placeMesh, colPorte } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser, coeurEn, majCoeur } from "./monde/mine.js";
@@ -129,7 +129,7 @@ function target(){
     const [x, z] = frontTile(dist);
     if(!inb(x, z)) continue;
     const i = idx(x, z);
-    if(occ.has(i)) return null;                       // un bâtiment : c'est son bouton à lui
+    if(occ.has(i)) return facadeCible(i, x, z);        // un bâtiment : c'est son bouton à lui (ou une lumière de sa façade)
     if(map.obj[i]) return {w: ILE, i, x, z, o: map.obj[i]};
     if((arrosoir || canne) && eauLibre(i)) return {i, x, z, eau: true, peche: !arrosoir};   // le bord de l'eau : l'arrosoir, ou la canne
   }
@@ -181,6 +181,7 @@ function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.pelle) return actionTerrain(t);
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
+  if(t.facade) return facadeAction(t);
   if(MEUBLES[t.o] && MEUBLES[t.o].dehors) return lumiereAction(t);
   if(t.peche) return avecOutil("canne", 0, {label: "🎣 Lancer", run: () => { if(tenu("canne")) lancer(); }}, "🎣 Il te faut une canne à pêche");
   if(t.eau){ const max = OUTILS[state.main].eau;
@@ -518,6 +519,40 @@ function lumiereAction(t){
   if(m.support && !c.torche && owned("torche") > 0)
     return {label: "🔥 Poser une torche sur la torchère", run: () => poserTorche(c, () => setEtat(t.i, {torche: true}))};
   return {label: `✋ Reprendre ${leNom(m)}${c.torche ? " et sa torche" : ""}`, run: () => reprendreLumiere(t)};
+}
+/* La façade de devant d'un bâtiment (batiments.js) : on s'y tient juste devant, face à elle, une colonne à la fois ;
+   une torchère ou une lanterne murale en main s'y accroche ; accrochée, on y pose une torche, ou on la décroche */
+function facadeCible(i, x, z){
+  const b = state.buildings.find(v => v.id === occ.get(i)), s = b && sizeOf(b.type);
+  if(!b || b.rot || B[b.type].fixe || z !== b.z + s - 1 || tileOf(player.position.z) !== b.z + s || tileOf(player.position.x) !== x) return null;
+  const col = x - b.x, f = (b.facade || []).find(v => v.col === col);
+  return f || (MEUBLES[state.main] && MEUBLES[state.main].facade) ? {facade: true, b, col, f} : null;
+}
+function facadeAction(t){
+  const {b, col, f} = t;
+  if(!f && col === colPorte(b.type)) return info("🚪 Pas sur la porte : accroche-la à côté");
+  if(f){
+    const m = MEUBLES[f.type];
+    if(m.support && !f.torche && owned("torche") > 0)
+      return {label: "🔥 Poser une torche sur la torchère", run: () => poserTorche(f, () => placeMesh(b))};
+    return {label: `✋ Décrocher ${leNom(m)}${f.torche ? " et sa torche" : ""}`, run: () => decrocher(t)};
+  }
+  return {label: `🪝 Accrocher ${leNom(MEUBLES[state.main])} au mur`, run: () => accrocher(t)};
+}
+function accrocher(t){
+  const k = state.main, m = MEUBLES[k];
+  if(!m || !m.facade || (t.b.facade || []).some(v => v.col === t.col) || !sacTake(k, 1)) return;
+  (t.b.facade || (t.b.facade = [])).push({type: k, col: t.col});
+  placeMesh(t.b); syncBarre(); save();
+  toast(`${m.emoji} ${m.nom} accrochée à la façade${m.support ? " : approche-toi avec une torche pour l'allumer" : " : elle s'allumera seule à la nuit tombée"}`, 3400);
+}
+function decrocher(t){
+  const f = t.f, m = MEUBLES[f.type], gains = {[f.type]: 1, ...(f.torche ? {torche: 1} : {})};
+  if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la décrocher", 3000); return; }
+  for(const [k, n] of Object.entries(gains)) sacAdd(k, n);
+  t.b.facade.splice(t.b.facade.indexOf(f), 1);
+  placeMesh(t.b); syncBarre(); save();
+  toast(`${m.emoji} ${m.nom} dans ton sac${f.torche ? ", avec sa torche" : ""}`, 2400);
 }
 function reprendreLumiere(t){
   const m = MEUBLES[t.o], c = state.ile[t.i] || {}, gains = {[t.o]: 1, ...(c.torche ? {torche: 1} : {})};

@@ -34,13 +34,13 @@ export const decoView = () => deco || lift ? view : null;
 /* ----- Règles de place ----- */
 const MAT_W = 1.1, MAT_D = .7;       // le paillasson (la sortie) reste toujours libre
 const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", tapis:"Pas sur un autre tapis", personnage:"Le personnage est là",
-  mur:"Pas sur une autre lumière du mur"};
+  mur:"Pas sur une autre lumière du mur", plafond:"Pas sur un autre lustre"};
 /* Trois couches : les tapis au sol, les meubles par-dessus, et ce qui est accroché au mur (la torchère murale, demande de
    Yo, 11 octobre 2026 : toujours contre un mur, on passe dessous). On ne chevauche que sa propre couche. */
-const couche = type => MEUBLES[type].flat ? "tapis" : MEUBLES[type].mur ? "mur" : "meuble";
+const couche = type => MEUBLES[type].flat ? "tapis" : MEUBLES[type].mur ? "mur" : MEUBLES[type].plafond ? "plafond" : "meuble";
 function problem(it){
   const [w, d] = footOf(it), {room} = cur(), c = couche(it.type), flat = c === "tapis";
-  if(c !== "mur" && Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
+  if(c !== "mur" && c !== "plafond" && Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
   for(const o of items()){
     if(o === it || couche(o.type) !== c) continue;
     const [ow, od] = footOf(o);
@@ -183,7 +183,8 @@ $("#deco-cat").addEventListener("click", () => {
         const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
         const where = m.dehorsSeul ? "Seulement dehors, sur ton île : prends-le en main devant une case libre"
           : m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}`
-          : m.mur ? "Contre un mur" : m.dehors ? "Partout, et dehors sur ton île" : "Partout";
+          : m.mur ? (m.facade ? "Contre un mur, ou dehors sur la façade de devant d'un bâtiment" : "Contre un mur")
+          : m.plafond ? "Au plafond" : m.dehors ? "Partout, et dehors sur ton île" : "Partout";
         const fab = FABRIQUE_A[t], af = fab && ATELIERS[fab];
         const stock = !craftable(t) ? "Gratuit pour l'instant"
           : n > 0 ? `Tu en as ${n}` : `Tu n'en as pas. Se fabrique ${aLe(af)} (${B[fab].nom})`;

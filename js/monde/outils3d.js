@@ -3,7 +3,7 @@
    et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
 import { G, part } from "./formes.js";
-import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, poseDehors } from "../donnees.js";
+import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, enMainDehors } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 
@@ -85,6 +85,7 @@ function matiere(g, k){
     for(const [x, z] of [[-.05, .02], [.05, .08], [0, -.04]]) g.add(part(G.dode, 0x8E8678, .05, .04, .05, x, .12, z));
   }
 }
+const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
 const POINTE = {fleche: 0x8E949C, flecheCuivre: 0xC8743C, flecheBronze: 0xB98A4A};
@@ -103,8 +104,10 @@ export function makeOutil(k){
     const c = POSABLES[k].pose === "coffre" ? makeMeuble("coffre") : rockMesh(POSABLES[k].pose, .5);
     c.scale.multiplyScalar(POSABLES[k].pose === "coffre" ? .22 : .4); c.position.y = .05; g.add(c); return g;
   }
-  else if(poseDehors(k)){                           // une lumière à poser dehors (torchère, chandelle, feu de camp…)
-    const c = makeMeuble(k); c.scale.multiplyScalar(k === "feuCamp" ? .32 : .42); c.position.y = .05; g.add(c); return g;
+  else if(enMainDehors(k)){                         // une lumière à poser dehors (torchère, chandelle, feu de camp…) ou à accrocher
+    const c = makeMeuble(k); c.scale.multiplyScalar(k === "feuCamp" ? .32 : k === "lampadaire" ? .3 : .42);
+    if(MEUBLES_MUR.has(k)) c.position.set(0, -.45, 0); else c.position.y = .05;
+    g.add(c); return g;
   }
   else if(CHEMIN_DE[k]) matiere(g, k);
   else BUILD[OUTILS[k].famille](g, OUTILS[k]);

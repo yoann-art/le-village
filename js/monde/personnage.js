@@ -46,9 +46,20 @@ flamme.castShadow = coeur.castShadow = false;
 torche.add(flamme, coeur);
 torche.visible = false;
 body.add(torche);
-export function tenirTorche(oui, t = 0){
-  torche.visible = !!oui;
-  if(oui){ const f = 1 + Math.sin(t * 17) * .12 + Math.sin(t * 9.3) * .08; flamme.scale.set(.5 * f, .8 * (2 - f), .5 * f); }
+/* La lanterne à main (demande de Yo, 11 octobre 2026), à la place de la torche : elle pend sous la main gauche */
+const lanterneG = new THREE.Group();
+lanterneG.position.set(.27, .4, .1);
+lanterneG.add(part(G.head, 0xF2C9A0, .38, .38, .38, 0, 0, 0));
+lanterneG.add(part(G.cyl, 0xC8743C, .025, .16, .025, 0, -.08, .04));                      // l'anse
+lanterneG.add(part(G.cone4, 0xC8743C, .2, .08, .2, 0, -.16, .04));                         // le chapeau
+const verreL = part(G.box, new THREE.MeshLambertMaterial({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1}), .14, .17, .14, 0, -.28, .04);
+verreL.castShadow = false; lanterneG.add(verreL);
+lanterneG.add(part(G.box, 0xC8743C, .17, .03, .17, 0, -.38, .04));                        // le fond
+lanterneG.visible = false;
+body.add(lanterneG);
+export function tenirTorche(oui, t = 0, lanterne = false){
+  torche.visible = !!oui && !lanterne; lanterneG.visible = !!oui && lanterne;
+  if(oui && !lanterne){ const f = 1 + Math.sin(t * 17) * .12 + Math.sin(t * 9.3) * .08; flamme.scale.set(.5 * f, .8 * (2 - f), .5 * f); }
 }
 /* Penche la main (et l'outil) vers l'avant : rx en radians ; sans rien, la position normale (la pêche s'en sert) */
 export function pencheMain(rx){ hand.rotation.x = rx === undefined ? .35 : rx; }

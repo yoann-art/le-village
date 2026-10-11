@@ -11,13 +11,18 @@ const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0x
 /* Ce qui brille : les flammes et la lumière des lanternes (les flammes vacillent : lumieres.js) */
 export const fireMat = new THREE.MeshLambertMaterial({color:0xFF8A3D, emissive:0xFF5A00, emissiveIntensity:.9});
 const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
+/* Le verre des lanternes qui s'allument seules à la nuit tombée (lumieres.js règle leur éclat), et les lucioles du bocal */
+export const nuitMat = new THREE.MeshLambertMaterial({color:0xFFEFC8, emissive:0xFFC060, emissiveIntensity:.1});
+export const lucioleMat = new THREE.MeshLambertMaterial({color:0xE8FF9A, emissive:0xC8F060, emissiveIntensity:.9});
+const CUIVRE = 0xC8743C;
 /* Le verre de la vitrine : on voit au travers */
 const verreMat = new THREE.MeshLambertMaterial({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
-  chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
+  chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
+  bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 const BUILD = {
   chaise(g, m){
@@ -85,6 +90,57 @@ const BUILD = {
     g.add(part(G.cone, fireMat, .28, .5, .28, 0, .36, 0));                             // les flammes
     g.add(part(G.cone, fireMat, .18, .34, .18, .1, .28, .06));
     g.add(part(G.cone, fireMat, .16, .3, .16, -.09, .27, -.05));
+  },
+  /* La lanterne murale (cuivre, verre, une chandelle) : au mur d'une pièce ou sur une façade ; elle s'allume seule à la
+     nuit tombée (nuitMat) */
+  lanterneMurale(g, m){
+    g.add(part(G.box, m, .2, .36, .04, 0, 1.25, -.23));                               // la plaque, sur le mur
+    g.add(part(G.box, m, .04, .04, .3, 0, 1.56, -.1));                                 // le bras
+    g.add(part(G.cyl, m, .02, .08, .02, 0, 1.52, .05));                                // le crochet
+    const v = part(G.box, nuitMat, .18, .24, .18, 0, 1.32, .05); v.castShadow = false; g.add(v);   // le verre
+    for(const [x, z] of [[-.1, -.05], [.1, -.05], [-.1, .15], [.1, .15]]) g.add(part(G.box, m, .025, .26, .025, x, 1.32, z));   // les montants
+    g.add(part(G.cone4, m, .28, .12, .28, 0, 1.5, .05));                               // le chapeau
+    g.add(part(G.box, m, .22, .03, .22, 0, 1.19, .05));                                // le fond
+  },
+  /* Le bocal à lucioles (Grand Carnet : « une lumière douce et vivante ») : trois lucioles qui palpitent */
+  bocalLucioles(g, m){
+    const v = part(G.cyl, verreMat, .32, .4, .32, 0, .21, 0); v.castShadow = false; v.receiveShadow = false; g.add(v);
+    g.add(part(G.cyl, m, .34, .06, .34, 0, .44, 0));                                   // le couvercle de bois
+    g.add(part(G.cyl, 0xD8CBA8, .2, .05, .2, 0, .49, 0));                              // le tissu noué
+    for(const [x, y, z] of [[.05, .14, .05], [-.06, .26, -.03], [.04, .32, -.06]]){
+      const l = part(G.head, lucioleMat, .14, .14, .14, x, y, z); l.castShadow = false; g.add(l);
+    }
+  },
+  /* Le brasero (dehors) : une vasque de cuivre sur trois pieds, ses braises et ses flammes */
+  brasero(g, m){
+    for(let k = 0; k < 3; k++){ const a = k * Math.PI * 2 / 3; g.add(part(G.cyl, m, .06, .7, .06, Math.sin(a) * .22, .35, Math.cos(a) * .22)); }
+    g.add(part(G.cyl, m, .62, .18, .62, 0, .76, 0));                                   // la vasque
+    g.add(part(G.cyl, 0x2A1E18, .54, .04, .54, 0, .86, 0));                            // les braises
+    g.add(part(G.cone, fireMat, .3, .42, .3, 0, 1.06, 0));                             // les flammes
+    g.add(part(G.cone, fireMat, .18, .3, .18, .1, 1.0, .05));
+    g.add(part(G.cone, fireMat, .16, .26, .16, -.09, .98, -.06));
+  },
+  /* Le lampadaire (dehors, le long des chemins : cuivre, verre, planches) : il s'allume seul à la nuit tombée */
+  lampadaire(g, m){
+    g.add(part(G.cyl, C.stone2, .36, .12, .36, 0, .06, 0));                            // le socle
+    g.add(part(G.cyl, m, .1, 1.8, .1, 0, 1.02, 0));                                    // le poteau
+    g.add(part(G.box, CUIVRE, .3, .04, .3, 0, 1.92, 0));                               // le plateau
+    const v = part(G.box, nuitMat, .22, .28, .22, 0, 2.08, 0); v.castShadow = false; g.add(v);   // le verre
+    for(const x of [-.12, .12]) for(const z of [-.12, .12]) g.add(part(G.box, CUIVRE, .025, .3, .025, x, 2.08, z));
+    g.add(part(G.cone4, CUIVRE, .38, .18, .38, 0, 2.31, 0));                           // le chapeau
+    g.add(part(G.head, CUIVRE, .2, .2, .2, 0, 2.42, 0));
+  },
+  /* Le lustre (bronze et six chandelles, au plafond des grandes pièces : « éclaire toute la pièce ») */
+  lustre(g, m){
+    const r = part(G.tore, m, 1, 1, 1.5, 0, 1.74, 0); r.rotation.x = Math.PI / 2; g.add(r);   // la couronne
+    g.add(part(G.box, m, 1.0, .03, .03, 0, 1.74, 0)); g.add(part(G.box, m, .03, .03, 1.0, 0, 1.74, 0));   // ses rayons
+    g.add(part(G.cyl, m, .04, .7, .04, 0, 2.08, 0));                                   // la chaîne
+    for(let k = 0; k < 6; k++){
+      const a = k * Math.PI / 3, x = Math.sin(a) * .5, z = Math.cos(a) * .5;
+      g.add(part(G.cyl, m, .1, .04, .1, x, 1.78, z));                                  // les coupelles
+      g.add(part(G.cyl, 0xF1E6C8, .07, .18, .07, x, 1.89, z));                         // les chandelles
+      const f = part(G.cone, fireMat, .06, .1, .06, x, 2.03, z); f.castShadow = false; g.add(f);
+    }
   },
   /* La vitrine (étape 1.11, morceau 4 ; Grand Carnet : bois et verre) : un meuble bas, une cage de verre (le dessus
      aussi : la caméra regarde d'en haut), et la pierre exposée sur un coussin de velours */
@@ -264,10 +320,11 @@ export const hasPlan = b => {
   const a = ATELIERS[b.type];
   return !!a && !!b.deco && b.deco.items.some(it => it.type === a.meuble);
 };
-/* Un meuble (pas un tapis, ni ce qui est accroché au mur) couvre-t-il ce point de la pièce ? */
+/* Un meuble (pas un tapis, ni ce qui est accroché au mur ou pend du plafond) couvre-t-il ce point de la pièce ? */
 export function meubleAt(items, x, z){
   return items.some(it => {
-    if(MEUBLES[it.type].flat || MEUBLES[it.type].mur) return false;
+    const m = MEUBLES[it.type];
+    if(m.flat || m.mur || m.plafond) return false;
     const [w, d] = footOf(it);
     return Math.abs(x - it.x) < w/2 && Math.abs(z - it.z) < d/2;
   });

@@ -128,29 +128,40 @@ const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector
 /* La lumière du personnage : la torche (chaude, loin) ou, sans torche, juste un peu autour de soi */
 const lueur = new THREE.PointLight(0xFFB060, 1.5, 7.5, 1.4);
 export function eclaire(x, z, torche, t){
-  const f = torche ? 1 + Math.sin(t * 13) * .05 + Math.sin(t * 7.3) * .04 : 1;   // la flamme vacille
+  const lampe = torche === "lanterne";                 // la lanterne à main : plus loin, sans vaciller (morceau 4 des lumières)
+  const f = torche && !lampe ? 1 + Math.sin(t * 13) * .05 + Math.sin(t * 7.3) * .04 : 1;   // la flamme vacille
   lueur.position.set(x, 1.3, z);
-  lueur.color.setHex(torche ? 0xFFB060 : 0x8C9AB4);
-  lueur.intensity = (torche ? 1.6 : .9) * f;
-  lueur.distance = torche ? 7.5 : 3.2;
+  lueur.color.setHex(lampe ? 0xFFDCA0 : torche ? 0xFFB060 : 0x8C9AB4);
+  lueur.intensity = (lampe ? 1.8 : torche ? 1.6 : .9) * f;
+  lueur.distance = lampe ? 10 : torche ? 7.5 : 3.2;
 }
 /* La torche posée au sol (torche.js, demande de Yo : pour tirer à l'arc, à deux mains) : un bâton planté, sa flamme,
    et sa propre lumière ; x = null l'enlève */
 const lueurSol = new THREE.PointLight(0xFFB060, 0, 7.5, 1.3);
 const FEU = new THREE.MeshLambertMaterial({color: 0xFF8A3D, emissive: 0xFF5A00, emissiveIntensity: .9});
 let torcheSol = null, flammeSol = null;
-export function torcheAuSol(x, z, t = 0){
+const VERRE_SOL = new THREE.MeshLambertMaterial({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1});
+export function torcheAuSol(x, z, t = 0, lanterne = false){
   if(x === null){ if(torcheSol && group) group.remove(torcheSol); torcheSol = null; lueurSol.intensity = 0; return; }
+  if(torcheSol && torcheSol.userData.lanterne !== !!lanterne){ group.remove(torcheSol); torcheSol = null; }
   if(!torcheSol){
-    torcheSol = new THREE.Group();
-    const baton = part(G.cyl, 0x8A5A32, .06, .55, .06, 0, .27, 0); baton.rotation.z = .12; torcheSol.add(baton);
-    torcheSol.add(part(G.cyl, 0x3A2A1C, .1, .14, .1, .03, .56, 0));
-    flammeSol = part(G.cone, FEU, .14, .26, .14, .04, .74, 0); flammeSol.castShadow = false; torcheSol.add(flammeSol);
+    torcheSol = new THREE.Group(); torcheSol.userData.lanterne = !!lanterne;
+    if(lanterne){                                       // la lanterne à main, posée : sa cage de cuivre, son verre allumé
+      torcheSol.add(part(G.box, 0xC8743C, .26, .04, .26, 0, .02, 0));
+      const v = part(G.box, VERRE_SOL, .2, .26, .2, 0, .17, 0); v.castShadow = false; torcheSol.add(v);
+      for(const a of [-.11, .11]) for(const b of [-.11, .11]) torcheSol.add(part(G.box, 0xC8743C, .025, .28, .025, a, .17, b));
+      torcheSol.add(part(G.cone4, 0xC8743C, .32, .12, .32, 0, .37, 0));
+      flammeSol = null;
+    } else {
+      const baton = part(G.cyl, 0x8A5A32, .06, .55, .06, 0, .27, 0); baton.rotation.z = .12; torcheSol.add(baton);
+      torcheSol.add(part(G.cyl, 0x3A2A1C, .1, .14, .1, .03, .56, 0));
+      flammeSol = part(G.cone, FEU, .14, .26, .14, .04, .74, 0); flammeSol.castShadow = false; torcheSol.add(flammeSol);
+    }
     group.add(torcheSol);
   }
-  const f = 1 + Math.sin(t * 13) * .06 + Math.sin(t * 7.3) * .05;   // la flamme vacille
-  torcheSol.position.set(x, 0, z); flammeSol.scale.set(.14 * f, .26 * (2 - f), .14 * f);
-  lueurSol.position.set(x, 1.2, z); lueurSol.intensity = 1.8 * f;
+  const f = lanterne ? 1 : 1 + Math.sin(t * 13) * .06 + Math.sin(t * 7.3) * .05;   // la flamme vacille (la lanterne, non)
+  torcheSol.position.set(x, 0, z); if(flammeSol) flammeSol.scale.set(.14 * f, .26 * (2 - f), .14 * f);
+  lueurSol.position.set(x, lanterne ? .7 : 1.2, z); lueurSol.intensity = (lanterne ? 1.9 : 1.8) * f; lueurSol.distance = lanterne ? 9 : 7.5;
 }
 export function makeGrotte(palier){
   plan = genere(palier);

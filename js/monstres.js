@@ -31,6 +31,7 @@ import { tanieres, walk as walkGrotte, visiteEnCours, palierEnCours, antre } fro
 import { walk as walkForet } from "./monde/foret.js";
 import { toast, renderHUD } from "./interface.js";
 import { flecheModele } from "./monde/outils3d.js";
+import { lumiereEnMain } from "./torche.js";
 
 const groupe = new THREE.Group(); interior.add(groupe); groupe.visible = false;
 const monstres = [];      // {k, x, y, z, ang, vie, etat, t, mesh, bulle, home, cible, pause, flash, recul, mord, tour, sens, dir, alpha, grp, foret}
@@ -357,7 +358,7 @@ function sanglier(m, L, d, versP, dt, blesser){
   return 0;
 }
 function chauve(m, L, d, versP, dt, blesser){
-  const g = m.grp, p = player.position, torche = state.torche > 0;
+  const g = m.grp, p = player.position, torche = lumiereEnMain();   // une torche ou la lanterne à main, allumée dans la main gauche
   if(m.etat === "dort"){ if(d < L.flair) alerter(m); return 0; }
   const voler = (tx, tz, v, ty) => {                   // elles volent par-dessus les rochers, pas à travers les parois
     const dx = tx - m.x, dz = tz - m.z, dd = Math.hypot(dx, dz);

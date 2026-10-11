@@ -11,7 +11,7 @@
    seulement dans le sac, il ne sert pas. La torche est à part : dans une case, elle se tient dans la main gauche,
    en même temps que l'outil ou l'arme (torche.js) ; l'arc se tient à deux mains (DEUX_MAINS). */
 import { $ } from "./outils.js";
-import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone, poseDehors } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone, enMainDehors } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacCount, pileOf, slotsAdd, slotsPlace, placesSac } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
@@ -21,7 +21,9 @@ const bar = $("#barre");
 /* Ce qui se tient en main : un outil, une graine qu'on va planter, ce qu'on pose ; et la matière d'un chemin
    (planches, blocs, gravier : étape 1.9), qu'on prend en main soi-même */
 export const enCaseAuto = k => !!(OUTILS[k] || GRAINES[k] || POSABLES[k]);
-export const utilisable = k => enCaseAuto(k) || !!CHEMIN_DE[k] || poseDehors(k);   // une lumière à poser dehors se prend en main aussi
+export const utilisable = k => enCaseAuto(k) || !!CHEMIN_DE[k] || enMainDehors(k);   // une lumière à poser dehors (ou à accrocher) se prend en main aussi
+/* La torche et la lanterne à main se tiennent dans la main gauche : elles ne se prennent pas « en main » */
+const MAIN_GAUCHE = new Set(["torche", "lanterne"]);
 
 /* Ce qui se tient à deux mains : la torche ne peut pas être tenue avec (torche.js la pose au sol) */
 export const DEUX_MAINS = new Set(["arc"]);
@@ -29,7 +31,7 @@ export const deuxMains = () => !!(state.main && OUTILS[state.main] && DEUX_MAINS
 /* Prend un objet en main (il doit être dans une case rapide : pris dans le sac, il y va d'abord), ou vide la main (null) ;
    false s'il n'y a pas de case libre. La torche, elle, se tient dans la main gauche toute seule */
 export function hold(k){
-  if(k && OUTILS[k] && OUTILS[k].famille === "torche"){ toast("🔥 La torche se tient dans la main gauche : dans une case rapide, elle s'allume toute seule dans le noir", 3600); return false; }
+  if(k && OUTILS[k] && MAIN_GAUCHE.has(OUTILS[k].famille)){ toast(`${objet(k).emoji} ${objet(k).une ? "La" : "Le"} ${objet(k).nom.toLowerCase()} se tient dans la main gauche : dans une case rapide, elle s'allume toute seule dans le noir`, 3600); return false; }
   if(k && dansCase(k) < 0){
     if(sacCount(k)) barreAuto(k);
     if(dansCase(k) < 0){ if(sacCount(k)) toast("🎒 Tes 3 cases rapides sont pleines : libère-en une pour prendre cet objet en main", 3400); return false; }
@@ -185,5 +187,5 @@ window.addEventListener("keydown", e => {
 /* Au démarrage : les cases et l'outil tenu, tels que la partie les a gardés ; ce qu'on tenait sans qu'il soit dans une case
    (avant la règle des mains) y va, s'il y a de la place, sinon la main se vide */
 syncBarre();
-if(state.main && (OUTILS[state.main] && OUTILS[state.main].famille === "torche" || dansCase(state.main) < 0 && (barreAuto(state.main), dansCase(state.main) < 0))) state.main = null;
+if(state.main && (OUTILS[state.main] && MAIN_GAUCHE.has(OUTILS[state.main].famille) || dansCase(state.main) < 0 && (barreAuto(state.main), dansCase(state.main) < 0))) state.main = null;
 if(state.main) holdTool(state.main);

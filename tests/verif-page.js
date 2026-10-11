@@ -4,7 +4,7 @@
    couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp, le suif et la chandelle), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   les ingrédients du poisson grillé, vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp, le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -25,7 +25,7 @@ import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, G
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
-import { occ, toitDe } from "../js/monde/batiments.js";
+import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton } from "../js/monde/ponton.js";
 import { lacherOmbre, presents, ombresIci } from "../js/peche.js";
 import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde/mine.js";
@@ -54,7 +54,7 @@ import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
 import { renderHUD } from "../js/interface.js";
 import { hold, mettreEnCase, jauge, dansCase } from "../js/barre.js";
-import { torcheSol } from "../js/torche.js";
+import { torcheSol, lanterneAllumee } from "../js/torche.js";
 import { updateLumieres, lumieresActives } from "../js/lumieres.js";
 import { penombreIci } from "../js/monde/interieurs.js";
 import { pickUp } from "../js/monde/sol.js";
@@ -928,7 +928,20 @@ export async function verifier(){
       if(!$("#btn-act").textContent.includes("Reprendre la torche")) throw new Error(`près de la torche posée, le bouton dit « ${$("#btn-act").textContent} »`);
       $("#btn-act").click();
       if(torcheSol()) throw new Error("la torche n'est pas reprise");
-      return "l'épée du sac ne frappe pas ; l'arc pose la torche au sol ; un loup vaincu d'une flèche en bronze, la flèche rendue ; la torche reprise";
+      /* la lanterne à main (morceau 4 des lumières) : elle passe avant la torche, qui ne brûle plus ; l'arc la pose au sol */
+      const reste = state.torche;
+      sacAdd("lanterneMain", 1); mettreEnCase(2, "lanterneMain");
+      if(!await attendre(() => lanterneAllumee(), 2000)) throw new Error("la lanterne à main ne s'allume pas");
+      if(state.torche < reste - .2) throw new Error("la torche brûle encore, la lanterne à main allumée");
+      enMain("arcIf");
+      if(!await attendre(() => torcheSol(), 2000)) throw new Error("prendre l'arc ne pose pas la lanterne au sol");
+      enMain("epeeBois"); await wait(200);
+      const l = player.position;
+      placePlayer(l.x + .3, l.z, -1, 0); frames(2);
+      if(!$("#btn-act").textContent.includes("Reprendre la lanterne")) throw new Error(`près de la lanterne posée, le bouton dit « ${$("#btn-act").textContent} »`);
+      $("#btn-act").click();
+      if(torcheSol() || dansCase("lanterneMain") < 0) throw new Error("la lanterne n'est pas reprise dans une case");
+      return "l'épée du sac ne frappe pas ; l'arc pose la torche au sol ; un loup vaincu d'une flèche en bronze, la flèche rendue ; la torche reprise ; la lanterne à main allumée à sa place, posée pour l'arc, reprise";
     } finally {
       const room = currentPlace() && currentPlace().room;
       if(room && room.doorX !== null && currentPlace().b.type === "grotte"){ placePlayer(room.doorX, room.d / 2 - R - .03, 0, 1); checkDoors(true); await attendre(() => currentPlace().b.type === "foret"); }
@@ -1216,6 +1229,24 @@ export async function verifier(){
     $("#btn-act").click();
     if(map.obj[i] || owned("torche") !== torches + 1) throw new Error("la torchère et sa torche ne sont pas revenues dans le sac");
     return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
+  });
+  if(scierie) await etape("Les autres lumières : une lanterne murale accrochée à la façade de la Scierie, qui s'allume seule la nuit", async () => {
+    const s = 3, x = scierie.x, z = scierie.z;              // la colonne de gauche (la porte est au milieu)
+    const devant = () => { pickUp(idx(x, z + s)); placePlayer(centerOf(x), centerOf(z + s) + .1, 0, -1); frames(3); return $("#btn-act").textContent; };
+    place(2); sacAdd("lanterneMurale", 1); enMain("lanterneMurale");
+    if(!devant().includes("Accrocher la lanterne murale")) throw new Error(`devant la façade, la lanterne en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(!(scierie.facade || []).some(f => f.type === "lanterneMurale" && f.col === 0) || !lumieresFacades().length) throw new Error("la lanterne n'est pas accrochée à la façade");
+    let jour, nuit;
+    try {
+      forcerHeure(13); updateCiel(0, 0); updateLumieres(1.1, true); jour = lumieresActives();
+      forcerHeure(23); updateCiel(0, 0); updateLumieres(1.1, true); nuit = lumieresActives();
+    } finally { forcerHeure(null); updateCiel(0, 0); }
+    if(!(nuit > jour)) throw new Error(`la lanterne murale ne s'allume pas seule la nuit (${jour} lumière le jour, ${nuit} la nuit)`);
+    if(!devant().includes("Décrocher la lanterne murale")) throw new Error(`devant la lanterne accrochée, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
+    return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
   });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */

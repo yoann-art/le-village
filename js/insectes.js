@@ -21,6 +21,7 @@ import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau, fleurie } f
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
+import { lumieresIle } from "./lumieres.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe, pleineLune } from "./peche.js";
 import { meteo } from "./monde/meteo.js";
@@ -123,7 +124,8 @@ function places(ou){
   if(ici === "foret") return placesForet(ou);
   const R = INSECTE.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), out = [];
   if(ou === "lanternes"){
-    for(const l of lanternes) if(Math.hypot(l.x - player.position.x, l.z - player.position.z) < R) out.push({x: l.x, y: l.y, z: l.z});
+    for(const l of [...lanternes, ...lumieresIle()])          // la lanterne du ponton, et les lumières posées (demande de Yo, 11 octobre 2026)
+      if(Math.hypot(l.x - player.position.x, l.z - player.position.z) < R) out.push({x: l.x, y: l.y, z: l.z});
     return out;
   }
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){

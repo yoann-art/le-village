@@ -43,10 +43,16 @@ export const MEUBLES = {
   lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
   /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE) : dehors = se pose aussi sur l'île (en main, devant une
      case libre) ; dehorsSeul = seulement dehors ; mur = contre un mur de la pièce (sa propre couche, on passe dessous) ;
-     support = on y pose une torche, qui ne s'éteint plus jamais (seulement sur son île) */
+     facade = s'accroche aussi dehors, sur la façade de devant d'un bâtiment (batiments.js) ; plafond = pend du plafond
+     (sa propre couche) ; support = on y pose une torche, qui ne s'éteint plus jamais (seulement sur son île) */
   chandelle:{nom:"Chandelle", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
   torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:true, une:true},
-  torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, support:true, une:true},
+  torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:true, une:true},
+  /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
+  lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true},
+  bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true},
+  brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
+  lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
   chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5},   // étape 1.11 : l'argent de la mine
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
@@ -56,6 +62,7 @@ export const MEUBLES = {
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
+  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"]},   // les grandes pièces
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
@@ -74,17 +81,26 @@ export const MEUBLES = {
 /* La lumière de chaque meuble qui éclaire (demande de Yo, 11 octobre 2026 ; lumieres.js) : sa couleur, sa force, sa
    portée en P, la hauteur de sa flamme (y) ; flamme : elle vacille ; torche : seulement avec une torche posée dessus.
    Dans les bâtiments, une pénombre ; seules les lumières les plus proches éclairent vraiment (le téléphone), les autres
-   brillent. Dehors, elles éclairent surtout la nuit. Chiffres choisis par Claude, à régler en jouant. */
+   brillent. Dehors, elles éclairent surtout la nuit. nuit : elle s'allume seule à la nuit tombée (Grand Carnet : la
+   lanterne murale ; le lampadaire aussi) ; lucioles : une lueur douce qui palpite. Chiffres choisis par Claude, à régler
+   en jouant. */
 export const LUMIERE = {
   chandelle:     {couleur:0xFFC27A, force:.9,  portee:3.6, y:.42, flamme:true},
   lanterne:      {couleur:0xFFD08A, force:1.2, portee:5,   y:1.28},
   chandelier:    {couleur:0xFFCB78, force:1.3, portee:5.5, y:1.05, flamme:true},
   torchere:      {couleur:0xFFA055, force:1.6, portee:6.5, y:1.66, flamme:true, torche:true},
   torchereMurale:{couleur:0xFFA055, force:1.6, portee:6.5, y:1.65, flamme:true, torche:true, avance:.12},
-  feuCamp:       {couleur:0xFF9040, force:2.2, portee:8,   y:.55, flamme:true}
+  feuCamp:       {couleur:0xFF9040, force:2.2, portee:8,   y:.55, flamme:true},
+  lanterneMurale:{couleur:0xFFD890, force:1.4, portee:6,   y:1.32, nuit:true, avance:.12},
+  bocalLucioles: {couleur:0xC8F070, force:.7,  portee:3.4, y:.3,  lucioles:true},
+  brasero:       {couleur:0xFF8A3A, force:2,   portee:7.5, y:.95, flamme:true},
+  lampadaire:    {couleur:0xFFE0A0, force:1.7, portee:8,   y:2.05, nuit:true},
+  lustre:        {couleur:0xFFD27A, force:1.5, portee:10,  y:1.95, flamme:true}     // « éclaire toute la pièce »
 };
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
+/* Un meuble qui se prend en main pour aller dehors : posé sur une case, ou accroché à une façade */
+export const enMainDehors = k => !!(MEUBLES[k] && (MEUBLES[k].dehors || MEUBLES[k].facade));
 
 /* Le sac à dos (étape 1.4) : nombre d'emplacements au départ (agrandissable plus tard),
    combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul),
@@ -135,6 +151,10 @@ export const OUTILS = {
   /* La grotte (étape 1.8, carnet : « Torche, puis lanterne : éclairer les grottes ; la torche s'use ») : elles
      s'empilent (pile), chacune brûle duree secondes, seulement dans la grotte */
   torche:      {nom:"Torche", pluriel:"torches", une:true, emoji:"🔥", famille:"torche", force:1, pile:10, duree:600, usage:"Dans la grotte, elle s'allume toute seule et éclaire loin autour de toi. Elle brûle 10 minutes, puis la suivante prend le relais. Elle se refait à l'établi."},
+  /* La lanterne à main (demande de Yo, 11 octobre 2026 ; bible : « la torche s'améliore en lanterne » ; Grand Carnet :
+     « enclume pour la lanterne ») : dans la main gauche comme la torche, elle éclaire plus loin et ne s'use jamais */
+  lanterneMain:{nom:"Lanterne à main", pluriel:"lanternes à main", une:true, emoji:"🏮", famille:"lanterne", force:2,
+    usage:"Dans une case rapide, elle se tient dans la main gauche et s'allume dans le noir de la grotte : elle éclaire plus loin que la torche et ne s'use jamais. L'arc se tient à deux mains : tu la poses au sol pour tirer."},
   arcIf:       {nom:"Arc en if", pluriel:"arcs en if", emoji:"🏹", famille:"arc", force:1, solidite:20, usage:"Dans la Forêt profonde : suis les traces, approche le gibier à pas de loup et sous le vent, puis « Tirer ». Il lui faut des flèches."},
   /* La pelle (étape 1.9 ; Grand Carnet : « creuser, combler, déterrer, tracer des chemins », « les paliers : creuse
      plus vite ») : en bois à l'établi, puis en cuivre à l'enclume (décidé avec Yo, le carnet la met à l'enclume) ;
@@ -721,6 +741,7 @@ export const ATELIERS = {
     ...SACS.filter(s => s.k).map(s => ({out:s.k, in:s.in, t:120, lvl:1, cat:"Ton sac"})),
     {out:"chandelle", n:2, in:{suif:1, fibre:1}, t:20, lvl:1, cat:"Lumières"},   // demande de Yo (11 octobre 2026) : le suif, une fibre pour la mèche
     {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
+    {out:"bocalLucioles", in:{bocal:1, luciole:3}, t:30, lvl:1},           // un bocal et trois lucioles attrapées
     {out:"pot", in:{pierre:2}, t:20, lvl:1, cat:"Décoration"},
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
@@ -754,7 +775,7 @@ export const ATELIERS = {
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
   forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
-    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux, la torchère murale et le chandelier d'argent", recettes:[
+    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux et les lumières de métal (lanternes, lampadaire, brasero, lustre, torchère murale, chandelier)", recettes:[
     {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze et le verre, fondus au charbon
     {out:"verre", n:2, in:{quartz:1, charbon:1}, t:20, lvl:1},
     {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1, cat:"Outils"},
@@ -777,6 +798,11 @@ export const ATELIERS = {
     {out:"bocalCuivre", in:{verre:2, cuivre:2}, t:60, lvl:1},
     {out:"bocalBronze", in:{verre:2, bronze:2}, t:90, lvl:1},
     {out:"torchereMurale", in:{cuivre:2}, t:40, lvl:1, cat:"Lumières"},     // demande de Yo (11 octobre 2026)
+    {out:"lanterneMain", in:{cuivre:2, verre:1, chandelle:1}, t:60, lvl:1},
+    {out:"lanterneMurale", in:{cuivre:2, verre:1, chandelle:1}, t:60, lvl:1},
+    {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1},
+    {out:"brasero", in:{bloc:2, cuivre:3, charbon:2}, t:60, lvl:1},
+    {out:"lustre", in:{bronze:2, chandelle:6}, t:90, lvl:1},
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",
@@ -801,7 +827,7 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","lanterne","torchere","torchereMurale","chandelier","tonneau","statue","coffre","banc","etagere","vitrine","cheminee","feuCamp","petitTapis","table","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","coffre","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

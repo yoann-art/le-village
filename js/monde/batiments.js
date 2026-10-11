@@ -10,6 +10,7 @@ import { B, ENTREE_MINE } from "../donnees.js";
 import { state } from "../sauvegarde.js";
 import { sizeOf, maxLvl } from "../regles.js";
 import { VITRE, lanterne } from "./ciel.js";
+import { makeMeuble } from "./meubles.js";
 
 const MUR = 2 * P, PORTE = 1.5 * P;
 const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8553D, white:0xF4EFE6, blue:0x4E6DB3, stone:0xAEB0B3, stone2:0x8E9195, gold:0xE2B24D, lit:0xF6D27A,
@@ -484,15 +485,34 @@ export function footprint(type, x, z){
   for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) t.push([x+dx, z+dz]);
   return t;
 }
+/* Les lumières accrochées à la façade de devant, celle de la porte (demande de Yo, 11 octobre 2026 : la torchère et la
+   lanterne murales, dehors aussi) : b.facade = [{type, col, torche?}], col = la colonne de cases (0 à gauche), jamais
+   celle de la porte (colPorte). Elles suivent le bâtiment (déplacé, amélioré) : elles font partie de son modèle. */
+export const colPorte = type => Math.floor(sizeOf(type) / 2 + (B[type].door || 0));
+function placeFacade(type, col){
+  const s = sizeOf(type), d = B[type].door || 0;
+  let x = col + .5 - s/2;
+  if(Math.abs(x - d) < .75) x += Math.sign(x - d) * .15;     // un peu plus loin du bord de la porte
+  return {x, z: frontOf(type) + .25};                         // la plaque touche le mur de devant
+}
+const facades = new Map();                                    // b.id → [{x, z, f}] : leur place sur l'île (lumieres.js)
+export const lumieresFacades = () => [...facades.values()].flat();
 export function placeMesh(b){
   if(bMeshes.has(b.id)) scene.remove(bMeshes.get(b.id));
   const s = sizeOf(b.type), g = makeBuilding(b.type, b.lvl);
   g.position.set(b.x - H + s/2, 0, b.z - H + s/2);
   g.rotation.y = (b.rot || 0) * Math.PI / 2;          // tourné (étape 1.9) : la porte regarde vers b.rot
+  const lf = [];
+  if(!b.rot) for(const f of b.facade || []){
+    const m = makeMeuble(f.type, undefined, f), p = placeFacade(b.type, f.col);
+    m.position.set(p.x, 0, p.z); g.add(m);
+    lf.push({x: g.position.x + p.x, z: g.position.z + p.z, f});
+  }
+  facades.set(b.id, lf);
   scene.add(g); bMeshes.set(b.id, g);
 }
 /* Retire le modèle d'un bâtiment démonté */
-export function removeMesh(id){ if(bMeshes.has(id)){ scene.remove(bMeshes.get(id)); bMeshes.delete(id); } }
+export function removeMesh(id){ if(bMeshes.has(id)){ scene.remove(bMeshes.get(id)); bMeshes.delete(id); } facades.delete(id); }
 /* Où se posent les oiseaux sur le toit d'un bâtiment (la hauteur de son faîte, selon son niveau) */
 export const toitDe = b => { const g = bMeshes.get(b.id); return g && g.userData.toit || MUR + 1.05; };
 /* Montre ou cache le modèle d'un bâtiment posé (caché pendant qu'on le déplace) */
