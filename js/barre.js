@@ -11,7 +11,7 @@
    seulement dans le sac, il ne sert pas. La torche est à part : dans une case, elle se tient dans la main gauche,
    en même temps que l'outil ou l'arme (torche.js) ; l'arc se tient à deux mains (DEUX_MAINS). */
 import { $ } from "./outils.js";
-import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone, poseDehors } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacCount, pileOf, slotsAdd, slotsPlace, placesSac } from "./regles.js";
 import { holdTool } from "./monde/personnage.js";
@@ -21,7 +21,7 @@ const bar = $("#barre");
 /* Ce qui se tient en main : un outil, une graine qu'on va planter, ce qu'on pose ; et la matière d'un chemin
    (planches, blocs, gravier : étape 1.9), qu'on prend en main soi-même */
 export const enCaseAuto = k => !!(OUTILS[k] || GRAINES[k] || POSABLES[k]);
-export const utilisable = k => enCaseAuto(k) || !!CHEMIN_DE[k];
+export const utilisable = k => enCaseAuto(k) || !!CHEMIN_DE[k] || poseDehors(k);   // une lumière à poser dehors se prend en main aussi
 
 /* Ce qui se tient à deux mains : la torche ne peut pas être tenue avec (torche.js la pose au sol) */
 export const DEUX_MAINS = new Set(["arc"]);

@@ -30,9 +30,9 @@
    dit de le prendre (`avecOutil`, `outilPour` et `prendreAction` dans barre.js). */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, MEUBLES, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { addOwned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
+import { addOwned, owned, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ } from "./monde/batiments.js";
@@ -52,6 +52,7 @@ import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 import { entreeAction } from "./entreeMine.js";
+import { poserTorche } from "./lumieres.js";
 import { torcheAction } from "./torche.js";
 import { user } from "./usure.js";
 
@@ -116,9 +117,9 @@ function target(){
     const [x, z] = dist ? frontTile(dist) : own;
     if(inb(x, z) && solAt(idx(x, z))) return {i: idx(x, z), x, z, sol: solAt(idx(x, z))};
   }
-  /* Une graine, un coffre ou un rocher en main : la case juste devant d'abord, si elle est libre */
+  /* Une graine, un coffre, un rocher ou une lumière en main : la case juste devant d'abord, si elle est libre */
   const [fx, fz] = frontTile(.8);
-  if((GRAINES[state.main] || POSABLES[state.main]) && inb(fx, fz) && !map.obj[idx(fx, fz)] && !occ.has(idx(fx, fz)))
+  if(aPoser(state.main) && inb(fx, fz) && !map.obj[idx(fx, fz)] && !occ.has(idx(fx, fz)))
     return {i: idx(fx, fz), x: fx, z: fz, o: null};
   const pelle = cibleTerrain();                       // la pelle en main : creuser, combler (étape 1.9)
   if(pelle) return pelle;
@@ -133,7 +134,7 @@ function target(){
     if((arrosoir || canne) && eauLibre(i)) return {i, x, z, eau: true, peche: !arrosoir};   // le bord de l'eau : l'arrosoir, ou la canne
   }
   const [x, z] = frontTile(.8);
-  if((GRAINES[state.main] || POSABLES[state.main]) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
+  if(aPoser(state.main) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
   const ici = inb(...own) && map.obj[idx(...own)];
   if(ici === "herbe" || ici === "thym" || FLEURS[ici]) return {w: ILE, i: idx(...own), x: own[0], z: own[1], o: ici};
   return inb(x, z) ? {i: idx(x, z), x, z, o: null} : null;
@@ -180,6 +181,7 @@ function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.pelle) return actionTerrain(t);
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
+  if(MEUBLES[t.o] && MEUBLES[t.o].dehors) return lumiereAction(t);
   if(t.peche) return avecOutil("canne", 0, {label: "🎣 Lancer", run: () => { if(tenu("canne")) lancer(); }}, "🎣 Il te faut une canne à pêche");
   if(t.eau){ const max = OUTILS[state.main].eau;
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
@@ -244,6 +246,7 @@ function actionOf(t){
   if(!t.o && POSABLES[state.main])
     return POSABLES[state.main].pose === "coffre" ? {label: "🗃️ Poser le coffre", run: () => poserCoffre(t.i)}
       : {label: "🪨 Poser le rocher", run: () => poser(t)};
+  if(!t.o && poseDehors(state.main)){ const m = MEUBLES[state.main]; return {label: `${m.emoji} Poser ${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`, run: () => poserDehors(t)}; }
   return null;
 }
 /* La case où l'on va planter ou poser (demande de Yo) : en surbrillance, jaune avec un contour blanc si c'est
@@ -256,7 +259,7 @@ const cadre = new THREE.Mesh(new THREE.RingGeometry(.6, .69, 4, 1), bord);
 cadre.rotation.z = Math.PI/4; cadre.position.z = .002; surbrillance.add(cadre);
 surbrillance.rotation.x = -Math.PI/2; surbrillance.visible = false; scene.add(surbrillance);
 function showCase(t){
-  const k = state.main, pose = t && (t.pelle || !t.o && !t.sol && !t.eau && t.x !== undefined && (GRAINES[k] || POSABLES[k]));
+  const k = state.main, pose = t && (t.pelle || !t.o && !t.sol && !t.eau && t.x !== undefined && aPoser(k));
   if(!pose){ if(surbrillance.visible) surbrillance.visible = false; return; }
   const ok = !(t.pelle ? terrainProbleme(t) : GRAINES[k] ? plantProblem(t, GRAINES[k].plante) : poseProblem(t.i));
   fond.color.setHex(ok ? 0xFFE27A : 0xE4776C); bord.color.setHex(ok ? 0xFFFFFF : 0xFFD1CC);
@@ -495,6 +498,34 @@ function poser(t){
   setObj(t.i, POSABLES[k].pose);
   syncBarre(); save();
   toast(`🪨 ${objet(k).nom} posé`, 1600);
+}
+
+/* ----- Les lumières posées dehors (demande de Yo, 11 octobre 2026 ; lumieres.js) : torchère, chandelle, lanterne,
+   feu de camp. En main, « Poser » devant une case libre ; posée, y mettre une torche (une torchère), ou la reprendre
+   (avec sa torche) ----- */
+const aPoser = k => !!(GRAINES[k] || POSABLES[k] || poseDehors(k));
+const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
+function poserDehors(t){
+  const k = state.main, m = MEUBLES[k], why = poseProblem(t.i);
+  if(why){ toast(why); return; }
+  if(!sacTake(k, 1)) return;
+  setObj(t.i, k);
+  syncBarre(); save();
+  toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais" : ""}`, 3200);
+}
+function lumiereAction(t){
+  const m = MEUBLES[t.o], c = state.ile[t.i] || {};
+  if(m.support && !c.torche && owned("torche") > 0)
+    return {label: "🔥 Poser une torche sur la torchère", run: () => poserTorche(c, () => setEtat(t.i, {torche: true}))};
+  return {label: `✋ Reprendre ${leNom(m)}${c.torche ? " et sa torche" : ""}`, run: () => reprendreLumiere(t)};
+}
+function reprendreLumiere(t){
+  const m = MEUBLES[t.o], c = state.ile[t.i] || {}, gains = {[t.o]: 1, ...(c.torche ? {torche: 1} : {})};
+  if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la reprendre", 3000); return; }
+  for(const [k, n] of Object.entries(gains)) sacAdd(k, n);
+  setObj(t.i, null);
+  syncBarre(); save();
+  toast(`${m.emoji} ${m.nom} dans ton sac${c.torche ? ", avec sa torche" : ""}`, 2400);
 }
 
 /* ----- Planter ----- */

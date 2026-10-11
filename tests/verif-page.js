@@ -4,7 +4,7 @@
    couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   les ingrédients du poisson grillé, vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp, le suif et la chandelle), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -55,6 +55,9 @@ import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/c
 import { renderHUD } from "../js/interface.js";
 import { hold, mettreEnCase, jauge, dansCase } from "../js/barre.js";
 import { torcheSol } from "../js/torche.js";
+import { updateLumieres, lumieresActives } from "../js/lumieres.js";
+import { penombreIci } from "../js/monde/interieurs.js";
+import { pickUp } from "../js/monde/sol.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 /* Demande de Yo (v1.13.2) : un outil ne sert que tenu en main, pris dans une case rapide : la vérification le met dans la
@@ -512,7 +515,9 @@ export async function verifier(){
     if(owned("planche") !== avant - poses) throw new Error("les planches ne sont pas prises une par case");
     /* la pelle, tournée vers le chemin derrière soi, enlève une case et rend sa planche */
     enMain("pelleBois");
-    const p = player.position; placePlayer(p.x, p.z, -1, 0); frames(1);
+    const p = player.position; placePlayer(p.x, p.z, -1, 0);
+    for(const dx of [0, -1]) pickUp(idx(tileOf(p.x) + dx, tileOf(p.z)));   // un petit caillou revenu là pendant l'essai cacherait le chemin
+    frames(1);
     if(!$("#btn-act").textContent.includes("Enlever")) throw new Error(`face au chemin, la pelle en main, le bouton dit « ${$("#btn-act").textContent} »`);
     const pl = owned("planche"); $("#btn-act").click(); frames(1);
     if(owned("planche") !== pl + 1) throw new Error("la planche du chemin enlevé n'est pas rendue");
@@ -1136,6 +1141,81 @@ export async function verifier(){
     if(state.coffres.includes(co) || scierie.deco.items.includes(it)) throw new Error("le coffre n'est pas emporté");
     await sortir();
     return `posé à (${it.x}, ${it.z}) dans la pièce, puis emporté`;
+  });
+  await etape("Les lumières : le suif et la chandelle, la pénombre, une torche sur la torchère, le feu de camp dehors", async () => {
+    /* le suif au fourneau, la chandelle à l'atelier de décoration : une Taverne et une Chaumière d'essai (retirées ensuite) */
+    const taverne = {id: -4, type: "taverne", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "fourneau", x: 0, z: 0, rot: 0}], next: 2}};
+    const chaumiere = {id: -5, type: "chaumiere", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "atelierDeco", x: 0, z: 0, rot: 0}], next: 2}};
+    state.buildings.push(taverne, chaumiere);
+    const fini = async b => { const j = b.atelier.queue[0]; j.start = Date.now() - j.t * 1000 - 1000; j.end = Date.now() - 1000; await attendre(() => !b.atelier.queue.length, 4000); };
+    const fab = (b, k) => { const r = $(`#sheet [data-fab='r${ATELIERS[b.type].recettes.findIndex(r => r.out === k)}']`); if(!r || r.disabled) throw new Error(`pas de bouton pour fabriquer : ${objet(k).nom}`); r.click(); };
+    try {
+      place(4); sacAdd("viandeGibier", 1); sacAdd("fibre", 1);
+      openAtelier(taverne); await wait(200); fab(taverne, "suif"); await fini(taverne);
+      if(owned("suif") < 2) throw new Error(`${owned("suif")} suif au lieu de 2`);
+      openAtelier(chaumiere); await wait(200); fab(chaumiere, "chandelle"); await fini(chaumiere);
+      if(owned("chandelle") < 2) throw new Error(`${owned("chandelle")} chandelles au lieu de 2`);
+      $("#sheetWrap [data-close]").click(); await wait(300);
+    } finally {
+      for(const b of [taverne, chaumiere]) state.buildings.splice(state.buildings.indexOf(b), 1);
+      renderHUD();
+    }
+    /* la pénombre de la Scierie ; une torchère sur pied posée, puis une torche dessus : elle éclaire */
+    let dedans = "";
+    if(scierie){
+      place(3); sacAdd("torchere", 1); sacAdd("torche", 2);
+      await entrer(scierie);
+      try {
+        if(!penombreIci()) throw new Error("pas de pénombre dans la Scierie");
+        $("#btn-deco").click(); $("#deco-cat").click(); await wait(200);
+        const pose = $("#sheet [data-meuble='torchere']");
+        if(!pose || pose.disabled) throw new Error("la torchère ne se pose pas");
+        pose.click(); await wait(200);
+        $("#deco-done").click();
+        const it = scierie.deco.items.find(v => v.type === "torchere");
+        if(!it) throw new Error("pas de torchère dans la Scierie");
+        placePlayer(it.x, it.z + footOf(it)[1] / 2 + .45, 0, -1);
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden) throw new Error("pas de bouton tout près de la torchère");
+        const n = owned("torche");
+        $("#btn-torchere").click();
+        if(!it.torche || owned("torche") !== n - 1) throw new Error("la torche n'est pas sur la torchère");
+        updateLumieres(.016, true);
+        if(lumieresActives() < 1) throw new Error("la torchère n'éclaire pas la pièce");
+        dedans = "une torche sur la torchère de la Scierie, qui éclaire la pièce ; ";
+      } finally { await sortir(); }
+    }
+    /* dehors : un feu de camp posé devant soi, qui éclaire la nuit, puis repris ; une torchère et sa torche */
+    let i = -1, x = 0, z = 0;
+    for(let tz = 2; tz < N - 3 && i < 0; tz++) for(let tx = 2; tx < N - 2; tx++){
+      const a = idx(tx, tz), s = idx(tx, tz + 1);
+      if([a, s].every(c => map.type[c] === "grass" && !map.obj[c] && !occ.has(c) && !state.sol[c] && !state.chemins[c]) && !poseProblem(a)){ i = a; x = tx; z = tz; break; }
+    }
+    if(i < 0) throw new Error("pas de case libre pour le feu de camp");
+    const devant = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(3); return $("#btn-act").textContent; };
+    place(2); sacAdd("feuCamp", 1); enMain("feuCamp");
+    if(!devant().includes("Poser le feu de camp")) throw new Error(`le feu de camp en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp n'est pas posé");
+    forcerHeure(23); updateCiel(0, 0);
+    try {
+      updateLumieres(1.1, true);
+      if(lumieresActives() < 1) throw new Error("le feu de camp n'éclaire pas la nuit");
+    } finally { forcerHeure(null); updateCiel(0, 0); }
+    if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(map.obj[i] || owned("feuCamp") !== 1) throw new Error("le feu de camp n'est pas revenu dans le sac");
+    place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
+    devant(); $("#btn-act").click();
+    if(map.obj[i] !== "torchere") throw new Error(`la torchère n'est pas posée dehors (le bouton dit « ${$("#btn-act").textContent} », en main : ${state.main})`);
+    if(!devant().includes("Poser une torche")) throw new Error(`devant la torchère, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(!state.ile[i].torche) throw new Error("la torche n'est pas sur la torchère dehors");
+    const torches = owned("torche");
+    if(!devant().includes("et sa torche")) throw new Error(`devant la torchère allumée, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(map.obj[i] || owned("torche") !== torches + 1) throw new Error("la torchère et sa torche ne sont pas revenues dans le sac");
+    return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
   });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */

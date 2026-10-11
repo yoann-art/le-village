@@ -36,7 +36,7 @@ export const VITRE = new THREE.MeshLambertMaterial({color: 0x9DB4D8, emissive: 0
 const lampes = [];        // {halo (un rond de lumière chaude), mat (la matière qui brille), base (son éclat le jour)}
 /* Le halo d'une lanterne, la nuit : un rond de lumière chaude et doux (une lumière qui éclaire vraiment faisait une tache
    blanche sur l'eau, et coûte cher à un téléphone) */
-const HALO = (() => {
+export const HALO = (() => {
   const c = document.createElement("canvas"); c.width = c.height = 64;
   const x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
   g.addColorStop(0, "rgba(255,214,140,.9)"); g.addColorStop(.35, "rgba(255,180,90,.35)"); g.addColorStop(1, "rgba(255,160,70,0)");

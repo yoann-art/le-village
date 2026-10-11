@@ -40,7 +40,13 @@ export const MEUBLES = {
   chaise:   {nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
   tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
   pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
-  lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5},
+  lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
+  /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE) : dehors = se pose aussi sur l'île (en main, devant une
+     case libre) ; dehorsSeul = seulement dehors ; mur = contre un mur de la pièce (sa propre couche, on passe dessous) ;
+     support = on y pose une torche, qui ne s'éteint plus jamais (seulement sur son île) */
+  chandelle:{nom:"Chandelle", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
+  torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:true, une:true},
+  torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, support:true, une:true},
   chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5},   // étape 1.11 : l'argent de la mine
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
@@ -49,6 +55,7 @@ export const MEUBLES = {
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
+  feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
@@ -63,6 +70,21 @@ export const MEUBLES = {
   enclume:  {nom:"Enclume", emoji:"⚒️", gabarit:"petit", w:.9, d:.7, plan:true},
   trone:    {nom:"Trône", emoji:"👑", gabarit:"moyen", w:1.2, d:1, plan:true}
 };
+
+/* La lumière de chaque meuble qui éclaire (demande de Yo, 11 octobre 2026 ; lumieres.js) : sa couleur, sa force, sa
+   portée en P, la hauteur de sa flamme (y) ; flamme : elle vacille ; torche : seulement avec une torche posée dessus.
+   Dans les bâtiments, une pénombre ; seules les lumières les plus proches éclairent vraiment (le téléphone), les autres
+   brillent. Dehors, elles éclairent surtout la nuit. Chiffres choisis par Claude, à régler en jouant. */
+export const LUMIERE = {
+  chandelle:     {couleur:0xFFC27A, force:.9,  portee:3.6, y:.42, flamme:true},
+  lanterne:      {couleur:0xFFD08A, force:1.2, portee:5,   y:1.28},
+  chandelier:    {couleur:0xFFCB78, force:1.3, portee:5.5, y:1.05, flamme:true},
+  torchere:      {couleur:0xFFA055, force:1.6, portee:6.5, y:1.66, flamme:true, torche:true},
+  torchereMurale:{couleur:0xFFA055, force:1.6, portee:6.5, y:1.65, flamme:true, torche:true, avance:.12},
+  feuCamp:       {couleur:0xFF9040, force:2.2, portee:8,   y:.55, flamme:true}
+};
+/* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
+export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
 
 /* Le sac à dos (étape 1.4) : nombre d'emplacements au départ (agrandissable plus tard),
    combien d'objets pareils s'empilent dans un emplacement (un outil prend un emplacement à lui seul),
@@ -635,6 +657,10 @@ export const PRODUITS = {
   aileMembraneuse:{nom:"Aile membraneuse", pluriel:"ailes membraneuses", emoji:"🦇", prix:2, aide:"Les ailes membraneuses viennent des chauves-souris, dans le noir de la grotte de la Forêt profonde.",
     usage:"L'aile d'une chauve-souris, pour les potions (plus tard)."},
   /* Le Gardien d'écorce (étape 1.13, morceau 1 ; Grand Carnet : « Carte du Marais, cœur de bois ») */
+  /* Le suif (demande de Yo, 11 octobre 2026) : la graisse fondue de la viande, pour les chandelles (la cire d'abeille
+     viendra avec la ruche) */
+  suif:     {nom:"Suif", pluriel:"suif", emoji:"🧈", prix:1, aide:"Le suif se fond au fourneau de la Taverne : 1 viande de gibier pour 2 suif.",
+    usage:"La graisse fondue de la viande de gibier : pour les chandelles (atelier de décoration de la Chaumière, avec une fibre pour la mèche)."},
   /* La toile (demande de Yo, 11 octobre 2026) : tissée à l'atelier de décoration avec des fibres, pour le sac de cuir */
   toile:    {nom:"Toile", pluriel:"toiles", emoji:"🧶", icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h13v11H4z" fill="#E8D6A8" stroke="#1C2230" stroke-opacity=".35"/><path d="M7 7v11M10 7v11M13 7v11M4 10h13M4 13h13M4 16h13" stroke="#B89A62" stroke-width=".8"/><ellipse cx="18" cy="12.5" rx="2.6" ry="5.8" fill="#D9C28C" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="18" cy="12.5" rx="1" ry="2.4" fill="#B89A62"/></svg>', prix:1,
     aide:"La toile se tisse à l'atelier de décoration de la Chaumière : 4 fibres pour 1 toile.",
@@ -662,7 +688,7 @@ export const PRODUITS = {
    Recette : ce qu'elle donne (out, n exemplaires), ses ingrédients (in), son temps en secondes (t)
    et le niveau du bâtiment qu'il faut (lvl). Chiffres à régler en jouant. */
 export const ATELIERS = {
-  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:8}, pour:"fabriquer des planches et des meubles en bois", recettes:[
+  scierie:{nom:"Établi", le:"l'établi", emoji:"🪚", meuble:"etabli", cost:{bois:8}, pour:"fabriquer des planches, des outils, des meubles en bois, les torchères et le feu de camp", recettes:[
     {out:"planche", n:2, in:{bois:1}, t:5, lvl:1, cat:"Matériaux"},
     /* Outils de départ ; le fil de la canne à pêche est en fibres */
     {out:"hachePierre", in:{planche:3, pierre:2}, t:30, lvl:1, cat:"Outils"},
@@ -676,6 +702,9 @@ export const ATELIERS = {
     {out:"fleche", n:10, in:{planche:2, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
     {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},
+    /* Les lumières (demande de Yo, 11 octobre 2026) : une torche posée sur la torchère ne s'éteint plus jamais */
+    {out:"torchere", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Lumières"},
+    {out:"feuCamp", in:{pierre:6, bois:4}, t:30, lvl:1},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"banc", in:{planche:4}, t:40, lvl:1},
@@ -686,12 +715,13 @@ export const ATELIERS = {
     {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
   ]},
   chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{planche:6, fibre:4},
-    pour:"tisser la toile, agrandir ton sac, fabriquer des pots de fleurs, des lanternes, des tapis et des vitrines", recettes:[
+    pour:"tisser la toile, agrandir ton sac, fabriquer des chandelles, des lanternes, des pots de fleurs, des tapis et des vitrines", recettes:[
     {out:"toile", in:{fibre:4}, t:20, lvl:1, cat:"Matériaux"},          // demande de Yo (11 octobre 2026)
     /* Le sac qui s'agrandit (SACS) : seul le suivant est proposé (recettesDe dans ateliers.js) */
     ...SACS.filter(s => s.k).map(s => ({out:s.k, in:s.in, t:120, lvl:1, cat:"Ton sac"})),
+    {out:"chandelle", n:2, in:{suif:1, fibre:1}, t:20, lvl:1, cat:"Lumières"},   // demande de Yo (11 octobre 2026) : le suif, une fibre pour la mèche
+    {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
     {out:"pot", in:{pierre:2}, t:20, lvl:1, cat:"Décoration"},
-    {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1, cat:"Décoration"},
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
     {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2, cat:"Décoration"},
@@ -716,14 +746,15 @@ export const ATELIERS = {
   /* Plans de travail en attente : posés, recettes affichées mais verrouillées (lock = la raison),
      en attendant ce qu'il leur faut. note : une phrase de plus en haut de leur fiche. */
   taverne:{nom:"Fourneau", le:"le fourneau", emoji:"🍲", meuble:"fourneau", cost:{bloc:10, planche:5},
-    pour:"cuisiner des plats qui donnent des bonus", note:"Pour l'instant, le poisson grillé ; les autres plats se découvriront en essayant des ingrédients.", recettes:[
+    pour:"cuisiner des plats qui donnent des bonus, et fondre le suif des chandelles", note:"Pour l'instant, le poisson grillé et le suif ; les autres plats se découvriront en essayant des ingrédients.", recettes:[
+    {out:"suif", n:2, in:{viandeGibier:1}, t:30, lvl:1, cat:"Matériaux"},   // demande de Yo (11 octobre 2026) : pour les chandelles
     /* Le poisson grillé (Grand Carnet : un poisson + du thym) : « poisson » = n'importe lequel, sauf un légendaire (GROUPES) */
-    {out:"poissonGrille", in:{poisson:1, thym:1}, t:30, lvl:1},
+    {out:"poissonGrille", in:{poisson:1, thym:1}, t:30, lvl:1, cat:"Plats"},
     {nom:"Ragoût de gibier", emoji:"🍖", lock:"Arrive avec la chasse"},
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
   forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
-    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux et le chandelier d'argent", recettes:[
+    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux, la torchère murale et le chandelier d'argent", recettes:[
     {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze et le verre, fondus au charbon
     {out:"verre", n:2, in:{quartz:1, charbon:1}, t:20, lvl:1},
     {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1, cat:"Outils"},
@@ -745,7 +776,8 @@ export const ATELIERS = {
     {out:"bocal", in:{verre:2, planche:1}, t:40, lvl:1},
     {out:"bocalCuivre", in:{verre:2, cuivre:2}, t:60, lvl:1},
     {out:"bocalBronze", in:{verre:2, bronze:2}, t:90, lvl:1},
-    {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1, cat:"Décoration"}
+    {out:"torchereMurale", in:{cuivre:2}, t:40, lvl:1, cat:"Lumières"},     // demande de Yo (11 octobre 2026)
+    {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",
     pour:"lancer les grands chantiers et les quêtes", note:"La salle du trône : c'est d'ici que tu lanceras les grands chantiers.", recettes:[
@@ -769,7 +801,7 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","lanterne","chandelier","tonneau","statue","coffre","banc","etagere","vitrine","cheminee","petitTapis","table","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","lanterne","torchere","torchereMurale","chandelier","tonneau","statue","coffre","banc","etagere","vitrine","cheminee","feuCamp","petitTapis","table","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

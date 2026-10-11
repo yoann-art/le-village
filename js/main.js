@@ -25,7 +25,8 @@ import { updateVitrine } from "./vitrine.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
-import { lampeSur, nuitForet } from "./monde/interieurs.js";
+import { lampeSur, nuitForet, penombre } from "./monde/interieurs.js";
+import { updateLumieres } from "./lumieres.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
@@ -97,6 +98,7 @@ function tick(now){
   garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
   garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
+  garde("lumières", () => updateLumieres(dt, isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // les lumières posées, la torche sur la torchère
   garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
   garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
   garde("combat", () => updateCombat(dt, wrap.hidden && !isBusy()));   // dans la grotte : les cœurs, les coups, les monstres
@@ -124,6 +126,7 @@ function camera_(now, dt){
   garde("météo", () => updateMeteo(dt, sousLeCiel ? currentScene() : null, camT.x, camT.z));   // la pluie, la neige, les éclairs (étape 1.10)
   updateCiel(camT.x, camT.z);                              // le jour et la nuit (étape 1.10) : le ciel, le soleil, les vitres
   if(foret && currentPlace().b.type === "foret") nuitForet(Math.max(nuitIci(), couvertIci() * .6));   // la forêt s'assombrit aussi sous la pluie
+  if(isInside()) penombre(nuitIci());                      // la pénombre des bâtiments, plus sombre la nuit (demande de Yo)
   if(!isInside()){
     water.position.y = -.2 + Math.sin(now * .0012) * .02;
     updateInteraction(dt);

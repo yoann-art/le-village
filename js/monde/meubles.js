@@ -8,8 +8,8 @@ import { pierreMesh } from "./rochers.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
   red:0xA9322A, cream:0xE8C48A, stone:0xAEB0B3, stone2:0x8E9195, soot:0x2A2522, clay:0xC8643C, leaf:0x57B25C, yellow:0xF2C14E};
-/* Ce qui brille : les flammes et la lumière des lanternes */
-const fireMat = new THREE.MeshLambertMaterial({color:0xFF8A3D, emissive:0xFF5A00, emissiveIntensity:.9});
+/* Ce qui brille : les flammes et la lumière des lanternes (les flammes vacillent : lumieres.js) */
+export const fireMat = new THREE.MeshLambertMaterial({color:0xFF8A3D, emissive:0xFF5A00, emissiveIntensity:.9});
 const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
 /* Le verre de la vitrine : on voit au travers */
 const verreMat = new THREE.MeshLambertMaterial({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
@@ -17,7 +17,7 @@ const verreMat = new THREE.MeshLambertMaterial({color:0xD8EEF8, transparent:true
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
-  chandelier:0xD8DCE2, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
+  chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 const BUILD = {
   chaise(g, m){
@@ -51,9 +51,45 @@ const BUILD = {
       g.add(part(G.cone, fireMat, .06, .1, .06, x, 1.05 + (x ? 0 : .06), 0));         // les flammes
     }
   },
+  /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE dans donnees.js) */
+  chandelle(g, m){                                                                   // une chandelle de suif sur son bougeoir
+    g.add(part(G.cyl, m, .34, .04, .34, 0, .02, 0));                                  // la coupelle
+    g.add(part(G.cyl, m, .16, .06, .16, 0, .07, 0));                                  // le godet
+    const anse = part(G.tore, m, .2, .2, .3, .2, .06, 0); anse.rotation.y = Math.PI / 2; g.add(anse);   // l'anse
+    g.add(part(G.cyl, 0xF1E6C8, .12, .26, .12, 0, .23, 0));                           // la chandelle, couleur crème
+    g.add(part(G.cone, fireMat, .08, .13, .08, 0, .42, 0));                           // la flamme
+  },
+  /* La torchère sur pied : un socle de pierre, un poteau de bois, une coupelle de fer ; la torche posée dessus brûle
+     toujours (o.torche) */
+  torchere(g, m, o){
+    g.add(part(G.cyl, C.stone2, .38, .1, .38, 0, .05, 0));                            // le socle
+    g.add(part(G.cyl, m, .09, 1.0, .09, 0, .6, 0));                                   // le poteau
+    g.add(part(G.cyl, C.metal, .26, .08, .26, 0, 1.12, 0));                           // la coupelle
+    for(const [x, z] of [[.11, 0], [-.11, 0], [0, .11], [0, -.11]]) g.add(part(G.box, C.metal, .03, .14, .03, x, 1.2, z));   // ses griffes
+    if(o && o.torche) torcheSur(g, 0, 1.16, 0);
+  },
+  /* La torchère murale (en cuivre, contre un mur de la pièce) : une plaque, un bras, une coupelle */
+  torchereMurale(g, m, o){
+    g.add(part(G.box, m, .24, .42, .04, 0, 1.2, -.23));                               // la plaque, sur le mur
+    g.add(part(G.box, m, .05, .05, .26, 0, 1.08, -.1));                                // le bras
+    g.add(part(G.cyl, m, .22, .08, .22, 0, 1.12, .04));                                // la coupelle
+    if(o && o.torche) torcheSur(g, 0, 1.15, .04);
+  },
+  /* Le feu de camp (dehors seulement) : un cercle de pierres, des bûches croisées, les flammes */
+  feuCamp(g, m){
+    for(let k = 0; k < 9; k++){ const a = k * Math.PI * 2 / 9; g.add(part(G.dode, m, .22, .17, .22, Math.sin(a) * .38, .07, Math.cos(a) * .38)); }
+    g.add(part(G.cyl, 0x3A2A22, .52, .03, .52, 0, .015, 0));                           // les cendres
+    for(const r of [0, Math.PI / 3, -Math.PI / 3]){
+      const b = part(G.cyl, 0x7A4E2E, .1, .62, .1, 0, .12, 0); b.rotation.order = "YXZ"; b.rotation.set(Math.PI / 2 - .25, r, 0); g.add(b);
+    }
+    g.add(part(G.cone, fireMat, .28, .5, .28, 0, .36, 0));                             // les flammes
+    g.add(part(G.cone, fireMat, .18, .34, .18, .1, .28, .06));
+    g.add(part(G.cone, fireMat, .16, .3, .16, -.09, .27, -.05));
+  },
   /* La vitrine (étape 1.11, morceau 4 ; Grand Carnet : bois et verre) : un meuble bas, une cage de verre (le dessus
      aussi : la caméra regarde d'en haut), et la pierre exposée sur un coussin de velours */
-  vitrine(g, m, pierre){
+  vitrine(g, m, o){
+    const pierre = o && o.pierre;
     g.add(part(G.box, m, 1.1, .42, .6, 0, .21, 0));                                   // le meuble du bas
     for(const x of [-.27, .27]) g.add(part(G.box, C.dark, .44, .3, .02, x, .22, .305));   // ses deux portes
     g.add(part(G.box, C.dark, 1.16, .05, .66, 0, .445, 0));                            // le plateau
@@ -206,11 +242,17 @@ const BUILD = {
     g.add(part(G.head, C.gold, .6, .6, .6, 0, 1.75, -.26));                            // ornement doré
   }
 };
-/* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine ; pierre : ce qu'expose
-   une vitrine */
-export function makeMeuble(type, color, pierre){
+/* Une torche posée (sur une torchère) : le bâton, sa tête de fibres, sa flamme (y + .5) */
+function torcheSur(g, x, y, z){
+  g.add(part(G.cyl, 0x8A5A32, .06, .34, .06, x, y + .13, z));
+  g.add(part(G.cyl, 0x3A2A1C, .1, .12, .1, x, y + .32, z));
+  const f = part(G.cone, fireMat, .15, .28, .15, x, y + .5, z); f.castShadow = false; g.add(f);
+}
+/* Le modèle d'un meuble, avec la couleur choisie (une clé de COULEURS), ou sa couleur d'origine ; o : le meuble posé
+   (la pierre qu'expose une vitrine, la torche posée sur une torchère) */
+export function makeMeuble(type, color, o){
   const g = new THREE.Group();
-  BUILD[type](g, COULEURS[color] ? COULEURS[color].hex : ORIGIN[type], pierre);
+  BUILD[type](g, COULEURS[color] ? COULEURS[color].hex : ORIGIN[type], o);
   return g;
 }
 
@@ -222,10 +264,10 @@ export const hasPlan = b => {
   const a = ATELIERS[b.type];
   return !!a && !!b.deco && b.deco.items.some(it => it.type === a.meuble);
 };
-/* Un meuble (pas un tapis) couvre-t-il ce point de la pièce ? */
+/* Un meuble (pas un tapis, ni ce qui est accroché au mur) couvre-t-il ce point de la pièce ? */
 export function meubleAt(items, x, z){
   return items.some(it => {
-    if(MEUBLES[it.type].flat) return false;
+    if(MEUBLES[it.type].flat || MEUBLES[it.type].mur) return false;
     const [w, d] = footOf(it);
     return Math.abs(x - it.x) < w/2 && Math.abs(z - it.z) < d/2;
   });

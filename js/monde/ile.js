@@ -4,7 +4,7 @@ import { scene } from "./scene.js";
 import { mat, G, part } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
-import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
+import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
 import { pluieDepuis, neigeAuSol } from "./meteo.js";
 import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
@@ -281,11 +281,13 @@ function buildObj(i){
   } else if(FLEURS[o]){                             // une fleur (étape 1.9) : pousse, feuilles, ou en fleur à sa couleur
     const st = stageOf(i);
     g.add(fleurModele(o, couleurDe(i), st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1));
+  } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
+    g.add(makeMeuble(o, undefined, state.ile[i]));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre");
     c.scale.setScalar(.75); g.add(c);
   } else g.add(rockMesh(o, r));                      // un rocher, à veines de cuivre ou non
-  g.rotation.y = o === "coffre" ? 0 : r * 6.28;
+  g.rotation.y = o === "coffre" || MEUBLES[o] ? 0 : r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   scene.add(g); meshes.set(i, g);
 }

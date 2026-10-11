@@ -33,17 +33,20 @@ export const decoView = () => deco || lift ? view : null;
 
 /* ----- Règles de place ----- */
 const MAT_W = 1.1, MAT_D = .7;       // le paillasson (la sortie) reste toujours libre
-const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", tapis:"Pas sur un autre tapis", personnage:"Le personnage est là"};
-/* Deux couches : les tapis au sol, les meubles par-dessus. On ne chevauche que sa propre couche. */
+const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", tapis:"Pas sur un autre tapis", personnage:"Le personnage est là",
+  mur:"Pas sur une autre lumière du mur"};
+/* Trois couches : les tapis au sol, les meubles par-dessus, et ce qui est accroché au mur (la torchère murale, demande de
+   Yo, 11 octobre 2026 : toujours contre un mur, on passe dessous). On ne chevauche que sa propre couche. */
+const couche = type => MEUBLES[type].flat ? "tapis" : MEUBLES[type].mur ? "mur" : "meuble";
 function problem(it){
-  const [w, d] = footOf(it), {room} = cur(), flat = !!MEUBLES[it.type].flat;
-  if(Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
+  const [w, d] = footOf(it), {room} = cur(), c = couche(it.type), flat = c === "tapis";
+  if(c !== "mur" && Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
   for(const o of items()){
-    if(o === it || !!MEUBLES[o.type].flat !== flat) continue;
+    if(o === it || couche(o.type) !== c) continue;
     const [ow, od] = footOf(o);
-    if(Math.abs(it.x - o.x) < (w + ow)/2 - .001 && Math.abs(it.z - o.z) < (d + od)/2 - .001) return flat ? "tapis" : "meuble";
+    if(Math.abs(it.x - o.x) < (w + ow)/2 - .001 && Math.abs(it.z - o.z) < (d + od)/2 - .001) return c;
   }
-  if(flat) return null;
+  if(c !== "meuble") return null;
   const p = player.position;
   if(Math.abs(p.x - it.x) < w/2 + R && Math.abs(p.z - it.z) < d/2 + R) return "personnage";
   return null;
@@ -55,12 +58,18 @@ function snap(v, half, lim){
   if(lo + 2*half > lim - .3) lo = lim - 2*half;
   return lo + half;
 }
-/* Pose le meuble au plus près de (x, z), aligné, toujours entre les murs */
+/* Pose le meuble au plus près de (x, z), aligné, toujours entre les murs ; ce qui s'accroche au mur va contre le mur le
+   plus proche (le fond ou un côté ; devant, il n'y a pas de mur) et se tourne vers la pièce */
 function settle(it, x, z){
   const [w, d] = footOf(it), hw = cur().room.w/2, hd = cur().room.d/2;
   const cm = v => Math.round(v * 100) / 100;
   it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, snap(x, w/2, hw))));
   it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, snap(z, d/2, hd))));
+  if(!MEUBLES[it.type].mur) return;
+  const fond = z + hd, gauche = x + hw, droite = hw - x, m = Math.min(fond, gauche, droite);
+  if(m === fond){ it.z = cm(-hd + d/2); it.rot = 0; }
+  else if(m === gauche){ it.x = cm(-hw + w/2); it.rot = 3; }
+  else { it.x = cm(hw - w/2); it.rot = 1; }
 }
 /* La place libre la plus proche du milieu de la pièce */
 function findSpot(it){
@@ -139,7 +148,7 @@ export function finishDeco(){
 
 /* ----- Catalogue, tourner, ranger ----- */
 /* Un meuble de métier ne se pose que dans ses bâtiments ; les autres, partout */
-const allowedIn = (type, bType) => !MEUBLES[type].where || MEUBLES[type].where.includes(bType);
+const allowedIn = (type, bType) => !MEUBLES[type].dehorsSeul && (!MEUBLES[type].where || MEUBLES[type].where.includes(bType));   // le feu de camp : dehors seulement
 const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles moyens", "environ 2 P² au sol"], grand:["Grands meubles", "environ 4 P² au sol"]};
 /* Un meuble qui a une recette se fabrique : on pose ce qu'on a en réserve. Sans recette (pas encore
    d'atelier pour lui), il reste gratuit. */
@@ -172,7 +181,9 @@ $("#deco-cat").addEventListener("click", () => {
     Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
       MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
         const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
-        const where = m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}` : "Partout";
+        const where = m.dehorsSeul ? "Seulement dehors, sur ton île : prends-le en main devant une case libre"
+          : m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}`
+          : m.mur ? "Contre un mur" : m.dehors ? "Partout, et dehors sur ton île" : "Partout";
         const fab = FABRIQUE_A[t], af = fab && ATELIERS[fab];
         const stock = !craftable(t) ? "Gratuit pour l'instant"
           : n > 0 ? `Tu en as ${n}` : `Tu n'en as pas. Se fabrique ${aLe(af)} (${B[fab].nom})`;
@@ -214,12 +225,14 @@ $("#deco-store").addEventListener("click", () => {
   if(!sel || MEUBLES[sel.type].plan || sel.reserve) return;           // le plan de travail reste dans son bâtiment ; un coffre de réserve s'emporte depuis le coffre
   if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
   if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
+  if(sel.torche && placeFor("torche") < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la torche de la torchère"); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);
   let ou = "dans ton sac";
   if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
   if(sel.pierre){ addOwned(sel.pierre, 1); ou += `, et sa pierre (${objet(sel.pierre).nom.toLowerCase()})`; }   // la pierre exposée dans une vitrine revient aussi
+  if(sel.torche){ addOwned("torche", 1); ou += ", et sa torche"; }                        // la torche posée sur une torchère aussi
   toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`);
   sel = null; showSel(); save();
 });

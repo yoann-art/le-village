@@ -4,7 +4,11 @@
    et un paillasson devant la porte, au bord de la pièce : c'est la sortie.
    Taille selon la bible (moyenne 6 × 6 P, grande 8 × 8 P, +1 P par niveau),
    couleurs et lumière selon l'ambiance de chaque bâtiment.
-   La pièce est construite au moment où l'on entre ; elle est vide (meubles : étape 1.2). */
+   La pièce est construite au moment où l'on entre ; elle est vide (meubles : étape 1.2).
+   La pénombre (demande de Yo, 11 octobre 2026 : « une pénombre où l'on voit encore ») : le jour, un peu de lumière entre
+   par les fenêtres ; la nuit, il fait plus sombre (penombre, à chaque image) ; les lumières posées éclairent autour
+   d'elles (lumieresDedans : seules les plus proches, réglées par lumieres.js). Les murs sont découpés en petits carreaux,
+   pour que la lumière d'une torche s'y voie. */
 import { P, G, part } from "./formes.js";
 import { roomSide } from "../regles.js";
 import { makeMeuble } from "./meubles.js";
@@ -12,6 +16,7 @@ import { COULEURS } from "../donnees.js";
 import { makeMine } from "./mine.js";
 import { makeForet } from "./foret.js";
 import { makeGrotte } from "./grotte.js";
+import { nuitIci } from "./ciel.js";
 
 export const interior = new THREE.Scene();
 interior.background = new THREE.Color(0x1E1813);
@@ -39,6 +44,12 @@ const AMBIANCE = {
 };
 
 const MUR = 2 * P, EP = .2, D_FORET = 36;                    // hauteur et épaisseur des murs
+/* Les murs, découpés en petits carreaux (la lumière d'un téléphone se calcule aux coins) : le fond, les côtés */
+const MUR_X = new THREE.BoxGeometry(1, 1, 1, 24, 6, 1), MUR_Z = new THREE.BoxGeometry(1, 1, 1, 1, 6, 24);
+/* Les fenêtres : claires le jour, bleu nuit la nuit */
+const FENETRE = new THREE.MeshLambertMaterial({color: 0xCFE4F4, emissive: 0xBFDDF8, emissiveIntensity: .8});
+/* Les lumières des meubles (lumieres.js) : quatre, données aux plus proches du personnage */
+export const lumieresDedans = Array.from({length: 4}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 const SILL = 0x654028, MAT = 0xA9322A, GOLD = 0xE2B24D;
 
 /* Sol : un carreau par case (jusqu'à 12 × 12 P) */
@@ -49,7 +60,7 @@ floor.receiveShadow = true;
 floor.setColorAt(0, new THREE.Color(0xffffff));
 interior.add(floor);
 
-let room = null;
+let room = null, dedans = null;                  // dedans : l'ambiance du bâtiment où l'on est (pas la mine, la forêt, la grotte)
 const itemMeshes = new Map();                    // meubles de la pièce : id → modèle
 /* La Forêt profonde suit l'heure (étape 1.10) : ses couleurs et ses lumières de jour (base), mêlées à la nuit (nuitForet) */
 let base = null;
@@ -63,13 +74,34 @@ export function nuitForet(n){
   hemi.intensity = base.hemi * (1 - .35 * n);
   lamp.intensity = base.power * (1 - .55 * n);
 }
+/* La pénombre d'un bâtiment (n : 0 le jour, 1 la nuit) : la lumière du ciel et des fenêtres baisse la nuit */
+export function penombre(n){
+  if(!dedans) return;
+  hemi.color.setHex(0xFFF1DC).lerp(c1.setHex(0x8C9CC8), n * .7);
+  hemi.intensity = .44 - .2 * n;
+  lamp.intensity = dedans.power * (.6 - .48 * n);
+  FENETRE.color.setHex(0xCFE4F4).lerp(c1.setHex(0x34446E), n);
+  FENETRE.emissive.setHex(0xBFDDF8).lerp(c1.setHex(0x22305A), n);
+  FENETRE.emissiveIntensity = .8 - .4 * n;
+}
+export const penombreIci = () => !!dedans;
+/* Une fenêtre sur un mur : sur le fond (cote = null, à la place x) ou sur un côté (cote = -1 ou 1, à la place z) */
+function fenetre(a, w, d, cote, u){
+  const y = 1.35, nx = cote ? -cote : 0, nz = cote ? 0 : 1, bx = cote ? cote * w/2 : u, bz = cote ? u : -d/2;
+  const box = (long, haut, ep, k, yy, m) => room.add(part(G.box, m, cote ? ep : long, haut, cote ? long : ep, bx + nx * k, yy, bz + nz * k));
+  box(.82, .7, .04, .02, y, a.beam);                               // le cadre
+  box(.68, .56, .04, .035, y, FENETRE);                            // la vitre
+  box(.04, .56, .04, .05, y, a.beam);                              // les croisillons
+  box(.68, .04, .04, .05, y, a.beam);
+  box(.92, .06, .14, .07, y - .38, a.beam);                        // l'appui
+}
 /* La lumière suit le personnage dans un grand lieu (la forêt), pour que les ombres l'accompagnent */
 export function lampeSur(x, z){ lamp.position.set(x - 3, 9, z + 5); lamp.target.position.set(x, 0, z); }
 export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
-  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null;
+  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null; dedans = null;
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
     const m = makeForet();
     room = m.group; floor.count = 0; base = m;
@@ -111,9 +143,12 @@ export function buildRoom(b){
   floor.count = k;
   floor.instanceMatrix.needsUpdate = true; floor.instanceColor.needsUpdate = true;
 
-  room.add(part(G.box, wall, w + 2*EP, MUR, EP, 0, MUR/2, -d/2 - EP/2));              // fond
-  room.add(part(G.box, wall, EP, MUR, d + EP, -w/2 - EP/2, MUR/2, -EP/2));            // gauche
-  room.add(part(G.box, wall, EP, MUR, d + EP, w/2 + EP/2, MUR/2, -EP/2));             // droite
+  room.add(part(MUR_X, wall, w + 2*EP, MUR, EP, 0, MUR/2, -d/2 - EP/2));             // fond
+  room.add(part(MUR_Z, wall, EP, MUR, d + EP, -w/2 - EP/2, MUR/2, -EP/2));            // gauche
+  room.add(part(MUR_Z, wall, EP, MUR, d + EP, w/2 + EP/2, MUR/2, -EP/2));             // droite
+  /* les fenêtres (la pénombre) : deux au fond (une au Château, entre ses bannières), une sur chaque côté */
+  for(const u of a.banner ? [0] : [-w/4, w/4]) fenetre(a, w, d, null, u);
+  for(const c of [-1, 1]) fenetre(a, w, d, c, -d/6);
   room.add(part(G.box, a.beam, w + 2*EP + .04, .14, EP + .04, 0, MUR, -d/2 - EP/2));
   room.add(part(G.box, a.beam, EP + .04, .14, d + EP + .04, -w/2 - EP/2, MUR, -EP/2));
   room.add(part(G.box, a.beam, EP + .04, .14, d + EP + .04, w/2 + EP/2, MUR, -EP/2));
@@ -130,6 +165,8 @@ export function buildRoom(b){
   }
   room.add(part(G.box, SILL, w + 2*EP, .24, .12, 0, -.08, d/2 + .06));                  // bord du sol, devant
   room.add(part(G.box, MAT, P, .03, .6, 0, .015, d/2 - .3));                            // paillasson de la sortie
+  room.add(...lumieresDedans);
+  dedans = a; penombre(nuitIci());
   interior.add(room);
   lamp.target.position.set(0, 0, 0);
   ((b.deco && b.deco.items) || []).forEach(addItemMesh);
@@ -150,7 +187,7 @@ export function raiseItemMesh(id, y){
   if(g) g.position.y = y;
 }
 export function addItemMesh(it){
-  const g = makeMeuble(it.type, it.color, it.pierre);
+  const g = makeMeuble(it.type, it.color, it);
   room.add(g); itemMeshes.set(it.id, g);
   placeItemMesh(it);
 }
