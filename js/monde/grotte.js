@@ -134,9 +134,27 @@ export function eclaire(x, z, torche, t){
   lueur.intensity = (torche ? 1.6 : .9) * f;
   lueur.distance = torche ? 7.5 : 3.2;
 }
+/* La torche posée au sol (torche.js, demande de Yo : pour tirer à l'arc, à deux mains) : un bâton planté, sa flamme,
+   et sa propre lumière ; x = null l'enlève */
+const lueurSol = new THREE.PointLight(0xFFB060, 0, 7.5, 1.3);
+const FEU = new THREE.MeshLambertMaterial({color: 0xFF8A3D, emissive: 0xFF5A00, emissiveIntensity: .9});
+let torcheSol = null, flammeSol = null;
+export function torcheAuSol(x, z, t = 0){
+  if(x === null){ if(torcheSol && group) group.remove(torcheSol); torcheSol = null; lueurSol.intensity = 0; return; }
+  if(!torcheSol){
+    torcheSol = new THREE.Group();
+    const baton = part(G.cyl, 0x8A5A32, .06, .55, .06, 0, .27, 0); baton.rotation.z = .12; torcheSol.add(baton);
+    torcheSol.add(part(G.cyl, 0x3A2A1C, .1, .14, .1, .03, .56, 0));
+    flammeSol = part(G.cone, FEU, .14, .26, .14, .04, .74, 0); flammeSol.castShadow = false; torcheSol.add(flammeSol);
+    group.add(torcheSol);
+  }
+  const f = 1 + Math.sin(t * 13) * .06 + Math.sin(t * 7.3) * .05;   // la flamme vacille
+  torcheSol.position.set(x, 0, z); flammeSol.scale.set(.14 * f, .26 * (2 - f), .14 * f);
+  lueurSol.position.set(x, 1.2, z); lueurSol.intensity = 1.8 * f;
+}
 export function makeGrotte(palier){
   plan = genere(palier);
-  group = new THREE.Group(); meshes.clear();
+  group = new THREE.Group(); meshes.clear(); torcheSol = null; lueurSol.intensity = 0;
   const {sol} = plan, estSol = (x, z) => x >= 0 && z >= 0 && x < W && z < D && sol[z * W + x];
   /* le sol de terre sombre */
   const cases = [];
@@ -210,7 +228,7 @@ export function makeGrotte(palier){
   }
   /* le butin */
   for(const [i, o] of plan.objets) objetMesh(i, o);
-  group.add(lueur);
+  group.add(lueur, lueurSol);
   /* noir et silencieux : seule la torche met du chaud (bible) */
   return {group, w: W, d: D, doorX: plan.porte ? 0 : null, walk, passages: plan.passages, depart: plan.depart,
     fond: 0x050407, light: 0x8090A8, power: .06, sky: 0x2A2E3A, ground: 0x0E0B08, hemi: .14};   // pas de brume : la pénombre vient de la lumière

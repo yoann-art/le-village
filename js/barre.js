@@ -4,7 +4,12 @@
    longtemps sur une case, ouvre le choix de son outil. Sur ordinateur : touches 1, 2 et 3.
    Demande de Yo (v1.7.6) : ce qu'on met dans une case sort du sac, ça fait de la place (comme la barre du bas
    de Minecraft, en plus du sac). state.barre = [{k, n} ou null, ×3] : un outil, ou une pile de graines, de coffres,
-   de rochers ; state.main = la clé de l'objet tenu. Un même objet n'occupe qu'une case. */
+   de rochers ; state.main = la clé de l'objet tenu. Un même objet n'occupe qu'une case.
+   Demande de Yo (11 octobre 2026, « cela vaut pour tous les outils ») : on ne se sert que de ce qu'on tient en main, et
+   on ne tient en main que ce qui est dans une case rapide (avant, le jeu prenait l'outil dans le sac tout seul). Si
+   l'outil est dans une case, le bouton d'action le dit et le toucher le prend en main (`prendreAction`) ; s'il est
+   seulement dans le sac, il ne sert pas. La torche est à part : dans une case, elle se tient dans la main gauche,
+   en même temps que l'outil ou l'arme (torche.js) ; l'arc se tient à deux mains (DEUX_MAINS). */
 import { $ } from "./outils.js";
 import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, SAC, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
@@ -18,14 +23,46 @@ const bar = $("#barre");
 export const enCaseAuto = k => !!(OUTILS[k] || GRAINES[k] || POSABLES[k]);
 export const utilisable = k => enCaseAuto(k) || !!CHEMIN_DE[k];
 
-/* Prend un outil en main (une clé de OUTILS), ou vide la main (null) */
+/* Ce qui se tient à deux mains : la torche ne peut pas être tenue avec (torche.js la pose au sol) */
+export const DEUX_MAINS = new Set(["arc"]);
+export const deuxMains = () => !!(state.main && OUTILS[state.main] && DEUX_MAINS.has(OUTILS[state.main].famille));
+/* Prend un objet en main (il doit être dans une case rapide : pris dans le sac, il y va d'abord), ou vide la main (null) ;
+   false s'il n'y a pas de case libre. La torche, elle, se tient dans la main gauche toute seule */
 export function hold(k){
-  if(k && !sacCount(k)) k = null;
+  if(k && OUTILS[k] && OUTILS[k].famille === "torche"){ toast("🔥 La torche se tient dans la main gauche : dans une case rapide, elle s'allume toute seule dans le noir", 3600); return false; }
+  if(k && dansCase(k) < 0){
+    if(sacCount(k)) barreAuto(k);
+    if(dansCase(k) < 0){ if(sacCount(k)) toast("🎒 Tes 3 cases rapides sont pleines : libère-en une pour prendre cet objet en main", 3400); return false; }
+  }
   state.main = k; holdTool(k); renderBarre(); save();
+  return true;
 }
 export function toggleHold(k){
   if(state.main === k){ hold(null); toast("Mains libres"); }
-  else { hold(k); toast(`${objet(k).emoji} ${objet(k).nom} en main`); }
+  else if(hold(k)) toast(`${objet(k).emoji} ${objet(k).nom} en main`);
+}
+/* ----- L'outil qu'on tient (demande de Yo : seulement celui-là sert) ----- */
+/* L'outil d'une famille qu'on tient en main, assez solide (force), sinon null */
+export const tenu = (famille, force = 0) => { const k = state.main; return k && OUTILS[k] && OUTILS[k].famille === famille && (OUTILS[k].force || 0) >= force ? k : null; };
+const meilleur = (liste, famille, force) => liste.filter(it => it && OUTILS[it.k] && OUTILS[it.k].famille === famille && (OUTILS[it.k].force || 0) >= force)
+  .map(it => it.k).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
+/* Où est l'outil d'une famille (assez solide) : {ou: "main" | "case" | "sac" | null, k, i (sa case)} */
+export function outilPour(famille, force = 0){
+  const m = tenu(famille, force); if(m) return {ou: "main", k: m};
+  const c = meilleur(state.barre, famille, force); if(c) return {ou: "case", k: c, i: dansCase(c)};
+  const s = meilleur(state.sac, famille, force); if(s) return {ou: "sac", k: s};
+  return {ou: null};
+}
+const voyelle = k => /^[aeiouéèê]/i.test(objet(k).nom);   // « ton épée », mais « ta hache » (h aspiré)
+const ton = k => objet(k).une && !voyelle(k) ? "ta" : "ton";
+/* Le bouton d'action quand l'outil n'est pas en main : dans une case, « 🪓 Prendre ta hache en pierre (case 2) » (le toucher
+   la prend en main) ; dans le sac, il faut d'abord la mettre dans une case (le toucher ouvre le choix d'une case) ; null sinon */
+export function prendreAction(o){
+  if(!o || !o.k || o.ou === "main") return null;
+  const m = objet(o.k), nom = m.nom.toLowerCase();
+  if(o.ou === "case") return {label: `${m.emoji} Prendre ${ton(o.k)} ${nom} (case ${o.i + 1})`, run: () => toggleHold(o.k)};
+  return {label: `${m.emoji} ${ton(o.k)[0].toUpperCase() + ton(o.k).slice(1)} ${nom} est dans le sac : mets-${m.une ? "la" : "le"} dans une case`,
+    run: () => { const i = state.barre.indexOf(null); chooser(i >= 0 ? i : 0); }};
 }
 /* Après un changement : une case vidée se libère ; la main qui tenait un objet qu'on n'a plus se vide */
 export function syncBarre(){
@@ -145,6 +182,8 @@ window.addEventListener("keydown", e => {
   toggleHold(state.barre[i].k);
 });
 
-/* Au démarrage : les cases et l'outil tenu, tels que la partie les a gardés */
+/* Au démarrage : les cases et l'outil tenu, tels que la partie les a gardés ; ce qu'on tenait sans qu'il soit dans une case
+   (avant la règle des mains) y va, s'il y a de la place, sinon la main se vide */
 syncBarre();
+if(state.main && (OUTILS[state.main] && OUTILS[state.main].famille === "torche" || dansCase(state.main) < 0 && (barreAuto(state.main), dansCase(state.main) < 0))) state.main = null;
 if(state.main) holdTool(state.main);

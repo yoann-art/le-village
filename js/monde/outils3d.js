@@ -85,6 +85,16 @@ function matiere(g, k){
     for(const [x, z] of [[-.05, .02], [.05, .08], [0, -.04]]) g.add(part(G.dode, 0x8E8678, .05, .04, .05, x, .12, z));
   }
 }
+/* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
+   elle pointe vers +z */
+const POINTE = {fleche: 0x8E949C, flecheCuivre: 0xC8743C, flecheBronze: 0xB98A4A};
+export function flecheModele(f){
+  const g = new THREE.Group();
+  const tige = part(G.cyl, 0x8A5A32, .02, .5, .02, 0, 0, 0); tige.rotation.x = Math.PI / 2; g.add(tige);
+  const pointe = part(G.cone, POINTE[f] || 0x8E949C, .05, .1, .05, 0, 0, .28); pointe.rotation.x = Math.PI / 2; g.add(pointe);
+  for(const r of [0, Math.PI / 2]){ const pl = part(G.box, 0xE4574C, .005, .06, .1, 0, 0, -.22); pl.rotation.z = r; g.add(pl); }
+  return g;
+}
 /* Le modèle d'un outil (une clé de OUTILS) ou d'une graine (une clé de GRAINES) */
 export function makeOutil(k){
   const g = new THREE.Group();

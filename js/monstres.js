@@ -30,6 +30,7 @@ import { player } from "./monde/personnage.js";
 import { tanieres, walk as walkGrotte, visiteEnCours, palierEnCours, antre } from "./monde/grotte.js";
 import { walk as walkForet } from "./monde/foret.js";
 import { toast, renderHUD } from "./interface.js";
+import { flecheModele } from "./monde/outils3d.js";
 
 const groupe = new THREE.Group(); interior.add(groupe); groupe.visible = false;
 const monstres = [];      // {k, x, y, z, ang, vie, etat, t, mesh, bulle, home, cible, pause, flash, recul, mord, tour, sens, dir, alpha, grp, foret}
@@ -216,6 +217,7 @@ function retirer(m){
 function vider(){
   for(const m of [...monstres]) retirer(m); for(const n of nuages) groupe.remove(n.s); nuages.length = 0;
   for(const e of effets){ groupe.remove(e.cercle); if(e.pics) groupe.remove(e.pics); } effets.length = 0;
+  for(const v of vols) groupe.remove(v.mesh); vols.length = 0;
 }
 /* Les bandes d'un palier, chacune dans sa salle, ses membres autour de la tanière */
 function peupler(palier){
@@ -535,11 +537,12 @@ export function plusProche(r){
   }
   return best && {m: best, d: bd};
 }
-/* Un coup d'épée : n dégâts ; (dx, dz) le sens du coup. Le loup recule, sauf lancé (le signe, le bond) ; le
-   sanglier, lourd, ne recule jamais */
-export function frapper(m, n, dx, dz){
+/* Un coup d'épée (ou une flèche, f : sa sorte) : n dégâts ; (dx, dz) le sens du coup. Le loup recule, sauf lancé (le
+   signe, le bond) ; le sanglier, lourd, ne recule jamais. Une flèche qui touche se reprend quand il est vaincu */
+export function frapper(m, n, dx, dz, f){
   if(!monstres.includes(m) || !visable(m)) return;
   m.vie -= n; m.flash = .16;
+  if(f){ m.fleches = m.fleches || {}; m.fleches[f] = (m.fleches[f] || 0) + 1; }
   if(m.vie <= 0){ vaincre(m); return; }
   if(m.etat === "rode") alerter(m);
   if(m.k !== "loup" || m.etat === "signe" || m.etat === "bond") return;
@@ -550,7 +553,8 @@ export function frapper(m, n, dx, dz){
 function vaincre(m){
   m.etat = "tombe"; m.t = 0; m.bulle.visible = false; vaincus++;
   if(m.grp.attaquant === m) m.grp.attaquant = null;
-  const L = MONSTRES[m.k], donne = m.foret ? {...GIBIER.sanglier.donne, [m.fleche || "fleche"]: 1} : L.donne, gains = [];
+  const L = MONSTRES[m.k], donne = m.foret ? {...GIBIER.sanglier.donne, [m.fleche || "fleche"]: 1} : {...L.donne}, gains = [];
+  for(const [f, n] of Object.entries(m.fleches || {})) donne[f] = (donne[f] || 0) + n;   // les flèches qui l'ont touché
   let perdu = false;
   for(const [k, n] of Object.entries(donne)){
     const q = Math.min(n, sacPlace(k));
@@ -566,6 +570,29 @@ function vaincre(m){
   if(carte){ toast(`🗺️ ${leNom(m.k, true)} s'effondre… et laisse la ${CARTES[L.carte].nom.toLowerCase()} ! Elle est rangée dans ton carnet (🗺️ Cartes).${gains.length ? " " + gains.join(", ") + "." : ""}`, 6500); return; }
   toast(`${L.emoji} ${leNom(m.k, true)} est vaincu${L.une ? "e" : ""}${gains.length ? " : " + gains.join(", ") : ""}.` +
     `${perdu ? " Ton sac est plein : le reste est perdu." : ""}${nouveau ? (m.foret ? " 🏆 Nouveau trophée au carnet !" : " 👹 Nouveau monstre au carnet !") : ""}`, 3600);
+}
+
+/* ----- Les flèches tirées sur un monstre (combat.js) : elles volent vers lui ; touché, il perd n points de vie ; ratée,
+   la flèche se plante au sol un moment, puis disparaît ----- */
+const vols = [];          // {mesh, de, a, t, T, m, f, touche, n, dx, dz, reste}
+export function lancerFleche(m, f, touche, n){
+  const p = player.position, d = Math.hypot(m.x - p.x, m.z - p.z) || 1, dx = (m.x - p.x) / d, dz = (m.z - p.z) / d, s = Math.random() < .5 ? 1 : -1;
+  const a = touche ? {x: m.x, y: m.k === "chauveSouris" ? m.y : .5, z: m.z} : {x: m.x + dx * 1.2 - dz * s * .7, y: .05, z: m.z + dz * 1.2 + dx * s * .7};
+  const mesh = flecheModele(f); groupe.add(mesh);
+  vols.push({mesh, de: {x: p.x + dx * .3, y: .85, z: p.z + dz * .3}, a, t: 0, T: Math.max(.12, d / 18), m, f, touche, n, dx, dz, reste: 0});
+}
+const vise = new THREE.Vector3();
+function volent(dt){
+  for(const v of [...vols]){
+    if(v.reste){ v.reste -= dt; if(v.reste <= 0){ groupe.remove(v.mesh); vols.splice(vols.indexOf(v), 1); } continue; }
+    v.t += dt;
+    const u = Math.min(1, v.t / v.T), x = v.de.x + (v.a.x - v.de.x) * u, z = v.de.z + (v.a.z - v.de.z) * u, y = v.de.y + (v.a.y - v.de.y) * u + Math.sin(u * Math.PI) * .2;
+    vise.set(x + (v.a.x - v.de.x), y + (v.a.y - v.de.y) * .3, z + (v.a.z - v.de.z));
+    v.mesh.position.set(x, y, z); v.mesh.lookAt(vise);
+    if(u < 1) continue;
+    if(v.touche && monstres.includes(v.m) && visable(v.m)){ frapper(v.m, v.n, v.dx, v.dz, v.f); groupe.remove(v.mesh); vols.splice(vols.indexOf(v), 1); }
+    else v.reste = 1.2;                                 // ratée : elle reste plantée un moment
+  }
 }
 
 /* ----- Le sanglier de la forêt, touché à l'arc (chasse.js) : il se retourne et charge ----- */
@@ -592,7 +619,7 @@ export function updateMonstres(dt, ou, actif, blesser){
   if(actif){ const bandes = new Set(monstres.map(m => m.grp)); for(const g of bandes) g.base += dt * .35; }   // la meute tourne lentement
   for(const m of [...monstres]) if(monstres.includes(m)) vivre(m, dt, actif, blesser);
   nuagesVolent(dt);
-  if(actif) effetsVivent(dt);
+  if(actif){ effetsVivent(dt); volent(dt); }
 }
 /* Ceux qui se battent encore (le combat de la forêt s'arrête quand il n'y en a plus) */
 export const monstresIci = () => monstres.filter(visable);

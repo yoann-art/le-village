@@ -26,7 +26,7 @@ import { pontonCases, eauLibre } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe } from "./peche.js";
 import { toast } from "./interface.js";
-import { barreAuto, hold } from "./barre.js";
+import { tenu } from "./barre.js";
 import { user } from "./usure.js";
 
 /* Combien, où, combien de temps, la peur (à régler en jouant) */
@@ -226,8 +226,8 @@ function vivre(o, dt){
 /* ----- Lancer le filet ----- */
 let montre = null;
 export const oiseauEnCours = () => !!montre;
-/* Le meilleur filet qu'on porte ; en cuivre ou en bronze, il attrape de plus loin */
-const filetDuSac = () => porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === "filet").sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
+/* Le filet qu'on tient en main (demande de Yo : seulement ce qu'on tient) ; en cuivre ou en bronze, il attrape de plus loin */
+const filetDuSac = () => tenu("filet");
 function aPortee(){
   const p = player.position, f = filetDuSac();
   let mieux = null, md = OISEAU.portee + (f && OUTILS[f].plusLoin || 0);
@@ -237,7 +237,6 @@ function aPortee(){
 function lancerFilet(o){
   const k = filetDuSac();
   if(!k) return;
-  if(state.main !== k){ barreAuto(k); hold(k); }
   if(sacPlace(o.k) < 1){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve", 3200); return; }
   sacAdd(o.k, 1);
   const c = state.carnet.oiseaux, e = c[o.k] || (c[o.k] = {n: 0});

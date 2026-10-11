@@ -265,6 +265,8 @@ export const COEUR_MINE = {coups: 6, force: 3};
 /* Les flèches (morceau 4 de l'usure) : la part du risque de rater que la pointe enlève (chasse.js, chanceDe) ; à 7 P,
    35 % avec une pointe de pierre, 48 % de cuivre, 61 % de bronze. Chiffres choisis par Claude, à régler en jouant */
 export const FLECHES = {fleche: 0, flecheCuivre: .2, flecheBronze: .4};
+/* Contre les monstres (demande de Yo, 11 octobre 2026 : se battre à l'arc) : les dégâts d'une flèche selon sa pointe */
+export const DEGATS_FLECHE = {fleche: 1, flecheCuivre: 2, flecheBronze: 3};
 
 /* La pêche (étape 1.6) : les poissons de l'île d'après le Grand Carnet (pages « Les poissons », décision de Yo
    le 5 octobre 2026), plus la truite, le congre et la Vieille Carpe d'or gardés par Yo, et quatre poissons du

@@ -25,7 +25,9 @@
      la mine trouvée s'inscrit au carnet, noterPierre) ; dans la Forêt profonde, ses arbres et ses rochers, qui
      repoussent (voir monde/foret.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
-   Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre. */
+   Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre.
+   Demande de Yo (11 octobre 2026) : un outil ne sert que s'il est tenu en main, pris dans une case rapide ; sinon le bouton
+   dit de le prendre (`avecOutil`, `outilPour` et `prendreAction` dans barre.js). */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
@@ -42,7 +44,7 @@ import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFrui
 import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
-import { hold, barreAuto, syncBarre, renderBarre } from "./barre.js";
+import { hold, barreAuto, syncBarre, renderBarre, tenu, outilPour, prendreAction } from "./barre.js";
 import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
 import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
 import { updateInsectes, insecteAction, attrapeEnCours } from "./insectes.js";
@@ -50,6 +52,7 @@ import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 import { entreeAction } from "./entreeMine.js";
+import { torcheAction } from "./torche.js";
 import { user } from "./usure.js";
 
 const btn = $("#btn-act");
@@ -81,7 +84,7 @@ function targetGrotte(){
 function targetForet(){
   const d = dir4(), p = player.position;
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
-  const canne = state.main ? OUTILS[state.main] && OUTILS[state.main].famille === "canne" : !!bestTool("canne");
+  const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case";   // la canne en main, ou dans une case (mains libres)
   for(const dist of [.8, 1.3]){
     const i = ftile(p.x + d.x * dist, p.z + d.z * dist);
     const o = i >= 0 && foretObj(i);
@@ -120,7 +123,7 @@ function target(){
   const pelle = cibleTerrain();                       // la pelle en main : creuser, combler (étape 1.9)
   if(pelle) return pelle;
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
-  const canne = state.main ? OUTILS[state.main] && OUTILS[state.main].famille === "canne" : !!bestTool("canne");
+  const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case";   // la canne en main, ou dans une case (mains libres)
   for(const dist of [.8, 1.3]){
     const [x, z] = frontTile(dist);
     if(!inb(x, z)) continue;
@@ -152,15 +155,13 @@ function plantProblem(t, plante){
   return null;
 }
 
-/* Le meilleur outil d'une famille sur soi, dans le sac ou une case rapide (le plus fort) */
-function bestTool(famille){
-  return porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === famille).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
-}
-/* Prend en main l'outil d'une famille (celui qu'on tient, ou le meilleur) ; null s'il n'y en a pas */
-function takeTool(famille){
-  const k = state.main && OUTILS[state.main] && OUTILS[state.main].famille === famille ? state.main : bestTool(famille);
-  if(k && state.main !== k){ barreAuto(k); hold(k); }
-  return k;
+/* Une action qui demande un outil (demande de Yo : seulement celui qu'on tient en main) : l'action si un outil assez solide
+   de cette famille est en main ; sinon le prendre (dans une case) ou le mettre dans une case (dans le sac) ; sinon le
+   message « il te faut … » */
+function avecOutil(famille, force, action, manque){
+  const o = outilPour(famille, force);
+  if(o.ou === "main") return action;
+  return prendreAction(o) || info(manque);
 }
 /* Une graine récoltée : dans le sac (et une case rapide) ; sac plein : dans un coffre s'il y a de la place */
 function giveSeed(k){
@@ -179,15 +180,15 @@ function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.pelle) return actionTerrain(t);
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
-  if(t.peche) return {label: "🎣 Lancer", run: () => { if(takeTool("canne")) lancer(); }};
+  if(t.peche) return avecOutil("canne", 0, {label: "🎣 Lancer", run: () => { if(tenu("canne")) lancer(); }}, "🎣 Il te faut une canne à pêche");
   if(t.eau){ const max = OUTILS[state.main].eau;
     return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: remplir} : info(`💧 Arrosoir plein (${max}/${max})`); }
   const g = t.o && t.w === ILE ? growth(t.i) : 1, h = hits.get(hk(t));
-  const tenu = state.main && OUTILS[state.main] && OUTILS[state.main].famille;
+  const tenue = state.main && OUTILS[state.main] && OUTILS[state.main].famille;   // la famille de l'outil en main
   if(t.galerie) return galerieAction(t.galerie);
   if(t.coeur) return coeurAction();
   if(t.o === "tresor") return {label: "🎁 Ouvrir le coffre au trésor", run: () => ouvrirTresor(t)};
-  if(t.o === "rockOr"){ const h2 = hits.get(hk(t)); return {label: `⛏️ Miner la veine d'or${h2 ? ` (${RECOLTE.rockOr.coups - h2})` : ""}`, run: () => couper(t)}; }
+  if(t.o === "rockOr") return avecOutil("pioche", 0, {label: `⛏️ Miner la veine d'or${h ? ` (${RECOLTE.rockOr.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
   if(t.o === "racines") return info("🕳️ La grotte, sous les racines du vieux chêne : avance dans l'ouverture pour y descendre");
   if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
   /* Les arbres de la forêt (dans la forêt, ou plantés sur l'île) : chacun son bois et sa graine ; le houx et le
@@ -195,26 +196,25 @@ function actionOf(t){
   if(ESSENCES.includes(t.o)){
     const R = RECOLTE[t.o], nom = R.nom.replace(/^(le |l')/, "");
     if(g < 1) return info(`🌱 Jeune ${nom} : adulte dans ${duree(growthLeft(t.i))}`);
-    if(FRUITS[t.o] && tenu !== "hache"){
+    if(FRUITS[t.o] && tenue !== "hache"){
       const reste = t.w === FORET ? foretFruitsLeft(t.i) : fruitsLeft(t.i), k = cueilletteDe(t.o);
       if(!k) return info(`🌿 ${nom[0].toUpperCase() + nom.slice(1)} : rien à cueillir en cette saison (la hache le coupe)`);
       if(reste > 0) return info(`🌿 ${objet(k).nom} : de retour dans ${duree(reste)}`);
       return {label: `✋ Cueillir : ${objet(k).nom.toLowerCase()}`, run: () => cueillirFruits(t, k)};
     }
-    const k = bestTool("hache");                     // la hache selon l'essence : les bois durs et les géants demandent mieux
-    if(R.force && (!k || OUTILS[k].force < R.force)) return info(TROP_DUR.hache(R.force, R.nom));
-    return {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
+    return avecOutil("hache", R.force || 0, {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)},   // la hache selon l'essence
+      R.force > 1 ? TROP_DUR.hache(R.force, R.nom) : IL_FAUT.hache);
   }
   if(t.o === "tree")
     return g < 1 ? info(`🌱 Jeune arbre : adulte dans ${duree(growthLeft(t.i))}`)
-      : {label: `🪓 Couper${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)};
+      : avecOutil("hache", 0, {label: `🪓 Couper${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.hache);
   if(t.o === "rock" || t.o === "rockCuivre")         // mains libres : on le prend ; sinon, on le mine
     return !state.main && !h ? {label: "✋ Prendre le rocher", run: () => prendre(t)}
-      : {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)};
+      : avecOutil("pioche", 0, {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
   if(RECOLTE[t.o] && RECOLTE[t.o].outil === "pioche"){   // les roches des salles de la mine (étape 1.11)
-    const R = RECOLTE[t.o], k = bestTool("pioche");
-    if(R.force && (!k || OUTILS[k].force < R.force)) return info(TROP_DUR.pioche(R.force));
-    return {label: `⛏️ Miner ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)};
+    const R = RECOLTE[t.o];
+    return avecOutil("pioche", R.force || 0, {label: `⛏️ Miner ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)},
+      R.force > 1 ? TROP_DUR.pioche(R.force) : IL_FAUT.pioche);
   }
   if(t.o === "herbe"){
     if(g < 1) return info(`🌱 Jeunes herbes : hautes dans ${duree(growthLeft(t.i))}`);
@@ -234,10 +234,10 @@ function actionOf(t){
   }
   if(t.o === "buisson"){
     if(g < 1) return info(`🌱 Jeune buisson : adulte dans ${duree(growthLeft(t.i))}`);
-    if(tenu === "hache") return {label: `🪓 Couper le buisson${h ? ` (${RECOLTE.buisson.coups - h})` : ""}`, run: () => couper(t)};
+    if(tenue === "hache") return {label: `🪓 Couper le buisson${h ? ` (${RECOLTE.buisson.coups - h})` : ""}`, run: () => couper(t)};
     const b = baiesLeft(t.i);
     return b === 0 ? {label: "✋ Cueillir les baies", run: () => cueillirBaies(t)}
-      : b < 0 ? {label: `💧 Arroser${tenu === "arrosoir" ? ` (eau ${state.eau}/${OUTILS[state.main].eau})` : ""}`, run: () => arroser(t)}
+      : b < 0 ? avecOutil("arrosoir", 0, {label: `💧 Arroser${tenue === "arrosoir" ? ` (eau ${state.eau}/${OUTILS[state.main].eau})` : ""}`, run: () => arroser(t)}, "💧 Il te faut un arrosoir : fabrique-le à l'établi de la Scierie")
       : info(`🫐 Baies dans ${duree(b)}`);
   }
   if(!t.o && GRAINES[state.main]) return {label: "🌱 Planter", run: () => planter(t)};
@@ -274,7 +274,8 @@ export function updateRecolte(dt, active){
   showCase(cur);
   const bete = active && !anim && milieu && (insecteAction() || oiseauAction() || chasseAction());
   const entree = active && !anim && milieu === "ile" && entreeAction();   // devant l'entrée de la mine pas encore construite
-  act = enPeche() ? pecheAction() : bete || entree || (cur && actionOf(cur));
+  const torche = active && !anim && inGrotte() && torcheAction();   // la torche posée au sol, tout près (demande de Yo)
+  act = enPeche() ? pecheAction() : bete || entree || torche || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;
@@ -357,8 +358,8 @@ function cueillirBaies(t){
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le buisson pour qu'elles reviennent (la pluie l'arrose aussi)`, 3000);
 }
 function arroser(t){
-  const k = takeTool("arrosoir");
-  if(!k){ toast(`💧 Il te faut un arrosoir dans ton sac : fabrique-le à l'établi de la Scierie, ou reprends-le dans un coffre`, 3200); return; }
+  const k = tenu("arrosoir");
+  if(!k) return;
   if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
   state.eau--;
   const cases = [t.i];
@@ -384,24 +385,17 @@ function remplir(){
 /* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
 const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
   rockAmethyste: "💜 Le rocher s'ouvre sur une améthyste", rockGrenat: "❤️ Le rocher s'ouvre sur un grenat", rockGeode: "🥚 Une géode se détache"};
-const IL_FAUT = {hache: "🪓 Il te faut une hache dans ton sac : fabrique-la", pioche: "⛏️ Il te faut une pioche dans ton sac : fabrique-la"};
+const IL_FAUT = {hache: "🪓 Il te faut une hache : fabrique-la à l'établi de la Scierie", pioche: "⛏️ Il te faut une pioche : fabrique-la à l'établi de la Scierie"};
 const PIOCHE = {2: "une pioche en cuivre", 3: "une pioche en bronze"};
 /* Trop dur pour l'outil qu'on a : une roche de la mine (étape 1.11), un bois dur ou un géant (la hache selon l'essence) */
 const TROP_DUR = {
   pioche: f => `🪨 Roche trop dure : il te faut ${PIOCHE[f]}`,
   hache: (f, nom) => { const n = nom[0].toUpperCase() + nom.slice(1);
     return f >= 3 ? `🌳 ${n}, un géant millénaire : il te faut une hache en bronze` : `🪵 ${n}, un bois dur : il te faut une hache en cuivre`; }};
-/* L'outil tenu est trop faible, mais un plus solide de la même famille est sur soi : on le prend */
-function assez(k, force, famille = "pioche"){
-  if(!k || !force || OUTILS[k].force >= force) return k;
-  const b = bestTool(famille);
-  if(b && OUTILS[b].force >= force){ barreAuto(b); hold(b); return b; }
-  return k;
-}
+
 function couper(t){
-  const R = RECOLTE[t.o], k = assez(takeTool(R.outil), R.force, R.outil);
-  if(!k){ toast(`${IL_FAUT[R.outil]} à l'établi de la Scierie, ou reprends-la dans un coffre`, 3200); return; }
-  if(R.force && OUTILS[k].force < R.force){ toast(TROP_DUR[R.outil](R.force, R.nom) + " (enclume de la Forge)", 2800); return; }
+  const R = RECOLTE[t.o], k = tenu(R.outil, R.force || 0);           // seulement l'outil en main (le bouton l'a demandé)
+  if(!k) return;
   const h = (hits.get(hk(t)) || 0) + 1;
   if(R.auBout && h >= R.coups && !sacOk(R.res, R.auBout)) return;     // une pierre précieuse : seulement au dernier coup
   const n = R.res && !R.auBout ? gain(R.parCoup, R.res) : 0;         // une ressource par coup, quel que soit l'outil (demande de Yo)
@@ -426,13 +420,12 @@ function trouve(k, n){
 /* ----- Le Cœur de la mine (morceau 4) : légendaire, une seule fois dans le jeu ----- */
 function coeurAction(){
   if(!coeurEveille()){ const [n, tot] = pierresTrouvees(); return info(`✨ Une lueur dort dans la roche… Trouve toutes les pierres des trois salles pour la réveiller (${n} sur ${tot})`); }
-  const k = bestTool("pioche");
-  if(!k || OUTILS[k].force < COEUR_MINE.force) return info("💖 Le Cœur de la mine bat dans la roche : il te faut une pioche en bronze pour le dégager");
-  return {label: `⛏️ Dégager le Cœur de la mine (${COEUR_MINE.coups - (state.coeurCoups || 0)})`, run: degagerCoeur};
+  return avecOutil("pioche", COEUR_MINE.force, {label: `⛏️ Dégager le Cœur de la mine (${COEUR_MINE.coups - (state.coeurCoups || 0)})`, run: degagerCoeur},
+    "💖 Le Cœur de la mine bat dans la roche : il te faut une pioche en bronze pour le dégager");
 }
 function degagerCoeur(){
-  const k = assez(takeTool("pioche"), COEUR_MINE.force);
-  if(!k || OUTILS[k].force < COEUR_MINE.force || !coeurEveille()) return;
+  const k = tenu("pioche", COEUR_MINE.force);
+  if(!k || !coeurEveille()) return;
   const h = (state.coeurCoups || 0) + 1;
   if(h < COEUR_MINE.coups){ state.coeurCoups = h; save(); toast(`⛏️ La roche s'effrite autour du Cœur… (encore ${COEUR_MINE.coups - h})`, 1600); user(k); return; }
   if(!sacOk("coeurMine", 1)) return;
@@ -444,13 +437,13 @@ function degagerCoeur(){
 }
 /* ----- Les galeries de la mine (étape 1.11, morceau 2) : la paroi marquée d'une croix, à creuser avec la bonne pioche ----- */
 function galerieAction(g){
-  const c = GALERIES[g], k = bestTool("pioche");
-  if(!k || OUTILS[k].force < c.force) return info(`🪨 Une roche très dure cache ${c.salle} : il te faut ${c.pioche}`);
-  return {label: `⛏️ Creuser la galerie (${coupsRestants(g)})`, run: () => creuserGalerie(g)};
+  const c = GALERIES[g];
+  return avecOutil("pioche", c.force, {label: `⛏️ Creuser la galerie (${coupsRestants(g)})`, run: () => creuserGalerie(g)},
+    `🪨 Une roche très dure cache ${c.salle} : il te faut ${c.pioche}`);
 }
 function creuserGalerie(g){
-  const c = GALERIES[g], k = assez(takeTool("pioche"), c.force);
-  if(!k || OUTILS[k].force < c.force) return;
+  const c = GALERIES[g], k = tenu("pioche", c.force);
+  if(!k) return;
   const r = creuser(g), place = sacPlace("pierre") >= 1;
   if(place) sacAdd("pierre", 1);
   renderHUD(); save();

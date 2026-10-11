@@ -25,7 +25,7 @@ import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js"
 import { saisonDe, pleineLune } from "./peche.js";
 import { meteo } from "./monde/meteo.js";
 import { toast } from "./interface.js";
-import { barreAuto, hold } from "./barre.js";
+import { tenu } from "./barre.js";
 import { user } from "./usure.js";
 
 /* Combien, où, combien de temps (à régler en jouant) ; peur : à quelle distance une bête fuit qui nous voit arriver trop vite */
@@ -255,9 +255,8 @@ function vivre(b, dt){
 /* ----- Attraper ----- */
 let montre = null;                 // la bête attrapée, montrée au-dessus de la tête : {mesh, t}
 export const attrapeEnCours = () => !!montre;
-/* Le meilleur outil de la famille qu'on porte (le plus solide) */
-const outilDuSac = f => porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === f).sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
-const filetDuSac = () => outilDuSac("filet");
+/* Le filet ou le bocal qu'on tient en main (demande de Yo : seulement ce qu'on tient) */
+const filetDuSac = () => tenu("filet");
 /* La bête la plus proche, à portée de filet */
 function aPortee(){
   const p = player.position;
@@ -269,10 +268,8 @@ function aPortee(){
 }
 function attraper(b){
   const p = INSECTES[b.k];
-  const k = p.bocal ? outilDuSac("bocal") : filetDuSac();       // la luciole et le frelon : au bocal (étape 1.11, morceau 3)
-  if(!k && p.bocal){ toast(`🫙 ${leNom(b.k, true)} se prend au bocal, pas au filet : fabrique-le à l'enclume de la Forge (2 verres, 1 planche)${p.danger ? ". Attention, il pique !" : ""}`, 3800); return; }
-  if(!k){ toast("🥅 Il te faut un filet : fabrique-le à l'établi de la Scierie (2 planches, 4 fibres)", 3200); return; }
-  if(state.main !== k){ barreAuto(k); hold(k); }
+  const k = p.bocal ? tenu("bocal") : filetDuSac();             // la luciole et le frelon : au bocal (étape 1.11, morceau 3)
+  if(!k) return;
   if(sacPlace(b.k) < 1){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve", 3200); return; }
   sacAdd(b.k, 1);
   const c = state.carnet.insectes, e = c[b.k] || (c[b.k] = {n: 0});
@@ -286,11 +283,12 @@ function attraper(b){
 /* Le bouton d'action pour la bête à portée (recolte.js l'affiche, avant le reste) */
 export function insecteAction(){
   if(montre) return {label: "🥅 …", run: () => {}};
-  if(!filetDuSac() && !outilDuSac("bocal")) return null;   // sans filet ni bocal, on ne prend pas la place des autres actions (pêcher, couper…)
+  if(!filetDuSac() && !tenu("bocal")) return null;          // sans filet ni bocal en main, on ne prend pas la place des autres actions
   const b = aPortee();
   if(!b) return null;
-  const bocal = INSECTES[b.k].bocal && outilDuSac("bocal");
-  if(!bocal && !filetDuSac()) return null;
+  const p = INSECTES[b.k], bocal = p.bocal && tenu("bocal");
+  if(p.bocal && !bocal) return {label: `🫙 ${p.nom} : elle se prend au bocal`, run: () => toast(`🫙 ${leNom(b.k, true)} se prend au bocal, pas au filet : le bocal se fabrique à l'enclume de la Forge${p.danger ? ". Attention, il pique !" : ""}`, 3800)};
+  if(!p.bocal && !filetDuSac()) return null;
   return {label: `${bocal ? "🫙" : "🥅"} Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, run: () => { if(b.etat === "vit" && betes.includes(b)) attraper(b); }};
 }
 

@@ -5,9 +5,13 @@
    tant qu'un sanglier blessé à l'arc charge (morceau 3) :
    - la vie : COMBAT.vie cœurs en haut de l'écran ; ils reviennent tous en sortant de la grotte (dans la forêt :
      quand le sanglier est vaincu ou parti) ;
-   - ⚔️ Attaquer : l'épée (celle qu'on tient, sinon la plus forte du sac) se met en main ; le personnage se tourne
-     vers le monstre le plus proche (jusqu'à COMBAT.vise), fait un pas vers lui, et le touche à moins de
-     COMBAT.portee : autant de dégâts que la force de l'épée (bois 1, cuivre 2) ;
+   - ⚔️ Attaquer, avec l'arme qu'on tient en main (demande de Yo, 11 octobre 2026 : seulement celle-là ; dans une case
+     rapide, le bouton la prend en main ; dans le sac, il faut d'abord la mettre dans une case) :
+     · l'épée : le personnage se tourne vers le monstre le plus proche (jusqu'à COMBAT.vise), fait un pas vers lui, et
+       le touche à moins de COMBAT.portee : autant de dégâts que la force de l'épée (bois 1, cuivre 2, bronze 3) ;
+     · l'arc (à deux mains : la torche se pose au sol, torche.js) : une flèche vers le monstre le plus proche, jusqu'à
+       CHASSE.portee ; la chance de toucher comme à la chasse (chanceDe), les dégâts selon la pointe (DEGATS_FLECHE) ;
+       ratée, la flèche est perdue ; elle touche, on la reprend quand le monstre est vaincu ;
    - 🤸 Roulade : une culbute dans le sens du joystick (sinon droit devant) ; pendant la roulade, rien ne touche ;
    - 🍢 Soin, l'objet rapide : un poisson grillé rend COMBAT.soin cœurs ;
    - une morsure enlève des cœurs ; ensuite, un court répit (le personnage clignote) ;
@@ -20,14 +24,15 @@
      où l'on se réveille, ce qui est perdu et ce qu'on garde.
    Sur ordinateur : Espace pour attaquer, E pour rouler, F pour manger. Les monstres : monstres.js. */
 import { $ } from "./outils.js";
-import { COMBAT, OUTILS, MONSTRES, objet, icone } from "./donnees.js";
+import { COMBAT, OUTILS, MONSTRES, DEGATS_FLECHE, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { porte, sacCount, sacTake } from "./regles.js";
 import { player, placePlayer, regard, elan, enRoulade, clignoter, pencheMain } from "./monde/personnage.js";
 import { currentPlace, isBusy, reveilVillage } from "./lieux.js";
-import { barreAuto, hold, syncBarre } from "./barre.js";
+import { syncBarre, tenu, outilPour, prendreAction } from "./barre.js";
+import { CHASSE, chanceDe, flecheDuSac } from "./chasse.js";
 import { toast, wrap, openSheet } from "./interface.js";
-import { updateMonstres, plusProche, frapper, monstresIci, oublierMonstres } from "./monstres.js";
+import { updateMonstres, plusProche, frapper, monstresIci, oublierMonstres, lancerFleche } from "./monstres.js";
 import { user } from "./usure.js";
 
 const coeurs = $("#coeurs"), boutons = $("#combat"), bRoul = $("#btn-roulade"), bObj = $("#btn-objet"), nObj = $("#objet-n");
@@ -48,16 +53,17 @@ function afficher(touche){
 }
 
 /* ----- ⚔️ Attaquer ----- */
-function epee(){
-  const k = state.main;
-  if(k && OUTILS[k] && OUTILS[k].famille === "arme") return k;
-  return porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === "arme").sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
-}
 function attaquer(){
   if(!pret() || attente > 0 || enRoulade()) return;
-  const k = epee();
-  if(!k){ toast("🗡️ Il te faut une épée : l'épée en bois se fabrique à l'établi de la Scierie (4 planches). En attendant, roule (🤸) pour éviter les coups", 4600); return; }
-  if(state.main !== k){ barreAuto(k); hold(k); }
+  if(tenu("arc")){ tirer(); return; }
+  const k = tenu("arme");
+  if(!k){                                               // pas d'arme en main : on la prend dans une case, sinon on dit quoi faire
+    const o = [outilPour("arme"), outilPour("arc")], c = o.find(x => x.ou === "case") || o.find(x => x.ou === "sac");
+    const a = prendreAction(c);
+    if(c && c.ou === "case"){ a.run(); return; }
+    if(a){ toast(a.label, 3600); a.run(); return; }
+    toast("🗡️ Il te faut une arme : l'épée en bois se fabrique à l'établi de la Scierie (4 planches). En attendant, roule (🤸) pour éviter les coups", 4600); return;
+  }
   attente = COMBAT.coup; coup = COUP;
   const c = plusProche(COMBAT.vise);
   if(!c) return;                                        // personne : un coup dans le vide
@@ -67,6 +73,22 @@ function attaquer(){
   const pas = Math.min(COMBAT.pas, Math.max(0, c.d - .9 - taille));
   if(pas > .05) elan(ux * pas / .12, uz * pas / .12, .12, false);
   if(c.d - pas - taille <= COMBAT.portee){ frapper(c.m, OUTILS[k].force, ux, uz); vibre(25); user(k); }   // un coup qui touche use l'épée (usure.js)
+}
+
+/* ----- 🏹 L'arc contre les monstres (demande de Yo, 11 octobre 2026) ----- */
+const TIR = .8;                                         // un tir toutes les 0,8 s
+function tirer(){
+  const arc = tenu("arc"), f = flecheDuSac();
+  attente = TIR;
+  if(!f){ toast("🏹 Plus de flèches : fabrique-en à l'établi de la Scierie (2 planches et 1 pierre pour 10), ou à pointe de métal à l'enclume", 3600); return; }
+  const c = plusProche(CHASSE.portee);
+  if(!c){ toast("🏹 Aucun monstre à portée de flèche", 1400); return; }
+  const p = player.position, ux = (c.m.x - p.x) / (c.d || 1), uz = (c.m.z - p.z) / (c.d || 1);
+  placePlayer(p.x, p.z, ux, uz);                        // la visée automatique : face au monstre
+  pencheMain(.5); coup = COUP;
+  sacTake(f, 1); syncBarre();
+  lancerFleche(c.m, f, Math.random() < chanceDe(c.d, f), DEGATS_FLECHE[f] || 1);
+  user(arc);                                            // chaque tir use l'arc (usure.js)
 }
 
 /* ----- 🤸 Roulade ----- */

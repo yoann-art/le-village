@@ -10,7 +10,7 @@ import { hasAll, owned, pay, costHTML, missingHTML, mineOuverte, sacAdd, sacPlac
 import { placeMesh } from "./monde/batiments.js";
 import { doorOf } from "./lieux.js";
 import { player, dir4 } from "./monde/personnage.js";
-import { hold, barreAuto, syncBarre } from "./barre.js";
+import { syncBarre, tenu, outilPour, prendreAction } from "./barre.js";
 import { toast, renderHUD, closeSheet, wrap } from "./interface.js";
 import { user } from "./usure.js";
 
@@ -18,17 +18,10 @@ const mine = () => state.buildings.find(b => b.type === "mine");
 const nomDe = (k, n) => (n > 1 && objet(k).pluriel || objet(k).nom).toLowerCase();
 const liste = c => Object.entries(c).map(([k, n]) => `${n} ${nomDe(k, n)}`).join(", ");
 const reste = () => ENTREE_MINE.coups - (state.deblai || 0);
-/* La pioche tenue, sinon la plus forte qu'on porte (sac et cases rapides) */
-function pioche(){
-  if(state.main && OUTILS[state.main] && OUTILS[state.main].famille === "pioche") return state.main;
-  return porte().map(it => it.k).filter(k => OUTILS[k] && OUTILS[k].famille === "pioche").sort((a, b) => OUTILS[b].force - OUTILS[a].force)[0] || null;
-}
-
 /* Un coup de pioche dans l'éboulement : un rocher de moins, et des pierres */
 export function deblayer(){
-  const k = pioche();
-  if(!k){ toast("⛏️ Il te faut une pioche pour déblayer l'éboulement : fabrique-la à l'établi de la Scierie (3 planches, 3 pierres)", 3800); return; }
-  if(state.main !== k){ barreAuto(k); hold(k); }
+  const k = tenu("pioche");                          // la pioche en main (demande de Yo : seulement ce qu'on tient)
+  if(!k) return;
   state.deblai = (state.deblai || 0) + 1;
   const n = ENTREE_MINE.pierres, place = sacPlace("pierre") >= n;
   if(place) sacAdd("pierre", n);
@@ -63,8 +56,10 @@ export function entreeAction(){
   if(f.x !== -n.x || f.z !== -n.z) return null;
   const cote = n.x === 0 ? Math.abs(p.x - d.x) : Math.abs(p.z - d.z), devant = (p.x - d.x) * n.x + (p.z - d.z) * n.z;
   if(cote > .8 || devant < 0 || devant > 1.6) return null;
-  return state.entreeMine === "eboulee" ? {label: `⛏️ Déblayer l'éboulement (${reste()})`, run: deblayer}
-    : {label: "🏗️ Poser les étais de la mine", run: poserEtais};
+  if(state.entreeMine !== "eboulee") return {label: "🏗️ Poser les étais de la mine", run: poserEtais};
+  if(tenu("pioche")) return {label: `⛏️ Déblayer l'éboulement (${reste()})`, run: deblayer};
+  const m = "⛏️ Il te faut une pioche pour déblayer l'éboulement : fabrique-la à l'établi de la Scierie (3 planches, 3 pierres)";
+  return prendreAction(outilPour("pioche")) || {label: m, run: () => toast(m, 3800)};
 }
 
 /* Sa ligne dans le menu Construire, juste après la Scierie (construire.js) */

@@ -26,7 +26,8 @@ import { ARBRES } from "./monde/essences.js";
 import { player, placePlayer, allure, ALLURE_DOUCE, pencheMain } from "./monde/personnage.js";
 import { saisonDe, pleineLune } from "./peche.js";
 import { toast, renderHUD } from "./interface.js";
-import { barreAuto, hold } from "./barre.js";
+import { tenu } from "./barre.js";
+import { flecheModele } from "./monde/outils3d.js";
 import { user } from "./usure.js";
 
 /* Combien, où, à quelle distance ils sentent, entendent, voient ; la portée de l'arc (à régler en jouant) */
@@ -305,21 +306,14 @@ function vivre(a, dt){
 }
 
 /* ----- Tirer à l'arc ----- */
-const arcDuSac = () => { const it = porte().find(it => OUTILS[it.k] && OUTILS[it.k].famille === "arc"); return it ? it.k : null; };
+const arcDuSac = () => tenu("arc");                    // l'arc qu'on tient en main (demande de Yo : seulement ce qu'on tient)
 /* La chance de toucher à une distance d, avec la flèche f : une pointe de métal enlève une part du risque de rater */
 export const chanceDe = (d, f = "fleche") => { const c = d <= CHASSE.sur ? 1 : Math.max(.35, 1 - (d - CHASSE.sur) / (CHASSE.portee - CHASSE.sur) * .65); return c + (1 - c) * (FLECHES[f] || 0); };
 /* La meilleure flèche qu'on porte (bronze, puis cuivre, puis pierre) */
-const flecheDuSac = () => Object.keys(FLECHES).sort((a, b) => FLECHES[b] - FLECHES[a]).find(f => sacCount(f) > 0) || null;
-const POINTE = {fleche: 0x8E949C, flecheCuivre: 0xC8743C, flecheBronze: 0xB98A4A};
+export const flecheDuSac = () => Object.keys(FLECHES).sort((a, b) => FLECHES[b] - FLECHES[a]).find(f => sacCount(f) > 0) || null;
+
 let tir = null;          // la flèche en vol : {mesh, de, a, t, T, bete, touche}
 export const tirEnCours = () => !!tir;
-function flecheMesh(f){
-  const g = new THREE.Group();
-  const tige = part(G.cyl, 0x8A5A32, .02, .5, .02, 0, 0, 0); tige.rotation.x = Math.PI / 2; g.add(tige);
-  const pointe = part(G.cone, POINTE[f] || 0x8E949C, .05, .1, .05, 0, 0, .28); pointe.rotation.x = Math.PI / 2; g.add(pointe);
-  for(const r of [0, Math.PI / 2]){ const pl = part(G.box, 0xE4574C, .005, .06, .1, 0, 0, -.22); pl.rotation.z = r; g.add(pl); }
-  return g;
-}
 /* La bête la plus proche à portée (le Cerf blanc ne se chasse pas) */
 function cible(){
   const p = player.position;
@@ -337,7 +331,7 @@ function tirer(a){
   if(!f){ toast("🏹 Plus de flèches : fabrique-en à l'établi de la Scierie (2 planches et 1 pierre pour 10 flèches), ou à pointe de métal à l'enclume de la Forge", 3600); return; }
   if(!tientSurSoi(p.donne)){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre avant de chasser", 3200); return; }
   const k = arcDuSac();
-  if(state.main !== k){ barreAuto(k); hold(k); }
+  if(!k) return;
   sacTake(f, 1);
   const pp = player.position, d = Math.hypot(a.x - pp.x, a.z - pp.z) || 1, dx = (a.x - pp.x) / d, dz = (a.z - pp.z) / d;
   placePlayer(pp.x, pp.z, dx, dz);                    // face à la bête
@@ -345,7 +339,7 @@ function tirer(a){
   const touche = Math.random() < chanceDe(d, f), s = Math.random() < .5 ? 1 : -1;
   const fin = touche ? {x: a.x, y: .3 * (p.taille || 1), z: a.z}
     : {x: a.x + dx * 1.2 - dz * s * (.5 + Math.random() * .6), y: .04, z: a.z + dz * 1.2 + dx * s * (.5 + Math.random() * .6)};
-  tir = {mesh: flecheMesh(f), de: {x: pp.x + dx * .3, y: .85, z: pp.z + dz * .3}, a: fin, t: 0, T: Math.max(.18, d / 16), bete: a, touche, fini: 0, fleche: f};
+  tir = {mesh: flecheModele(f), de: {x: pp.x + dx * .3, y: .85, z: pp.z + dz * .3}, a: fin, t: 0, T: Math.max(.18, d / 16), bete: a, touche, fini: 0, fleche: f};
   groupe.add(tir.mesh);
   renderHUD();
   user(k);                                            // chaque tir use l'arc (usure.js)

@@ -13,7 +13,8 @@
    le combat (un loup qui mord, la roulade qui esquive, l'épée qui le vainc et ce qu'il laisse, une chauve-souris,
    le poisson grillé qui soigne, vaincu : la moitié du butin de la grotte perdue, jamais l'équipement, le réveil au
    village, toute sa vie revenue), le Gardien d'écorce (au fond du troisième palier ; ses racines s'illuminent, la roulade
-   les évite ; vaincu, la carte du Marais et un cœur de bois), le sanglier de la forêt
+   les évite ; vaincu, la carte du Marais et un cœur de bois), les mains (l'épée restée dans le sac ne frappe pas ; l'arc
+   à deux mains pose la torche au sol, vainc un loup d'une flèche et la rend ; la torche se reprend), le sanglier de la forêt
    (touché à l'arc, il charge ; vaincu à l'épée),
    creuser et combler à la pelle, tracer un chemin en marchant et l'enlever à la pelle,
    les fleurs (cueillir une fleur de la saison, la déterrer à la pelle, replanter sa graine), le jour et la nuit (la
@@ -52,9 +53,19 @@ import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
 import { renderHUD } from "../js/interface.js";
-import { hold, mettreEnCase, jauge } from "../js/barre.js";
+import { hold, mettreEnCase, jauge, dansCase } from "../js/barre.js";
+import { torcheSol } from "../js/torche.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
+/* Demande de Yo (v1.13.2) : un outil ne sert que tenu en main, pris dans une case rapide : la vérification le met dans la
+   première case (ce qui y était retourne au sac), puis le prend en main (la torche, elle, reste dans sa case) */
+const enMain = k => {
+  if(dansCase(k) < 0 && !mettreEnCase(0, k)){                      // sac plein pour ce qui était dans la case : on fait un peu de place
+    const j = state.sac.findIndex(it => !OUTILS[it.k] && it.k !== k); if(j >= 0) state.sac.splice(j, 1);
+    mettreEnCase(0, k);
+  }
+  hold(k);
+};
 const $ = s => document.querySelector(s);
 const frames = (n, dt = .05) => { for(let k = 0; k < n; k++) updateRecolte(dt, true); };
 /* Se placer devant la porte d'un bâtiment, et entrer (ou sortir en repassant le paillasson) */
@@ -239,7 +250,7 @@ export async function verifier(){
     return null;
   };
   await etape("Couper un arbre", async () => {
-    sacAdd("hachePierre", 1); hold("hachePierre");
+    sacAdd("hachePierre", 1); enMain("hachePierre");
     const t = arbreLibre();
     if(!t) throw new Error("aucun arbre accessible");
     const bois = owned("bois");
@@ -259,7 +270,7 @@ export async function verifier(){
     state.usure[k] = OUTILS[k].solidite - 1;                 // le dernier coup
     const t = arbreLibre();
     if(!t) throw new Error("aucun arbre accessible");
-    hold(k);
+    enMain(k);
     placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1);
     frames(1, .016); $("#btn-act").click(); frames(25);
     if(owned(k) !== n - 1) throw new Error("la hache usée ne s'est pas cassée");
@@ -282,6 +293,7 @@ export async function verifier(){
     const mine = state.buildings.find(b => b.type === "mine"), d = doorOf(mine);
     if(state.entreeMine !== "eboulee") throw new Error(`une partie neuve trouve l'entrée « ${state.entreeMine || "ouverte"} » au lieu d'éboulée`);
     if(!owned("piochePierre")) sacAdd("piochePierre", 1);
+    enMain("piochePierre");
     placePlayer(d.x + d.n.x * R, d.z + d.n.z * R, -d.n.x, -d.n.z);
     checkDoors(true);
     if(isInside()) throw new Error("on entre dans la mine éboulée");
@@ -312,7 +324,7 @@ export async function verifier(){
       const avant = devantGalerie(2);
       placePlayer(avant.x, avant.z, avant.fx, avant.fz); frames(3);
       if(!$("#btn-act").textContent.includes("pioche en cuivre")) throw new Error(`sans pioche en cuivre, le bouton dit « ${$("#btn-act").textContent} »`);
-      sacAdd("piocheCuivre", 1);
+      sacAdd("piocheCuivre", 1); enMain("piocheCuivre");
       let coups = 0;
       for(let k = 0; k < 20 && !galerieOuverte(2); k++){
         const p = devantGalerie(2);
@@ -344,6 +356,9 @@ export async function verifier(){
     if(!owned("hachePierre")) sacAdd("hachePierre", 1);
     placePlayer(fcx(t.i) - t.dx, fcz(t.i), t.dx, 0);
     const sorte = foretObj(t.i), bois = RECOLTE[sorte].res, avant = owned(bois);
+    const outil = RECOLTE[sorte].outil === "pioche" ? "piochePierre" : "hachePierre";
+    if(!owned(outil)) sacAdd(outil, 1);
+    enMain(outil);
     for(let k = 0; k < RECOLTE[sorte].coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
     if(foretObj(t.i)) throw new Error(`${RECOLTE[sorte].nom} est toujours là (le bouton dit « ${$("#btn-act").textContent} »)`);
     if(owned(bois) <= avant) throw new Error(`pas de ${objet(bois).nom.toLowerCase()} gagné`);
@@ -351,7 +366,7 @@ export async function verifier(){
     return `${RECOLTE[sorte].nom} coupé, +${owned(bois) - avant} ${objet(bois).nom.toLowerCase()}`;
   });
   await etape("Pêcher", async () => {
-    sacAdd("canneBois", 1); hold(null);
+    sacAdd("canneBois", 1); enMain("canneBois");
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
       const i = idx(x, z), s = idx(x, z + 1);
@@ -423,6 +438,7 @@ export async function verifier(){
   const place = n => {
     for(const k of ["graineArbre", "graineThym", "fibre", "pierre", "bois", "planche"]) if(state.sac.length > 12 - n) state.sac = state.sac.filter(it => it.k !== k);
     while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => !OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }   // puis les prises des essais d'avant
+    while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }    // puis les outils des essais d'avant (chaque essai reprend les siens)
   };
   await etape("La hache selon l'essence : le frêne demande une hache en cuivre, le chêne séculaire une hache en bronze", async () => {
     let i = -1;
@@ -435,10 +451,12 @@ export async function verifier(){
     const face = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(1, .016); return $("#btn-act").textContent; };
     state.sac = state.sac.filter(it => !OUTILS[it.k] || OUTILS[it.k].famille !== "hache");
     state.barre = state.barre.map(it => it && OUTILS[it.k] && OUTILS[it.k].famille === "hache" ? null : it);
-    place(2); sacAdd("hachePierre", 1); hold("hachePierre");
+    place(2); sacAdd("hachePierre", 1); enMain("hachePierre");
     setObj(i, "frene");
     if(!face().includes("hache en cuivre")) throw new Error(`avec une hache en pierre, devant le frêne, le bouton dit « ${face()} »`);
     sacAdd("hacheCuivre", 1);
+    if(!face().includes("dans le sac")) throw new Error(`la hache en cuivre dans le sac, le bouton dit « ${face()} » (il devrait dire de la mettre dans une case)`);
+    enMain("hacheCuivre");
     if(!face().includes("Couper le frêne")) throw new Error(`avec une hache en cuivre, le bouton dit « ${face()} »`);
     const avant = owned("boisFrene");
     for(let k = 0; k < RECOLTE.frene.coups; k++){ face(); $("#btn-act").click(); frames(25); }
@@ -452,7 +470,7 @@ export async function verifier(){
   });
   await etape("Creuser et combler à la pelle", async () => {
     place(1);
-    sacAdd("pelleBois", 1); hold("pelleBois");
+    sacAdd("pelleBois", 1); enMain("pelleBois");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     /* une case d'herbe libre sur la place du village, avec une case libre en dessous pour s'y tenir */
     const c = Math.floor(N / 2), libre = j => map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
@@ -481,7 +499,7 @@ export async function verifier(){
     let rang = null;
     for(let dz = 1; dz < 8 && rang === null; dz++) for(const z of [c + dz, c - dz]) if([0, 1, 2, 3, 4].every(k => libre(idx(c - 2 + k, z)))){ rang = z; break; }
     if(rang === null) throw new Error("pas de rangée libre sur la place");
-    hold("planche");
+    enMain("planche");
     placePlayer(centerOf(c - 2), centerOf(rang), 1, 0); updateChemins(true);
     const bt = $("#btn-tracer");
     if(bt.hidden || !bt.textContent.includes("planches")) throw new Error(`des planches en main, le bouton « Tracer » ${bt.hidden ? "n'apparaît pas" : `dit « ${bt.textContent} »`}`);
@@ -493,7 +511,7 @@ export async function verifier(){
     if(poses < 2) throw new Error(`${poses} case de chemin en marchant`);
     if(owned("planche") !== avant - poses) throw new Error("les planches ne sont pas prises une par case");
     /* la pelle, tournée vers le chemin derrière soi, enlève une case et rend sa planche */
-    hold("pelleBois");
+    enMain("pelleBois");
     const p = player.position; placePlayer(p.x, p.z, -1, 0); frames(1);
     if(!$("#btn-act").textContent.includes("Enlever")) throw new Error(`face au chemin, la pelle en main, le bouton dit « ${$("#btn-act").textContent} »`);
     const pl = owned("planche"); $("#btn-act").click(); frames(1);
@@ -524,13 +542,13 @@ export async function verifier(){
     if(!$("#btn-act").textContent.includes("refleurit")) throw new Error(`cueillie, le bouton dit « ${$("#btn-act").textContent} »`);
     /* la pelle la déterre : sa graine revient dans le sac */
     if(!owned("pelleBois")) sacAdd("pelleBois", 1);
-    hold("pelleBois"); frames(1);
+    enMain("pelleBois"); frames(1);
     const g = graineDeFleur(k), gAvant = owned(g);
     if(!$("#btn-act").textContent.includes("Déterrer")) throw new Error(`pelle en main, face à la fleur, le bouton dit « ${$("#btn-act").textContent} »`);
     $("#btn-act").click(); frames(1);
     if(map.obj[t.i] || owned(g) !== gAvant + 1) throw new Error("déterrée, la fleur ne rend pas sa graine");
     /* la graine replantée */
-    hold(g); frames(1);
+    enMain(g); frames(1);
     if(!$("#btn-act").textContent.includes("Planter")) throw new Error(`la graine en main, le bouton dit « ${$("#btn-act").textContent} »`);
     $("#btn-act").click(); frames(1);
     if(map.obj[t.i] !== k) throw new Error("la graine n'est pas plantée");
@@ -545,7 +563,7 @@ export async function verifier(){
   });
   await etape("Attraper un insecte au filet", async () => {
     place(2);
-    sacAdd("filet", 1); hold(null);
+    sacAdd("filet", 1); enMain("filet");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);                   // immobile : on ne fait peur à personne
     const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
     const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1));
@@ -563,7 +581,7 @@ export async function verifier(){
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);
-    sacAdd("bocal", 1); hold(null);
+    sacAdd("bocal", 1); enMain("bocal");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j];
     const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1));
@@ -585,14 +603,14 @@ export async function verifier(){
     const sans = f => { state.sac = state.sac.filter(it => !OUTILS[it.k] || OUTILS[it.k].famille !== f); state.barre = state.barre.map(it => it && OUTILS[it.k] && OUTILS[it.k].famille === f ? null : it); };
     const libre = j => j >= 0 && j < N * N && map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j] && !state.chemins[j];
     /* le filet en cuivre : un demi-pas plus loin */
-    sans("filet"); sacAdd("filet", 1); hold(null);
+    sans("filet"); sacAdd("filet", 1); enMain("filet");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1) && libre(j - 2 * N));
     if(i < 0) throw new Error("pas de place libre");
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
     lacherInsecte("fourmi", player.position.x, player.position.z + 1.6, .03); frames(2);
     if(!$("#btn-act").hidden && $("#btn-act").textContent.includes("Attraper")) throw new Error("le filet en bois attrape déjà à 1,6 P");
-    sacAdd("filetCuivre", 1); frames(2);
+    sacAdd("filetCuivre", 1); enMain("filetCuivre"); frames(2);
     if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`avec le filet en cuivre, à 1,6 P, le bouton dit « ${$("#btn-act").textContent} »`);
     const fourmis = owned("fourmi");
     $("#btn-act").click(); frames(40);
@@ -604,7 +622,7 @@ export async function verifier(){
     const buissons = [b - 1, b, b + 1];
     try {
       for(const j of buissons){ setObj(j, "buisson"); setEtat(j, {vide: Date.now()}); }
-      sans("arrosoir"); sacAdd("arrosoirBronze", 1); hold("arrosoirBronze"); state.eau = OUTILS.arrosoirBronze.eau;
+      sans("arrosoir"); sacAdd("arrosoirBronze", 1); enMain("arrosoirBronze"); state.eau = OUTILS.arrosoirBronze.eau;
       placePlayer(centerOf(b % N), centerOf(Math.floor(b / N) + 1) + .1, 0, -1); frames(1, .016);
       if(!$("#btn-act").textContent.includes("Arroser")) throw new Error(`devant un buisson vide, le bouton dit « ${$("#btn-act").textContent} »`);
       $("#btn-act").click(); frames(10);
@@ -613,7 +631,7 @@ export async function verifier(){
       if(state.eau !== OUTILS.arrosoirBronze.eau - 1) throw new Error("un seul arrosage aurait dû servir");
     } finally { for(const j of buissons) setObj(j, null); forcerMeteo(null); hold(null); }
     /* la canne en bois : le fil casse sur un poisson légendaire */
-    sans("canne"); sacAdd("canneBois", 1);
+    sans("canne"); place(1); sacAdd("canneBois", 1); enMain("canneBois"); place(1);   // sac plein : pas de pêche
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
       const a = idx(x, z), s2 = idx(x, z + 1);
@@ -639,6 +657,8 @@ export async function verifier(){
   });
   await etape("Attraper un oiseau au filet", async () => {
     place(1);
+    if(!owned("filet")) sacAdd("filet", 1);
+    enMain("filet");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     lacherOiseau("moineau", player.position.x, player.position.z + 1.4);
     frames(2);
@@ -655,7 +675,7 @@ export async function verifier(){
     await entrer(state.buildings.find(b => b.type === "foret"));
     if(!owned("filet")) sacAdd("filet", 1);
     if(!owned("canneBois")) sacAdd("canneBois", 1);
-    hold(null);
+    enMain("filet");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     /* une case libre au bord de l'eau, face à l'eau */
     let t = null;
@@ -678,8 +698,8 @@ export async function verifier(){
     if(!$("#btn-act").textContent.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas d'oiseau)`);
     $("#btn-act").click(); frames(40);
     if(!state.carnet.oiseaux.picVert) throw new Error("le pic vert n'est pas au carnet");
-    /* pêcher : mains libres (la canne du sac est prise toute seule), une ombre dans l'eau, juste devant */
-    hold(null); frames(2);
+    /* pêcher : la canne en main, une ombre dans l'eau, juste devant */
+    enMain("canneBois"); frames(2);
     if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au bord du ruisseau, le bouton dit « ${$("#btn-act").textContent} »`);
     if(!lacherOmbre(fcx(t.i) + t.dx * .3, fcz(t.i) + t.dz * .3)) throw new Error("pas d'ombre de poisson possible dans le ruisseau");
     $("#btn-act").click();
@@ -697,7 +717,7 @@ export async function verifier(){
     place(5);
     pauseChasse(true);
     await entrer(state.buildings.find(b => b.type === "foret"));
-    sacAdd("arcIf", 1); sacAdd("fleche", 5); hold(null);
+    sacAdd("arcIf", 1); sacAdd("fleche", 5); enMain("arcIf");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     frames(2);
     if($("#vent").hidden) throw new Error("pas de flèche du vent dans la forêt");
@@ -727,7 +747,7 @@ export async function verifier(){
     await entrer(state.buildings.find(b => b.type === "foret"));
     try {
       if(!owned("arcIf")) sacAdd("arcIf", 1);
-      sacAdd("flecheBronze", 2); hold(null);
+      sacAdd("flecheBronze", 2); enMain("arcIf");
       keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016); frames(2);
       const p = player.position, w = vent(), pierre = owned("fleche"), bronze = owned("flecheBronze");
       lacherGibier("chevreuil", p.x - w.x * 5, p.z - w.z * 5); frames(2);
@@ -751,7 +771,7 @@ export async function verifier(){
   await etape("La grotte : y entrer depuis la forêt, descendre d'un palier, remonter", async () => {
     place(2);
     await entrer(state.buildings.find(b => b.type === "foret"));
-    sacAdd("torche", 2); hold(null);
+    sacAdd("torche", 2); hold(null); mettreEnCase(1, "torche");   // la torche dans une case : elle s'allume dans le noir
     const E = ENTREE_GROTTE;
     placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
     if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte par les racines");
@@ -770,7 +790,7 @@ export async function verifier(){
   await etape("Le combat : un loup mord, la roulade esquive, l'épée le vainc, le poisson grillé soigne, vaincu", async () => {
     place(7);                                          // l'épée, le poisson grillé, et ce que laissent le loup et la chauve-souris
     await entrer(state.buildings.find(b => b.type === "foret"));
-    sacAdd("epeeBois", 1); sacAdd("poissonGrille", 1); hold(null);
+    sacAdd("epeeBois", 1); sacAdd("poissonGrille", 1); enMain("epeeBois");
     /* bug de Yo (v1.9.4) : toutes ses torches rangées au coffre, une torche entamée s'allumait quand même */
     state.sac = state.sac.filter(it => it.k !== "torche"); state.barre = state.barre.map(it => it && it.k === "torche" ? null : it);
     state.torche = 300;
@@ -827,7 +847,7 @@ export async function verifier(){
     place(4);
     const sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));   // rendus à la fin : les essais suivants ont besoin de place
     await entrer(state.buildings.find(b => b.type === "foret"));
-    sacAdd("epeeBronze", 1); hold(null);
+    sacAdd("epeeBronze", 1); enMain("epeeBronze");
     const E = ENTREE_GROTTE;
     placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
     if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte");
@@ -865,6 +885,52 @@ export async function verifier(){
       state.sac = sac0; state.barre = barre0; hold(null);
     }
   });
+  await etape("Les mains : l'épée du sac ne sert pas ; l'arc à deux mains pose la torche au sol, vainc un loup et rend sa flèche", async () => {
+    place(4);
+    const sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));
+    await entrer(state.buildings.find(b => b.type === "foret"));
+    const E = ENTREE_GROTTE;
+    placePlayer(E.x, E.z + R + .05, 0, -1); checkDoors(true);
+    if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte")) throw new Error("on n'entre pas dans la grotte");
+    try {
+      pauseMonstres(true);
+      state.barre = [null, null, null]; hold(null);
+      sacAdd("torche", 2); mettreEnCase(1, "torche");
+      if(!await attendre(() => torcheAllumee() && !torcheSol(), 2000)) throw new Error("la torche de la case ne s'allume pas dans la main gauche");
+      /* une épée seulement dans le sac : ⚔️ ne frappe pas, il propose de la mettre dans une case */
+      sacAdd("epeeBois", 1);
+      let p = player.position;
+      const loup = lacherMonstre("loup", p.x + 1, p.z, "souffle"), vie = loup.vie;
+      combat.attaquer(); await wait(300);
+      if(loup.vie < vie) throw new Error("l'épée restée dans le sac a frappé");
+      if($("#sheetWrap").hidden) throw new Error("⚔️ ne propose pas de mettre l'épée dans une case");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+      pauseMonstres(true);
+      /* l'arc à deux mains : la torche se pose au sol, et continue d'éclairer */
+      sacAdd("arcIf", 1); sacAdd("flecheBronze", 3); enMain("arcIf");
+      if(!await attendre(() => torcheSol(), 2000)) throw new Error("prendre l'arc ne pose pas la torche au sol");
+      if(!torcheAllumee()) throw new Error("la torche posée n'éclaire plus");
+      p = player.position;
+      const cible = lacherMonstre("loup", p.x + 2.5, p.z, "souffle"); cible.vie = 3;   // une flèche en bronze (3) suffit
+      const fleches = owned("flecheBronze"), avant = monstresVaincus();
+      combat.attaquer();
+      if(!await attendre(() => monstresVaincus() > avant, 2500)) throw new Error("la flèche ne vainc pas le loup");
+      if(owned("flecheBronze") !== fleches) throw new Error(`la flèche n'est pas rendue (${owned("flecheBronze")} au lieu de ${fleches})`);
+      /* une autre arme en main : on reprend la torche, tout près */
+      enMain("epeeBois"); await wait(200);
+      const q = player.position;
+      placePlayer(q.x + .3, q.z, -1, 0); frames(2);
+      if(!$("#btn-act").textContent.includes("Reprendre la torche")) throw new Error(`près de la torche posée, le bouton dit « ${$("#btn-act").textContent} »`);
+      $("#btn-act").click();
+      if(torcheSol()) throw new Error("la torche n'est pas reprise");
+      return "l'épée du sac ne frappe pas ; l'arc pose la torche au sol ; un loup vaincu d'une flèche en bronze, la flèche rendue ; la torche reprise";
+    } finally {
+      const room = currentPlace() && currentPlace().room;
+      if(room && room.doorX !== null && currentPlace().b.type === "grotte"){ placePlayer(room.doorX, room.d / 2 - R - .03, 0, 1); checkDoors(true); await attendre(() => currentPlace().b.type === "foret"); }
+      if(currentPlace() && currentPlace().b.type === "foret") await sortir();
+      state.sac = sac0; state.barre = barre0; hold(null);
+    }
+  });
   await etape("Le sanglier de la forêt : touché à l'arc, il charge ; vaincu à l'épée", async () => {
     place(6);                                          // l'arc, les flèches, l'épée, et ce que laisse le sanglier
     pauseChasse(true);
@@ -872,7 +938,7 @@ export async function verifier(){
     if(!owned("arcIf")) sacAdd("arcIf", 1);
     if(owned("fleche") < 2) sacAdd("fleche", 3);
     if(!owned("epeeBois")) sacAdd("epeeBois", 1);
-    hold(null);
+    enMain("arcIf");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016); frames(2);
     let p = player.position;
     const w = vent();
@@ -881,6 +947,7 @@ export async function verifier(){
     $("#btn-act").click();
     if(!await attendre(() => monstresIci().some(m => m.foret), 3000)) throw new Error("touché, le sanglier ne se retourne pas");
     if($("#coeurs").hidden || $("#combat").hidden) throw new Error("pas de cœurs ni de boutons de combat quand le sanglier charge");
+    enMain("epeeBois");                                // à l'épée (avec l'arc en main, ⚔️ tirerait)
     let coups = 0;
     while(monstresIci().length && coups < 20){
       const m = monstresIci()[0]; p = player.position;
@@ -970,7 +1037,7 @@ export async function verifier(){
     }
     /* le Cœur de la mine : endormi, puis réveillé quand toutes les pierres des trois salles sont au carnet */
     state.galeries = {2: {seg: 4, coups: 0}, 3: {seg: 4, coups: 0}};
-    place(2); sacAdd("piocheBronze", 1);
+    place(2); sacAdd("piocheBronze", 1); enMain("piocheBronze");
     await entrer(state.buildings.find(b => b.type === "mine"));
     try {
       const p = devantCoeur();
@@ -994,7 +1061,7 @@ export async function verifier(){
       for(let d = 1; d < 8; d++) for(let dx = -d; dx <= d; dx++) for(const dz of [-d, d]){ const i = idx(px + dx, pz + dz); if(!poseProblem(i)) return i; }
       throw new Error("pas de place pour poser un coffre"); };
     place(4);                                                                   // le sac de la partie d'essai se remplit
-    sacAdd("coffreReserve", 2); sacAdd("bois", 5); hold("coffreReserve");
+    sacAdd("coffreReserve", 2); sacAdd("bois", 5); enMain("coffreReserve");
     poserCoffre(libre()); poserCoffre(libre());
     if(state.coffres.length < 2) throw new Error("les coffres ne sont pas posés");
     const [a, b] = state.coffres.slice(-2), bois = owned("bois");
@@ -1017,7 +1084,7 @@ export async function verifier(){
     return `un coffre rempli (${range.items.length} emplacement) rangé dans un autre`;
   });
   if(scierie) await etape("Un coffre dans un bâtiment : le poser, l'ouvrir, l'emporter", async () => {
-    sacAdd("coffreReserve", 1); hold("coffreReserve");
+    sacAdd("coffreReserve", 1); enMain("coffreReserve");
     await entrer(scierie);
     const avant = state.coffres.length;
     updateCoffrePiece(true);
