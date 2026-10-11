@@ -52,7 +52,7 @@ const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHou
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 /* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : seul le sac suivant se fabrique, et pas s'il est déjà en cours */
 const sacEnCours = () => state.buildings.some(b => b.atelier && b.atelier.queue.some(j => objet(j.out).sac));
-const sacPropose = r => !objet(r.out).sac || (objet(r.out).sac === (state.sacNiveau || 0) + 1 && !sacEnCours());
+const sacPropose = r => !r.out || !objet(r.out).sac || (objet(r.out).sac === (state.sacNiveau || 0) + 1 && !sacEnCours());
 function recettesDe(b){
   const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i})).filter(sacPropose);
   if(!a.vente) return list;
