@@ -283,9 +283,13 @@ export const RECOLTE = {
    les bonus des bâtiments), combien il y en a au plus sur l'île (max), où ils apparaissent (pres : à côté
    d'un arbre), et toutes les combien de secondes il en revient un de chaque (retour). */
 export const SOL = {
-  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:1, max:12, sols:["grass"], pres:"tree"},   // 1 bois (demande de Yo, 12 octobre 2026)
-  caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, max:12, sols:["grass", "sand"]}
+  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:1, debut:24, max:12, sols:["grass"], pres:"tree"},   // 1 bois (demande de Yo, 12 octobre 2026)
+  caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, debut:12, max:12, sols:["grass", "sand"]}
 };
+/* Décidé avec Yo (12 octobre 2026) : le premier jour d'une partie, il y en a debut au sol et il en revient un de chaque
+   toutes les SOL_RETOUR secondes (jusqu'à debut) ; ensuite, une seule fois par jour, quand la date change, entre
+   SOL_JOUR[0] et SOL_JOUR[1] de chaque, sans dépasser max au sol */
+export const SOL_JOUR = [3, 6];
 export const SOL_RETOUR = 600;
 /* La mine : combien de rochers chaque jour, dont combien à veines de cuivre (à régler en jouant) */
 /* Les rochers du jour de chaque salle de la mine (étape 1.11 : trois salles) : sortes = [sorte, combien, chance d'être

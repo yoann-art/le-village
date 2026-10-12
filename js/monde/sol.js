@@ -1,15 +1,17 @@
 /* ================= Ce qu'on trouve au sol =================
    Des morceaux de bois (à côté des arbres) et des petits cailloux, qu'on ramasse à la main (demande de Yo) :
-   de quoi fabriquer sa première hache et sa première pioche. Il en revient un de chaque toutes les
-   SOL_RETOUR secondes, avec l'horloge du téléphone, jusqu'au maximum. On marche dessus.
-   state.sol = {case: "branche" | "caillou"} ; state.solT = l'heure du dernier retour. */
+   de quoi fabriquer sa première hache et sa première pioche. Le premier jour de la partie (state.solDebut, la date),
+   il y en a SOL[…].debut, et il en revient un de chaque toutes les SOL_RETOUR secondes ; ensuite, une seule fois par
+   jour, quand la date change (state.solJour), entre 3 et 6 de chaque (SOL_JOUR), sans dépasser SOL[…].max au sol
+   (décidé avec Yo, 12 octobre 2026). On marche dessus.
+   state.sol = {case: "branche" | "caillou"} ; state.solT = l'heure du dernier retour (le premier jour). */
 import { scene } from "./scene.js";
 import { G, part } from "./formes.js";
 import { map, idx, inb, N, centerOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state, save } from "../sauvegarde.js";
 import { doorTile } from "../regles.js";
-import { SOL, SOL_RETOUR } from "../donnees.js";
+import { SOL, SOL_RETOUR, SOL_JOUR } from "../donnees.js";
 
 const meshes = new Map();
 function build(i){
@@ -46,8 +48,10 @@ function spot(k){
   return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
 }
 const count = k => Object.values(state.sol).filter(v => v === k).length;
-function spawn(k){
-  if(count(k) >= SOL[k].max) return;
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const premierJour = () => state.solDebut === today();
+function spawn(k, max = SOL[k].max){
+  if(count(k) >= max) return;
   const i = spot(k);
   if(i === null) return;
   state.sol[i] = k; build(i);
@@ -56,11 +60,18 @@ function spawn(k){
 /* Ce qui est revenu depuis la dernière fois (aussi jeu fermé) ; un objet recouvert par un bâtiment disparaît */
 function update(){
   for(const i of Object.keys(state.sol)) if(occ.has(+i) || map.obj[+i]) remove(+i);
+  if(!premierJour()){                                 // après le premier jour : une fois par jour, 3 à 6 de chaque
+    if(state.solJour === today()) return;
+    state.solJour = today();
+    for(const t of Object.keys(SOL)) for(let k = SOL_JOUR[0] + Math.floor(Math.random() * (SOL_JOUR[1] - SOL_JOUR[0] + 1)); k > 0; k--) spawn(t);
+    save();
+    return;
+  }
   const now = Date.now();
-  if(Object.keys(SOL).every(t => count(t) >= SOL[t].max)){ state.solT = now; return; }   // tout est là : le compte repart d'ici
+  if(Object.keys(SOL).every(t => count(t) >= SOL[t].debut)){ state.solT = now; return; }   // tout est là : le compte repart d'ici
   const n = Math.floor((now - state.solT) / (SOL_RETOUR * 1000));
   if(n <= 0) return;
-  for(let k = 0; k < n; k++) for(const t of Object.keys(SOL)) spawn(t);
+  for(let k = 0; k < n; k++) for(const t of Object.keys(SOL)) spawn(t, SOL[t].debut);
   state.solT += n * SOL_RETOUR * 1000;
   save();
 }
@@ -76,11 +87,13 @@ export function pickUp(i){
 
 /* Au démarrage : la toute première fois, l'île reçoit tout ce qu'il faut ; sinon, ce qui est revenu */
 if(!state.sol){
-  state.sol = {}; state.solT = Date.now();
-  for(const t of Object.keys(SOL)) for(let k = 0; k < SOL[t].max; k++) spawn(t);
+  state.sol = {}; state.solT = Date.now(); state.solDebut = state.solJour = today();
+  for(const t of Object.keys(SOL)) for(let k = 0; k < SOL[t].debut; k++) spawn(t, SOL[t].debut);
   save();
 } else {
+  if(!state.solDebut) state.solDebut = "avant";        // une partie commencée avant : son premier jour est passé
   for(const i of Object.keys(state.sol)) build(+i);
   update();
 }
 setInterval(update, 30000);
+export const updateSol = update;                      // pour la vérification automatique

@@ -59,7 +59,7 @@ import { hold, mettreEnCase, jauge, dansCase } from "../js/barre.js";
 import { torcheSol, lanterneAllumee } from "../js/torche.js";
 import { updateLumieres, lumieresActives } from "../js/lumieres.js";
 import { penombreIci } from "../js/monde/interieurs.js";
-import { pickUp } from "../js/monde/sol.js";
+import { pickUp, updateSol } from "../js/monde/sol.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 /* Demande de Yo (v1.13.2) : un outil ne sert que tenu en main, pris dans une case rapide : la vérification le met dans la
@@ -112,7 +112,9 @@ export async function verifier(){
     if(state.v !== 4) throw new Error(`format de sauvegarde ${state.v}`);
     if(state.sac.length) throw new Error("le sac n'est pas vide");
     if(!state.buildings.some(b => b.type === "mine")) throw new Error("pas de mine sur l'île");
-    return `${Object.keys(state.sol).length} objets au sol, la mine est posée`;
+    const bois = Object.values(state.sol).filter(v => v === "branche").length;
+    if(bois !== 24) throw new Error(`${bois} morceaux de bois au sol au lieu de 24`);
+    return `${Object.keys(state.sol).length} objets au sol (dont 24 morceaux de bois), la mine est posée`;
   });
   await etape("Ramasser au sol", async () => {
     const i = +Object.keys(state.sol)[0];
@@ -121,6 +123,19 @@ export async function verifier(){
     $("#btn-act").click();
     if(!state.sac.length) throw new Error("rien dans le sac");
     return state.sac.map(it => `${it.n} ${it.k}`).join(", ");
+  });
+  await etape("Le bois et les cailloux au sol : après le premier jour, 3 à 6 de chaque, une fois par jour", async () => {
+    const debut = state.solDebut, jour = state.solJour;
+    for(const i of Object.keys(state.sol)) pickUp(+i);
+    state.solDebut = "avant"; state.solJour = "hier";               // comme si le premier jour était passé
+    try {
+      updateSol();
+      const n = t => Object.values(state.sol).filter(v => v === t).length, b = n("branche"), c = n("caillou");
+      if(b < 3 || b > 6 || c < 3 || c > 6) throw new Error(`${b} morceaux de bois et ${c} cailloux, au lieu de 3 à 6`);
+      updateSol();
+      if(n("branche") !== b || n("caillou") !== c) throw new Error("il en revient encore le même jour");
+      return `${b} morceaux de bois et ${c} petits cailloux aujourd'hui, rien de plus avant demain`;
+    } finally { state.solDebut = debut; state.solJour = jour; }
   });
   await etape("Marcher", async () => {
     placePlayer(.5, .5, 0, 1);
