@@ -29,6 +29,7 @@ import { lampeSur, nuitForet, penombre } from "./monde/interieurs.js";
 import { updateLumieres } from "./lumieres.js";
 import { updateBarque, posBarque } from "./barque.js";
 import { deplaceEnCours } from "./deplacer.js";
+import { updateVoyage, voyageEnCours } from "./voyage.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
@@ -93,7 +94,7 @@ let last = performance.now();
 function tick(now){
   requestAnimationFrame(tick);                              // en premier : la boucle repart, quoi qu'il arrive
   const dt = Math.min(.05, (now - last) / 1000); last = now;
-  const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
+  const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && !voyageEnCours() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
   if(pushing) dirty = true;
   garde("portes", () => checkDoors(pushing));
   garde("caméra", () => camera_(now, dt));
@@ -101,8 +102,9 @@ function tick(now){
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
   garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
   garde("barque", () => updateBarque(dt));                  // la barque du ponton : ses travaux, à bord (étape 1.13)
+  garde("voyage", () => updateVoyage(dt));                  // le trajet en barque vers le Marais, et le retour
   garde("lumières", () => updateLumieres(dt, isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // les lumières posées, la torche sur la torchère
-  garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
+  garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte", "marais"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
   garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
   garde("combat", () => updateCombat(dt, wrap.hidden && !isBusy()));   // dans la grotte : les cœurs, les coups, les monstres
   garde("chemins", () => updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating()));   // sur l'île : tracer les chemins en marchant
@@ -116,7 +118,7 @@ function tick(now){
 /* La caméra, le soleil, la mer, et ce qu'on bâtit dehors */
 function camera_(now, dt){
   const dv = decoView();
-  const foret = isInside() && ["foret", "grotte"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
+  const foret = isInside() && ["foret", "grotte", "marais", "trajet"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
   if(takeJump()) camT.copy(target);
@@ -142,5 +144,5 @@ renderHUD();
 requestAnimationFrame(tick);
 setTimeout(() => {
   if(migrationMsg) toast(migrationMsg, 4200);
-  else if(!state.buildings.some(b => !B[b.type].fixe)) toast("Ramasse les morceaux de bois et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
+  else if(!state.buildings.some(b => !B[b.type].fixe)) toast("Ramasse les branches de chêne et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
 }, 700);

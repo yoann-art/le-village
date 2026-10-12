@@ -84,7 +84,7 @@ function allumer(pool, liste, facteur){
   });
   return Math.min(list.length, pool.length);
 }
-const DEDANS_SANS = ["mine", "foret", "grotte"];       // des lieux sans meubles : rien à éclairer ici
+const DEDANS_SANS = ["mine", "foret", "grotte", "marais", "trajet"];       // des lieux sans meubles : rien à éclairer ici
 let actives = 0;
 /* À chaque image (main.js) ; actif : le personnage est libre (pour le bouton de la torchère) */
 export function updateLumieres(dt, actif){

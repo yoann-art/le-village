@@ -5,7 +5,7 @@
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, la barque (la construire au bout du ponton, ramer au large, y pêcher le thon
-   en moulinant, accoster), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   en moulinant, accoster), le voyage (vers le Marais brumeux avec sa carte, la scène qu'on passe, le retour), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -28,7 +28,8 @@ import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noter
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
-import { enBarque, auLarge, updateBarque, accosterBarque } from "../js/barque.js";
+import { enBarque, auLarge, updateBarque, accosterBarque, barquePrete } from "../js/barque.js";
+import { voyageEnCours, passerTrajet } from "../js/voyage.js";
 import { lacherOmbre, presents, ombresIci } from "../js/peche.js";
 import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde/mine.js";
 import { footOf } from "../js/monde/meubles.js";
@@ -50,7 +51,7 @@ import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/mond
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
-import { checkDoors, isInside, currentPlace, doorOf } from "../js/lieux.js";
+import { checkDoors, isInside, currentPlace, doorOf, retourIle } from "../js/lieux.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
@@ -481,8 +482,10 @@ export async function verifier(){
     b.click(); await wait(300);
     if(!state.barque) throw new Error("les travaux de la barque ne commencent pas");
     state.barque.fin = Date.now() - 1000; updateBarque(.016); frames(2);          // sans attendre ses 10 minutes
-    if(!$("#btn-act").textContent.includes("Monter dans")) throw new Error(`la barque finie, le bouton dit « ${$("#btn-act").textContent} »`);
-    $("#btn-act").click();
+    if(!$("#btn-act").textContent.includes("Libellule")) throw new Error(`la barque finie, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click(); await wait(200);
+    if(!$("#sheet [data-barque-ramer]")) throw new Error("la fiche de la barque ne s'ouvre pas");
+    $("#sheet [data-barque-ramer]").click(); await wait(300);
     if(!enBarque()) throw new Error("on ne monte pas dans la barque");
     try {
       keys.d = 1; for(let k = 0; k < 900 && !auLarge(player.position.x, player.position.z); k++) updatePlayer(.016);
@@ -509,6 +512,38 @@ export async function verifier(){
       if(enBarque() || !islandWalkable(player.position.x, player.position.z)) throw new Error("on n'accoste pas sur le ponton");
       return "construite, au large en ramant, un thon pris en moulinant, puis accostée";
     } finally { if(enBarque()) accosterBarque(); keys.d = 0; state.sac = sac0; state.barre = barre0; hold(null); }
+  });
+  await etape("Le voyage : partir en barque vers le Marais brumeux avec sa carte, passer la scène, rentrer au village", async () => {
+    const P = state.ponton;
+    if(!P || !barquePrete()) throw new Error("pas de barque prête au bout du ponton");
+    const cartes = state.cartes;
+    state.cartes = {...(cartes || {})}; delete state.cartes.marais;
+    try {
+      hold(null); placePlayer(centerOf(P.x), centerOf(P.z + P.n - 1), 1, 0); frames(2);
+      if(!$("#btn-act").textContent.includes("Libellule")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
+      $("#btn-act").click(); await wait(200);
+      const sans = $("#sheet [data-barque-marais]");
+      if(!sans || !sans.disabled) throw new Error("sans la carte du Marais, on peut partir");
+      $("#sheetWrap [data-close]").click(); await wait(300);
+      state.cartes.marais = Date.now();                                          // la carte, trouvée
+      $("#btn-act").click(); await wait(200);
+      $("#sheet [data-barque-marais]").click();
+      if(!await attendre(() => currentPlace() && currentPlace().b.type === "trajet") || !voyageEnCours()) throw new Error("le trajet ne commence pas");
+      passerTrajet();
+      if(!await attendre(() => currentPlace() && currentPlace().b.type === "marais", 8000)) throw new Error("on n'arrive pas au Marais");
+      frames(2);
+      if(!$("#btn-act").textContent.includes("Rentrer au village")) throw new Error(`sur l'embarcadère du Marais, le bouton dit « ${$("#btn-act").textContent} »`);
+      $("#btn-act").click();
+      if(!await attendre(() => currentPlace() && currentPlace().b.type === "trajet")) throw new Error("le trajet du retour ne commence pas");
+      passerTrajet();
+      if(!await attendre(() => !isInside(), 8000)) throw new Error("on ne revient pas au village");
+      if(tileOf(player.position.x) !== P.x || tileOf(player.position.z) !== P.z + P.n - 1) throw new Error("on ne revient pas au bout du ponton");
+      return "sans la carte, pas de départ ; avec elle : le trajet, le Marais, puis le retour au bout du ponton";
+    } finally {
+      state.cartes = cartes;
+      if(currentPlace() && ["marais", "trajet"].includes(currentPlace().b.type)){ passerTrajet(); await wait(500); }
+      if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
+    }
   });
   await etape("La hache selon l'essence : le frêne demande une hache en cuivre, le chêne séculaire une hache en bronze", async () => {
     let i = -1;

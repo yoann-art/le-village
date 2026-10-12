@@ -20,6 +20,7 @@ import { occ } from "./monde/batiments.js";
 import { passageCases, amarre, barqueModele } from "./monde/ponton.js";
 import { player, placePlayer, setWalkable, islandWalkable, allure, regard } from "./monde/personnage.js";
 import { tenu } from "./barre.js";
+import { partirMarais } from "./voyage.js";
 import { currentPlace } from "./lieux.js";
 import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
 
@@ -82,7 +83,20 @@ export function barqueAction(){
   if(!auBout() || (tenu("canne") && regard().x < .5)) return null;
   if(!state.barque) return {label: "🛶 Construire la barque", run: ouvrirChantier};
   if(!barquePrete()) return info(`🛶 ${Nom} : prête dans ${duree((state.barque.fin - Date.now()) / 1000)}`);
-  return {label: `🛶 Monter dans ${BARQUE.nom}`, run: monter};
+  return {label: `🛶 ${Nom}`, run: ouvrirBarque};
+}
+/* La fiche de la barque prête (morceau 3) : ramer autour de l'île, ou partir vers le Marais avec sa carte */
+function ouvrirBarque(){
+  const carte = !!(state.cartes && state.cartes.marais);
+  openSheet(`<div class="sh-head"><h2 class="display">🛶 ${Nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p class="muted" style="margin:0 0 6px">Amarrée au bout du ponton. Où vas-tu ?</p>
+    <div class="brow"><div class="be" aria-hidden="true">🎣</div>
+      <div class="bt"><span class="bn">Ramer autour de l'île</span><p>Pêcher au large (le thon, en été). Reviens au bout du ponton pour accoster.</p></div>
+      <button class="btn primary" data-barque-ramer>Ramer</button></div>
+    <div class="brow"><div class="be" aria-hidden="true">🌫️</div>
+      <div class="bt"><span class="bn">Le Marais brumeux</span><p>${carte ? "Ta carte du Marais montre le chemin à travers la brume. Tu rentres au village quand tu veux, depuis l'embarcadère."
+        : "🗺️ Il te faut sa carte : le Gardien d'écorce la garde, au fond de la grotte de la Forêt profonde."}</p></div>
+      <button class="btn primary" data-barque-marais ${carte ? "" : "disabled"}>${carte ? "Partir" : "Sans carte"}</button></div>`);
 }
 function monter(){
   if(!barquePrete() || aBord) return;
@@ -121,7 +135,11 @@ function construire(){
   save(); renderHUD(); closeSheet();
   toast(`🛶 Les travaux de ${BARQUE.nom} commencent au bout du ponton : elle sera prête dans ${duree(BARQUE.t)}, même jeu fermé`, 4200);
 }
-wrap.addEventListener("click", e => { if(e.target.closest("[data-barque]")) construire(); });
+wrap.addEventListener("click", e => {
+  if(e.target.closest("[data-barque]")) construire();
+  else if(e.target.closest("[data-barque-ramer]")){ closeSheet(); monter(); }
+  else if(e.target.closest("[data-barque-marais]")){ closeSheet(); partirMarais(); }
+});
 
 /* ----- À chaque image (main.js) ----- */
 export function updateBarque(dt){

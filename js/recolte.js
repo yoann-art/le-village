@@ -55,6 +55,7 @@ import { entreeAction } from "./entreeMine.js";
 import { poserTorche } from "./lumieres.js";
 import { torcheAction } from "./torche.js";
 import { barqueAction, enBarque } from "./barque.js";
+import { voyageAction } from "./voyage.js";
 import { user } from "./usure.js";
 
 const btn = $("#btn-act");
@@ -113,6 +114,7 @@ function target(){
   if(inMine()) return targetMine();
   if(inForet()) return targetForet();
   if(inGrotte()) return targetGrotte();
+  if(currentPlace() && ["marais", "trajet"].includes(currentPlace().b.type)) return null;   // le Marais : ses récoltes viendront (morceaux 4 et 5)
   if(enBarque()){                                     // en barque (étape 1.13, morceau 2) : seulement pêcher, tout autour
     const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case", [x, z] = frontTile(1.3);
     return canne ? {i: inb(x, z) ? idx(x, z) : -1, eau: true, peche: true} : null;
@@ -214,8 +216,8 @@ function actionOf(t){
       R.force > 1 ? TROP_DUR.hache(R.force, R.nom) : IL_FAUT.hache);
   }
   if(t.o === "tree")
-    return g < 1 ? info(`🌱 Jeune arbre : adulte dans ${duree(growthLeft(t.i))}`)
-      : avecOutil("hache", 0, {label: `🪓 Couper${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.hache);
+    return g < 1 ? info(`🌱 Jeune chêne : adulte dans ${duree(growthLeft(t.i))}`)
+      : avecOutil("hache", 0, {label: `🪓 Couper le chêne${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.hache);
   if(t.o === "rock" || t.o === "rockCuivre")         // mains libres : on le prend ; sinon, on le mine
     return !state.main && !h ? {label: "✋ Prendre le rocher", run: () => prendre(t)}
       : avecOutil("pioche", 0, {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
@@ -285,7 +287,8 @@ export function updateRecolte(dt, active){
   const entree = active && !anim && milieu === "ile" && entreeAction();   // devant l'entrée de la mine pas encore construite
   const torche = active && !anim && inGrotte() && torcheAction();   // la torche posée au sol, tout près (demande de Yo)
   const barque = active && !anim && milieu === "ile" && barqueAction();   // au bout du ponton, ou en barque (étape 1.13)
-  act = enPeche() ? pecheAction() : bete || entree || torche || barque || (cur && actionOf(cur));
+  const voyage = active && !anim && voyageAction();   // sur l'embarcadère du Marais : rentrer au village
+  act = enPeche() ? pecheAction() : bete || entree || torche || barque || voyage || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;
@@ -486,7 +489,7 @@ function tombe(){
   /* sa graine : toujours pour l'arbre de l'île ; selon sa rareté pour ceux de la forêt (carnet : chance) */
   const graine = R.graine && (R.chance === undefined || Math.random() < R.chance);
   const ou = graine ? giveSeed(R.graine) : ""; save();
-  toast(`${FIN[o] || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : ""].filter(Boolean).join(", ")}`, 3600);
+  toast(`${FIN[o] || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : o === "tree" ? "🌳 Le chêne est tombé" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : ""].filter(Boolean).join(", ")}`, 3600);
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */
@@ -570,7 +573,7 @@ function reprendreLumiere(t){
 }
 
 /* ----- Planter ----- */
-const DEVIENT = {tree: "un arbre adulte", herbe: "des herbes hautes", buisson: "un buisson de baies", thym: "du thym prêt à cueillir"};
+const DEVIENT = {tree: "un chêne adulte", herbe: "des herbes hautes", buisson: "un buisson de baies", thym: "du thym prêt à cueillir"};
 function planter(t){
   const k = state.main, gr = GRAINES[k];
   const why = plantProblem(t, gr.plante);

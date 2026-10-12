@@ -1,7 +1,7 @@
 /* ================= Données du jeu =================
    Les chiffres qu'on règle : ressources, bâtiments, meubles, plans de travail, outils, récolte. */
 export const RES = {
-  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", aide:"Le bois : ramasse les morceaux de bois au sol, puis coupe des arbres avec une hache."},
+  bois:   {emoji:"🪵", nom:"bois", pluriel:"bois", aide:"Le bois : ramasse les branches de chêne au sol, puis coupe des chênes avec une hache."},
   pierre: {emoji:"🪨", nom:"pierre", pluriel:"pierres", aide:"La pierre : ramasse les petits cailloux au sol, puis mine des rochers avec une pioche."},
   or:     {emoji:"🪙", nom:"or", pluriel:"or", aide:"L'or : vends ton surplus au comptoir du Marché."}
 };
@@ -207,8 +207,10 @@ export const OUTILS = {
    plante : ce qui pousse ; pousse : temps pour devenir adulte, en secondes, avec l'horloge du téléphone
    (à régler en jouant ; plus tard selon la météo et la saison, étape 1.10) */
 export const GRAINES = {
-  graineArbre:{nom:"Graine d'arbre", pluriel:"graines d'arbre", emoji:"🌰", plante:"tree", pousse:7200,
-    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre."},
+  /* L'arbre de l'île, au début d'une partie : le chêne (décidé par Yo, 12 octobre 2026 : une seule essence, « la plus
+     basique » ; Grand Carnet : bois brun miel, glands) ; sa graine, le gland */
+  graineArbre:{nom:"Gland", pluriel:"glands", emoji:"🌰", plante:"tree", pousse:7200,
+    usage:"Le gland du chêne de l'île : prends-le en main, puis touche « Planter » devant une case d'herbe libre. Un chêne y poussera."},
   graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
   graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
@@ -239,7 +241,7 @@ export const GRAINES = {
    2e cueillette de suite (une graine, plus de repousse) ; buisson : vide après la cueillette, les baies
    reviennent « retour » secondes après l'arrosage (décidé par Yo). Les bonus des bâtiments s'ajoutent. */
 export const RECOLTE = {
-  tree:   {nom:"l'arbre", outil:"hache", coups:3, res:"bois", parCoup:1, graine:"graineArbre"},
+  tree:   {nom:"le chêne", outil:"hache", coups:3, res:"bois", parCoup:1, graine:"graineArbre"},   // le chêne de l'île
   /* Les rochers de l'île ne reviennent jamais (décidé par Yo) : ensuite, la pierre se trouve à la mine */
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:1, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:1, prendre:"rocherCuivre"},
@@ -283,7 +285,7 @@ export const RECOLTE = {
    les bonus des bâtiments), combien il y en a au plus sur l'île (max), où ils apparaissent (pres : à côté
    d'un arbre), et toutes les combien de secondes il en revient un de chaque (retour). */
 export const SOL = {
-  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:1, debut:24, max:12, sols:["grass"], pres:"tree"},   // 1 bois (demande de Yo, 12 octobre 2026)
+  branche:{nom:"Branche de chêne", emoji:"🪵", res:"bois", n:1, debut:24, max:12, sols:["grass"], pres:"tree"},   // 1 bois (demande de Yo, 12 octobre 2026)
   caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, debut:12, max:12, sols:["grass", "sand"]}
 };
 /* Décidé avec Yo (12 octobre 2026) : le premier jour d'une partie, il y en a debut au sol et il en revient un de chaque

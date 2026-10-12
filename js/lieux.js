@@ -4,7 +4,9 @@
    Un court fondu au noir cache le changement de lieu.
    La grotte (étape 1.8) est un lieu dans un lieu : on y entre depuis la Forêt profonde (les racines du vieux chêne),
    on descend ses paliers par le trou du fond, et on en sort vers la forêt (le tunnel du premier palier, la corde
-   des suivants) ; jamais directement au village (bible : « on sort par les paliers »). */
+   des suivants) ; jamais directement au village (bible : « on sort par les paliers »).
+   Les lieux lointains (étape 1.13 : le trajet en barque, le Marais brumeux) : on y va en voyage (voyage.js : allerA,
+   retourIle), pas par une porte ; inside.ponton : où l'on se retrouve sur l'île si le jeu est rouvert. */
 import { $ } from "./outils.js";
 import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
@@ -19,7 +21,8 @@ import { player, R, dir4, placePlayer, setWalkable, islandWalkable, degager } fr
 import { placing } from "./construire.js";
 import { toast } from "./interface.js";
 
-let inside = null;        // {b, room} quand on est dans un bâtiment ; dans la grotte : {b: {type: "grotte", palier}, room, foret}
+let inside = null;        // {b, room} quand on est dans un bâtiment ; dans la grotte : {b: {type: "grotte", palier}, room, foret} ;
+                          // en voyage : {b: {type: "trajet" | "marais"}, room, ponton}
 let busy = false;         // pendant le fondu
 let jump = false;         // la caméra doit sauter d'un coup au nouveau lieu
 const fondu = $("#fondu");
@@ -131,6 +134,29 @@ export function reveilVillage(apres){
   });
   return true;
 }
+/* Un lieu lointain (le trajet en barque, le Marais) : depart = {x, z, fx, fz} ; ponton : le bout du ponton, sur l'île */
+export function allerA(b, depart, ponton, apres){
+  fade(() => {
+    const room = buildRoom(b);
+    if(!inside) interior.add(player);
+    inside = {b, room, ponton};
+    setWalkable(room.walk);
+    placePlayer(depart.x, depart.z, depart.fx, depart.fz);
+    $("#btn-build").hidden = true; $("#btn-ctx").hidden = true; $("#btn-deco").hidden = true;
+    if(apres) apres(room);
+  });
+}
+/* De retour sur l'île, à cet endroit */
+export function retourIle(x, z, fx, fz, apres){
+  fade(() => {
+    inside = null;
+    scene.add(player);
+    setWalkable(islandWalkable);
+    placePlayer(x, z, fx, fz);
+    $("#btn-build").hidden = false; $("#btn-deco").hidden = true;
+    if(apres) apres();
+  });
+}
 function exit(){
   const b = inside.b;
   fade(() => {
@@ -150,6 +176,7 @@ export function checkDoors(pushing){
   const p = player.position, d = dir4();
   if(inside){
     const {room, b} = inside;
+    if(b.type === "trajet" || b.type === "marais") return;     // en voyage : pas de porte (voyage.js)
     if(b.type === "grotte"){                         // le trou qui descend, la corde qui remonte, le tunnel du premier palier
       for(const q of room.passages) if(Math.hypot(p.x - q.x, p.z - q.z) < .45){
         if(q.vers === "bas" && b.palier < PALIERS) entrerGrotte(b.palier + 1); else sortirGrotte();
@@ -175,7 +202,7 @@ export function checkDoors(pushing){
 
 /* Position à sauvegarder sur l'île : dedans, on garde la place devant la porte,
    pour reprendre dehors si le jeu est rouvert */
-export function islandPos(){ return inside ? outsideSpot(inside.foret || inside.b) : {x: player.position.x, z: player.position.z}; }
+export function islandPos(){ return inside ? inside.ponton || outsideSpot(inside.foret || inside.b) : {x: player.position.x, z: player.position.z}; }
 
 /* Point que regarde la caméra : dedans, elle suit le personnage sans trop sortir de la pièce
    (si la pièce tient dans l'écran, elle reste au milieu) */
