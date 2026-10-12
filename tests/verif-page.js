@@ -524,10 +524,13 @@ export async function verifier(){
       $("#btn-act").click(); await wait(200);
       const sans = $("#sheet [data-barque-marais]");
       if(!sans || !sans.disabled) throw new Error("sans la carte du Marais, on peut partir");
-      $("#sheetWrap [data-close]").click(); await wait(300);
+      $("#sheetWrap [data-close]").click(); await wait(400);
       state.cartes.marais = Date.now();                                          // la carte, trouvée
-      $("#btn-act").click(); await wait(200);
-      $("#sheet [data-barque-marais]").click();
+      frames(2);                                       // le bouton d'action, remis à jour (la machine de GitHub est lente)
+      $("#btn-act").click(); await wait(300);
+      const avec = $("#sheet [data-barque-marais]");
+      if($("#sheetWrap").hidden || !avec || avec.disabled) throw new Error(`avec la carte, pas de bouton « Partir » (le bouton d'action dit « ${$("#btn-act").textContent} »)`);
+      avec.click();
       if(!await attendre(() => currentPlace() && currentPlace().b.type === "trajet") || !voyageEnCours()) throw new Error("le trajet ne commence pas");
       passerTrajet();
       if(!await attendre(() => currentPlace() && currentPlace().b.type === "marais", 8000)) throw new Error("on n'arrive pas au Marais");
