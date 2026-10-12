@@ -54,6 +54,7 @@ import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 import { entreeAction } from "./entreeMine.js";
 import { poserTorche } from "./lumieres.js";
 import { torcheAction } from "./torche.js";
+import { barqueAction, enBarque } from "./barque.js";
 import { user } from "./usure.js";
 
 const btn = $("#btn-act");
@@ -112,6 +113,10 @@ function target(){
   if(inMine()) return targetMine();
   if(inForet()) return targetForet();
   if(inGrotte()) return targetGrotte();
+  if(enBarque()){                                     // en barque (étape 1.13, morceau 2) : seulement pêcher, tout autour
+    const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case", [x, z] = frontTile(1.3);
+    return canne ? {i: inb(x, z) ? idx(x, z) : -1, eau: true, peche: true} : null;
+  }
   const own = [tileOf(player.position.x), tileOf(player.position.z)];
   for(const dist of [0, .8]){
     const [x, z] = dist ? frontTile(dist) : own;
@@ -279,7 +284,8 @@ export function updateRecolte(dt, active){
   const bete = active && !anim && milieu && (insecteAction() || oiseauAction() || chasseAction());
   const entree = active && !anim && milieu === "ile" && entreeAction();   // devant l'entrée de la mine pas encore construite
   const torche = active && !anim && inGrotte() && torcheAction();   // la torche posée au sol, tout près (demande de Yo)
-  act = enPeche() ? pecheAction() : bete || entree || torche || (cur && actionOf(cur));
+  const barque = active && !anim && milieu === "ile" && barqueAction();   // au bout du ponton, ou en barque (étape 1.13)
+  act = enPeche() ? pecheAction() : bete || entree || torche || barque || (cur && actionOf(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
   if(btn.textContent !== act.label) btn.textContent = act.label;

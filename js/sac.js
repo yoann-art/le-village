@@ -79,7 +79,7 @@ const ENDROITS = [
   ["À l'étang", p => lieuxDe(p).includes("etang")],
   ["En mer, depuis la plage", p => p.lieu === "mer" && !p.depuis],
   ["En mer, depuis le ponton", p => p.depuis === "ponton"],
-  ["Au large, en barque (bientôt)", p => p.depuis === "barque"],
+  ["Au large, en barque", p => p.depuis === "barque"],
   ["Dans la Forêt profonde, au ruisseau et à la source", p => lieuxDe(p).some(l => l === "ruisseau" || l === "source")]
 ];
 /* Les insectes, rangés par endroit (le premier où on les trouve) */

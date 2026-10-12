@@ -11,7 +11,10 @@
      prend qu'une fois dans tout le jeu. Le carnet garde chaque espèce prise, combien, et le plus gros
      (state.carnet.poissons = {k: {n, max}}).
    - Trop tôt ou trop tard : il s'échappe (décidé par Yo) et son ombre s'enfuit ; on relance, rien n'est perdu.
-   Bouger, lâcher la canne ou ouvrir un panneau remonte la ligne. Sac plein : on ne pêche pas. */
+   Bouger, lâcher la canne ou ouvrir un panneau remonte la ligne. Sac plein : on ne pêche pas.
+   En barque (étape 1.13, morceau 2 ; barque.js) : les ombres nagent tout autour, en pleine mer aussi ; au large
+   (auLarge), les poissons « depuis la barque » (le thon, en été). Un poisson qui se débat (tenir : le thon, « il faut
+   tenir longtemps ») : ferré, il faut encore mouliner tenir fois en PECHE.tenir secondes, sinon il s'échappe. */
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
@@ -26,6 +29,7 @@ import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
 import { meteo, mouille } from "./monde/meteo.js";
 import { user } from "./usure.js";
+import { enBarque, auLarge } from "./barque.js";
 
 /* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, l'hémisphère du joueur) ----- */
 export const saisonDe = saisonDu;
@@ -38,21 +42,21 @@ const LUNAISON = 29.530588853;
 export const ageLune = d => (((d - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % LUNAISON + LUNAISON) % LUNAISON;
 export const pleineLune = (d = new Date()) => Math.abs(ageLune(d) - LUNAISON / 2) < 1.5;
 const dejaPris = k => { const e = state.carnet.poissons[k]; return !!e && e.n > 0; };
-/* lieu : « etang », « mer », « ruisseau » ou « source » (où nagent aussi ceux du ruisseau) ; ponton : près du
-   ponton (la barque viendra plus tard) */
-export function presents(lieu, ponton, d = new Date()){
-  const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d);
+/* lieu : « etang », « mer », « ruisseau » ou « source » (où nagent aussi ceux du ruisseau) ; depuis : « ponton »
+   (près du ponton ; true veut dire la même chose), « barque » (au large, en barque), ou rien */
+export function presents(lieu, depuis, d = new Date()){
+  const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d), dep = depuis === true ? "ponton" : depuis || null;
   return Object.keys(POISSONS).filter(k => { const p = POISSONS[k], l = lieuxDe(p);
     return (l.includes(lieu) || lieu === "source" && l.includes("ruisseau")) && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
       && (!p.lune || lune)
-      && temps(p) && (!p.depuis || p.depuis === "ponton" && ponton)
+      && temps(p) && (!p.depuis || p.depuis === dep)
       && !(p.rarete === "legendaire" && (dejaPris(k) || ombres.some(o => o.k === k))); });
 }
 /* Un poisson : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille penche
    vers les petites (les gros sont plus rares). null s'il n'y a personne */
-function tirer(lieu, ponton){
+function tirer(lieu, depuis){
   const par = {};
-  presents(lieu, ponton).forEach(k => { const r = POISSONS[k].rarete; (par[r] = par[r] || []).push(k); });
+  presents(lieu, depuis).forEach(k => { const r = POISSONS[k].rarete; (par[r] = par[r] || []).push(k); });
   const rangs = Object.keys(par);
   if(!rangs.length) return null;
   let x = Math.random() * rangs.reduce((n, r) => n + PECHE.poids[r], 0);
@@ -180,9 +184,25 @@ function pondreForet(){
     return;
   }
 }
+/* En barque : une ombre en mer tout autour (en pleine mer aussi, au-delà de l'île) ; au large, ceux du large */
+const enMer = (x, z) => !inb(x, z) ? Math.min(x, z) > -10 && Math.max(x, z) < N + 10 : eauLibre(idx(x, z)) && lieuEau(idx(x, z)) === "mer";
+const depuisIci = (x, z) => enBarque() && auLarge(x, z) ? "barque" : presDuPonton(x, z) ? "ponton" : null;
+function pondreBarque(){
+  const R = PECHE.ombres.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z);
+  for(let essai = 0; essai < 8; essai++){
+    const a = Math.random() * 6.28, r = 2 + Math.random() * (R - 2), tx = Math.round(px + Math.cos(a) * r), tz = Math.round(pz + Math.sin(a) * r);
+    if(!enMer(tx, tz)) continue;
+    const x = centerOf(tx) + (Math.random() - .5) * .6, z = centerOf(tz) + (Math.random() - .5) * .6;
+    if(ombres.some(o => Math.hypot(o.x - x, o.z - z) < 1.3)) continue;
+    const f = tirer("mer", depuisIci(x, z));
+    if(f){ const o = ajouterOmbre(f.k, f.cm, x, z, "mer"); o.libre = !presDuBord(tx, tz); banc(f, x, z, "mer"); }
+    return;
+  }
+}
 /* Une nouvelle ombre, sur une case d'eau près d'un bord, autour du personnage (pas trop près) */
 function pondre(){
   if(ici === "foret"){ pondreForet(); return; }
+  if(enBarque()){ pondreBarque(); return; }
   const R = PECHE.ombres.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), cand = [];
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
     const d = Math.hypot(x - px, z - pz);
@@ -200,12 +220,13 @@ function pondre(){
     return;
   }
 }
-/* Pour la vérification automatique : une ombre à un endroit précis (sur l'île ou dans la forêt) */
 /* Pour la vérification : les ombres qui nagent */
 export const ombresIci = () => ombres;
-export function lacherOmbre(x, z){
-  const fi = ftile(x, z), lieu = ici === "foret" ? (sources.has(fi) ? "source" : "ruisseau") : lieuEau(idx(tileOf(x), tileOf(z)));
-  const f = tirer(lieu, presDuPonton(x, z));
+/* Pour la vérification automatique : une ombre à un endroit précis (sur l'île, en mer ou dans la forêt) ; k : ce poisson-là */
+export function lacherOmbre(x, z, k){
+  const fi = ftile(x, z), tx = tileOf(x), tz = tileOf(z);
+  const lieu = ici === "foret" ? (sources.has(fi) ? "source" : "ruisseau") : inb(tx, tz) ? lieuEau(idx(tx, tz)) : "mer";
+  const f = k ? {k, cm: POISSONS[k].taille[0]} : tirer(lieu, depuisIci(x, z));
   if(!f) return null;
   const o = ajouterOmbre(f.k, f.cm, x, z, lieu); o.alpha = 1; o.pause = 99;
   return o;
@@ -242,7 +263,7 @@ function nager(o, dt){
       if(!o.cible){
         for(let essai = 0; essai < 5 && !o.cible; essai++){
           const a = Math.random() * 6.28, r = .6 + Math.random() * 1.4, x = o.x + Math.cos(a) * r, z = o.z + Math.sin(a) * r;
-          if(enEau(x, z) && presDuBord(tileOf(x), tileOf(z))) o.cible = {x, z};
+          if(enEau(x, z) && (o.libre || presDuBord(tileOf(x), tileOf(z)))) o.cible = {x, z};
         }
         if(!o.cible) o.pause = 1;
       }
@@ -345,11 +366,21 @@ function remonter(msg){
   if(msg) toast(msg, 2400);
 }
 function ferrer(){
-  const o = ligne.ombre, {k, cm} = o;
+  const o = ligne.ombre, {k} = o;
   if(sacPlace(k) < 1){ remonter(`🎒 Ton sac est plein : tu relâches ${leNom(k)}`); return; }
   const tenue = canneEnMain() ? state.main : null;
   if(POISSONS[k].rarete === "legendaire" && !(tenue && OUTILS[tenue].force >= 2)){   // morceau 3 de l'usure : il faut une canne en cuivre
     remonter(`💥 Le fil casse ! ${leNom(k, true)} est trop fort${POISSONS[k].une ? "e" : ""} pour la canne en bois : il te faut une canne en cuivre (enclume de la Forge)`); return; }
+  if(POISSONS[k].tenir){                              // il se débat : il faut mouliner (le thon)
+    ligne.phase = "tenir"; ligne.t = 0; ligne.coups = 0; vibre(200);
+    toast(`🎣 ${leNom(k, true)} se débat ! Mouline vite : touche le bouton ${POISSONS[k].tenir} fois`, 2600);
+    return;
+  }
+  prendre();
+}
+/* Le poisson ferré (et tenu) : dans le sac, au carnet, montré au-dessus de la tête */
+function prendre(){
+  const o = ligne.ombre, {k, cm} = o;
   sacAdd(k, 1);
   retirer(o); ligne.ombre = null;
   const canne = state.main && OUTILS[state.main] && OUTILS[state.main].famille === "canne" ? state.main : null;
@@ -380,6 +411,11 @@ export function pecheAction(){
   if(ligne.phase === "attente") return {label: "🎣 Remonter la ligne", run: () => { if(ligne && ligne.phase === "attente")
     remonter(ligne.ombre ? "🐟 Trop tôt : le poisson s'est méfié. Attends que le bouchon plonge !" : "🎣 Ligne remontée"); }};
   if(ligne.phase === "touche") return {label: "❗ Ferrer !", run: () => { if(ligne && ligne.phase === "touche") ferrer(); }, alerte: true};
+  if(ligne.phase === "tenir") return {label: `🎣 Mouline ! (${POISSONS[ligne.ombre.k].tenir - ligne.coups})`, alerte: true, run: () => {
+    if(!ligne || ligne.phase !== "tenir") return;
+    ligne.coups++; vibre(30);
+    if(ligne.coups >= POISSONS[ligne.ombre.k].tenir) prendre();
+  }};
   return null;
 }
 
@@ -424,6 +460,10 @@ export function updatePeche(dt, actif, ou){
   } else if(L.phase === "touche"){
     bouchon.position.set(L.a.x + Math.sin(L.T * 40) * .03, EAU - .12, L.a.z);            // il plonge et tire
     if(L.t >= PECHE.fenetre){ remonter("🐟 Trop tard : le poisson s'est échappé. Relance !"); return; }
+  } else if(L.phase === "tenir"){                     // il se débat et tire le fil de tous les côtés
+    bouchon.position.set(L.a.x + Math.sin(L.T * 23) * .12, EAU - .1, L.a.z + Math.cos(L.T * 17) * .12);
+    if(Math.floor(L.T * 3) !== Math.floor((L.T - dt) * 3)) remous(bouchon.position.x, bouchon.position.z);
+    if(L.t >= PECHE.tenir){ remonter(`🐟 ${leNom(L.ombre.k, true)} a filé : mouline plus vite la prochaine fois !`); return; }
   } else if(L.phase === "montre"){
     const u = Math.min(1, L.t / .25);
     pencheMain(.35 - .9 * (1 - u));
@@ -433,7 +473,7 @@ export function updatePeche(dt, actif, ou){
     return;
   }
   /* Le fil, du bout de la canne au bouchon, qui pend un peu (tendu pendant la touche) */
-  const A = boutDeCanne(), B = bouchon.position, pend = L.phase === "touche" ? .02 : L.phase === "vol" ? .05 : .22;
+  const A = boutDeCanne(), B = bouchon.position, pend = L.phase === "touche" || L.phase === "tenir" ? .02 : L.phase === "vol" ? .05 : .22;
   const pos = fil.geometry.attributes.position;
   for(let n = 0; n < NF; n++){
     const f = n / (NF - 1);

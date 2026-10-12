@@ -27,6 +27,7 @@ import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
 import { lampeSur, nuitForet, penombre } from "./monde/interieurs.js";
 import { updateLumieres } from "./lumieres.js";
+import { updateBarque, posBarque } from "./barque.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
@@ -98,6 +99,7 @@ function tick(now){
   garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
   garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
+  garde("barque", () => updateBarque(dt));                  // la barque du ponton : ses travaux, à bord (étape 1.13)
   garde("lumières", () => updateLumieres(dt, isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // les lumières posées, la torche sur la torchère
   garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
   garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
@@ -105,7 +107,7 @@ function tick(now){
   garde("chemins", () => updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating()));   // sur l'île : tracer les chemins en marchant
   garde("dessin", () => renderer.render(currentScene(), camera));
   if(dirty && now - lastSave > 2000) garde("sauvegarde", () => {
-    const p = islandPos();
+    const p = posBarque() || islandPos();                  // en barque : on se retrouvera au bout du ponton
     state.player = {x:+p.x.toFixed(2), z:+p.z.toFixed(2)};
     save(); lastSave = now; dirty = false;
   });

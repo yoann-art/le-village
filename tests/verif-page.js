@@ -4,7 +4,8 @@
    couper un arbre (une ressource par coup), l'usure (un outil s'use, puis se casse), la hache selon l'essence (le frêne
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
-   les ingrédients du poisson grillé, vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp, le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   les ingrédients du poisson grillé, la barque (la construire au bout du ponton, ramer au large, y pêcher le thon
+   en moulinant, accoster), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp, le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -26,7 +27,8 @@ import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
-import { eauLibre, entreePonton } from "../js/monde/ponton.js";
+import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
+import { enBarque, auLarge, updateBarque, accosterBarque } from "../js/barque.js";
 import { lacherOmbre, presents, ombresIci } from "../js/peche.js";
 import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde/mine.js";
 import { footOf } from "../js/monde/meubles.js";
@@ -443,6 +445,48 @@ export async function verifier(){
     while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => !OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }   // puis les prises des essais d'avant
     while(state.sac.length > 12 - n){ const j = state.sac.findIndex(it => OUTILS[it.k]); if(j < 0) break; state.sac.splice(j, 1); }    // puis les outils des essais d'avant (chaque essai reprend les siens)
   };
+  await etape("La barque : la construire au bout du ponton, ramer au large, y pêcher le thon, accoster", async () => {
+    const P = state.ponton;
+    if(!P || !amarre) throw new Error("pas de ponton sur l'île");
+    const sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));   // rendus à la fin
+    place(3); sacAdd("planche", 20); sacAdd("fibre", 8); hold(null);
+    placePlayer(centerOf(P.x), centerOf(P.z + P.n - 1), 1, 0); frames(2);          // au bout du ponton, face à la borne
+    if(!$("#btn-act").textContent.includes("Construire la barque")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click(); await wait(200);
+    const b = $("#sheet [data-barque]");
+    if(!b || b.disabled) throw new Error("la barque ne se construit pas");
+    b.click(); await wait(300);
+    if(!state.barque) throw new Error("les travaux de la barque ne commencent pas");
+    state.barque.fin = Date.now() - 1000; updateBarque(.016); frames(2);          // sans attendre ses 10 minutes
+    if(!$("#btn-act").textContent.includes("Monter dans")) throw new Error(`la barque finie, le bouton dit « ${$("#btn-act").textContent} »`);
+    $("#btn-act").click();
+    if(!enBarque()) throw new Error("on ne monte pas dans la barque");
+    try {
+      keys.d = 1; for(let k = 0; k < 900 && !auLarge(player.position.x, player.position.z); k++) updatePlayer(.016);
+      keys.d = 0; updatePlayer(.016);
+      if(!auLarge(player.position.x, player.position.z)) throw new Error("la barque n'arrive pas au large");
+      /* le thon, au large : il mord, on le ferre, puis il faut mouliner */
+      sacAdd("canneBois", 1); enMain("canneBois");
+      placePlayer(player.position.x, player.position.z, 0, 1); frames(2);
+      if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au large, la canne en main, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!lacherOmbre(player.position.x, player.position.z + 2, "thon")) throw new Error("pas d'ombre de thon possible au large");
+      $("#btn-act").click();
+      let k = 0;
+      while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+      if(k >= 400) throw new Error("le thon ne mord pas");
+      $("#btn-act").click(); frames(1);
+      if(!$("#btn-act").textContent.includes("Mouline")) throw new Error(`le thon ferré, le bouton dit « ${$("#btn-act").textContent} »`);
+      for(let n = 0; n < 10 && !owned("thon"); n++){ $("#btn-act").click(); frames(1); }
+      if(!owned("thon")) throw new Error("le thon n'est pas dans le sac");
+      frames(40);
+      /* revenir au ponton, et accoster */
+      placePlayer(amarre.x, amarre.z + .6, 0, -1); frames(2);
+      if(!$("#btn-act").textContent.includes("Accoster")) throw new Error(`près du ponton, en barque, le bouton dit « ${$("#btn-act").textContent} »`);
+      $("#btn-act").click();
+      if(enBarque() || !islandWalkable(player.position.x, player.position.z)) throw new Error("on n'accoste pas sur le ponton");
+      return "construite, au large en ramant, un thon pris en moulinant, puis accostée";
+    } finally { if(enBarque()) accosterBarque(); keys.d = 0; state.sac = sac0; state.barre = barre0; hold(null); }
+  });
   await etape("La hache selon l'essence : le frêne demande une hache en cuivre, le chêne séculaire une hache en bronze", async () => {
     let i = -1;
     for(let z = 2; z < N - 2 && i < 0; z++) for(let x = 2; x < N - 2; x++){

@@ -365,8 +365,9 @@ export const POISSONS = {
   ombre:   {nom:"Ombre", pluriel:"ombres", lieu:"ruisseau", rarete:"peuCommun", saisons:["automne"], heures:"toujours", taille:[30, 50], prix:3, couleur:0x8A9AA8, note:"Une grande nageoire en forme de voile"},
   saumon:  {nom:"Saumon", pluriel:"saumons", lieu:"ruisseau", rarete:"peuCommun", saisons:["automne"], heures:"toujours", taille:[50, 100], prix:3, couleur:0xC88A7A, note:"Il remonte la rivière en sautant"},
   truiteArgent:{nom:"Truite d'argent", pluriel:"truites d'argent", une:true, lieu:"source", rarete:"rare", saisons:TOUTE, heures:"nuit", lune:"pleine", taille:[30, 60], prix:8, couleur:0xD8E0EA, brille:true, note:"Elle brille comme une pièce neuve"},
-  /* La mer, au large en barque (quand la barque arrivera) */
-  thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", depuis:"barque", rarete:"rare", saisons:["ete"], heures:"toujours", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond", note:"Énorme : il faut tenir longtemps"}
+  /* La mer, au large en barque (étape 1.13, morceau 2) ; tenir : il faut mouliner autant de fois après l'avoir ferré
+     (Grand Carnet : « Énorme : il faut tenir longtemps ») */
+  thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", depuis:"barque", rarete:"rare", saisons:["ete"], heures:"toujours", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond", tenir:6, note:"Énorme : il faut tenir longtemps"}
 };
 /* Les moments de la journée, en heures du téléphone : [de, à[ */
 export const HEURES = {
@@ -390,7 +391,11 @@ export const METEOS = {beau:"par beau temps", pluie:"sous la pluie", orage:"une 
    rayon cases, près des bords ; chacune reste vie secondes (de… à…) ; un poisson à moins de attire P du bouchon
    vient voir. À régler en jouant. */
 export const PECHE = {morsure:[1.5, 5], fenetre:1, poids:{commun:60, peuCommun:28, rare:10, legendaire:1},
-  ombres:{max:5, etang:2, rayon:8, vie:[45, 100], attire:2.5}};
+  ombres:{max:5, etang:2, rayon:8, vie:[45, 100], attire:2.5}, tenir:7};   // tenir : le temps pour mouliner (le thon)
+/* La barque (étape 1.13, morceau 2 ; décidé par Yo : construite au ponton ; Grand Carnet : « la Libellule ») : ses
+   matières, ses travaux en temps réel (en secondes, même jeu fermé), et « au large » : à tant de cases de toute terre.
+   Chiffres choisis par Claude, à régler en jouant. */
+export const BARQUE = {nom:"la Libellule", cost:{planche:20, fibre:8}, t:600, large:4};
 /* Où et quand on le trouve, en toutes lettres (le sac, le carnet) */
 const EN = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
 export const quandPoisson = p => [p.saisons.length === 4 ? "toute l'année" : p.saisons.map(s => EN[s]).join(", ").replace(/, ([^,]*)$/, " et $1"),

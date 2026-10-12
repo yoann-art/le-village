@@ -3,7 +3,9 @@
    de la mer, au sud de la place du village, qui avance de LONG cases dans l'eau. On y marche ; certains
    poissons ne se pêchent que de là (depuis:"ponton" dans POISSONS). La case de terre d'où il part reste
    toujours libre : on n'y bâtit pas, rien n'y pousse, on n'y pose rien.
-   state.ponton = {x, z, n} : sa colonne, sa première case sur l'eau, sa longueur (gardé, pour qu'il ne bouge plus). */
+   state.ponton = {x, z, n} : sa colonne, sa première case sur l'eau, sa longueur (gardé, pour qu'il ne bouge plus).
+   La barque (étape 1.13, morceau 2) s'amarre à droite du bout du ponton, contre la borne (amarre) ; son modèle :
+   barqueModele (barque.js la pose, ou la fait suivre le personnage quand il rame). */
 import { G, part } from "./formes.js";
 import { scene } from "./scene.js";
 import { state, save } from "../sauvegarde.js";
@@ -101,6 +103,48 @@ if(P){
   lanterne(x0 - .38, .95, bout, glow);                 // la nuit, elle éclaire le bout du ponton (ciel.js)
   scene.add(g);
 }
+/* ----- La barque (étape 1.13, morceau 2 ; Grand Carnet : « la Libellule ») -----
+   Une coque ronde de bois (une demi-sphère retournée), son bord, un banc, deux rames, et une petite libellule en figure
+   de proue. En chantier, seulement sa carcasse : la quille et ses couples, en bois clair. Elle regarde vers +z ; posée
+   à y = 0,02, son fond (une planche ovale) reste juste au-dessus de la mer (y = −0,2) : l'eau ne la remplit pas. */
+export const amarre = P ? {x: centerOf(P.x) + 1.02, z: centerOf(P.z + P.n - 1) - .15} : null;
+const COQUE = new THREE.MeshLambertMaterial({color: 0xA06A3E, side: THREE.DoubleSide});
+const COUPLE = new THREE.TorusGeometry(.5, .05, 6, 12, Math.PI);
+const AILE = new THREE.MeshLambertMaterial({color: 0xDDF2F4, transparent: true, opacity: .8});
+export function barqueModele(chantier){
+  const g = new THREE.Group();
+  if(chantier){
+    g.add(part(G.box, 0xC89A68, .1, .08, 1.9, 0, -.34, 0));                           // la quille
+    for(const z of [-.7, -.35, 0, .35, .7]){                                             // les couples
+      const e = 1 - Math.abs(z) * .5, c = new THREE.Mesh(COUPLE, new THREE.MeshLambertMaterial({color: 0xC89A68}));
+      c.rotation.z = Math.PI; c.scale.set(.82 * e, .8 * e, 1); c.position.set(0, .04, z); c.castShadow = true; g.add(c);
+    }
+    g.add(part(G.box, 0xC89A68, .06, .06, 1.9, .3, .02, 0));                            // une première planche du bord
+    return g;
+  }
+  const coque = new THREE.Mesh(G.hair, COQUE);
+  coque.rotation.x = Math.PI; coque.scale.set(1.6, 1.4, 3.75); coque.position.y = .04;   // 0,8 de large, 1,9 de long, 0,36 de creux
+  coque.castShadow = coque.receiveShadow = true; g.add(coque);
+  const bord = part(G.tore, 0x7A4E2E, .82, 1.9, 1.2, 0, .05, 0); bord.rotation.x = Math.PI / 2; g.add(bord);
+  g.add(part(G.cyl, 0x6B4A2F, .7, .03, 1.62, 0, -.15, 0));                              // le fond, au-dessus de l'eau (qui ondule)
+  g.add(part(G.box, 0x8A5A32, .76, .05, .2, 0, -.05, -.25));                             // le banc
+  const rames = [];
+  for(const c of [-1, 1]){                                                               // les rames, sur le bord
+    const r = new THREE.Group(); r.position.set(c * .4, .08, -.1);
+    const manche = part(G.cyl, 0x9A6E46, .04, 1.1, .04, 0, -.55, 0); r.add(manche);
+    r.add(part(G.box, 0x9A6E46, .02, .32, .13, 0, -1.05, 0));                            // la pale
+    r.rotation.z = c * (Math.PI / 2 - .45); g.add(r); rames.push(r);
+  }
+  g.userData.rames = rames;
+  /* la libellule de la proue : un corps bleu-vert, deux paires d'ailes */
+  const proue = new THREE.Group(); proue.position.set(0, .14, .95);
+  const corps = part(G.cyl, 0x2E9C9A, .05, .32, .05, 0, 0, 0); corps.rotation.x = Math.PI / 2; proue.add(corps);
+  proue.add(part(G.head, 0x2E9C9A, .3, .3, .3, 0, .02, .17));
+  for(const z of [.03, -.06]) for(const c of [-1, 1]){ const a = part(G.box, AILE, .22, .01, .06, c * .12, .03, z); a.castShadow = false; proue.add(a); }
+  g.add(proue);
+  return g;
+}
+
 /* Le pont de la forêt : des planches entre deux rambardes de bois, vers le nord */
 if(pontForet){
   const g = new THREE.Group(), x0 = centerOf(pontForet.x), zBas = centerOf(pontForet.z) + .5, n = pontForet.n;
