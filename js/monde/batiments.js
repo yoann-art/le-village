@@ -489,7 +489,7 @@ export function footprint(type, x, z){
    lanterne murales, dehors aussi) : b.facade = [{type, col, torche?}], col = la colonne de cases (0 à gauche), jamais
    celle de la porte (colPorte). Elles suivent le bâtiment (déplacé, amélioré) : elles font partie de son modèle. */
 export const colPorte = type => Math.floor(sizeOf(type) / 2 + (B[type].door || 0));
-function placeFacade(type, col){
+export function placeFacade(type, col){
   const s = sizeOf(type), d = B[type].door || 0;
   let x = col + .5 - s/2;
   if(Math.abs(x - d) < .75) x += Math.sign(x - d) * .15;     // un peu plus loin du bord de la porte
@@ -506,7 +506,7 @@ export function placeMesh(b){
   if(!b.rot) for(const f of b.facade || []){
     const m = makeMeuble(f.type, undefined, f), p = placeFacade(b.type, f.col);
     m.position.set(p.x, 0, p.z); g.add(m);
-    lf.push({x: g.position.x + p.x, z: g.position.z + p.z, f});
+    lf.push({x: g.position.x + p.x, z: g.position.z + p.z, f, b, mesh: m});
   }
   facades.set(b.id, lf);
   scene.add(g); bMeshes.set(b.id, g);

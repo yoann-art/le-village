@@ -120,7 +120,9 @@ function showSel(){
   const pb = showPlate(sel);
   if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
   if(sel.reserve && !pb){ hint("🗃️ Coffre de réserve : glisse-le du doigt. Pour l'emporter, ouvre-le : « Déplacer le coffre »"); return; }
-  hint(pb ? WHY[pb] : `${MEUBLES[sel.type].emoji} ${MEUBLES[sel.type].nom} : glisse-le du doigt`, !!pb);
+  const m = MEUBLES[sel.type], la = m.une ? "la" : "le";
+  hint(pb ? WHY[pb] : m.mur ? `${m.emoji} ${m.nom} : glisse-${la} du doigt le long des murs ; « Tourner » ${la} change de mur`
+    : `${m.emoji} ${m.nom} : glisse-${la} du doigt`, !!pb);
 }
 
 /* ----- Entrer et sortir du mode décoration ----- */
@@ -214,8 +216,25 @@ export function addMeuble(type){
   items().push(it); addItemMesh(it);
   sel = it; showSel(); save();
 }
+/* Ce qui s'accroche au mur : « Tourner » le fait passer au mur suivant (le fond, la droite, la gauche), à la place
+   libre la plus proche du milieu de ce mur (demande de Yo, 12 octobre 2026) */
+function murSuivant(it){
+  const hw = cur().room.w/2, hd = cur().room.d/2, avant = {x: it.x, z: it.z, rot: it.rot};
+  const MURS = [0, 1, 3], mur = MURS[(MURS.indexOf(it.rot) + 1) % 3];
+  for(let k = 0; k <= 4 * Math.max(hw, hd); k++){
+    const dv = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * .5;
+    settle(it, mur === 0 ? dv : mur === 1 ? hw : -hw, mur === 0 ? -hd : dv);
+    if(it.rot === mur && !problem(it)) return true;
+  }
+  Object.assign(it, avant);
+  return false;
+}
 $("#deco-rot").addEventListener("click", () => {
   if(!sel) return;
+  if(MEUBLES[sel.type].mur){
+    if(!murSuivant(sel)){ showSel(); hint("Pas de place libre sur le mur suivant", true); return; }
+    placeItemMesh(sel); showSel(); save(); return;
+  }
   const before = {x: sel.x, z: sel.z, rot: sel.rot};
   sel.rot = (sel.rot + 1) % 4;
   settle(sel, sel.x, sel.z);

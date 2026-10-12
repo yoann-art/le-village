@@ -28,6 +28,7 @@ import { updateChemins } from "./terraformer.js";
 import { lampeSur, nuitForet, penombre } from "./monde/interieurs.js";
 import { updateLumieres } from "./lumieres.js";
 import { updateBarque, posBarque } from "./barque.js";
+import { deplaceEnCours } from "./deplacer.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
@@ -92,7 +93,7 @@ let last = performance.now();
 function tick(now){
   requestAnimationFrame(tick);                              // en premier : la boucle repart, quoi qu'il arrive
   const dt = Math.min(.05, (now - last) / 1000); last = now;
-  const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
+  const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
   if(pushing) dirty = true;
   garde("portes", () => checkDoors(pushing));
   garde("caméra", () => camera_(now, dt));

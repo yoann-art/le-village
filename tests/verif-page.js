@@ -5,7 +5,7 @@
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, la barque (la construire au bout du ponton, ramer au large, y pêcher le thon
-   en moulinant, accoster), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp, le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   en moulinant, accoster), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -44,7 +44,7 @@ import { torcheAllumee } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
 import { forcerSaison, saisonDu, reglerHemisphere } from "../js/donnees.js";
-import { scene } from "../js/monde/scene.js";
+import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
 import { keys } from "../js/commandes.js";
@@ -73,6 +73,14 @@ const enMain = k => {
 };
 const $ = s => document.querySelector(s);
 const frames = (n, dt = .05) => { for(let k = 0; k < n; k++) updateRecolte(dt, true); };
+/* Un doigt sur l'écran : la place à l'écran d'un point 3D, et un appui long qui glisse d'un point à un autre */
+const ecran = (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; };
+const doigt = (type, [x, y]) => renderer.domElement.dispatchEvent(new PointerEvent(type, {pointerId: 7, clientX: x, clientY: y, bubbles: true}));
+async function glisser(de, a){
+  doigt("pointerdown", de); await wait(700);
+  for(let k = 1; k <= 6; k++) doigt("pointermove", [de[0] + (a[0] - de[0]) * k / 6, de[1] + (a[1] - de[1]) * k / 6]);
+  doigt("pointerup", a); await wait(150);
+}
 /* Se placer devant la porte d'un bâtiment, et entrer (ou sortir en repassant le paillasson) */
 /* Attendre qu'un changement de lieu soit vraiment fini (le jeu peut être lent sur la machine de GitHub) */
 async function attendre(test, ms = 6000){ const t0 = performance.now(); while(!test() && performance.now() - t0 < ms) await wait(100); await wait(300); return test(); }
@@ -974,7 +982,7 @@ export async function verifier(){
       if(torcheSol()) throw new Error("la torche n'est pas reprise");
       /* la lanterne à main (morceau 4 des lumières) : elle passe avant la torche, qui ne brûle plus ; l'arc la pose au sol */
       const reste = state.torche;
-      sacAdd("lanterneMain", 1); mettreEnCase(2, "lanterneMain");
+      place(1); sacAdd("lanterneMain", 1); mettreEnCase(2, "lanterneMain");   // (le sac a pu se remplir de ce que laisse le loup)
       if(!await attendre(() => lanterneAllumee(), 2000)) throw new Error("la lanterne à main ne s'allume pas");
       if(state.torche < reste - .2) throw new Error("la torche brûle encore, la lanterne à main allumée");
       enMain("arcIf");
@@ -1259,6 +1267,15 @@ export async function verifier(){
       updateLumieres(1.1, true);
       if(lumieresActives() < 1) throw new Error("le feu de camp n'éclaire pas la nuit");
     } finally { forcerHeure(null); updateCiel(0, 0); }
+    /* le déplacer d'un appui long sur une case voisine, puis le ramener (demande de Yo, 12 octobre 2026) */
+    devant(); await wait(1500);                          // la caméra a fini de suivre le personnage
+    const j = [i + 1, i - 1].find(c => !poseProblem(c));
+    if(j === undefined) throw new Error("pas de case libre à côté du feu de camp");
+    const haut = c => ecran(centerOf(c % N), .3, centerOf(Math.floor(c / N))), sol = c => ecran(centerOf(c % N), 0, centerOf(Math.floor(c / N)));
+    await glisser(haut(i), sol(j));
+    if(map.obj[j] !== "feuCamp" || map.obj[i]) throw new Error("le feu de camp ne se déplace pas d'un appui long");
+    await glisser(haut(j), sol(i));
+    if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp ne revient pas à sa place");
     if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").textContent} »`);
     $("#btn-act").click();
     if(map.obj[i] || owned("feuCamp") !== 1) throw new Error("le feu de camp n'est pas revenu dans le sac");
@@ -1272,7 +1289,7 @@ export async function verifier(){
     if(!devant().includes("et sa torche")) throw new Error(`devant la torchère allumée, le bouton dit « ${$("#btn-act").textContent} »`);
     $("#btn-act").click();
     if(map.obj[i] || owned("torche") !== torches + 1) throw new Error("la torchère et sa torche ne sont pas revenues dans le sac");
-    return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
+    return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, déplacé d'un appui long, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
   });
   if(scierie) await etape("Les autres lumières : une lanterne murale accrochée à la façade de la Scierie, qui s'allume seule la nuit", async () => {
     const s = 3, x = scierie.x, z = scierie.z;              // la colonne de gauche (la porte est au milieu)

@@ -283,7 +283,7 @@ export const RECOLTE = {
    les bonus des bâtiments), combien il y en a au plus sur l'île (max), où ils apparaissent (pres : à côté
    d'un arbre), et toutes les combien de secondes il en revient un de chaque (retour). */
 export const SOL = {
-  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:2, max:12, sols:["grass"], pres:"tree"},
+  branche:{nom:"Morceau de bois", emoji:"🪵", res:"bois", n:1, max:12, sols:["grass"], pres:"tree"},   // 1 bois (demande de Yo, 12 octobre 2026)
   caillou:{nom:"Petit caillou", emoji:"🪨", res:"pierre", n:1, max:12, sols:["grass", "sand"]}
 };
 export const SOL_RETOUR = 600;

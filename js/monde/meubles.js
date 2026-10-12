@@ -298,6 +298,12 @@ const BUILD = {
     g.add(part(G.head, C.gold, .6, .6, .6, 0, 1.75, -.26));                            // ornement doré
   }
 };
+/* Les petites lumières se touchent mal du doigt (la torchère murale est petite et haut sur le mur) : une boîte
+   invisible autour d'elles agrandit ce qu'on peut toucher (demande de Yo, 12 octobre 2026) : [largeur, hauteur,
+   profondeur, hauteur de son milieu] */
+const PRISE = {chandelle:[.6, .7, .6, .3], bocalLucioles:[.6, .7, .6, .3], lanterne:[.6, 1.7, .6, .8], torchere:[.6, 1.9, .6, .9],
+  torchereMurale:[.7, 1, .6, 1.35], lanterneMurale:[.7, 1, .6, 1.3], brasero:[.8, 1.3, .8, .6], lampadaire:[.6, 2.5, .6, 1.2], feuCamp:[1, .7, 1, .3]};
+const INVISIBLE = new THREE.MeshBasicMaterial({visible: false}), BOITE = new THREE.BoxGeometry(1, 1, 1);
 /* Une torche posée (sur une torchère) : le bâton, sa tête de fibres, sa flamme (y + .5) */
 function torcheSur(g, x, y, z){
   g.add(part(G.cyl, 0x8A5A32, .06, .34, .06, x, y + .13, z));
@@ -309,6 +315,7 @@ function torcheSur(g, x, y, z){
 export function makeMeuble(type, color, o){
   const g = new THREE.Group();
   BUILD[type](g, COULEURS[color] ? COULEURS[color].hex : ORIGIN[type], o);
+  if(PRISE[type]){ const [w, h, d, y] = PRISE[type], p = new THREE.Mesh(BOITE, INVISIBLE); p.scale.set(w, h, d); p.position.y = y; g.add(p); }
   return g;
 }
 

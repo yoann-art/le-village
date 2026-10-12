@@ -11,6 +11,7 @@ import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars,
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, N, idx, inb, map, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, removeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
+import { lumiereSousDoigt } from "./deplacer.js";
 import { entrees } from "./monde/ponton.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
@@ -111,6 +112,7 @@ canvas.addEventListener("pointerdown", e => {
   if(!outside()) return;
   if(placing){ startDrag(e.pointerId); return; }
   aim(e.clientX, e.clientY);
+  if(lumiereSousDoigt(ray)) return;                    // une lumière de sa façade : c'est elle qu'on déplace (deplacer.js)
   const id = pickBuilding(ray);
   if(id !== null) press = {id, pid: e.pointerId, sx: e.clientX, sy: e.clientY, timer: setTimeout(liftBuilding, 500)};
 });
