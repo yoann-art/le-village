@@ -77,10 +77,17 @@ const frames = (n, dt = .05) => { for(let k = 0; k < n; k++) updateRecolte(dt, t
 /* Un doigt sur l'écran : la place à l'écran d'un point 3D, et un appui long qui glisse d'un point à un autre */
 const ecran = (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; };
 const doigt = (type, [x, y]) => renderer.domElement.dispatchEvent(new PointerEvent(type, {pointerId: 7, clientX: x, clientY: y, bubbles: true}));
+/* de, a : des fonctions qui donnent la place à l'écran au moment même (sur la machine lente de GitHub, la caméra peut
+   encore bouger : croix rouge de la v1.13.10) */
 async function glisser(de, a){
-  doigt("pointerdown", de); await wait(700);
-  for(let k = 1; k <= 6; k++) doigt("pointermove", [de[0] + (a[0] - de[0]) * k / 6, de[1] + (a[1] - de[1]) * k / 6]);
-  doigt("pointerup", a); await wait(150);
+  doigt("pointerdown", de()); await wait(700);
+  for(let k = 1; k <= 6; k++){ const p = de(), q = a(); doigt("pointermove", [p[0] + (q[0] - p[0]) * k / 6, p[1] + (q[1] - p[1]) * k / 6]); await wait(30); }
+  doigt("pointerup", a()); await wait(150);
+}
+/* Attendre que la caméra ne bouge plus (elle suit le personnage en douceur) */
+async function cameraImmobile(ms = 5000){
+  const t0 = performance.now(), avant = new THREE.Vector3();
+  do { avant.copy(camera.position); await wait(200); } while(camera.position.distanceTo(avant) > .005 && performance.now() - t0 < ms);
 }
 /* Se placer devant la porte d'un bâtiment, et entrer (ou sortir en repassant le paillasson) */
 /* Attendre qu'un changement de lieu soit vraiment fini (le jeu peut être lent sur la machine de GitHub) */
@@ -1321,13 +1328,14 @@ export async function verifier(){
       if(lumieresActives() < 1) throw new Error("le feu de camp n'éclaire pas la nuit");
     } finally { forcerHeure(null); updateCiel(0, 0); }
     /* le déplacer d'un appui long sur une case voisine, puis le ramener (demande de Yo, 12 octobre 2026) */
-    devant(); await wait(1500);                          // la caméra a fini de suivre le personnage
+    devant(); await cameraImmobile();                    // la caméra a fini de suivre le personnage
     const j = [i + 1, i - 1].find(c => !poseProblem(c));
     if(j === undefined) throw new Error("pas de case libre à côté du feu de camp");
     const haut = c => ecran(centerOf(c % N), .3, centerOf(Math.floor(c / N))), sol = c => ecran(centerOf(c % N), 0, centerOf(Math.floor(c / N)));
-    await glisser(haut(i), sol(j));
-    if(map.obj[j] !== "feuCamp" || map.obj[i]) throw new Error("le feu de camp ne se déplace pas d'un appui long");
-    await glisser(haut(j), sol(i));
+    await glisser(() => haut(i), () => sol(j));
+    if(map.obj[j] !== "feuCamp" || map.obj[i]) throw new Error(`le feu de camp ne se déplace pas d'un appui long (case ${i} : ${map.obj[i]}, case ${j} : ${map.obj[j]})`);
+    await cameraImmobile();
+    await glisser(() => haut(j), () => sol(i));
     if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp ne revient pas à sa place");
     if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").textContent} »`);
     $("#btn-act").click();
