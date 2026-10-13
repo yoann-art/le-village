@@ -97,7 +97,9 @@ degager();
 const facing = {x:0, z:1};
 
 /* La vue à la première personne (demande de Yo, 13 octobre 2026 ; vue.js) : le corps est caché (la caméra est à la place
-   de ses yeux), le doigt tourne son regard (tournerVue) et le joystick avance, recule et va de côté par rapport à ce regard */
+   de ses yeux), le doigt tourne son regard (tournerVue) ; le joystick avance et recule, et tourne la vue en poussant à gauche
+   ou à droite (Yo, v1.13.21 : « c'est dur et pas ergonomique de regarder autour de soi et de se déplacer avec le joystick » ;
+   son choix : « Joystick qui tourne ») */
 let fps = false;
 export function modeFPS(oui){ fps = !!oui; player.visible = !fps; }
 export function tournerVue(da){
@@ -123,6 +125,10 @@ export const ALLURE_DOUCE = .55;
 export const allure = () => allureNow;
 /* Déplacement : renvoie true si le joueur pousse le joystick (même contre un mur) */
 const SPEED = 3.4;
+/* À la première personne : le joystick poussé à fond sur le côté tourne la vue de TOURNE radians par seconde (un tour en
+   un peu plus de 3 s) ; un petit écart (MORT) ne compte pas, pour avancer tout droit sans dériver ; reculer, moins vite */
+const TOURNE = 2, MORT = .15, RECUL = .7;
+const doux = v => { const a = Math.abs(v); return a < MORT ? 0 : Math.sign(v) * Math.min(1, (a - MORT) / (1 - MORT)); };
 let walkT = 0;
 /* La direction où regarde le personnage (vecteur de longueur 1 ; la pêche vise avec) */
 export const regard = () => ({x: facing.x, z: facing.z});
@@ -166,28 +172,38 @@ export function updatePlayer(dt){
     ix = (keys.r||0) - (keys.l||0); iz = (keys.d||0) - (keys.u||0);
     const l = Math.hypot(ix, iz); if(l){ ix /= l * (keys.lent ? 2.5 : 1); iz /= l * (keys.lent ? 2.5 : 1); }   // Maj : à pas de loup
   }
-  const mag = Math.min(1, Math.hypot(ix, iz));
-  allureNow = mag;
-  pousse = mag > 0;
-  if(mag > 0){
-    const sp = SPEED * mag * dt * (lent > 0 ? .55 : 1), p = player.position, l = Math.hypot(ix, iz);
-    let ux = ix / l, uz = iz / l;
-    if(fps){                                            // première personne : le haut du joystick avance là où l'on regarde
-      const fx = facing.x, fz = facing.z;
-      [ux, uz] = [fx * -uz - fz * ux, fz * -uz + fx * ux];
+  const pousseJoy = Math.hypot(ix, iz) > 0;
+  let mag = Math.min(1, Math.hypot(ix, iz));
+  pousse = pousseJoy;
+  if(fps && pousseJoy){                                 // première personne : le haut avance, le bas recule, les côtés tournent
+    const fx = facing.x, fz = facing.z, l = Math.hypot(ix, iz);
+    sens.x = (fx * -iz - fz * ix) / l; sens.z = (fz * -iz + fx * ix) / l;   // le sens poussé, par rapport au regard (la roulade)
+    const t = doux(ix), av = doux(-iz);
+    if(t) tournerVue(-Math.sign(t) * Math.pow(Math.abs(t), 1.4) * TOURNE * dt);
+    mag = Math.abs(av);
+    if(mag > 0){
+      const sp = SPEED * mag * dt * (lent > 0 ? .55 : 1) * (av < 0 ? RECUL : 1), p = player.position, s = Math.sign(av);
+      const nx = p.x + facing.x * s * sp, nz = p.z + facing.z * s * sp;
+      if(free(nx, p.z)) p.x = nx;
+      if(free(p.x, nz)) p.z = nz;
+      walkT += dt * 11 * mag;
     }
+  } else if(mag > 0){
+    const sp = SPEED * mag * dt * (lent > 0 ? .55 : 1), p = player.position, l = Math.hypot(ix, iz);
+    const ux = ix / l, uz = iz / l;
     const nx = p.x + ux * sp, nz = p.z + uz * sp;
     if(free(nx, p.z)) p.x = nx;
     if(free(p.x, nz)) p.z = nz;
     sens.x = ux; sens.z = uz;
-    if(!fps){ facing.x = ux; facing.z = uz; }
+    facing.x = ux; facing.z = uz;
     walkT += dt * 11 * mag;
   }
+  allureNow = mag;                                      // tourner sur place ne fait pas fuir les bêtes
   const target = Math.atan2(facing.x, facing.z);
   let d = target - player.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
   player.rotation.y += d * Math.min(1, dt * 14);
   const sw = mag > 0 ? Math.sin(walkT) : 0;
   body.position.y = mag > 0 ? Math.abs(sw) * .05 : 0;
   legL.rotation.x = sw * .6; legR.rotation.x = -sw * .6;
-  return mag > 0;
+  return pousseJoy;
 }

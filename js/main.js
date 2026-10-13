@@ -36,7 +36,7 @@ import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
-import { vuePremiere, activerVue, tangageVue } from "./vue.js";
+import { vuePremiere, activerVue, tangageVue, horizon } from "./vue.js";
 import { enBarque } from "./barque.js";
 import "./sac.js";
 import "./barre.js";
@@ -112,7 +112,7 @@ function tick(now){
   const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && !voyageEnCours() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
   if(pushing) dirty = true;
   garde("portes", () => checkDoors(pushing));
-  garde("caméra", () => camera_(now, dt));
+  garde("caméra", () => camera_(now, dt, pushing));
   garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
   garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
@@ -132,7 +132,7 @@ function tick(now){
   });
 }
 /* La caméra, le soleil, la mer, et ce qu'on bâtit dehors */
-function camera_(now, dt){
+function camera_(now, dt, marche){
   const dv = decoView();
   const foret = isInside() && ["foret", "grotte", "marais", "trajet"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
   const fps = premierePossible();
@@ -142,6 +142,7 @@ function camera_(now, dt){
     setFov(fovPremiere());
     setDistance(12);                                       // le brouillard et l'ombre du soleil autour de soi
     ajusterBrume(4.5);
+    horizon(dt, marche);                                   // en marchant, les yeux reviennent à l'horizon
     const saut = takeJump(), p = player.position, r = regard(), but = Math.atan2(r.x, r.z);
     camT.set(p.x, 0, p.z);
     if(saut || lacet === null) lacet = but;

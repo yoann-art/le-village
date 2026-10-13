@@ -3,8 +3,9 @@
    et les armes et objets qu'il a en main. » Choix de Yo : glisser le doigt pour regarder, partout où l'on marche.
    - Le bouton 👁️ en haut à droite (#btn-vue) passe d'une vue à l'autre ; le choix est gardé sur le téléphone.
    - En première personne (main.js la règle à chaque image) : la caméra à hauteur des yeux, le corps caché
-     (personnage.js : modeFPS) ; glisser le doigt sur l'écran tourne la tête (tournerVue) et lève ou baisse les yeux
-     (tangage) ; le joystick avance, recule et va de côté par rapport au regard.
+     (personnage.js : modeFPS) ; le joystick avance, recule, et tourne la vue en poussant sur le côté (personnage.js,
+     v1.13.21 : avec deux pouces, c'était dur) ; glisser le doigt sur l'écran tourne la tête (tournerVue) et lève ou baisse
+     les yeux (tangage), pour regarder précisément ; en marchant, les yeux reviennent doucement à l'horizon (horizon).
    - On repasse tout seul en vue de dessus pour décorer, bâtir, pendant la scène du voyage et en barque (main.js) ; les
      appuis longs pour soulever un bâtiment, une lumière ou un meuble ne servent pas en première personne (on regarde
      avec le doigt) : premiereActive, lu par construire.js, deplacer.js et decorer.js.
@@ -27,6 +28,8 @@ export function activerVue(oui){
   active = oui;
   modeFPS(oui);
 }
+/* En marchant avec le joystick, les yeux reviennent doucement à l'horizon (pas pendant que le doigt regarde) */
+export function horizon(dt, marche){ if(marche && !doigt && tangage) tangage *= Math.exp(-dt * 2.5); }
 /* Pour la vérification : choisir la vue sans toucher au bouton */
 export function choisirVue(p){ premiere = !!p; tangage = 0; garder(); majBouton(); }
 
@@ -40,7 +43,7 @@ function majBouton(){
 if(btn) btn.addEventListener("click", e => {
   e.stopPropagation();
   choisirVue(!premiere);
-  toast(premiere ? "👁️ Vue à la première personne : glisse le doigt sur l'écran pour regarder autour de toi ; le joystick avance, recule et va de côté. Touche 👁️ pour revenir à la vue de dessus."
+  toast(premiere ? "👁️ Vue à la première personne : le joystick avance, recule et tourne (pousse-le à gauche ou à droite) ; glisse le doigt sur l'écran pour regarder précisément. Touche 👁️ pour revenir à la vue de dessus."
     : "🗺️ Vue de dessus", premiere ? 5200 : 1400);
 });
 majBouton();

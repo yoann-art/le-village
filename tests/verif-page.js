@@ -1556,7 +1556,7 @@ export async function verifier(){
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
     return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
   });
-  if(scierie) await etape("La vue à la première personne : le bouton 👁️, la caméra aux yeux, le doigt tourne la tête, le joystick avance où l'on regarde, entrer dans la Scierie, décorer en vue de dessus", async () => {
+  if(scierie) await etape("La vue à la première personne : le bouton 👁️, la caméra aux yeux, le doigt tourne la tête, le joystick avance où l'on regarde et tourne la vue, entrer dans la Scierie, décorer en vue de dessus", async () => {
     if(isInside()) await sortir();
     const avant = vuePremiere();
     try {
@@ -1586,6 +1586,12 @@ export async function verifier(){
       const dx = player.position.x - p0.x, dz = player.position.z - p0.z, l = Math.hypot(dx, dz), r2 = regard();
       if(l < .3 || (dx * r1.x + dz * r1.z) / l < .95) throw new Error(`le personnage n'avance pas là où il regarde (${dx.toFixed(2)}, ${dz.toFixed(2)})`);
       if(Math.abs(r2.x - r1.x) + Math.abs(r2.z - r1.z) > .01) throw new Error("marcher change le regard");
+      /* le joystick poussé à droite : la vue tourne à droite, sur place (v1.13.21) */
+      const p1 = player.position.clone();
+      keys.r = 1; for(let k = 0; k < 30; k++) updatePlayer(.016); keys.r = 0;
+      const r3 = regard(), virage = Math.atan2(r2.x * r3.z - r2.z * r3.x, r2.x * r3.x + r2.z * r3.z);
+      if(player.position.distanceTo(p1) > .05) throw new Error("en tournant avec le joystick, le personnage se déplace");
+      if(!(virage > .5)) throw new Error(`le joystick poussé à droite ne tourne pas la vue à droite (${virage.toFixed(2)} rad)`);
       /* entrer dans la Scierie en marchant dans la porte */
       const d = doorOf(scierie);
       placePlayer(d.x + d.n.x * (R + .4), d.z + d.n.z * (R + .4), -d.n.x, -d.n.z);
@@ -1604,7 +1610,7 @@ export async function verifier(){
       /* revenir à la vue de dessus */
       $("#btn-vue").click();
       if(!await attendre(() => !premiereActive() && player.visible && camera.fov === 40 && camera.position.y > 3)) throw new Error("le bouton 👁️ ne ramène pas la vue de dessus");
-      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, on entre dans la Scierie, la décoration se fait en vue de dessus`;
+      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, le joystick tourne la vue de ${Math.round(virage * 180 / Math.PI)}° en une demi-seconde, on entre dans la Scierie, la décoration se fait en vue de dessus`;
     } finally { choisirVue(avant); }
   });
   await etape("Jamais coincé", async () => {
