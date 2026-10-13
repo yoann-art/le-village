@@ -828,7 +828,6 @@ export const ATELIERS = {
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"banc", in:{planche:4}, t:40, lvl:1},
-    {out:"coffre", in:{planche:4, or:1}, t:60, lvl:1},
     {out:"tonneau", in:{planche:5}, t:60, lvl:2},
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"etagere", in:{planche:6}, t:90, lvl:2},
@@ -927,7 +926,9 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","coffre","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","lit","grandTapis"];
+/* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
+   des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
+export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

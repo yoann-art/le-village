@@ -67,6 +67,21 @@ function sortirDeLaMain(){
 }
 const pose = (co, plein) => toast(plein ? `🗃️ ${nomCoffre(co)} posé, avec tout ce qu'il contient`
   : `🗃️ ${nomCoffre(co)} posé : approche-toi et touche « Ouvrir le coffre » pour y ranger tes affaires`, 3600);
+/* Demande de Yo (13 octobre 2026) : le meuble « Coffre » de l'établi (une simple décoration, de la même allure, qui ne
+   s'ouvrait pas : « je ne peux pas l'ouvrir ») est retiré du jeu. Ceux qu'on avait deviennent des coffres de réserve :
+   posés dans une pièce, ils s'ouvrent (vides) ; dans le sac, une case rapide, un coffre ou en fabrication, ce sont des
+   « Coffres de réserve ». À chaque chargement (la fois suivante, il n'y a plus rien à changer). */
+{
+  let n = 0;
+  for(const b of state.buildings){
+    for(const it of (b.deco && b.deco.items) || []) if(it.type === "coffre" && !it.reserve){ it.reserve = newCoffre({b: b.id}).id; n++; }
+    for(const j of (b.atelier && b.atelier.queue) || []) if(j.out === "coffre"){ j.out = "coffreReserve"; n++; }
+  }
+  const renommer = l => { for(const it of l || []) if(it){ if(it.k === "coffre"){ it.k = "coffreReserve"; n++; } if(it.items) renommer(it.items); } };
+  renommer(state.sac); renommer(state.barre); state.coffres.forEach(co => renommer(co.items));
+  if(state.main === "coffre"){ state.main = "coffreReserve"; n++; }
+  if(n) save();
+}
 /* Poser le coffre tenu en main sur la case de l'île devant soi */
 export function poserCoffre(i){
   const why = poseProblem(i);
