@@ -15,13 +15,18 @@
    « 🔥 Reprendre la torche » tout près (`torcheAction`, appelé par recolte.js). Quitter le palier la laisse derrière.
    La lanterne à main (morceau 4 ; bible : « la torche s'améliore en lanterne ») : dans une case rapide, elle passe avant
    les torches (elles ne brûlent pas pendant ce temps) ; elle éclaire plus loin et ne s'use jamais ; avec l'arc, elle se
-   pose au sol comme la torche (sol.lanterne), et se reprend de même. */
+   pose au sol comme la torche (sol.lanterne), et se reprend de même.
+   Au Marais brumeux (demande de Yo, 13 octobre 2026 : « il fait vraiment sombre ») : la torche ou la lanterne s'allume
+   de même, mais seulement quand il y fait sombre (sombreMarais au-delà de SOMBRE : la nuit, la pluie, le soir), et ne
+   brûle que pendant ce temps ; sa lumière : eclaireMarais. Avec l'arc en main, elle reste éteinte (pas de torche au sol
+   au Marais pour l'instant). */
 import { OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, sacCount, addOwned } from "./regles.js";
 import { currentPlace } from "./lieux.js";
 import { player, tenirTorche } from "./monde/personnage.js";
 import { eclaire, torcheAuSol, visiteEnCours } from "./monde/grotte.js";
+import { eclaireMarais, sombreMarais } from "./monde/marais.js";
 import { toast } from "./interface.js";
 import { renderBarre, syncBarre, dansCase, deuxMains } from "./barre.js";
 
@@ -31,6 +36,7 @@ let enMain = false;        // une lumière allumée dans la main gauche (les cha
 /* La lanterne à main est-elle dans une case rapide ? */
 const lanterne = () => dansCase("lanterneMain") >= 0;
 const minutes = s => `${Math.ceil(s / 60)} min`;
+const SOMBRE = .2;                                       // au Marais, la torche s'allume au-delà (la pluie : .33 ; la nuit : 1)
 /* Les torches de la case rapide (seules celles-là s'allument) */
 const enCase = () => { const c = dansCase("torche"); return c >= 0 ? state.barre[c].n : 0; };
 function oterUne(){                                      // une torche quitte sa case
@@ -39,16 +45,18 @@ function oterUne(){                                      // une torche quitte sa
   state.barre[c].n--; syncBarre();
 }
 export function updateTorche(dt){
-  const p = currentPlace(), ici = !!p && p.b.type === "grotte";
-  if(sol && (!ici || visiteEnCours() !== sol.visite)){    // on a quitté le palier : la torche posée reste derrière
+  const p = currentPlace(), grotte = !!p && p.b.type === "grotte", marais = !!p && p.b.type === "marais", ici = grotte || marais;
+  if(sol && (!grotte || visiteEnCours() !== sol.visite)){    // on a quitté le palier : la torche posée reste derrière
     if(sol.lanterne) toast(rendreLanterne(true) ? "🏮 Tu reprends ta lanterne en partant" : "🏮 Plus aucune place pour ta lanterne : elle est restée derrière toi", 2600);   // elle ne s'use pas : on l'emporte
     else toast("🔥 Ta torche posée est restée derrière toi", 2600);
     sol = null; torcheAuSol(null);
   }
   if(!ici){ if(dedans){ dedans = false; enFeu = enMain = false; tenirTorche(false); save(); } return; }
+  if(!dedans) sans = false;                               // le message « pas de torche » : une fois par visite
   dedans = true; t += dt;
-  /* l'arc se tient à deux mains : la lanterne, ou la torche allumée, se pose au sol, à ses pieds */
-  if(deuxMains() && !sol){
+  const noir = grotte || sombreMarais() > SOMBRE;          // au Marais, seulement quand il fait sombre
+  /* l'arc se tient à deux mains : la lanterne, ou la torche allumée, se pose au sol, à ses pieds (dans la grotte) */
+  if(grotte && deuxMains() && !sol){
     const q = player.position;
     if(lanterne()){
       sol = {x: q.x, z: q.z, lanterne: true, visite: visiteEnCours()};
@@ -67,12 +75,12 @@ export function updateTorche(dt){
     else torcheAuSol(sol.x, sol.z, t, sol.lanterne);
   }
   /* la lanterne à main d'abord ; sinon, une torche neuve s'allume dans la main gauche (gardée dans sa case tant qu'elle brûle) */
-  const lampe = !deuxMains() && lanterne();
-  const n = deuxMains() || lampe ? 0 : enCase();
+  const lampe = noir && !deuxMains() && lanterne();
+  const n = !noir || deuxMains() || lampe ? 0 : enCase();
   if(n > 0 && !(state.torche > 0)){
     state.torche = OUTILS.torche.duree; sans = false;
     renderBarre(); save();
-    toast(`🔥 Tu allumes une torche : elle brûle ${minutes(state.torche)}${n > 1 ? ` (il t'en reste ${n - 1})` : ""}`, 2600);
+    toast(`🔥 ${marais ? "Il fait sombre, tu allumes une torche" : "Tu allumes une torche"} : elle brûle ${minutes(state.torche)}${n > 1 ? ` (il t'en reste ${n - 1})` : ""}`, 2600);
   }
   const allumee = n > 0 && state.torche > 0;              // sans torche dans une case, rien ne brûle dans la main
   if(allumee){
@@ -82,13 +90,16 @@ export function updateTorche(dt){
       if(!enCase()) toast("🔥 Ta torche s'est éteinte, et tu n'en as plus dans tes cases : il fait sombre. Fabrique des torches à l'établi de la Scierie", 4200);
     }
     if(Math.floor(t) !== Math.floor(t - dt) && Math.floor(t) % 5 === 0) renderBarre();   // la jauge de sa case baisse doucement
-  } else if(!sans && !sol && !deuxMains() && !lampe){
+  } else if(noir && !sans && !sol && !deuxMains() && !lampe){
     sans = true;
-    toast(sacCount("lanterneMain") ? "🏮 Ta lanterne est dans le sac : mets-la dans une case rapide pour l'allumer"
-      : sacCount("torche") ? "🔥 Tes torches sont dans le sac : mets-en une dans une case rapide pour l'allumer" : "🕯️ Pas de torche : tu ne vois qu'un peu autour de toi. Les torches se fabriquent à l'établi de la Scierie", 4200);
+    toast(sacCount("lanterneMain") ? `🏮 ${marais ? "Il fait sombre : t" : "T"}a lanterne est dans le sac : mets-la dans une case rapide pour l'allumer`
+      : sacCount("torche") ? `🔥 ${marais ? "Il fait sombre : t" : "T"}es torches sont dans le sac : mets-en une dans une case rapide pour l'allumer`
+      : marais ? "🌫️ Il fait sombre au Marais : une torche dans une case rapide t'éclairerait. Les torches se fabriquent à l'établi de la Scierie"
+      : "🕯️ Pas de torche : tu ne vois qu'un peu autour de toi. Les torches se fabriquent à l'établi de la Scierie", 4200);
   }
   tenirTorche(allumee || lampe, t, lampe);
-  eclaire(player.position.x, player.position.z, lampe ? "lanterne" : allumee, t);
+  if(grotte) eclaire(player.position.x, player.position.z, lampe ? "lanterne" : allumee, t);
+  else eclaireMarais(player.position.x, player.position.z, lampe ? "lanterne" : allumee, t);
   enFeu = allumee || lampe || !!sol; enMain = allumee || lampe;
 }
 /* La lanterne posée revient dans une case rapide libre, sinon dans le sac (partout : sinon dans un coffre) ; false s'il

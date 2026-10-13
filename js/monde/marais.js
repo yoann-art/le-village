@@ -22,9 +22,11 @@ import { state, save } from "../sauvegarde.js";
 import { RECOLTE, PRODUITS, PLANTES_MARAIS, PLANTE_RETOUR, enSaisonPlante } from "../donnees.js";
 import { essences, TAILLE, arbreModele, FRUITS, fruitsDeSaison, VOILE } from "./essences.js";
 import { nuitIci } from "./ciel.js";
+import { couvertIci } from "./meteo.js";
 
 const EAU = -.2;
-const EAU_MAT = new THREE.MeshLambertMaterial({color: 0x3E5E52});
+/* L'eau calcule sa lumière à chaque point (Phong) : la torche s'y reflète, chaude et mouillée (demande de Yo) */
+const EAU_MAT = new THREE.MeshPhongMaterial({color: 0x3A584E, specular: 0x24302A, shininess: 24});
 const BRUME_MAT = new THREE.MeshLambertMaterial({color: 0xE4ECE6, transparent: true, opacity: .18, depthWrite: false});
 function eau(g, w, d){
   const e = new THREE.Mesh(new THREE.PlaneGeometry(w, d), EAU_MAT);
@@ -368,6 +370,7 @@ export function makeMarais(){
   const loin = [];
   for(let k = 0; k < 28; k++){ const a = k / 28 * 6.283 + .1, d = 26 + (k * 7 % 5) * 1.6; loin.push([Math.cos(a) * d, Math.sin(a) * d, .9 + (k % 3) * .2]); }
   for(const [geo, coul, s, p] of E.cypres) serie(g, geo, mat(coul), loin.map(([x, z, k]) => [x + p[0] * k, p[1] * k, z + p[2] * k, s[0] * k, s[1] * k, s[2] * k]), false);
+  lueur.intensity = 0; g.add(lueur);                   // la lumière de la torche (eclaireMarais)
   /* et des nappes de brume qui flottent */
   for(let k = 0; k < 12; k++){ const a = k * 2.4, d = 5 + (k * 5 % 14); brume(g, Math.cos(a) * d, Math.sin(a) * d, .7 + (k % 3) * .2); }
   return {group: g, w: W, d: D, walk: marche, depart: DEPART,
@@ -399,6 +402,18 @@ export function setMaraisObj(i, o){
   if(seuls.has(i)){ group.remove(seuls.get(i)); seuls.delete(i); }
   montrerArbre(i, false);
   save();
+}
+/* La torche au Marais (demande de Yo, 13 octobre 2026 : « il fait vraiment sombre, j'aimerais que l'on puisse utiliser la
+   torche ») : quand il fait sombre (sombreMarais : la nuit, la pluie, comme la lumière du lieu dans main.js), la torche ou
+   la lanterne à main d'une case rapide s'allume (torche.js) ; sa lumière suit le personnage */
+export const sombreMarais = () => Math.max(nuitIci(), couvertIci() * .6);
+const lueur = new THREE.PointLight(0xFFB060, 0, 8, 1.3);
+export function eclaireMarais(x, z, torche, t){
+  const lampe = torche === "lanterne", f = torche && !lampe ? 1 + Math.sin(t * 13) * .05 + Math.sin(t * 7.3) * .04 : 1;   // la flamme vacille
+  lueur.position.set(x, 1.3, z);
+  lueur.color.setHex(lampe ? 0xFFDCA0 : 0xFFB060);
+  lueur.intensity = torche ? (lampe ? 1.9 : 1.7) * f : 0;
+  lueur.distance = lampe ? 10 : 8;
 }
 /* À chaque image (main.js), quand on est au Marais : les feux-follets dansent ; chaque seconde, les plantes suivent la
    nuit, la saison et leurs cueillettes */

@@ -6,7 +6,8 @@
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, la barque (la construire au bout du ponton, ramer au large, y pêcher le thon
    en moulinant, accoster), le voyage (vers le Marais brumeux avec sa carte, la scène qu'on passe, le retour), le Marais brumeux
-   (ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   (ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit, la torche qui
+   s'allume quand il fait sombre), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -42,7 +43,7 @@ import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../j
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci } from "../js/monstres.js";
 import { antre } from "../js/monde/grotte.js";
 import { combat, vieCombat } from "../js/combat.js";
-import { torcheAllumee } from "../js/torche.js";
+import { torcheAllumee, updateTorche } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
 import { forcerSaison, saisonDu, reglerHemisphere } from "../js/donnees.js";
@@ -557,8 +558,8 @@ export async function verifier(){
       if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
     }
   });
-  await etape("Le Marais brumeux : ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit", async () => {
-    const P = state.ponton, sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));
+  await etape("Le Marais brumeux : ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit, la torche quand il fait sombre", async () => {
+    const P = state.ponton, sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre)), torche0 = state.torche;
     /* devant : une case où il y a ce qu'on cherche, et la case d'à côté où l'on se tient, tourné vers elle */
     const devant = (f, ou) => {
       for(let i = 0; i < WM * DM; i++){
@@ -610,10 +611,17 @@ export async function verifier(){
       if(!bouton().includes("Cueillir : chou-lune")) throw new Error(`la nuit, devant un chou-lune, le bouton dit « ${bouton()} »`);
       $("#btn-act").click(); frames(1, .016);
       if(!owned("chouLune")) throw new Error("pas de chou-lune dans le sac");
-      return `${owned("boisCypres")} bois de cyprès, l'eau de brume au bocal, une rose des brumes, et la nuit un chou-lune`;
+      /* la torche (demande de Yo) : dans une case rapide, elle s'allume quand il fait sombre (la nuit), pas en plein jour */
+      hold(null); state.barre = [null, null, null]; sacAdd("torche", 2); mettreEnCase(0, "torche");
+      forcerMeteo("beau"); updateMeteo(10, null, 0, 0);                    // le ciel dégagé, tout de suite
+      forcerHeure(12.5); updateCiel(0, 0); updateTorche(.016);
+      if(torcheAllumee()) throw new Error("en plein jour, par beau temps, la torche brûle au Marais");
+      forcerHeure(23.5); updateCiel(0, 0); updateTorche(.016);
+      if(!torcheAllumee()) throw new Error("la nuit, la torche ne s'allume pas au Marais");
+      return `${owned("boisCypres")} bois de cyprès, l'eau de brume au bocal, une rose des brumes, la nuit un chou-lune ; la torche allumée la nuit, éteinte le jour`;
     } finally {
-      forcerHeure(null); updateCiel(0, 0);
-      state.sac = sac0; state.barre = barre0; hold(null);
+      forcerHeure(null); forcerMeteo(null); updateCiel(0, 0);
+      state.sac = sac0; state.barre = barre0; state.torche = torche0; hold(null);
       if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
     }
   });
