@@ -27,15 +27,16 @@
      se recueille au bocal) et ses plantes à cueillir, à leur saison, certaines la nuit (voir monde/marais.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre.
-   Demande de Yo (11 octobre 2026) : un outil ne sert que s'il est tenu en main, pris dans une case rapide ; sinon le bouton
-   dit de le prendre (`avecOutil`, `outilPour` et `prendreAction` dans barre.js). */
+   Demande de Yo (11 octobre 2026) : un outil ne sert que s'il est tenu en main, pris dans une case rapide (`avecOutil`,
+   `outilPour` dans barre.js). Demande de Yo (13 octobre 2026) : le bouton dit le nom de ce qu'on vise (`nomCible`), et
+   c'est au joueur de prendre lui-même l'outil adapté. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse,
-  PRODUITS, enSaisonPlante, quandPlante } from "./donnees.js";
+  PRODUITS, enSaisonPlante, quandPlante, CHEMINS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
+import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh, lieuEau } from "./monde/ile.js";
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ, placeMesh, colPorte } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
@@ -187,8 +188,13 @@ function plantProblem(t, plante){
 function avecOutil(famille, force, action, manque){
   const o = outilPour(famille, force);
   if(o.ou === "main") return action;
-  return prendreAction(o) || info(manque);
+  /* Demande de Yo (13 octobre 2026) : le bouton ne dit plus « Prends ta hache… » : c'est au joueur de prendre lui-même
+     l'outil adapté (le tutoriel l'expliquera). La bonne sorte d'outil en main, mais pas assez solide (une hache en pierre
+     devant un frêne) : un message dit pourquoi ; sinon, toucher ne fait rien */
+  if(tenu(famille)) return info(manque);
+  return {label: manque, run: rien};
 }
+const rien = () => {};
 /* Une graine récoltée : dans le sac (et une case rapide) ; sac plein : dans un coffre s'il y a de la place */
 function giveSeed(k){
   const r = addOwned(k, 1);
@@ -202,6 +208,45 @@ let cur = null, act = null, anim = null;              // ce qu'on vise ; son act
 const hits = new Map();                               // coups déjà donnés à chaque arbre, buisson ou rocher
 const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : t.w === GROTTE ? "g" : t.w === MARAIS ? "b" : "") + t.i;
 const info = label => ({label, run: () => toast(label)});
+/* Le nom de ce qu'on vise, affiché sur le bouton d'action (demande de Yo, 13 octobre 2026 : « le nom de cette ressource »
+   à la place de « Prends ta hache dans la case 1 » ou de « Cueillir » ; un tutoriel expliquera le jeu) : le bouton fait
+   toujours la même chose (act.label, gardé dans data-action pour la vérification). null : une case vide, le bouton garde
+   ses mots (Planter, Poser, Creuser, Combler, Accrocher) */
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const sansArticle = s => cap(s.replace(/^(le |la |les |l')/, ""));
+const EMOJI_ARBRE = {if: "🌲", cypres: "🌲", houx: "🌿", sureau: "🌿", arbreLanterne: "🏮"};
+const EMOJI_FLEUR = {tulipe: "🌷", rose: "🌹", tournesol: "🌻", coquelicot: "🌺"};
+const PRECIEUX = new Set(["rockQuartz", "rockAmethyste", "rockGrenat", "rockGeode"]);
+function nomCible(t){
+  if(t.sol) return `${SOL[t.sol].emoji} ${SOL[t.sol].nom}`;
+  if(t.pelle === "deterrer") return nomCible({w: ILE, i: t.i, o: map.obj[t.i]});
+  if(t.pelle === "enlever") return `🟫 Chemin de ${CHEMINS[state.chemins[t.i]].nom}`;
+  if(t.pelle) return null;
+  if(t.o === "coffre"){ const n = state.coffres.findIndex(c => c.id === (state.ile[t.i] || {}).id); return `🗃️ Coffre${n >= 0 ? ` ${n + 1}` : ""}`; }
+  if(t.facade) return t.f ? `${MEUBLES[t.f.type].emoji} ${MEUBLES[t.f.type].nom}` : null;
+  if(MEUBLES[t.o]) return `${MEUBLES[t.o].emoji} ${MEUBLES[t.o].nom}`;
+  if(t.eau) return t.w === FORET ? "💧 Ruisseau" : t.w === MARAIS ? "💧 Chenal" : t.i >= 0 && lieuEau(t.i) === "etang" && !enBarque() ? "💧 Étang" : "🌊 Mer";
+  if(t.galerie) return "🪨 Roche fissurée";
+  if(t.coeur) return coeurEveille() ? "💖 Cœur de la mine" : "✨ Lueur dans la roche";
+  if(t.o === "tresor") return "🎁 Coffre au trésor";
+  if(t.o === "racines") return "🕳️ Racines du vieux chêne";
+  if(t.o === "grandChene" || t.o === "bloc") return "👑 Grand Chêne millénaire";
+  if(t.o === "chicot") return "🪵 Arbre mort";
+  if(t.o === "puits") return "🕳️ Puits aux Brumes";
+  if(t.w === MARAIS && plante(t.o)) return `${PRODUITS[t.o].emoji} ${PRODUITS[t.o].nom}`;
+  const jeune = !!t.o && t.w === ILE && growth(t.i) < 1;
+  if(FLEURS[t.o]) return jeune ? `🌱 Jeune ${FLEURS[t.o].nom.toLowerCase()}` : `${EMOJI_FLEUR[t.o] || "🌼"} ${FLEURS[t.o].nom}`;
+  if(t.o === "herbe") return jeune ? "🌱 Jeunes herbes" : "🌾 Herbes hautes";
+  if(t.o === "thym") return jeune ? "🌱 Jeune thym" : "🌿 Thym";
+  if(t.o === "buisson") return jeune ? "🌱 Jeune buisson" : "🫐 Buisson de baies";
+  if(t.o === "tree" || ESSENCES.includes(t.o)){ const n = sansArticle(RECOLTE[t.o].nom); return jeune ? `🌱 Jeune ${n.toLowerCase()}` : `${EMOJI_ARBRE[t.o] || "🌳"} ${n}`; }
+  if(RECOLTE[t.o]) return `${t.o === "rockOr" ? "✨" : PRECIEUX.has(t.o) ? "💎" : "🪨"} ${sansArticle(RECOLTE[t.o].nom)}`;
+  return null;
+}
+function actionNommee(t){
+  const a = actionOf(t), n = a && nomCible(t);
+  return n ? {...a, nom: n} : a;
+}
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.pelle) return actionTerrain(t);
@@ -311,10 +356,12 @@ export function updateRecolte(dt, active){
   const torche = active && !anim && inGrotte() && torcheAction();   // la torche posée au sol, tout près (demande de Yo)
   const barque = active && !anim && milieu === "ile" && barqueAction();   // au bout du ponton, ou en barque (étape 1.13)
   const voyage = active && !anim && voyageAction();   // sur l'embarcadère du Marais : rentrer au village
-  act = enPeche() ? pecheAction() : bete || entree || torche || barque || voyage || (cur && actionOf(cur));
+  act = enPeche() ? pecheAction() : bete || entree || torche || barque || voyage || (cur && actionNommee(cur));
   btn.classList.toggle("ferrer", !!(act && act.alerte));
   if(!act){ if(!btn.hidden) btn.hidden = true; return; }
-  if(btn.textContent !== act.label) btn.textContent = act.label;
+  const texte = act.nom || act.label;                   // le nom de ce qu'on vise ; sinon (pêche, case vide) ses mots
+  if(btn.textContent !== texte) btn.textContent = texte;
+  if(btn.dataset.action !== act.label) btn.dataset.action = act.label;
   if(btn.hidden) btn.hidden = false;
 }
 btn.addEventListener("click", () => {

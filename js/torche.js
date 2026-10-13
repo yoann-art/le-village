@@ -117,9 +117,9 @@ export function torcheAction(){
   if(!sol) return null;
   const q = player.position;
   if(Math.hypot(q.x - sol.x, q.z - sol.z) > 1.1) return null;
-  const quoi = sol.lanterne ? "🏮 Reprendre la lanterne" : "🔥 Reprendre la torche";
-  if(deuxMains()) return {label: `${quoi} (lâche d'abord ton arc)`, run: () => toast(`L'arc se tient à deux mains : prends une autre arme ou un outil, puis reprends ta ${sol.lanterne ? "lanterne" : "torche"}`, 3200)};
-  return {label: quoi, run: reprendre};
+  const quoi = sol.lanterne ? "🏮 Reprendre la lanterne" : "🔥 Reprendre la torche", nom = sol.lanterne ? "🏮 Lanterne" : "🔥 Torche";   // son nom (demande de Yo)
+  if(deuxMains()) return {label: `${quoi} (lâche d'abord ton arc)`, nom, run: () => {}};
+  return {label: quoi, nom, run: reprendre};
 }
 function reprendre(){
   if(!sol) return;

@@ -6,6 +6,7 @@
    brumeux (monde/marais.js). Sur l'embarcadère du Marais, « 🛶 Rentrer au village » : le trajet du retour, et l'on se
    retrouve au bout du ponton, la barque amarrée. Rouvrir le jeu pendant un voyage : on est au bout du ponton. */
 import { state } from "./sauvegarde.js";
+import { BARQUE } from "./donnees.js";
 import { centerOf } from "./monde/ile.js";
 import { interior } from "./monde/interieurs.js";
 import { barqueModele } from "./monde/ponton.js";
@@ -78,7 +79,7 @@ export function updateVoyage(dt){
 export function voyageAction(){
   const p = currentPlace();
   if(voyage || !p || p.b.type !== "marais" || !surEmbarcadere(player.position.x, player.position.z)) return null;
-  return {label: "🛶 Rentrer au village", run: rentrer};
+  return {label: "🛶 Rentrer au village", nom: `🛶 ${BARQUE.nom[0].toUpperCase() + BARQUE.nom.slice(1)}`, run: rentrer};   // la barque amarrée (demande de Yo : son nom)
 }
 /* Pour la vérification automatique : passer la scène */
 export const passerTrajet = () => { if(voyage) voyage.t = TRAJET; };

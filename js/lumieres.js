@@ -126,7 +126,7 @@ function bouton(place){
     const [w, d] = footOf(it);
     return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
   }) || null : null;
-  if(proche){ const txt = owned("torche") ? "🔥 Poser une torche" : "🔥 Torchère : il lui faut une torche"; if(btn.textContent !== txt) btn.textContent = txt; }
+  if(proche){ const m = MEUBLES[proche.type], txt = `${m.emoji} ${m.nom}`; if(btn.textContent !== txt) btn.textContent = txt; }   // son nom (demande de Yo)
   if(btn.hidden === !!proche) btn.hidden = !proche;
 }
 btn.addEventListener("click", () => { const it = proche; if(it) poserTorche(it, () => refreshItemMesh(it)); });

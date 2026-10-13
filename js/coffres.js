@@ -127,10 +127,12 @@ export function updateCoffrePiece(active){
       const [w, d] = footOf(it);
       return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
     });
-    if(proche) actPiece = {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(proche.reserve)};
+    if(proche){ const co = state.coffres.find(c => c.id === proche.reserve);   // le bouton dit son nom (demande de Yo, 13 octobre 2026)
+      actPiece = {label: "🗃️ Ouvrir le coffre", nom: co ? `🗃️ ${nomCoffre(co)}` : "🗃️ Coffre", run: () => openCoffre(proche.reserve)}; }
     else if(state.main && POSABLES[state.main] && POSABLES[state.main].pose === "coffre") actPiece = {label: "🗃️ Poser le coffre", run: () => poserDansPiece(place)};
   }
-  if(actPiece && btnPiece.textContent !== actPiece.label) btnPiece.textContent = actPiece.label;
+  const texte = actPiece && (actPiece.nom || actPiece.label);
+  if(actPiece && btnPiece.textContent !== texte){ btnPiece.textContent = texte; btnPiece.dataset.action = actPiece.label; }
   if(btnPiece.hidden === !!actPiece) btnPiece.hidden = !actPiece;
 }
 btnPiece.addEventListener("click", () => { if(actPiece) actPiece.run(); });

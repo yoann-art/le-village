@@ -514,12 +514,14 @@ const rien = () => {};
 export function chasseAction(){
   if(tir && !tir.fini) return {label: "🏹 …", run: rien};
   const c = blanc && blanc.cadeau, p = player.position;
-  if(c && Math.hypot(c.x - p.x, c.z - p.z) < 1.4) return {label: "✨ Ramasser le bois d'argent", run: ramasser};
+  if(c && Math.hypot(c.x - p.x, c.z - p.z) < 1.4) return {label: "✨ Ramasser le bois d'argent", nom: "✨ Bois d'argent", run: ramasser};
   if(!arcDuSac()) return null;
   const a = cible();
   if(!a) return null;
   const d = Math.hypot(a.x - p.x, a.z - p.z);
-  return {label: `🏹 Tirer : ${GIBIER[a.k].nom.toLowerCase()} (${Math.round(chanceDe(d, flecheDuSac() || "fleche") * 100)} %)`, run: () => { if(betes.includes(a) && !tir) tirer(a); }};
+  return {label: `🏹 Tirer : ${GIBIER[a.k].nom.toLowerCase()} (${Math.round(chanceDe(d, flecheDuSac() || "fleche") * 100)} %)`,
+    nom: `${GIBIER[a.k].emoji || "🦌"} ${GIBIER[a.k].nom}`,   // le bouton dit son nom (demande de Yo, 13 octobre 2026)
+    run: () => { if(betes.includes(a) && !tir) tirer(a); }};
 }
 
 /* ----- À chaque image (recolte.js) ; ou : le milieu, la chasse n'a lieu que dans la forêt ----- */

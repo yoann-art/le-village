@@ -136,7 +136,7 @@ export async function verifier(){
   await etape("Ramasser au sol", async () => {
     const i = +Object.keys(state.sol)[0];
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); frames(3);
-    if(!$("#btn-act").textContent.includes("Ramasser")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Ramasser")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(!state.sac.length) throw new Error("rien dans le sac");
     return state.sac.map(it => `${it.n} ${it.k}`).join(", ");
@@ -294,18 +294,23 @@ export async function verifier(){
     }
     return null;
   };
-  await etape("Couper un arbre", async () => {
-    sacAdd("hachePierre", 1); enMain("hachePierre");
+  await etape("Couper un arbre ; le bouton dit le nom de ce qu'on vise (« 🌳 Chêne »), et sans hache en main il ne fait rien", async () => {
+    sacAdd("hachePierre", 1); hold(null);
     const t = arbreLibre();
     if(!t) throw new Error("aucun arbre accessible");
     const bois = owned("bois");
-    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1);
+    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
+    if($("#btn-act").textContent !== "🌳 Chêne") throw new Error(`devant le chêne, le bouton dit « ${$("#btn-act").textContent} » au lieu de « 🌳 Chêne »`);
+    $("#btn-act").click(); frames(25);                 // sans hache en main : au joueur de la prendre (demande de Yo)
+    if(owned("bois") !== bois || state.main) throw new Error("sans hache en main, toucher le chêne a fait quelque chose");
+    enMain("hachePierre"); frames(1, .016);
+    if($("#btn-act").textContent !== "🌳 Chêne") throw new Error(`la hache en main, le bouton dit « ${$("#btn-act").textContent} »`);
     for(let k = 0; k < 3; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
     if(map.obj[idx(...t)]) throw new Error("l'arbre est toujours là");
     const n = owned("bois") - bois;
     if(n <= 0) throw new Error("pas de bois gagné");
     if(n > 6) throw new Error(`${n} bois pour 3 coups : un coup ne donne plus qu'un bois (avec le bonus de la Scierie, 2 au plus)`);
-    return `+${n} bois en 3 coups`;
+    return `« 🌳 Chêne » sur le bouton ; sans hache, rien ; +${n} bois en 3 coups`;
   });
   await etape("L'usure : un outil s'use à chaque coup, sa jauge baisse, puis il se casse et disparaît", async () => {
     const k = "hachePierre";
@@ -345,13 +350,13 @@ export async function verifier(){
     let coups = 0;
     for(let k = 0; k < 8 && state.entreeMine === "eboulee"; k++){
       frames(3);
-      if(!$("#btn-act").textContent.includes("Déblayer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » devant l'éboulement`);
+      if(!$("#btn-act").dataset.action.includes("Déblayer")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » devant l'éboulement`);
       $("#btn-act").click(); coups++;
     }
     if(state.entreeMine !== "deblayee") throw new Error("l'éboulement n'est pas dégagé");
     addOwned("planche", 15); addOwned("pierre", 10); addOwned("torche", 4);
     frames(3);
-    if(!$("#btn-act").textContent.includes("étais")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » devant l'entrée dégagée`);
+    if(!$("#btn-act").dataset.action.includes("étais")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » devant l'entrée dégagée`);
     $("#btn-act").click();
     if(state.entreeMine) throw new Error("les étais ne sont pas posés");
     return `${coups} coups de pioche, puis les étais : la mine est ouverte`;
@@ -368,19 +373,19 @@ export async function verifier(){
     try {
       const avant = devantGalerie(2);
       placePlayer(avant.x, avant.z, avant.fx, avant.fz); frames(3);
-      if(!$("#btn-act").textContent.includes("pioche en cuivre")) throw new Error(`sans pioche en cuivre, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("pioche en cuivre")) throw new Error(`sans pioche en cuivre, le bouton dit « ${$("#btn-act").dataset.action} »`);
       sacAdd("piocheCuivre", 1); enMain("piocheCuivre");
       let coups = 0;
       for(let k = 0; k < 20 && !galerieOuverte(2); k++){
         const p = devantGalerie(2);
         placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
-        if(!$("#btn-act").textContent.includes("Creuser la galerie")) throw new Error(`devant la galerie, le bouton dit « ${$("#btn-act").textContent} »`);
+        if(!$("#btn-act").dataset.action.includes("Creuser la galerie")) throw new Error(`devant la galerie, le bouton dit « ${$("#btn-act").dataset.action} »`);
         $("#btn-act").click(); coups++;
       }
       if(!galerieOuverte(2)) throw new Error("la galerie n'est pas ouverte");
       const p3 = devantGalerie(3);
       placePlayer(p3.x, p3.z, p3.fx, p3.fz); frames(3);
-      if(!$("#btn-act").textContent.includes("pioche en bronze")) throw new Error(`devant la galerie de la géode, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("pioche en bronze")) throw new Error(`devant la galerie de la géode, le bouton dit « ${$("#btn-act").dataset.action} »`);
       const sortes = [...new Set(Object.entries(state.mine.rocks).filter(([t]) => salleEn(+t) === 2).map(([, o]) => o))];
       if(!sortes.includes("rockEtain")) throw new Error("pas d'étain dans la salle de l'étain");
       return `${coups} coups de pioche ; dans la salle de l'étain : ${sortes.join(", ")} ; la géode attend la pioche en bronze`;
@@ -405,7 +410,7 @@ export async function verifier(){
     if(!owned(outil)) sacAdd(outil, 1);
     enMain(outil);
     for(let k = 0; k < RECOLTE[sorte].coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
-    if(foretObj(t.i)) throw new Error(`${RECOLTE[sorte].nom} est toujours là (le bouton dit « ${$("#btn-act").textContent} »)`);
+    if(foretObj(t.i)) throw new Error(`${RECOLTE[sorte].nom} est toujours là (le bouton dit « ${$("#btn-act").dataset.action} »)`);
     if(owned(bois) <= avant) throw new Error(`pas de ${objet(bois).nom.toLowerCase()} gagné`);
     await sortir();
     return `${RECOLTE[sorte].nom} coupé, +${owned(bois) - avant} ${objet(bois).nom.toLowerCase()}`;
@@ -419,11 +424,11 @@ export async function verifier(){
     }
     if(!t) throw new Error("aucun bord de l'eau");
     placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
-    if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2)) throw new Error("pas d'ombre de poisson possible ici");   // une ombre devant soi
     $("#btn-act").click();
     let k = 0;
-    while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+    while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
     if(k >= 400) throw new Error("le poisson ne mord jamais (il ne vient pas au bouchon)");
     $("#btn-act").click();
     const p = state.sac.find(it => POISSONS[it.k]);
@@ -438,12 +443,12 @@ export async function verifier(){
     keys.d = 1; for(let k = 0; k < 120; k++) updatePlayer(.016); keys.d = 0;   // marcher jusqu'au bout
     if(tileOf(player.position.z) < P.z + P.n - 2) throw new Error("on ne marche pas sur le ponton");
     frames(2);
-    if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0);
     if(!lacherOmbre(player.position.x, player.position.z + 2)) throw new Error("pas d'ombre de poisson possible au bout du ponton");
     $("#btn-act").click();
     let k = 0;
-    while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+    while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
     if(k >= 400) throw new Error("rien ne mord au bout du ponton");
     $("#btn-act").click(); frames(40);
     if(state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0) <= avant) throw new Error("pas de poisson dans le sac");
@@ -455,12 +460,12 @@ export async function verifier(){
     const i = map.obj.findIndex((o, j) => o === "thym" && libre(j + N));          // rien juste devant (vers le bas)
     if(i < 0) throw new Error("pas de thym sur l'île");
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); frames(2);   // debout dans la touffe
-    if(!$("#btn-act").textContent.includes("thym")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("thym")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned("thym");
     $("#btn-act").click();
     if(owned("thym") <= avant) throw new Error("pas de thym dans le sac");
     frames(2);
-    if(!$("#btn-act").textContent.includes("repousse")) throw new Error(`après la cueillette, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("repousse")) throw new Error(`après la cueillette, le bouton dit « ${$("#btn-act").dataset.action} »`);
     return `${map.obj.filter(o => o === "thym").length} touffes sur l'île`;
   });
   await etape("Le carnet de pêche", async () => {
@@ -491,14 +496,14 @@ export async function verifier(){
     const sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));   // rendus à la fin
     place(3); sacAdd("planche", 20); sacAdd("fibre", 8); hold(null);
     placePlayer(centerOf(P.x), centerOf(P.z + P.n - 1), 1, 0); frames(2);          // au bout du ponton, face à la borne
-    if(!$("#btn-act").textContent.includes("Construire la barque")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Construire la barque")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click(); await wait(200);
     const b = $("#sheet [data-barque]");
     if(!b || b.disabled) throw new Error("la barque ne se construit pas");
     b.click(); await wait(300);
     if(!state.barque) throw new Error("les travaux de la barque ne commencent pas");
     state.barque.fin = Date.now() - 1000; updateBarque(.016); frames(2);          // sans attendre ses 10 minutes
-    if(!$("#btn-act").textContent.includes("Libellule")) throw new Error(`la barque finie, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Libellule")) throw new Error(`la barque finie, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click(); await wait(200);
     if(!$("#sheet [data-barque-ramer]")) throw new Error("la fiche de la barque ne s'ouvre pas");
     $("#sheet [data-barque-ramer]").click(); await wait(300);
@@ -510,20 +515,20 @@ export async function verifier(){
       /* le thon, au large : il mord, on le ferre, puis il faut mouliner */
       sacAdd("canneBois", 1); enMain("canneBois");
       placePlayer(player.position.x, player.position.z, 0, 1); frames(2);
-      if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au large, la canne en main, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au large, la canne en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
       if(!lacherOmbre(player.position.x, player.position.z + 2, "thon")) throw new Error("pas d'ombre de thon possible au large");
       $("#btn-act").click();
       let k = 0;
-      while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+      while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
       if(k >= 400) throw new Error("le thon ne mord pas");
       $("#btn-act").click(); frames(1);
-      if(!$("#btn-act").textContent.includes("Mouline")) throw new Error(`le thon ferré, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Mouline")) throw new Error(`le thon ferré, le bouton dit « ${$("#btn-act").dataset.action} »`);
       for(let n = 0; n < 10 && !owned("thon"); n++){ $("#btn-act").click(); frames(1); }
       if(!owned("thon")) throw new Error("le thon n'est pas dans le sac");
       frames(40);
       /* revenir au ponton, et accoster */
       placePlayer(amarre.x, amarre.z + .6, 0, -1); frames(2);
-      if(!$("#btn-act").textContent.includes("Accoster")) throw new Error(`près du ponton, en barque, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Accoster")) throw new Error(`près du ponton, en barque, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click();
       if(enBarque() || !islandWalkable(player.position.x, player.position.z)) throw new Error("on n'accoste pas sur le ponton");
       return "construite, au large en ramant, un thon pris en moulinant, puis accostée";
@@ -536,7 +541,7 @@ export async function verifier(){
     state.cartes = {...(cartes || {})}; delete state.cartes.marais;
     try {
       hold(null); placePlayer(centerOf(P.x), centerOf(P.z + P.n - 1), 1, 0); frames(2);
-      if(!$("#btn-act").textContent.includes("Libellule")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Libellule")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click(); await wait(200);
       const sans = $("#sheet [data-barque-marais]");
       if(!sans || !sans.disabled) throw new Error("sans la carte du Marais, on peut partir");
@@ -545,13 +550,13 @@ export async function verifier(){
       frames(2);                                       // le bouton d'action, remis à jour (la machine de GitHub est lente)
       $("#btn-act").click(); await wait(300);
       const avec = $("#sheet [data-barque-marais]");
-      if($("#sheetWrap").hidden || !avec || avec.disabled) throw new Error(`avec la carte, pas de bouton « Partir » (le bouton d'action dit « ${$("#btn-act").textContent} »)`);
+      if($("#sheetWrap").hidden || !avec || avec.disabled) throw new Error(`avec la carte, pas de bouton « Partir » (le bouton d'action dit « ${$("#btn-act").dataset.action} »)`);
       avec.click();
       if(!await attendre(() => currentPlace() && currentPlace().b.type === "trajet") || !voyageEnCours()) throw new Error("le trajet ne commence pas");
       passerTrajet();
       if(!await attendre(() => currentPlace() && currentPlace().b.type === "marais", 8000)) throw new Error("on n'arrive pas au Marais");
       frames(2);
-      if(!$("#btn-act").textContent.includes("Rentrer au village")) throw new Error(`sur l'embarcadère du Marais, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Rentrer au village")) throw new Error(`sur l'embarcadère du Marais, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click();
       if(!await attendre(() => currentPlace() && currentPlace().b.type === "trajet")) throw new Error("le trajet du retour ne commence pas");
       passerTrajet();
@@ -577,7 +582,7 @@ export async function verifier(){
       }
       throw new Error("introuvable au Marais");
     };
-    const bouton = () => $("#btn-act").textContent;
+    const bouton = () => $("#btn-act").dataset.action;
     const face = t => { placePlayer(t.x, t.z, t.fx, t.fz); frames(2, .016); };
     try {
       allerA({type: "marais"}, DEPART, {x: centerOf(P.x), z: centerOf(P.z + P.n - 1)});
@@ -633,7 +638,7 @@ export async function verifier(){
   });
   await etape("La vie du Marais brumeux : un insecte, un oiseau, un poisson des chenaux, un gibier", async () => {
     const P = state.ponton, sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));
-    const bouton = () => $("#btn-act").textContent;
+    const bouton = () => $("#btn-act").dataset.action;
     pauseChasse(true);
     try {
       allerA({type: "marais"}, DEPART, {x: centerOf(P.x), z: centerOf(P.z + P.n - 1)});
@@ -704,14 +709,16 @@ export async function verifier(){
     }
     if(i < 0) throw new Error("pas de place pour un frêne");
     const x = i % N, z = Math.floor(i / N);
-    const face = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(1, .016); return $("#btn-act").textContent; };
+    const face = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(1, .016); return $("#btn-act").dataset.action; };
     state.sac = state.sac.filter(it => !OUTILS[it.k] || OUTILS[it.k].famille !== "hache");
     state.barre = state.barre.map(it => it && OUTILS[it.k] && OUTILS[it.k].famille === "hache" ? null : it);
     place(2); sacAdd("hachePierre", 1); enMain("hachePierre");
     setObj(i, "frene");
     if(!face().includes("hache en cuivre")) throw new Error(`avec une hache en pierre, devant le frêne, le bouton dit « ${face()} »`);
     sacAdd("hacheCuivre", 1);
-    if(!face().includes("dans le sac")) throw new Error(`la hache en cuivre dans le sac, le bouton dit « ${face()} » (il devrait dire de la mettre dans une case)`);
+    /* la hache en cuivre dans le sac : c'est au joueur de la prendre en main (demande de Yo, 13 octobre 2026) ; le bouton dit
+       le nom du frêne, et la hache en pierre en main explique pourquoi elle ne suffit pas */
+    if(!face().includes("hache en cuivre") || $("#btn-act").textContent !== "🌳 Frêne") throw new Error(`la hache en cuivre dans le sac, le bouton dit « ${$("#btn-act").textContent} » (${face()})`);
     enMain("hacheCuivre");
     if(!face().includes("Couper le frêne")) throw new Error(`avec une hache en cuivre, le bouton dit « ${face()} »`);
     const avant = owned("boisFrene");
@@ -737,10 +744,10 @@ export async function verifier(){
     }
     if(!t) throw new Error("pas de case d'herbe libre sur la place");
     placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
-    if(!$("#btn-act").textContent.includes("Creuser")) throw new Error(`face à l'herbe, la pelle en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Creuser")) throw new Error(`face à l'herbe, la pelle en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     for(let k = 0; k < OUTILS.pelleBois.coups; k++){ $("#btn-act").click(); frames(1); }
     if(map.type[t.i] !== "water" || state.terrain[t.i] !== "water") throw new Error(`après ${OUTILS.pelleBois.coups} coups de pelle, la case n'est pas de l'eau`);
-    if(!$("#btn-act").textContent.includes("Combler")) throw new Error(`face à l'eau creusée, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Combler")) throw new Error(`face à l'eau creusée, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click(); frames(1);
     if(map.type[t.i] !== "grass" || state.terrain[t.i]) throw new Error("la case n'est pas comblée");
     hold(null);
@@ -771,7 +778,7 @@ export async function verifier(){
     const p = player.position; placePlayer(p.x, p.z, -1, 0);
     for(const dx of [0, -1]) pickUp(idx(tileOf(p.x) + dx, tileOf(p.z)));   // un petit caillou revenu là pendant l'essai cacherait le chemin
     frames(1);
-    if(!$("#btn-act").textContent.includes("Enlever")) throw new Error(`face au chemin, la pelle en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Enlever")) throw new Error(`face au chemin, la pelle en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const pl = owned("planche"); $("#btn-act").click(); frames(1);
     if(owned("planche") !== pl + 1) throw new Error("la planche du chemin enlevé n'est pas rendue");
     hold(null);
@@ -793,21 +800,21 @@ export async function verifier(){
     setObj(t.i, k, Date.now() - FLEUR_RARETE[FLEURS[k].rarete].pousse * 1000 - 1000);
     hold(null); keys.u = keys.d = keys.l = keys.r = 0;
     placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
-    if(!$("#btn-act").textContent.includes("Cueillir")) throw new Error(`face à ${FLEURS[k].nom.toLowerCase()} en fleur, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Cueillir")) throw new Error(`face à ${FLEURS[k].nom.toLowerCase()} en fleur, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned(k);
     $("#btn-act").click(); frames(1);
     if(owned(k) !== avant + 1) throw new Error("la fleur cueillie n'est pas dans le sac");
-    if(!$("#btn-act").textContent.includes("refleurit")) throw new Error(`cueillie, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("refleurit")) throw new Error(`cueillie, le bouton dit « ${$("#btn-act").dataset.action} »`);
     /* la pelle la déterre : sa graine revient dans le sac */
     if(!owned("pelleBois")) sacAdd("pelleBois", 1);
     enMain("pelleBois"); frames(1);
     const g = graineDeFleur(k), gAvant = owned(g);
-    if(!$("#btn-act").textContent.includes("Déterrer")) throw new Error(`pelle en main, face à la fleur, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Déterrer")) throw new Error(`pelle en main, face à la fleur, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click(); frames(1);
     if(map.obj[t.i] || owned(g) !== gAvant + 1) throw new Error("déterrée, la fleur ne rend pas sa graine");
     /* la graine replantée */
     enMain(g); frames(1);
-    if(!$("#btn-act").textContent.includes("Planter")) throw new Error(`la graine en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Planter")) throw new Error(`la graine en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click(); frames(1);
     if(map.obj[t.i] !== k) throw new Error("la graine n'est pas plantée");
     /* bug de Yo (v1.9.8) : le bouton d'un long message ne doit jamais aller sous le joystick (le texte de sa capture) */
@@ -829,7 +836,7 @@ export async function verifier(){
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
     lacherInsecte("fourmi", player.position.x, player.position.z + .7, .03);
     frames(2);
-    if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned("fourmi");
     $("#btn-act").click();
     if(owned("fourmi") <= avant) throw new Error("pas de fourmi dans le sac");
@@ -847,7 +854,7 @@ export async function verifier(){
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
     lacherInsecte("luciole", player.position.x, player.position.z + .7, .03);
     frames(2);
-    if(!$("#btn-act").textContent.includes("🫙")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("🫙")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned("luciole");
     $("#btn-act").click();
     if(owned("luciole") <= avant) throw new Error("pas de luciole dans le sac");
@@ -867,9 +874,9 @@ export async function verifier(){
     if(i < 0) throw new Error("pas de place libre");
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
     lacherInsecte("fourmi", player.position.x, player.position.z + 1.6, .03); frames(2);
-    if(!$("#btn-act").hidden && $("#btn-act").textContent.includes("Attraper")) throw new Error("le filet en bois attrape déjà à 1,6 P");
+    if(!$("#btn-act").hidden && $("#btn-act").dataset.action.includes("Attraper")) throw new Error("le filet en bois attrape déjà à 1,6 P");
     sacAdd("filetCuivre", 1); enMain("filetCuivre"); frames(2);
-    if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`avec le filet en cuivre, à 1,6 P, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Attraper")) throw new Error(`avec le filet en cuivre, à 1,6 P, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const fourmis = owned("fourmi");
     $("#btn-act").click(); frames(40);
     if(owned("fourmi") <= fourmis) throw new Error("la fourmi n'est pas prise au filet en cuivre");
@@ -882,7 +889,7 @@ export async function verifier(){
       for(const j of buissons){ setObj(j, "buisson"); setEtat(j, {vide: Date.now()}); }
       sans("arrosoir"); sacAdd("arrosoirBronze", 1); enMain("arrosoirBronze"); state.eau = OUTILS.arrosoirBronze.eau;
       placePlayer(centerOf(b % N), centerOf(Math.floor(b / N) + 1) + .1, 0, -1); frames(1, .016);
-      if(!$("#btn-act").textContent.includes("Arroser")) throw new Error(`devant un buisson vide, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Arroser")) throw new Error(`devant un buisson vide, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click(); frames(10);
       const arroses = buissons.filter(j => state.ile[j] && state.ile[j].arrose).length;
       if(arroses !== 3) throw new Error(`l'arrosoir en bronze a arrosé ${arroses} buisson(s) au lieu de 3`);
@@ -903,7 +910,7 @@ export async function verifier(){
     try {
       $("#btn-act").click();
       let k = 0;
-      while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+      while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
       if(k >= 400) throw new Error("le poisson ne mord jamais");
       $("#btn-act").click();
       if(owned("carpeOr")) throw new Error("la canne en bois a retenu un poisson légendaire");
@@ -920,7 +927,7 @@ export async function verifier(){
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
     lacherOiseau("moineau", player.position.x, player.position.z + 1.4);
     frames(2);
-    if(!$("#btn-act").textContent.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned("moineau");
     $("#btn-act").click();
     if(owned("moineau") <= avant) throw new Error("pas de moineau dans le sac");
@@ -949,20 +956,20 @@ export async function verifier(){
     const p = player.position, pris = [];
     /* un phasme sur la rive, puis un pic vert posé un peu plus loin */
     lacherInsecte("phasme", p.x - t.dz * .7, p.z + t.dx * .7, .1); frames(2);
-    if(!$("#btn-act").textContent.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas d'insecte à attraper)`);
+    if(!$("#btn-act").dataset.action.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » (pas d'insecte à attraper)`);
     $("#btn-act").click(); frames(40);
     if(!state.carnet.insectes.phasme) throw new Error("le phasme n'est pas au carnet");
     lacherOiseau("picVert", p.x + t.dz * 1.4, p.z - t.dx * 1.4); frames(2);
-    if(!$("#btn-act").textContent.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas d'oiseau)`);
+    if(!$("#btn-act").dataset.action.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » (pas d'oiseau)`);
     $("#btn-act").click(); frames(40);
     if(!state.carnet.oiseaux.picVert) throw new Error("le pic vert n'est pas au carnet");
     /* pêcher : la canne en main, une ombre dans l'eau, juste devant */
     enMain("canneBois"); frames(2);
-    if(!$("#btn-act").textContent.includes("Lancer")) throw new Error(`au bord du ruisseau, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au bord du ruisseau, le bouton dit « ${$("#btn-act").dataset.action} »`);
     if(!lacherOmbre(fcx(t.i) + t.dx * .3, fcz(t.i) + t.dz * .3)) throw new Error("pas d'ombre de poisson possible dans le ruisseau");
     $("#btn-act").click();
     let k = 0;
-    while(!$("#btn-act").textContent.includes("Ferrer") && k < 400){ frames(1); k++; }
+    while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
     if(k >= 400) throw new Error("rien ne mord dans le ruisseau");
     $("#btn-act").click();
     const poisson = Object.keys(state.carnet.poissons).find(f => [].concat(POISSONS[f].lieu).some(l => l === "ruisseau" || l === "source"));
@@ -982,7 +989,7 @@ export async function verifier(){
     /* un chevreuil à 2,5 P, du côté d'où vient le vent : il ne nous sent pas */
     const p = player.position, w = vent(), avant = owned("viandeGibier");
     lacherGibier("chevreuil", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
-    if(!$("#btn-act").textContent.includes("Tirer")) throw new Error(`le bouton dit « ${$("#btn-act").textContent} » (pas de gibier à portée)`);
+    if(!$("#btn-act").dataset.action.includes("Tirer")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » (pas de gibier à portée)`);
     $("#btn-act").click();
     let k = 0;
     while(!state.carnet.gibier.chevreuil && k < 60){ frames(1); k++; }
@@ -992,7 +999,7 @@ export async function verifier(){
     frames(40);
     /* le présent du Cerf blanc, posé devant soi */
     place(1); lacherCerfBlanc(true); frames(2);
-    if(!$("#btn-act").textContent.includes("bois d'argent")) throw new Error(`devant le présent du Cerf blanc, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("bois d'argent")) throw new Error(`devant le présent du Cerf blanc, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(!owned("boisArgent") || !state.cerfBlanc) throw new Error("le bois d'argent n'est pas dans le sac");
     await sortir();
@@ -1010,9 +1017,9 @@ export async function verifier(){
       const p = player.position, w = vent(), pierre = owned("fleche"), bronze = owned("flecheBronze");
       lacherGibier("chevreuil", p.x - w.x * 5, p.z - w.z * 5); frames(2);
       /* la bête peut avoir bougé un peu (machine de GitHub lente) : une petite marge autour de 5 P */
-      const m = $("#btn-act").textContent.match(/\((\d+) %\)/), pct = m ? +m[1] : 0;
+      const m = $("#btn-act").dataset.action.match(/\((\d+) %\)/), pct = m ? +m[1] : 0;
       const bas = Math.round(chanceDe(5.3, "flecheBronze") * 100), haut = Math.round(chanceDe(4.7, "flecheBronze") * 100);
-      if(pct < bas || pct > haut) throw new Error(`à 5 P avec une flèche en bronze, le bouton dit « ${$("#btn-act").textContent} » (attendu entre ${bas} et ${haut} %)`);
+      if(pct < bas || pct > haut) throw new Error(`à 5 P avec une flèche en bronze, le bouton dit « ${$("#btn-act").dataset.action} » (attendu entre ${bas} et ${haut} %)`);
       if(pct <= Math.round(chanceDe(4.7, "fleche") * 100)) throw new Error("la flèche en bronze n'est pas plus sûre que celle en pierre");
       const attendu = `${pct} %`;
       lacherGibier("chevreuil", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
@@ -1225,7 +1232,7 @@ export async function verifier(){
       enMain("epeeBois"); await wait(200);
       const q = player.position;
       placePlayer(q.x + .3, q.z, -1, 0); frames(2);
-      if(!$("#btn-act").textContent.includes("Reprendre la torche")) throw new Error(`près de la torche posée, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Reprendre la torche")) throw new Error(`près de la torche posée, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click();
       if(torcheSol()) throw new Error("la torche n'est pas reprise");
       /* la lanterne à main (morceau 4 des lumières) : elle passe avant la torche, qui ne brûle plus ; l'arc la pose au sol */
@@ -1238,7 +1245,7 @@ export async function verifier(){
       enMain("epeeBois"); await wait(200);
       const l = player.position;
       placePlayer(l.x + .3, l.z, -1, 0); frames(2);
-      if(!$("#btn-act").textContent.includes("Reprendre la lanterne")) throw new Error(`près de la lanterne posée, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Reprendre la lanterne")) throw new Error(`près de la lanterne posée, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click();
       if(torcheSol() || dansCase("lanterneMain") < 0) throw new Error("la lanterne n'est pas reprise dans une case");
       return "l'épée du sac ne frappe pas ; l'arc pose la torche au sol ; un loup vaincu d'une flèche en bronze, la flèche rendue ; la torche reprise ; la lanterne à main allumée à sa place, posée pour l'arc, reprise";
@@ -1261,7 +1268,7 @@ export async function verifier(){
     let p = player.position;
     const w = vent();
     lacherGibier("sanglier", p.x - w.x * 2.5, p.z - w.z * 2.5); frames(2);
-    if(!$("#btn-act").textContent.includes("Tirer")) throw new Error(`devant le sanglier, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!$("#btn-act").dataset.action.includes("Tirer")) throw new Error(`devant le sanglier, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(!await attendre(() => monstresIci().some(m => m.foret), 3000)) throw new Error("touché, le sanglier ne se retourne pas");
     if($("#coeurs").hidden || $("#combat").hidden) throw new Error("pas de cœurs ni de boutons de combat quand le sanglier charge");
@@ -1396,16 +1403,16 @@ export async function verifier(){
     try {
       const p = devantCoeur();
       placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
-      if(!$("#btn-act").textContent.includes("Trouve toutes les pierres")) throw new Error(`devant le Cœur endormi, le bouton dit « ${$("#btn-act").textContent} »`);
+      if(!$("#btn-act").dataset.action.includes("Trouve toutes les pierres")) throw new Error(`devant le Cœur endormi, le bouton dit « ${$("#btn-act").dataset.action} »`);
       for(const k of Object.keys(PIERRES)) if(PIERRES[k] <= 3 && !state.carnet.pierres[k]) noterPierre(k, 1);
       for(let k = 0; k < 10 && !owned("coeurMine"); k++){
         placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
-        if(!$("#btn-act").textContent.includes("Dégager le Cœur")) throw new Error(`devant le Cœur réveillé, le bouton dit « ${$("#btn-act").textContent} »`);
+        if(!$("#btn-act").dataset.action.includes("Dégager le Cœur")) throw new Error(`devant le Cœur réveillé, le bouton dit « ${$("#btn-act").dataset.action} »`);
         $("#btn-act").click();
       }
       if(owned("coeurMine") !== 1 || !state.coeurMine) throw new Error("le Cœur de la mine n'est pas dans le sac");
       placePlayer(p.x, p.z, p.fx, p.fz); frames(3);
-      if(!$("#btn-act").hidden && $("#btn-act").textContent.includes("Cœur")) throw new Error("le Cœur se dégage encore");
+      if(!$("#btn-act").hidden && $("#btn-act").dataset.action.includes("Cœur")) throw new Error("le Cœur se dégage encore");
     } finally { await sortir(); }
     return `la géode s'ouvre sur : ${objet(cristal).nom.toLowerCase()}${vitrine} ; le Cœur de la mine dégagé`;
   });
@@ -1442,12 +1449,12 @@ export async function verifier(){
     await entrer(scierie);
     const avant = state.coffres.length;
     updateCoffrePiece(true);
-    if($("#btn-coffre").hidden || !$("#btn-coffre").textContent.includes("Poser")) throw new Error(`pas de bouton « Poser le coffre » (${$("#btn-coffre").textContent})`);
+    if($("#btn-coffre").hidden || !$("#btn-coffre").dataset.action.includes("Poser")) throw new Error(`pas de bouton « Poser le coffre » (${$("#btn-coffre").dataset.action})`);
     $("#btn-coffre").click();
     const co = state.coffres.find(c => c.b === scierie.id), it = co && scierie.deco.items.find(v => v.reserve === co.id);
     if(state.coffres.length !== avant + 1 || !it) throw new Error("le coffre n'est pas posé dans la Scierie");
     updateCoffrePiece(true);
-    if(!$("#btn-coffre").textContent.includes("Ouvrir")) throw new Error(`pas de bouton « Ouvrir le coffre » (${$("#btn-coffre").textContent})`);
+    if(!$("#btn-coffre").dataset.action.includes("Ouvrir")) throw new Error(`pas de bouton « Ouvrir le coffre » (${$("#btn-coffre").dataset.action})`);
     $("#btn-coffre").click(); await wait(200);
     if(!$("[data-co-deplacer]")) throw new Error("le coffre ne s'ouvre pas");
     $("[data-co-deplacer]").click(); await wait(300);
@@ -1505,9 +1512,9 @@ export async function verifier(){
       if([a, s].every(c => map.type[c] === "grass" && !map.obj[c] && !occ.has(c) && !state.sol[c] && !state.chemins[c]) && !poseProblem(a)){ i = a; x = tx; z = tz; break; }
     }
     if(i < 0) throw new Error("pas de case libre pour le feu de camp");
-    const devant = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(3); return $("#btn-act").textContent; };
+    const devant = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(3); return $("#btn-act").dataset.action; };
     place(2); sacAdd("feuCamp", 1); enMain("feuCamp");
-    if(!devant().includes("Poser le feu de camp")) throw new Error(`le feu de camp en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!devant().includes("Poser le feu de camp")) throw new Error(`le feu de camp en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp n'est pas posé");
     forcerHeure(23); updateCiel(0, 0);
@@ -1525,26 +1532,26 @@ export async function verifier(){
     await cameraImmobile();
     await glisser(() => haut(j), () => sol(i));
     if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp ne revient pas à sa place");
-    if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(map.obj[i] || owned("feuCamp") !== 1) throw new Error("le feu de camp n'est pas revenu dans le sac");
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
-    if(map.obj[i] !== "torchere") throw new Error(`la torchère n'est pas posée dehors (le bouton dit « ${$("#btn-act").textContent} », en main : ${state.main})`);
-    if(!devant().includes("Poser une torche")) throw new Error(`devant la torchère, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(map.obj[i] !== "torchere") throw new Error(`la torchère n'est pas posée dehors (le bouton dit « ${$("#btn-act").dataset.action} », en main : ${state.main})`);
+    if(!devant().includes("Poser une torche")) throw new Error(`devant la torchère, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(!state.ile[i].torche) throw new Error("la torche n'est pas sur la torchère dehors");
     const torches = owned("torche");
-    if(!devant().includes("et sa torche")) throw new Error(`devant la torchère allumée, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!devant().includes("et sa torche")) throw new Error(`devant la torchère allumée, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(map.obj[i] || owned("torche") !== torches + 1) throw new Error("la torchère et sa torche ne sont pas revenues dans le sac");
     return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, déplacé d'un appui long, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
   });
   if(scierie) await etape("Les autres lumières : une lanterne murale accrochée à la façade de la Scierie, qui s'allume seule la nuit", async () => {
     const s = 3, x = scierie.x, z = scierie.z;              // la colonne de gauche (la porte est au milieu)
-    const devant = () => { pickUp(idx(x, z + s)); placePlayer(centerOf(x), centerOf(z + s) + .1, 0, -1); frames(3); return $("#btn-act").textContent; };
+    const devant = () => { pickUp(idx(x, z + s)); placePlayer(centerOf(x), centerOf(z + s) + .1, 0, -1); frames(3); return $("#btn-act").dataset.action; };
     place(2); sacAdd("lanterneMurale", 1); enMain("lanterneMurale");
-    if(!devant().includes("Accrocher la lanterne murale")) throw new Error(`devant la façade, la lanterne en main, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!devant().includes("Accrocher la lanterne murale")) throw new Error(`devant la façade, la lanterne en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(!(scierie.facade || []).some(f => f.type === "lanterneMurale" && f.col === 0) || !lumieresFacades().length) throw new Error("la lanterne n'est pas accrochée à la façade");
     let jour, nuit;
@@ -1553,7 +1560,7 @@ export async function verifier(){
       forcerHeure(23); updateCiel(0, 0); updateLumieres(1.1, true); nuit = lumieresActives();
     } finally { forcerHeure(null); updateCiel(0, 0); }
     if(!(nuit > jour)) throw new Error(`la lanterne murale ne s'allume pas seule la nuit (${jour} lumière le jour, ${nuit} la nuit)`);
-    if(!devant().includes("Décrocher la lanterne murale")) throw new Error(`devant la lanterne accrochée, le bouton dit « ${$("#btn-act").textContent} »`);
+    if(!devant().includes("Décrocher la lanterne murale")) throw new Error(`devant la lanterne accrochée, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
     return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";

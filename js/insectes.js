@@ -323,9 +323,10 @@ export function insecteAction(){
   const b = aPortee();
   if(!b) return null;
   const p = INSECTES[b.k], bocal = p.bocal && tenu("bocal");
-  if(p.bocal && !bocal) return {label: `🫙 ${p.nom} : elle se prend au bocal`, run: () => toast(`🫙 ${leNom(b.k, true)} se prend au bocal, pas au filet : le bocal se fabrique à l'enclume de la Forge${p.danger ? ". Attention, il pique !" : ""}`, 3800)};
+  const nom = `${p.emoji || "🦋"} ${p.nom}`;              // le bouton dit son nom (demande de Yo, 13 octobre 2026)
+  if(p.bocal && !bocal) return {label: `🫙 ${p.nom} : elle se prend au bocal`, nom, run: () => {}};   // au joueur de prendre le bocal
   if(!p.bocal && !filetDuSac()) return null;
-  return {label: `${bocal ? "🫙" : "🥅"} Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, run: () => { if(b.etat === "vit" && betes.includes(b)) attraper(b); }};
+  return {label: `${bocal ? "🫙" : "🥅"} Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, nom, run: () => { if(b.etat === "vit" && betes.includes(b)) attraper(b); }};
 }
 
 /* À chaque image (recolte.js) ; ou : le milieu, « ile » ou « foret » (null dans un bâtiment ou la mine) */

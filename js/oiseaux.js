@@ -294,7 +294,8 @@ export function oiseauAction(){
   if(!filetDuSac()) return null;
   const o = aPortee();
   if(!o) return null;
-  return {label: `🥅 Lancer le filet : ${OISEAUX[o.k].nom.toLowerCase()}`, run: () => { if(o.etat === "pose" && oiseaux.includes(o)) lancerFilet(o); }};
+  return {label: `🥅 Lancer le filet : ${OISEAUX[o.k].nom.toLowerCase()}`, nom: `${OISEAUX[o.k].emoji || "🐦"} ${OISEAUX[o.k].nom}`,   // son nom (demande de Yo)
+    run: () => { if(o.etat === "pose" && oiseaux.includes(o)) lancerFilet(o); }};
 }
 
 /* À chaque image (recolte.js) ; ou : le milieu, « ile » ou « foret » (null dans un bâtiment ou la mine) */

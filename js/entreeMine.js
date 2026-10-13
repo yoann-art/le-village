@@ -56,10 +56,10 @@ export function entreeAction(){
   if(f.x !== -n.x || f.z !== -n.z) return null;
   const cote = n.x === 0 ? Math.abs(p.x - d.x) : Math.abs(p.z - d.z), devant = (p.x - d.x) * n.x + (p.z - d.z) * n.z;
   if(cote > .8 || devant < 0 || devant > 1.6) return null;
-  if(state.entreeMine !== "eboulee") return {label: "🏗️ Poser les étais de la mine", run: poserEtais};
-  if(tenu("pioche")) return {label: `⛏️ Déblayer l'éboulement (${reste()})`, run: deblayer};
-  const m = "⛏️ Il te faut une pioche pour déblayer l'éboulement : fabrique-la à l'établi de la Scierie (3 planches, 3 pierres)";
-  return prendreAction(outilPour("pioche")) || {label: m, run: () => toast(m, 3800)};
+  /* le bouton dit ce qu'on regarde (demande de Yo, 13 octobre 2026) ; sans pioche en main, toucher ne fait rien */
+  if(state.entreeMine !== "eboulee") return {label: "🏗️ Poser les étais de la mine", nom: "🕳️ Entrée de la mine", run: poserEtais};
+  if(tenu("pioche")) return {label: `⛏️ Déblayer l'éboulement (${reste()})`, nom: "🪨 Éboulement", run: deblayer};
+  return {label: "⛏️ Il te faut une pioche pour déblayer l'éboulement", nom: "🪨 Éboulement", run: () => {}};
 }
 
 /* Sa ligne dans le menu Construire, juste après la Scierie (construire.js) */

@@ -78,11 +78,11 @@ const info = label => ({label, run: () => toast(label, 3000)});
 /* Le bouton d'action (recolte.js, avant les autres) : null s'il n'y a rien à faire avec la barque ici */
 export function barqueAction(){
   if(!P || !amarre) return null;
-  if(aBord) return pres(1.4) ? {label: "🛶 Accoster au ponton", run: accoster} : null;
+  if(aBord) return pres(1.4) ? {label: "🛶 Accoster au ponton", nom: "🪵 Ponton", run: accoster} : null;   // le bouton dit ce qu'on regarde (demande de Yo)
   /* au bout du ponton : tourné vers la borne (à droite), ou sans canne en main (sinon, on y pêche) */
   if(!auBout() || (tenu("canne") && regard().x < .5)) return null;
-  if(!state.barque) return {label: "🛶 Construire la barque", run: ouvrirChantier};
-  if(!barquePrete()) return info(`🛶 ${Nom} : prête dans ${duree((state.barque.fin - Date.now()) / 1000)}`);
+  if(!state.barque) return {label: "🛶 Construire la barque", nom: "🛶 Barque", run: ouvrirChantier};
+  if(!barquePrete()) return {...info(`🛶 ${Nom} : prête dans ${duree((state.barque.fin - Date.now()) / 1000)}`), nom: `🛶 ${Nom}`};
   return {label: `🛶 ${Nom}`, run: ouvrirBarque};
 }
 /* La fiche de la barque prête (morceau 3) : ramer autour de l'île, ou partir vers le Marais avec sa carte */

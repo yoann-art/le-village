@@ -38,7 +38,7 @@ export function updateVitrine(active){
     const [w, d] = footOf(it);
     return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
   }) || null;
-  const txt = proche ? (proche.pierre ? `💎 Vitrine : ${nom(proche.pierre).toLowerCase()}` : "💎 Exposer une pierre") : "";
+  const txt = proche ? (proche.pierre ? `💎 Vitrine : ${nom(proche.pierre).toLowerCase()}` : "💎 Vitrine") : "";   // son nom (demande de Yo)
   if(proche && btn.textContent !== txt) btn.textContent = txt;
   if(btn.hidden === !!proche) btn.hidden = !proche;
 }
