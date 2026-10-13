@@ -2,14 +2,15 @@
    « … le mode première personne où l'on voit uniquement les mains du joueur et les armes et objets qu'il a en main. »
    À la première personne (vue.js), les mains sont dessinées par-dessus le monde, dans leur propre petite scène, avec
    leur propre caméra : elles ne rentrent jamais dans un mur et gardent la même taille en portrait et en paysage.
-   - La main droite, toujours là, tient ce qu'on a en main (le même modèle que vu de dessus : outils3d.js) ; la main
-     gauche n'apparaît qu'avec la torche ou la lanterne à main ; avec l'arc (à deux mains), la gauche tient l'arc et la
-     droite tire la corde.
+   - La main droite tient ce qu'on a en main (le même modèle que vu de dessus : outils3d.js) ; rien en main, on ne la
+     voit pas (Yo, v1.13.23 : « quand le personnage n'a [rien en main] on ne doit plus voir ses mains ») ; la main gauche
+     n'apparaît qu'avec la torche ou la lanterne à main ; avec l'arc (à deux mains), la gauche tient l'arc et la droite
+     tire la corde.
    - Elles se balancent en marchant, respirent au repos, traînent un peu quand on tourne la tête, et bougent à chaque
      geste : elles suivent la main du personnage (angleMain : l'épée qui s'abat, la canne qu'on lance, la pelle, la prise
      qu'on lève) ; chaque coup d'outil a son geste (gesteOutil, appelé par usure.js : la hache et la pioche frappent,
-     l'arrosoir verse, le filet balaie, le bocal puise, l'arc se bande) ; le bouton d'action à mains nues tend la main
-     (gesteAction, recolte.js : cueillir, ramasser, planter, ouvrir) ; changer d'outil : la main descend et remonte avec
+     l'arrosoir verse, le filet balaie, le bocal puise, l'arc se bande) ; le bouton d'action sans coup d'outil tend la
+     main (gesteAction, recolte.js : planter une graine, poser, ramasser avec un outil en main) ; changer d'outil : la main descend et remonte avec
      le nouveau.
    - Leur lumière suit celle du lieu (le ciel et le soleil dehors, la pénombre dedans) ; la torche et la lanterne les
      éclairent d'une lueur chaude.
@@ -124,6 +125,7 @@ export function updateMains(dt, dedans){
   if(tenir(D, kd, makeOutil)) change = .3;
   tenir(Gc, kg, x => MODELES_G[x] ? MODELES_G[x]() : makeOutil(x));
   Gc.g.visible = !!kg;
+  D.g.visible = !!k;                                    // rien en main : pas de main droite (demande de Yo)
   if(geste){ geste.t += dt; if(geste.t >= geste.T) geste = null; }
   if(change > 0) change = Math.max(0, change - dt);
   /* la place à l'écran : la même en portrait et en paysage (le petit côté de l'écran compte) */
@@ -183,4 +185,4 @@ export function boutFPS(out){
   return true;
 }
 /* Pour la vérification : ce que les mains tiennent */
-export const mainsIci = () => ({actif, droite: D.k, gauche: Gc.g.visible ? Gc.k : null, geste: geste && geste.sorte});
+export const mainsIci = () => ({actif, droite: D.g.visible ? D.k : null, gauche: Gc.g.visible ? Gc.k : null, geste: geste && geste.sorte});

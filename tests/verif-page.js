@@ -1602,6 +1602,8 @@ export async function verifier(){
       const torcheVue = await attendre(() => mainsIci().gauche === "torche");
       tenirTorche(false);
       if(!torcheVue) throw new Error("la main gauche ne tient pas la torche");
+      hold(null);                                          // rien en main : on ne voit plus de main (v1.13.23)
+      if(!await attendre(() => !mainsIci().droite && !mainsIci().gauche)) throw new Error(`rien en main, on voit encore une main (${JSON.stringify(mainsIci())})`);
       /* entrer dans la Scierie en marchant dans la porte */
       const d = doorOf(scierie);
       placePlayer(d.x + d.n.x * (R + .4), d.z + d.n.z * (R + .4), -d.n.x, -d.n.z);
@@ -1620,7 +1622,7 @@ export async function verifier(){
       /* revenir à la vue de dessus */
       $("#btn-vue").click();
       if(!await attendre(() => !premiereActive() && player.visible && camera.fov === 40 && camera.position.y > 3)) throw new Error("le bouton 👁️ ne ramène pas la vue de dessus");
-      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, le joystick tourne la vue de ${Math.round(virage * 180 / Math.PI)}° en une demi-seconde, la main droite tient la hache et frappe, la gauche la torche, on entre dans la Scierie, la décoration se fait en vue de dessus`;
+      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, le joystick tourne la vue de ${Math.round(virage * 180 / Math.PI)}° en une demi-seconde, la main droite tient la hache et frappe, la gauche la torche, rien en main on ne voit plus de main, on entre dans la Scierie, la décoration se fait en vue de dessus`;
     } finally { choisirVue(avant); }
   });
   await etape("Jamais coincé", async () => {
