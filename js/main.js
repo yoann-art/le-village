@@ -12,7 +12,7 @@ import { B } from "./donnees.js";
 import { renderer, camera, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
-import { player, updatePlayer, regard } from "./monde/personnage.js";
+import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
 import "./coffres.js";
 import { view } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
@@ -73,7 +73,8 @@ const OFF = new THREE.Vector3(0, .78, .63).normalize(), camT = new THREE.Vector3
 camT.copy(player.position);
 /* La vue à la première personne (vue.js) : les yeux du personnage (il mesure 1 P), un angle de vue plus large ; on
    repasse tout seul en vue de dessus pour décorer, bâtir, déplacer une lumière, pendant la scène du voyage et en barque */
-const OEIL = .8;
+const OEIL = .8, PORTEE = 1.8;
+const viseur = $("#viseur"), btnAct = $("#btn-act");     // le point au centre de l'écran (morceau B3), le bouton d'action
 let lacet = null;                                          // où regarde la caméra (suit le regard du personnage, en douceur)
 function premierePossible(){
   return vuePremiere() && !decoView() && !decorating() && !lifting() && !placing && !deplaceEnCours() && !voyageEnCours()
@@ -151,10 +152,17 @@ function camera_(now, dt, marche){
     if(saut || lacet === null) lacet = but;
     else { let d = but - lacet; d = Math.atan2(Math.sin(d), Math.cos(d)); lacet += d * Math.min(1, dt * 22); }
     const t = tangageVue(), c = Math.cos(t);
+    /* viser ce qu'on regarde (morceau B3) : si l'on regarde le sol tout près (à moins de PORTEE), c'est cette case */
+    const sol = t < -.05 ? OEIL / Math.tan(-t) : Infinity;
+    viser({sol: sol <= PORTEE ? sol : null});
+    viseur.hidden = false;
+    viseur.classList.toggle("cible", !btnAct.hidden);       // quelque chose à faire là : le point devient un rond
     camera.position.set(p.x, OEIL, p.z);
     camera.lookAt(p.x + Math.sin(lacet) * c, OEIL + Math.sin(t), p.z + Math.cos(lacet) * c);
   } else {
   lacet = null;
+  viser(null);
+  if(!viseur.hidden) viseur.hidden = true;
   setFov(FOV_DESSUS);
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
   ajusterBrume(D);                                         // la brume de la grotte du Marais suit la caméra (étape 1.13)

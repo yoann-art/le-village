@@ -53,7 +53,8 @@ import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable, regard, tenirTorche } from "../js/monde/personnage.js";
 import { mainsIci, gesteOutil } from "../js/monde/mains.js";
-import { choisirVue, premiereActive, vuePremiere } from "../js/vue.js";
+import { choisirVue, premiereActive, vuePremiere, pencherVue } from "../js/vue.js";
+import { frontTile } from "../js/monde/personnage.js";
 import { decorating } from "../js/decorer.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
@@ -1557,7 +1558,7 @@ export async function verifier(){
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
     return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
   });
-  if(scierie) await etape("La vue à la première personne : le bouton 👁️, la caméra aux yeux, le doigt tourne la tête, le joystick avance où l'on regarde et tourne la vue, les mains, entrer dans la Scierie, décorer en vue de dessus", async () => {
+  if(scierie) await etape("La vue à la première personne : le bouton 👁️, la caméra aux yeux, le doigt tourne la tête, le joystick avance où l'on regarde et tourne la vue, viser ce qu'on regarde, les mains, entrer dans la Scierie, décorer en vue de dessus", async () => {
     if(isInside()) await sortir();
     const avant = vuePremiere();
     try {
@@ -1593,6 +1594,16 @@ export async function verifier(){
       const r3 = regard(), virage = Math.atan2(r2.x * r3.z - r2.z * r3.x, r2.x * r3.x + r2.z * r3.z);
       if(player.position.distanceTo(p1) > .05) throw new Error("en tournant avec le joystick, le personnage se déplace");
       if(!(virage > .5)) throw new Error(`le joystick poussé à droite ne tourne pas la vue à droite (${virage.toFixed(2)} rad)`);
+      /* viser ce qu'on regarde (morceau B3) : le point au centre ; tout droit, la case devant dans la direction exacte du
+         regard ; les yeux baissés, la case du sol qu'on regarde */
+      if($("#viseur").hidden) throw new Error("pas de point au centre de l'écran");
+      const caseA = d => { const r = regard(); return [tileOf(player.position.x + r.x * d), tileOf(player.position.z + r.z * d)]; };
+      const meme = (a, b) => a[0] === b[0] && a[1] === b[1];
+      if(!meme(frontTile(1.3), caseA(1.3))) throw new Error(`tout droit, la case visée n'est pas devant le regard (${frontTile(1.3)} au lieu de ${caseA(1.3)})`);
+      pencherVue(-.7);                                     // les yeux baissés : le sol à 0,95 P
+      const baisse = await attendre(() => meme(frontTile(1.3), caseA(.8 / Math.tan(.7))), 2000);
+      pencherVue(0);
+      if(!baisse) throw new Error(`les yeux baissés, la case visée n'est pas celle qu'on regarde (${frontTile(1.3)} au lieu de ${caseA(.8 / Math.tan(.7))})`);
       /* les mains (morceau B2) : la hache dans la main droite, son coup, la torche dans la main gauche */
       sacAdd("hachePierre", 1); enMain("hachePierre");
       if(!await attendre(() => mainsIci().actif && mainsIci().droite === "hachePierre")) throw new Error(`la main droite ne tient pas la hache (${JSON.stringify(mainsIci())})`);
@@ -1621,8 +1632,8 @@ export async function verifier(){
       await sortir();
       /* revenir à la vue de dessus */
       $("#btn-vue").click();
-      if(!await attendre(() => !premiereActive() && player.visible && camera.fov === 40 && camera.position.y > 3)) throw new Error("le bouton 👁️ ne ramène pas la vue de dessus");
-      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, le joystick tourne la vue de ${Math.round(virage * 180 / Math.PI)}° en une demi-seconde, la main droite tient la hache et frappe, la gauche la torche, rien en main on ne voit plus de main, on entre dans la Scierie, la décoration se fait en vue de dessus`;
+      if(!await attendre(() => !premiereActive() && player.visible && camera.fov === 40 && camera.position.y > 3 && $("#viseur").hidden)) throw new Error("le bouton 👁️ ne ramène pas la vue de dessus");
+      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, le joystick tourne la vue de ${Math.round(virage * 180 / Math.PI)}° en une demi-seconde, le point au centre, la case regardée (tout droit ou les yeux baissés), la main droite tient la hache et frappe, la gauche la torche, rien en main on ne voit plus de main, on entre dans la Scierie, la décoration se fait en vue de dessus`;
     } finally { choisirVue(avant); }
   });
   await etape("Jamais coincé", async () => {

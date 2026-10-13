@@ -138,9 +138,26 @@ let walkT = 0;
 /* La direction où regarde le personnage (vecteur de longueur 1 ; la pêche vise avec) */
 export const regard = () => ({x: facing.x, z: facing.z});
 export function dir4(){ return Math.abs(facing.x) > Math.abs(facing.z) ? {x:Math.sign(facing.x), z:0} : {x:0, z:Math.sign(facing.z) || 1}; }
-export function frontTile(dist){
+/* Viser ce qu'on regarde (morceau B3 de la première personne, demande de Yo, 13 octobre 2026) : main.js donne, à chaque
+   image à la première personne, la visée {sol} (sol : la distance du point du sol qu'on regarde, si l'on regarde le sol
+   tout près ; sinon null), et null vu de dessus */
+let visee = null;
+export function viser(v){ visee = v; }
+/* Le point à dist P devant le personnage, là où l'on cherche ce qu'il y a à faire (recolte.js, terraformer.js…) : vu de
+   dessus, dans l'une des 4 directions ; à la première personne, exactement dans la direction du regard, et, si l'on
+   regarde le sol tout près, le point du sol regardé */
+export function devant(dist){
+  const p = player.position;
+  if(visee){
+    const s = visee.sol != null && dist > 0 ? visee.sol : dist;
+    return {x: p.x + facing.x * s, z: p.z + facing.z * s};
+  }
   const d = dir4();
-  return [tileOf(player.position.x + d.x*dist), tileOf(player.position.z + d.z*dist)];
+  return {x: p.x + d.x * dist, z: p.z + d.z * dist};
+}
+export function frontTile(dist){
+  const q = devant(dist);
+  return [tileOf(q.x), tileOf(q.z)];
 }
 /* Un élan (étape 1.8) : la roulade (roule : il fait la culbute), ou le recul quand un monstre le blesse ; vx, vz en P/s,
    pendant T secondes ; le joystick n'agit pas pendant ce temps */

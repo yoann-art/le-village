@@ -30,6 +30,8 @@ export function activerVue(oui){
 }
 /* En marchant avec le joystick, les yeux reviennent doucement à l'horizon (pas pendant que le doigt regarde) */
 export function horizon(dt, marche){ if(marche && !doigt && tangage) tangage *= Math.exp(-dt * 2.5); }
+/* Pour la vérification : lever ou baisser les yeux sans le doigt */
+export function pencherVue(t){ tangage = t; }
 /* Pour la vérification : choisir la vue sans toucher au bouton */
 export function choisirVue(p){ premiere = !!p; tangage = 0; garder(); majBouton(); }
 

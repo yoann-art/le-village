@@ -39,7 +39,7 @@ import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLe
 import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ, placeMesh, colPorte } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
-import { player, frontTile, dir4 } from "./monde/personnage.js";
+import { player, frontTile, devant } from "./monde/personnage.js";
 import { compteGestes, gesteAction } from "./monde/mains.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser, coeurEn, majCoeur } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
@@ -81,11 +81,11 @@ const inForet = () => { const p = currentPlace(); return !!p && p.b.type === "fo
 const MARAIS = {obj: maraisObj, mesh: maraisMesh, set: setMaraisObj, cx: x => x - W_MARAIS/2 + .5};
 const inMarais = () => { const p = currentPlace(); return !!p && p.b.type === "marais"; };
 function targetMarais(){
-  const d = dir4(), p = player.position, cible = i => ({w: MARAIS, i, x: i % W_MARAIS, z: Math.floor(i / W_MARAIS), o: maraisObj(i)});
+  const p = player.position, cible = i => ({w: MARAIS, i, x: i % W_MARAIS, z: Math.floor(i / W_MARAIS), o: maraisObj(i)});
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
   const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case";   // la canne en main, ou dans une case (mains libres)
   for(const dist of [.8, 1.3]){
-    const i = mtile(p.x + d.x * dist, p.z + d.z * dist);
+    const q = devant(dist), i = mtile(q.x, q.z);
     if(i >= 0 && maraisObj(i) && maraisObj(i) !== "panneau") return cible(i);
     if(i >= 0 && marais.type[i] === "eau" && !maraisObj(i) && (arrosoir || canne)) return {w: MARAIS, i, eau: true, peche: !arrosoir};   // les chenaux (morceau 5)
   }
@@ -96,20 +96,18 @@ function targetMarais(){
 const GROTTE = {obj: grotteObj, mesh: grotteMesh, set: setGrotteObj, cx: x => x - W_GROTTE/2 + .5};
 const inGrotte = () => { const p = currentPlace(); return !!p && p.b.type === "grotte"; };
 function targetGrotte(){
-  const d = dir4(), p = player.position;
   for(const dist of [.8, 1.3]){
-    const i = gtile(p.x + d.x * dist, p.z + d.z * dist), o = i >= 0 && grotteObj(i);
+    const q = devant(dist), i = gtile(q.x, q.z), o = i >= 0 && grotteObj(i);
     if(o) return {w: GROTTE, i, x: i % W_GROTTE, z: Math.floor(i / W_GROTTE), o};
   }
   return null;
 }
 /* Dans la forêt : l'arbre ou le rocher juste devant */
 function targetForet(){
-  const d = dir4(), p = player.position;
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
   const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case";   // la canne en main, ou dans une case (mains libres)
   for(const dist of [.8, 1.3]){
-    const i = ftile(p.x + d.x * dist, p.z + d.z * dist);
+    const q = devant(dist), i = ftile(q.x, q.z);
     const o = i >= 0 && foretObj(i);
     if(o) return {w: FORET, i, x: i % W_FORET, z: Math.floor(i / W_FORET), o};
     if(i >= 0 && foret.type[i] === "eau" && (arrosoir || canne)) return {w: FORET, i, eau: true, peche: !arrosoir};   // le ruisseau, la source
@@ -118,9 +116,8 @@ function targetForet(){
 }
 /* Dans la mine : le rocher juste devant */
 function targetMine(){
-  const d = dir4(), p = player.position;
   for(const dist of [.8, 1.3]){
-    const t = mineTile(p.x + d.x * dist, p.z + d.z * dist);
+    const q = devant(dist), t = mineTile(q.x, q.z);
     if(t >= 0 && mineRock(t)) return {w: MINE, i: t, o: mineRock(t)};
     if(coeurEn(t)) return {w: MINE, i: t, coeur: true};      // le pilier de la géode, où dort le Cœur de la mine
     const g = galerieEn(t);                          // la paroi d'une galerie à creuser (étape 1.11)
