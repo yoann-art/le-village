@@ -12,6 +12,7 @@ import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, N, idx, inb, map, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, removeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
 import { lumiereSousDoigt } from "./deplacer.js";
+import { premiereActive } from "./vue.js";
 import { entrees } from "./monde/ponton.js";
 import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
@@ -111,6 +112,7 @@ canvas.addEventListener("pointerdown", e => {
   if(touches.size > 1){ cancelPress(); drag = null; return; }       // deux doigts : c'est un zoom
   if(!outside()) return;
   if(placing){ startDrag(e.pointerId); return; }
+  if(premiereActive()) return;                         // première personne : le doigt fait regarder autour de soi (vue.js)
   aim(e.clientX, e.clientY);
   if(lumiereSousDoigt(ray)) return;                    // une lumière de sa façade : c'est elle qu'on déplace (deplacer.js)
   const id = pickBuilding(ray);

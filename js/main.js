@@ -9,10 +9,10 @@ import "./pleinecran.js";                                 // le plein écran (de
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
 import { B } from "./donnees.js";
-import { renderer, camera, sun, D, distanceFor, setDistance } from "./monde/scene.js";
+import { renderer, camera, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
-import { player, updatePlayer } from "./monde/personnage.js";
+import { player, updatePlayer, regard } from "./monde/personnage.js";
 import "./coffres.js";
 import { view } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
@@ -26,7 +26,7 @@ import { updateVitrine } from "./vitrine.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
-import { lampeSur, nuitForet, penombre, ajusterBrume } from "./monde/interieurs.js";
+import { lampeSur, nuitForet, penombre, ajusterBrume, murDevant } from "./monde/interieurs.js";
 import { updateLumieres } from "./lumieres.js";
 import { updateBarque, posBarque } from "./barque.js";
 import { deplaceEnCours } from "./deplacer.js";
@@ -36,6 +36,8 @@ import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
+import { vuePremiere, activerVue, tangageVue } from "./vue.js";
+import { enBarque } from "./barque.js";
 import "./sac.js";
 import "./barre.js";
 import "./saisons.js";
@@ -68,6 +70,16 @@ const VIEW_OUT = 8, VIEW_IN = 6;
 let lastSave = 0, dirty = false;
 const OFF = new THREE.Vector3(0, .78, .63).normalize(), camT = new THREE.Vector3();
 camT.copy(player.position);
+/* La vue à la première personne (vue.js) : les yeux du personnage (il mesure 1 P), un angle de vue plus large ; on
+   repasse tout seul en vue de dessus pour décorer, bâtir, déplacer une lumière, pendant la scène du voyage et en barque */
+const OEIL = .8;
+let lacet = null;                                          // où regarde la caméra (suit le regard du personnage, en douceur)
+function premierePossible(){
+  return vuePremiere() && !decoView() && !decorating() && !lifting() && !placing && !deplaceEnCours() && !voyageEnCours()
+    && !enBarque() && !(isInside() && currentPlace().b.type === "trajet");
+}
+/* L'angle de vue, de haut en bas : 85° en portrait (l'écran est étroit), 55° en paysage (plus large, choix de Yo) */
+const fovPremiere = () => Math.max(55, Math.min(85, 2 * Math.atan(Math.tan(40 * Math.PI / 180) / camera.aspect) * 180 / Math.PI));
 
 /* Une erreur dans un morceau du jeu ne doit jamais tout figer (bug de Yo, 9 octobre 2026 : le jeu bloqué après avoir
    replanté une fleur) : chaque morceau de la boucle est gardé à part (garde), la boucle repart toujours ; l'erreur est
@@ -123,6 +135,23 @@ function tick(now){
 function camera_(now, dt){
   const dv = decoView();
   const foret = isInside() && ["foret", "grotte", "marais", "trajet"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
+  const fps = premierePossible();
+  activerVue(fps);
+  murDevant(fps);                                          // dans une pièce : le mur de devant et le plafond, aux yeux seulement
+  if(fps){
+    setFov(fovPremiere());
+    setDistance(12);                                       // le brouillard et l'ombre du soleil autour de soi
+    ajusterBrume(4.5);
+    const saut = takeJump(), p = player.position, r = regard(), but = Math.atan2(r.x, r.z);
+    camT.set(p.x, 0, p.z);
+    if(saut || lacet === null) lacet = but;
+    else { let d = but - lacet; d = Math.atan2(Math.sin(d), Math.cos(d)); lacet += d * Math.min(1, dt * 22); }
+    const t = tangageVue(), c = Math.cos(t);
+    camera.position.set(p.x, OEIL, p.z);
+    camera.lookAt(p.x + Math.sin(lacet) * c, OEIL + Math.sin(t), p.z + Math.cos(lacet) * c);
+  } else {
+  lacet = null;
+  setFov(FOV_DESSUS);
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
   ajusterBrume(D);                                         // la brume de la grotte du Marais suit la caméra (étape 1.13)
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
@@ -130,6 +159,7 @@ function camera_(now, dt){
   else camT.lerp(target, 1 - Math.pow(.0005, dt));
   camera.position.copy(camT).addScaledVector(OFF, D);
   camera.lookAt(camT.x, .4, camT.z);
+  }
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
   if(foret || isInside() && currentPlace().b.type === "mine") lampeSur(camT.x, camT.z);   // la lumière suit, dans les grands lieux
   const sousLeCiel = !isInside() || ["foret", "marais"].includes(currentPlace().b.type);

@@ -17,6 +17,7 @@ import { resetJoy } from "./commandes.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
 import { openAtelier } from "./ateliers.js";
+import { premiereActive } from "./vue.js";
 
 let deco = null;                     // la pièce qu'on décore : {b, room}
 let sel = null;                      // le meuble choisi
@@ -342,7 +343,7 @@ canvas.addEventListener("pointerdown", e => {
   touches.add(e.pointerId);
   if(touches.size > 1){ cancelPress(); endDrag(); return; }        // deux doigts : c'est un zoom
   if(!deco){
-    if(lift || !currentPlace() || isBusy() || !wrap.hidden) return;
+    if(lift || !currentPlace() || isBusy() || !wrap.hidden || premiereActive()) return;   // première personne : le doigt fait regarder (vue.js)
     const id = pickItem(aim(e.clientX, e.clientY));
     if(id !== null) press = {id, pid: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, timer: setTimeout(startLift, 500)};
     return;

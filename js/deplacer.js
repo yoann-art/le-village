@@ -15,6 +15,7 @@ import { poseProblem } from "./coffres.js";
 import { resetJoy } from "./commandes.js";
 import { wrap } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
+import { premiereActive } from "./vue.js";
 
 const canvas = renderer.domElement;
 let press = null;          // appui en cours sur une lumière : {cible, pid, x, y, sx, sy, timer}
@@ -101,7 +102,7 @@ function lacher(){
 
 canvas.addEventListener("pointerdown", e => {
   if(press){ clearTimeout(press.timer); press = null; return; }   // un deuxième doigt : c'est un zoom
-  if(lift || currentPlace() || isBusy() || !wrap.hidden || $("#joy").hidden) return;
+  if(lift || currentPlace() || isBusy() || !wrap.hidden || $("#joy").hidden || premiereActive()) return;   // première personne : le doigt fait regarder (vue.js)
   const cible = lumiereSousDoigt(aim(e.clientX, e.clientY));
   if(cible) press = {cible, pid: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, timer: setTimeout(soulever, 500)};
 });

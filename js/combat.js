@@ -27,7 +27,8 @@ import { $ } from "./outils.js";
 import { COMBAT, OUTILS, MONSTRES, DEGATS_FLECHE, objet, icone } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { porte, sacCount, sacTake } from "./regles.js";
-import { player, placePlayer, regard, elan, enRoulade, clignoter, pencheMain } from "./monde/personnage.js";
+import { player, placePlayer, regard, elan, enRoulade, clignoter, pencheMain, sensMarche } from "./monde/personnage.js";
+import { premiereActive } from "./vue.js";
 import { currentPlace, isBusy, reveilVillage } from "./lieux.js";
 import { syncBarre, tenu, outilPour, prendreAction } from "./barre.js";
 import { CHASSE, chanceDe, flecheDuSac } from "./chasse.js";
@@ -94,8 +95,9 @@ function tirer(){
 /* ----- 🤸 Roulade ----- */
 function rouler(){
   if(!pret() || roule > 0 || enRoulade()) return;
-  const R = COMBAT.roulade, d = regard(), p = player.position;
-  placePlayer(p.x, p.z, d.x, d.z);
+  const R = COMBAT.roulade, p = player.position;
+  const d = premiereActive() ? sensMarche() : regard();   // première personne : on roule là où pousse le joystick, sans tourner la tête
+  if(!premiereActive()) placePlayer(p.x, p.z, d.x, d.z);
   elan(d.x * R.dist / R.duree, d.z * R.dist / R.duree, R.duree, true);
   roule = R.duree + R.attente;
 }

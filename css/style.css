@@ -45,6 +45,9 @@ button{font:inherit;color:inherit}
 .plein{pointer-events:auto;appearance:none;border:0;width:36px;height:36px;border-radius:50%;padding:7px;background:var(--hud);box-shadow:0 2px 0 rgba(0,0,0,.16);cursor:pointer;touch-action:manipulation}
 .plein svg{display:block;width:100%;height:100%;fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .plein .fermer,.plein.dedans .ouvrir{display:none}
+/* Le bouton de la vue à la première personne (vue.js) : allumé quand elle est choisie */
+.plein.vue[aria-pressed="true"]{background:var(--ink)}
+.plein.vue[aria-pressed="true"] svg{stroke:var(--hud)}
 .plein.dedans .fermer{display:inline}
 /* Le vent, dans la Forêt profonde (la chasse, étape 1.7) : la flèche montre où il souffle */
 .vent{position:absolute;top:calc(98px + var(--st));right:calc(10px + var(--sr));z-index:2;display:flex;align-items:center;gap:4px;background:var(--hud);border-radius:12px;padding:3px 9px;font-size:16px;box-shadow:0 2px 0 rgba(0,0,0,.12);pointer-events:none}

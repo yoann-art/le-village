@@ -62,6 +62,10 @@ floor.setColorAt(0, new THREE.Color(0xffffff));
 interior.add(floor);
 
 let room = null, dedans = null;                  // dedans : l'ambiance du bâtiment où l'on est (pas la mine, la forêt, la grotte)
+/* À la première personne (demande de Yo, 13 octobre 2026 ; vue.js) : le mur de devant, avec sa porte fermée, et le plafond,
+   qu'on ne voit qu'aux yeux du personnage (vus de dessus, ils cacheraient la pièce) ; main.js les montre (murDevant) */
+let devant = null;
+export function murDevant(oui){ if(devant) devant.visible = oui; }
 const itemMeshes = new Map();                    // meubles de la pièce : id → modèle
 /* La Forêt profonde suit l'heure (étape 1.10) : ses couleurs et ses lumières de jour (base), mêlées à la nuit (nuitForet) */
 let base = null;
@@ -106,6 +110,7 @@ export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
+  devant = null;
   interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null; dedans = null; brumeGrotte = false;
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
     const m = makeForet();
@@ -179,6 +184,22 @@ export function buildRoom(b){
     }
   }
   room.add(part(G.box, SILL, w + 2*EP, .24, .12, 0, -.08, d/2 + .06));                  // bord du sol, devant
+  /* le mur de devant et le plafond, à la première personne : sans ombre (la lumière du plafonnier passe au travers) */
+  devant = new THREE.Group(); devant.visible = false;
+  const sans = m => { m.castShadow = false; devant.add(m); };
+  const PW = 1.1, PH = 1.5, zf = d/2 + EP/2, pan = (w + 2*EP - PW) / 2;
+  for(const s of [-1, 1]) sans(part(MUR_X, wall, pan, MUR, EP, s * (PW + pan) / 2, MUR/2, zf));
+  sans(part(MUR_X, wall, PW, MUR - PH, EP, 0, (MUR + PH) / 2, zf));                      // au-dessus de la porte
+  sans(part(G.box, a.beam, w + 2*EP + .04, .14, EP + .04, 0, MUR, zf));                  // la poutre du haut
+  sans(part(G.box, a.beam, PW + .2, .1, EP + .06, 0, PH + .05, zf));                     // le linteau
+  for(const s of [-1, 1]) sans(part(G.box, a.beam, .1, PH, EP + .06, s * (PW/2 + .05), PH/2, zf));   // les montants
+  sans(part(G.box, 0x7A4A2A, PW, PH, .08, 0, PH/2, zf));                                // la porte, fermée : on sort en marchant dedans
+  for(const x of [-.275, 0, .275]) sans(part(G.box, 0x66391E, .03, PH - .08, .1, x, PH/2, zf));   // ses planches
+  for(const y of [.35, 1.15]) sans(part(G.box, 0x4A2E1C, PW - .1, .07, .11, 0, y, zf));   // ses traverses
+  sans(part(G.head, GOLD, .12, .12, .12, .38, .78, zf - .1));                           // la poignée
+  sans(part(G.box, new THREE.Color(wall).multiplyScalar(.72).getHex(), w + 2*EP, .1, d + 2*EP, 0, MUR + .12, -EP/2));   // le plafond
+  for(let z = -d/2 + 1.5; z < d/2; z += 2) sans(part(G.box, a.beam, w, .16, .18, 0, MUR - .02, z));                       // ses poutres
+  room.add(devant);
   room.add(part(G.box, MAT, P, .03, .6, 0, .015, d/2 - .3));                            // paillasson de la sortie
   room.add(...lumieresDedans);
   dedans = a; penombre(nuitIci());

@@ -51,7 +51,9 @@ import { choisirHemisphere } from "../js/saisons.js";
 import { forcerSaison, saisonDu, reglerHemisphere } from "../js/donnees.js";
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
-import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/monde/personnage.js";
+import { player, placePlayer, updatePlayer, R, islandWalkable, regard } from "../js/monde/personnage.js";
+import { choisirVue, premiereActive, vuePremiere } from "../js/vue.js";
+import { decorating } from "../js/decorer.js";
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
@@ -1553,6 +1555,57 @@ export async function verifier(){
     $("#btn-act").click();
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
     return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
+  });
+  if(scierie) await etape("La vue à la première personne : le bouton 👁️, la caméra aux yeux, le doigt tourne la tête, le joystick avance où l'on regarde, entrer dans la Scierie, décorer en vue de dessus", async () => {
+    if(isInside()) await sortir();
+    const avant = vuePremiere();
+    try {
+      $("#btn-vue").click();
+      if(!vuePremiere()) throw new Error("le bouton 👁️ ne choisit pas la première personne");
+      if(!await attendre(() => premiereActive() && Math.abs(camera.position.y - .8) < .05)) throw new Error(`la caméra n'est pas à hauteur des yeux (${camera.position.y.toFixed(2)})`);
+      if(player.visible) throw new Error("le corps du personnage se voit encore");
+      if(!(camera.fov > 50)) throw new Error(`l'angle de vue reste à ${camera.fov}°`);
+      /* une place dégagée : 1 P libre tout autour */
+      let libre = null;
+      for(let r = 0; r < 12 && !libre; r++) for(let dx = -r; dx <= r && !libre; dx++) for(let dz = -r; dz <= r && !libre; dz++){
+        const x = .5 + dx, z = 6.5 + dz;
+        if([...Array(8)].every((_, k) => islandWalkable(x + Math.cos(k * Math.PI / 4), z + Math.sin(k * Math.PI / 4))) && islandWalkable(x, z)) libre = [x, z];
+      }
+      if(!libre) throw new Error("pas de place dégagée pour l'essai");
+      placePlayer(libre[0], libre[1], 0, 1); await wait(200);
+      /* le doigt glisse vers la gauche, sur un tiers de l'écran : la tête tourne vers la gauche */
+      const r0 = regard(), w = renderer.domElement.getBoundingClientRect().width;
+      doigt("pointerdown", [w * .6, 300]);
+      for(let k = 1; k <= 6; k++){ doigt("pointermove", [w * .6 - w / 3 * k / 6, 300]); await wait(20); }
+      doigt("pointerup", [w * .6 - w / 3, 300]);
+      const r1 = regard(), tour = Math.acos(Math.max(-1, Math.min(1, r0.x * r1.x + r0.z * r1.z)));
+      if(tour < .6) throw new Error(`le doigt ne tourne pas la tête (${tour.toFixed(2)} rad)`);
+      /* le haut du joystick avance là où l'on regarde, sans changer le regard */
+      const p0 = player.position.clone();
+      keys.u = 1; for(let k = 0; k < 10; k++) updatePlayer(.016); keys.u = 0;
+      const dx = player.position.x - p0.x, dz = player.position.z - p0.z, l = Math.hypot(dx, dz), r2 = regard();
+      if(l < .3 || (dx * r1.x + dz * r1.z) / l < .95) throw new Error(`le personnage n'avance pas là où il regarde (${dx.toFixed(2)}, ${dz.toFixed(2)})`);
+      if(Math.abs(r2.x - r1.x) + Math.abs(r2.z - r1.z) > .01) throw new Error("marcher change le regard");
+      /* entrer dans la Scierie en marchant dans la porte */
+      const d = doorOf(scierie);
+      placePlayer(d.x + d.n.x * (R + .4), d.z + d.n.z * (R + .4), -d.n.x, -d.n.z);
+      keys.u = 1;
+      for(let k = 0; k < 40 && !isInside(); k++){ updatePlayer(.016); checkDoors(true); }
+      keys.u = 0;
+      if(!await attendre(() => isInside() && currentPlace().b === scierie)) throw new Error("on n'entre pas dans la Scierie en marchant dans la porte");
+      if(!await attendre(() => premiereActive() && Math.abs(camera.position.y - .8) < .05)) throw new Error("dans la Scierie, la caméra n'est plus aux yeux");
+      /* décorer : on repasse tout seul en vue de dessus, puis on revient aux yeux */
+      $("#btn-deco").click();
+      if(!decorating()) throw new Error("le mode décoration ne s'ouvre pas");
+      if(!await attendre(() => !premiereActive() && camera.position.y > 3)) throw new Error("en décorant, la vue reste à la première personne");
+      $("#deco-done").click();
+      if(!await attendre(() => premiereActive() && Math.abs(camera.position.y - .8) < .05)) throw new Error("après la décoration, la vue ne revient pas aux yeux");
+      await sortir();
+      /* revenir à la vue de dessus */
+      $("#btn-vue").click();
+      if(!await attendre(() => !premiereActive() && player.visible && camera.fov === 40 && camera.position.y > 3)) throw new Error("le bouton 👁️ ne ramène pas la vue de dessus");
+      return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, on entre dans la Scierie, la décoration se fait en vue de dessus`;
+    } finally { choisirVue(avant); }
   });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */

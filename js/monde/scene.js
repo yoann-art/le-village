@@ -33,12 +33,22 @@ function resize(){
   const w = app.clientWidth, h = app.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
+  projection();
+}
+function projection(){
   camera.updateProjectionMatrix();
   tanH = Math.tan(camera.fov * Math.PI / 360) * camera.aspect;
   tanCourt = Math.min(tanH, Math.tan(camera.fov * Math.PI / 360));   // le petit côté de l'écran (la largeur, ou la hauteur en paysage)
 }
 window.addEventListener("resize", resize);
 resize();
+/* L'angle de vue (en degrés, de haut en bas) : 40 vu de dessus ; plus large à la première personne (main.js) */
+export const FOV_DESSUS = 40;
+export function setFov(f){
+  if(Math.abs(camera.fov - f) < .01) return;
+  camera.fov = f;
+  projection();
+}
 /* Distance pour voir environ `width` P autour du personnage, sur le petit côté de l'écran : en paysage (demande de Yo,
    13 octobre 2026 : « plus large »), le personnage garde la taille qu'il a en portrait, et l'on voit plus loin sur les côtés */
 export const distanceFor = width => Math.min(34, width / (2 * tanCourt));

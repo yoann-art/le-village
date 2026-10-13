@@ -96,6 +96,19 @@ player.position.set(state.player.x, 0, state.player.z);
 degager();
 const facing = {x:0, z:1};
 
+/* La vue à la première personne (demande de Yo, 13 octobre 2026 ; vue.js) : le corps est caché (la caméra est à la place
+   de ses yeux), le doigt tourne son regard (tournerVue) et le joystick avance, recule et va de côté par rapport à ce regard */
+let fps = false;
+export function modeFPS(oui){ fps = !!oui; player.visible = !fps; }
+export function tournerVue(da){
+  const a = Math.atan2(facing.x, facing.z) + da;
+  facing.x = Math.sin(a); facing.z = Math.cos(a);
+}
+/* Où va le personnage : le sens de la marche si l'on pousse le joystick, sinon là où il regarde (la roulade s'en sert) */
+const sens = {x: 0, z: 1};
+let pousse = false;
+export const sensMarche = () => pousse ? {x: sens.x, z: sens.z} : {x: facing.x, z: facing.z};
+
 /* Pose le personnage à un endroit, tourné dans une direction (entrée et sortie des bâtiments) */
 export function placePlayer(x, z, fx, fz){
   player.position.set(x, 0, z);
@@ -155,13 +168,19 @@ export function updatePlayer(dt){
   }
   const mag = Math.min(1, Math.hypot(ix, iz));
   allureNow = mag;
+  pousse = mag > 0;
   if(mag > 0){
     const sp = SPEED * mag * dt * (lent > 0 ? .55 : 1), p = player.position, l = Math.hypot(ix, iz);
-    const ux = ix / l, uz = iz / l;
+    let ux = ix / l, uz = iz / l;
+    if(fps){                                            // première personne : le haut du joystick avance là où l'on regarde
+      const fx = facing.x, fz = facing.z;
+      [ux, uz] = [fx * -uz - fz * ux, fz * -uz + fx * ux];
+    }
     const nx = p.x + ux * sp, nz = p.z + uz * sp;
     if(free(nx, p.z)) p.x = nx;
     if(free(p.x, nz)) p.z = nz;
-    facing.x = ux; facing.z = uz;
+    sens.x = ux; sens.z = uz;
+    if(!fps){ facing.x = ux; facing.z = uz; }
     walkT += dt * 11 * mag;
   }
   const target = Math.atan2(facing.x, facing.z);
