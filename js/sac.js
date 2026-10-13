@@ -186,10 +186,11 @@ function monstresHTML(){
   const detail = !L ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche un monstre pour voir sa fiche.</p>`
     : vu(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${L.emoji}</span><div class="pt"><b>${L.nom}</b><p>${L.comportement}. Taille : ${L.taille}.</p>` +
       `<p>⚠️ Son signe avant l'attaque : ${L.annonce.toLowerCase()}.</p><p>${L.une ? "Elle" : "Il"} laisse : ${laisse}. Vaincu${e} ${c[fiche].n} fois.</p></div></div>`
-    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore vaincu${e}</b><p>On ${L.une ? "la" : "le"} rencontre dans la grotte de la Forêt profonde, sous les racines du vieux chêne${L.gardien ? ", tout au fond du troisième palier" : ""}. Observe bien son signe avant l'attaque !</p></div></div>`;
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore vaincu${e}</b><p>On ${L.une ? "la" : "le"} rencontre ${L.zone === "marais" ? "dans la grotte du Marais brumeux, le Puits aux Brumes" : "dans la grotte de la Forêt profonde, sous les racines du vieux chêne"}${L.gardien ? ", tout au fond du troisième palier" : ""}. Observe bien son signe avant l'attaque !</p></div></div>`;
   return `<p class="muted" style="margin:0 0 8px">👹 Monstres : ${ks.filter(vu).length} sur ${ks.length}. Chaque attaque s'annonce par un signe : on gagne en observant.</p>` + detail +
-    `<h3 style="margin:8px 0 4px">🌲 La grotte de la Forêt profonde</h3><div class="res-grid">${ks.filter(k => !MONSTRES[k].gardien).map(tuile).join("")}</div>` +
-    `<h3 style="margin:8px 0 4px">👑 Son gardien</h3><div class="res-grid">${ks.filter(k => MONSTRES[k].gardien).map(tuile).join("")}</div>`;
+    [[undefined, "🌲 La grotte de la Forêt profonde"], ["marais", "🌫️ La grotte du Marais brumeux, le Puits aux Brumes"]].map(([z, titre]) =>
+      `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => MONSTRES[k].zone === z && !MONSTRES[k].gardien).map(tuile).join("")}</div>` +
+      `<h3 style="margin:8px 0 4px">👑 Son gardien</h3><div class="res-grid">${ks.filter(k => MONSTRES[k].zone === z && MONSTRES[k].gardien).map(tuile).join("")}</div>`).join("");
 }
 /* Le gibier (étape 1.7, morceau 5) : chaque espèce chassée met son trophée au carnet (carnet) ; le Cerf blanc,
    qui ne se chasse pas, s'y inscrit quand il a offert son bois d'argent */

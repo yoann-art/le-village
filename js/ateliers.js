@@ -46,7 +46,7 @@ function chain(q){
    poissons et des plats qu'on possède, avec leur prix (POISSONS, PRODUITS) */
 const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf", "duvet", "fourrureImper", "cuirArgente"];
 const FLEURS_VENTE = Object.keys(FLEURS);
-const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse", "coeurDeBois"];
+const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse", "coeurDeBois", "glandePoison", "ventouse", "flammeBleue", "ecailleGrise", "tourbe", "racineAncienne", "ecailleHydre"];
 const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "quartzRose", "citrine", "oeilTigre", "bronze", "verre"];   // pas le Cœur de la mine
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
 const MARAIS_VENTE = ["boisCypres", "boisAulne", "eauBrume", "fruitLanterne", ...PLANTES_MARAIS];   // étape 1.13, morceau 4

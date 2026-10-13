@@ -793,6 +793,22 @@ export const PRODUITS = {
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C6 17 3 13.5 3 9.5 3 6.5 5.4 4.5 8 4.5c1.7 0 3.1.9 4 2.2.9-1.3 2.3-2.2 4-2.2 2.6 0 5 2 5 5 0 4-3 7.5-9 11.5z" fill="#7A5232" stroke="#1C2230" stroke-opacity=".35"/><path d="M8 8.5c1.5 1 2 3 1.5 5M15.5 8c-1 1.4-1 3.4 0 5.2M12 9v8" stroke="#4A3020" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="1.6" fill="#9AF060"/></svg>',
     aide:"Le Gardien d'écorce le laisse, au fond de la grotte de la Forêt profonde (le troisième palier).",
     usage:"Le cœur du Gardien d'écorce : il servira à graver la rune des racines, à la Pierre de gravure de la Tour des runes (Grand Carnet). En attendant, il se vend au comptoir."},
+  /* Ce que laissent les monstres de la grotte du Marais brumeux (étape 1.13, morceau 6 ; Grand Carnet) ; prix choisis par
+     Claude ; en attendant l'équipement et les potions, tout se vend au comptoir */
+  glandePoison:{nom:"Glande à poison", pluriel:"glandes à poison", une:true, emoji:"🟢", prix:4, aide:"La glande à poison vient du crapaud-poison, dans la grotte du Marais brumeux (le Puits aux Brumes).",
+    usage:"Pour les potions et les bombes de poison (plus tard). En attendant, elle se vend au comptoir."},
+  ventouse:{nom:"Ventouse", pluriel:"ventouses", une:true, emoji:"⭕", prix:3, aide:"La ventouse vient de la sangsue géante, dans la grotte du Marais brumeux.",
+    usage:"La ventouse de la sangsue géante, pour l'équipement (plus tard)."},
+  flammeBleue:{nom:"Flamme bleue en bocal", pluriel:"flammes bleues en bocal", une:true, emoji:"🔵", prix:6, aide:"La flamme bleue vient du feu-follet trompeur, dans la grotte du Marais brumeux.",
+    usage:"Une petite flamme bleue qui ne brûle pas, enfermée dans un bocal : une lumière, ou un ingrédient de potion (plus tard)."},
+  ecailleGrise:{nom:"Écaille grise", pluriel:"écailles grises", une:true, emoji:"🐍", prix:5, aide:"L'écaille grise vient du serpent des brumes, dans la grotte du Marais brumeux.",
+    usage:"Une écaille dure et pâle, pour une armure d'écailles (plus tard, Grand Carnet)."},
+  tourbe:{nom:"Tourbe", pluriel:"tourbe", une:true, emoji:"🟫", prix:1, aide:"La tourbe vient de l'homme-tourbe, dans la grotte du Marais brumeux.",
+    usage:"De la tourbe sombre, qui brûle longtemps (plus tard). En attendant, elle se vend au comptoir."},
+  racineAncienne:{nom:"Racine ancienne", pluriel:"racines anciennes", une:true, emoji:"🪵", prix:6, aide:"La racine ancienne vient de l'homme-tourbe, dans la grotte du Marais brumeux.",
+    usage:"Une racine noueuse, plus vieille que le Marais : pour les potions puissantes (plus tard)."},
+  ecailleHydre:{nom:"Écaille d'hydre", pluriel:"écailles d'hydre", une:true, emoji:"🐉", prix:15, aide:"L'Hydre des brumes la laisse, au fond de la grotte du Marais brumeux (le troisième palier).",
+    usage:"Une grande écaille grise et verte de l'Hydre des brumes : un trophée, et plus tard une armure (Grand Carnet). En attendant, elle se vend au comptoir."},
   boisArgent:{nom:"Bois d'argent", pluriel:"bois d'argent", emoji:"✨", aide:"Le bois d'argent est le présent du Cerf blanc, une seule fois dans tout le jeu.",
     usage:"Le présent du Cerf blanc, qu'on a suivi jusqu'au bout une nuit de pleine lune. Un seul dans tout le jeu."},
   thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
@@ -960,8 +976,36 @@ export const MONSTRES = {
      (le signe : il les lève) ; rayon : sa taille au sol (combat.js frappe de plus loin). Chiffres choisis par Claude */
   gardien:{nom:"Gardien d'écorce", pluriel:"Gardiens d'écorce", emoji:"🌳", taille:"Gardien (environ 2,5 P)", gardien:true, vie:14, degats:1, vitesse:.7, flair:6, pause:1,
     racines:{degats:2, signe:1.1, r:.95, t:.6}, balaie:{signe:.8, portee:1.9}, souffle:1.3, rayon:.75, carte:"marais",
-    comportement:"L'esprit de l'arbre, au fond de la grotte : il fait jaillir ses racines sous tes pieds et balaie de ses branches", annonce:"Ses racines s'illuminent sous le sol (ou il lève ses branches)", donne:{coeurDeBois:1}}
+    comportement:"L'esprit de l'arbre, au fond de la grotte : il fait jaillir ses racines sous tes pieds et balaie de ses branches", annonce:"Ses racines s'illuminent sous le sol (ou il lève ses branches)", donne:{coeurDeBois:1}},
+  /* La grotte du Marais brumeux, le Puits aux Brumes (étape 1.13, morceau 6 ; Grand Carnet : « de la brume, de la vase et des
+     poches de gaz ») ; zone : la grotte où ils vivent ; chiffres choisis par Claude, à régler en jouant.
+     crapaud : il reste à distance, gonfle sa gorge, puis crache son venin là où se tenait le personnage (crachat : vitesse,
+     rayon) ; sangsue : elle ondule, puis bondit et s'accroche (ralentit : secondes où le personnage avance moins vite) ;
+     feu-follet trompeur : il flotte près d'une poche de gaz et y attire ; quand on approche, sa flamme vire au vert et la
+     poche éclate ; serpent : caché dans la brume (on ne le voit ni ne le vise), il siffle, se dresse et mord ; homme-tourbe :
+     il nage sous la vase (des bulles), des bulles remontent sous le personnage, il en sort et frappe lourdement autour de
+     lui (frappe.r), puis reste un moment dehors ; l'Hydre des brumes : trois têtes (tete : leurs points de vie, chacune) ;
+     une tête coupée repousse au bout de repousse secondes, il faut les couper toutes avant ; de près, les trois têtes se
+     dressent ensemble et s'abattent (morsure) ; de loin, elles soufflent un nuage de brume empoisonnée (le signe : un
+     cercle vert au sol) */
+  crapaud:{nom:"Crapaud-poison", pluriel:"crapauds-poison", emoji:"🐸", zone:"marais", taille:"Petit (environ ½ P)", vie:2, degats:1, vitesse:1.6, flair:5, distance:3.4, signe:.8,
+    crachat:{v:5.5, r:.6}, souffle:1.3, comportement:"Crache du venin", annonce:"Gonfle sa gorge", donne:{glandePoison:1}},
+  sangsue:{nom:"Sangsue géante", pluriel:"sangsues géantes", une:true, emoji:"🪱", zone:"marais", taille:"Petit (environ ½ P)", vie:2, degats:1, vitesse:1.7, flair:4, signe:.7,
+    bond:{v:6.5, t:.32}, ralentit:3, souffle:1.1, comportement:"S'accroche et ralentit", annonce:"Ondule dans l'eau", donne:{ventouse:1}},
+  feuFolletTrompeur:{nom:"Feu-follet trompeur", pluriel:"feux-follets trompeurs", emoji:"🔵", zone:"marais", taille:"Petit (environ ½ P)", vie:1, degats:1, vitesse:2, flair:5.5,
+    signe:.9, souffle:2.5, comportement:"Attire vers les poches de gaz", annonce:"Sa flamme vire au vert", donne:{flammeBleue:1}},
+  serpent:{nom:"Serpent des brumes", pluriel:"serpents des brumes", emoji:"🐍", zone:"marais", taille:"Moyen (environ 1 P)", vie:4, degats:1, vitesse:2.2, flair:4.2, signe:.7,
+    bond:{v:7, t:.3}, souffle:1.2, comportement:"Se cache dans la brume et mord", annonce:"Sifflement", donne:{ecailleGrise:1}},
+  hommeTourbe:{nom:"Homme-tourbe", pluriel:"hommes-tourbe", emoji:"🗿", zone:"marais", taille:"Moyen (environ 1 P)", vie:6, degats:2, vitesse:1.5, flair:5, signe:1.1,
+    frappe:{r:1.2}, souffle:2.2, comportement:"Sort de la vase et frappe lourdement", annonce:"Des bulles remontent", donne:{tourbe:2, racineAncienne:1}},
+  hydre:{nom:"Hydre des brumes", pluriel:"Hydres des brumes", une:true, emoji:"🐉", zone:"marais", taille:"Gardien (environ 3 P)", gardien:true, vie:9, tete:3, repousse:8, degats:2,
+    vitesse:.6, flair:6.5, pause:1.1, morsure:{signe:1, portee:2.4}, brume:{degats:1, signe:1.1, r:1.1, t:.8}, souffle:1.4, rayon:1, carte:"recif",
+    comportement:"Trois têtes : une tête coupée repousse si on ne coupe pas vite les autres", annonce:"Les trois têtes se dressent ensemble (ou un cercle vert s'étend sous toi)", donne:{ecailleHydre:1}}
 };
+/* Les poches de gaz de la grotte du Marais (étape 1.13, morceau 6 ; bible : « poches de gaz ») : elles bouillonnent, puis
+   éclatent toutes les intervalle secondes (de… à…) ; le signe : elles bouillonnent plus fort et jaunissent (signe secondes) ;
+   le nuage de gaz (rayon r, t secondes) enlève degats cœurs. Chiffres choisis par Claude */
+export const GAZ = {intervalle:[7, 12], signe:1.3, r:1.15, t:.8, degats:1};
 /* Les cartes des destinations (étape 1.13 ; bible : « deux conditions pour ouvrir une destination : trouver sa carte au fond
    de la grotte précédente, puis construire ou apprivoiser son transport sur l'île »). Gardées dans la partie
    (state.cartes = {carte: heure}), jamais perdues ; la page « 🗺️ Cartes » du carnet. Dans l'ordre d'ouverture (bible) */
@@ -977,6 +1021,10 @@ export const CARTES = {
    descend les paliers, et plus on s'éloigne de la lumière, plus ils sont nombreux et forts ») */
 export const PALIER_MONSTRES = {1:[["loup", 2], ["chauveSouris", 3]], 2:[["loup", 2], ["sanglier", 1], ["chauveSouris", 4]],
   3:[["loup", 3], ["sanglier", 1], ["chauveSouris", 4], ["sanglier", 1]]};
+/* La grotte du Marais brumeux (étape 1.13, morceau 6) */
+export const PALIER_MONSTRES_MARAIS = {1:[["crapaud", 2], ["sangsue", 2], ["feuFolletTrompeur", 1]],
+  2:[["crapaud", 2], ["serpent", 1], ["hommeTourbe", 1], ["feuFolletTrompeur", 2], ["sangsue", 2]],
+  3:[["serpent", 2], ["hommeTourbe", 1], ["crapaud", 3], ["feuFolletTrompeur", 2], ["sangsue", 2]]};
 /* Les fleurs des prés de l'île (étape 1.9, morceau 4 ; Grand Carnet, « Les fleurs », les prés de l'île) : leurs couleurs
    (rares : seulement par croisement, plus tard), saison, rareté, à quoi elles servent (note, du carnet), forme (le
    dessin : etoile, coupe, boule, epi, clochette), coeur (le milieu de la fleur), taille (hauteur en P), prix au

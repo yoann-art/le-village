@@ -8,7 +8,8 @@
    en moulinant, accoster), le voyage (vers le Marais brumeux avec sa carte, la scène qu'on passe, le retour), le Marais brumeux
    (ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit, la torche qui
    s'allume quand il fait sombre), la vie du Marais (une araignée d'eau, un canard colvert, un poisson-chat, un ragondin),
-   vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   la grotte du Marais (le Puits aux Brumes, une poche de gaz, un crapaud-poison, l'Hydre des brumes et ses têtes qui
+   repoussent, la carte du Récif), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -41,7 +42,7 @@ import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/me
 import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
-import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci } from "../js/monstres.js";
+import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci, hydreIci, pochesIci, eclaterPoche } from "../js/monstres.js";
 import { antre } from "../js/monde/grotte.js";
 import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee, updateTorche } from "../js/torche.js";
@@ -55,7 +56,7 @@ import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
 import { checkDoors, isInside, currentPlace, doorOf, retourIle, allerA } from "../js/lieux.js";
-import { marais, maraisObj, marche as marcheMarais, plante, mcx, mcz, mtile, W as WM, D as DM, DEPART } from "../js/monde/marais.js";
+import { marais, maraisObj, marche as marcheMarais, plante, mcx, mcz, mtile, W as WM, D as DM, DEPART, PUITS } from "../js/monde/marais.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
@@ -1136,6 +1137,53 @@ export async function verifier(){
       if(haut){ placePlayer(haut.x, haut.z + .3, 0, -1); checkDoors(true); await attendre(() => currentPlace().b.type === "foret"); }
       if(currentPlace() && currentPlace().b.type === "foret") await sortir();
       state.sac = sac0; state.barre = barre0; hold(null);
+    }
+  });
+  await etape("La grotte du Marais : le Puits aux Brumes, une poche de gaz, un crapaud-poison, l'Hydre des brumes et la carte du Récif", async () => {
+    const P = state.ponton, sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre)), cartes0 = {...(state.cartes || {})};
+    allerA({type: "marais"}, DEPART, {x: centerOf(P.x), z: centerOf(P.z + P.n - 1)});
+    if(!await attendre(() => currentPlace() && currentPlace().b.type === "marais")) throw new Error("on n'arrive pas au Marais");
+    try {
+      state.sac = []; state.barre = [null, null, null]; hold(null);
+      sacAdd("epeeBronze", 1); enMain("epeeBronze");
+      pauseMonstres(false);                                      // ses habitants, ses poches de gaz
+      placePlayer(PUITS.x, PUITS.z + R + .05, 0, -1); checkDoors(true);
+      if(!await attendre(() => currentPlace() && currentPlace().b.type === "grotte" && currentPlace().b.zone === "marais")) throw new Error("on n'entre pas dans le Puits aux Brumes");
+      /* une poche de gaz : sous les pieds du personnage, elle jaunit, puis son nuage l'atteint */
+      if(!await attendre(() => pochesIci().length > 0, 3000)) throw new Error("pas de poche de gaz dans le Puits aux Brumes");
+      const poche = pochesIci()[0];
+      placePlayer(poche.x, poche.z + .3, 0, -1); eclaterPoche(poche);
+      if(!await attendre(() => poche.touche, 5000)) throw new Error(`la poche de gaz n'atteint pas le personnage (elle est « ${poche.etat} »)`);
+      /* un crapaud-poison, tout près : un coup d'épée en bronze */
+      pauseMonstres(true);
+      const ici = player.position, avant = monstresVaincus();
+      lacherMonstre("crapaud", ici.x, ici.z - 1.4, "souffle");
+      for(let k = 0; k < 6 && monstresVaincus() === avant; k++){ combat.attaquer(); await wait(COMBAT.coup * 1000 + 100); }
+      if(monstresVaincus() === avant || !state.carnet.monstres.crapaud || !owned("glandePoison")) throw new Error("le crapaud-poison n'est pas vaincu, ou pas de glande à poison");
+      /* au fond, l'Hydre des brumes : une tête coupée repousse ; coupées toutes les trois, elle laisse la carte du Récif */
+      state.cartes = state.cartes || {}; delete state.cartes.recif;
+      const { entrerGrotte } = await import("../js/lieux.js");
+      entrerGrotte(3);
+      if(!await attendre(() => currentPlace().b.palier === 3)) throw new Error("on ne descend pas au fond du Puits aux Brumes");
+      const a = antre();
+      if(!a) throw new Error("pas de repaire de l'Hydre au troisième palier");
+      pauseMonstres(true);
+      placePlayer(a.x, a.z + 1.8, 0, -1);
+      const h = lacherMonstre("hydre", a.x, a.z, "souffle");
+      combat.attaquer(); await wait(COMBAT.coup * 1000 + 150);
+      if(!h.tetes[0].coupee) throw new Error("un coup d'épée en bronze ne coupe pas une tête de l'Hydre");
+      h.tetes[0].repousse = .05; await wait(400);
+      if(h.tetes[0].coupee) throw new Error("la tête coupée ne repousse pas");
+      const fin = monstresVaincus();
+      for(let k = 0; k < 8 && monstresVaincus() === fin; k++){ h.etat = "souffle"; h.t = 0; combat.attaquer(); await wait(COMBAT.coup * 1000 + 100); }
+      if(monstresVaincus() === fin) throw new Error(`l'Hydre n'est pas vaincue (ses têtes : ${h.tetes.map(t => t.coupee ? "coupée" : t.vie).join(", ")})`);
+      if(!state.cartes.recif || !owned("ecailleHydre") || !state.carnet.monstres.hydre) throw new Error("vaincue, l'Hydre ne laisse pas la carte du Récif, ou pas d'écaille d'hydre");
+      return "le Puits aux Brumes ; une poche de gaz qui jaunit puis éclate ; un crapaud-poison vaincu (sa glande à poison) ; l'Hydre : une tête repousse, puis les trois coupées : la carte du Récif et une écaille d'hydre";
+    } finally {
+      pauseMonstres(true);
+      state.cartes = {...cartes0, ...(state.cartes && state.cartes.recif ? {recif: state.cartes.recif} : {})};
+      state.sac = sac0; state.barre = barre0; hold(null);
+      if(currentPlace() && ["grotte", "marais"].includes(currentPlace().b.type)){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
     }
   });
   await etape("Les mains : l'épée du sac ne sert pas ; l'arc à deux mains pose la torche au sol, vainc un loup et rend sa flèche", async () => {

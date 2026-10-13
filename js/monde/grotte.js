@@ -12,7 +12,13 @@
    Le butin : des rochers (pierre), des veines de cuivre, de rares veines d'or, et des coffres au trésor ; plus on
    descend, plus il y en a. La grotte change à chaque visite : rien n'est gardé dans la sauvegarde.
    Étape 1.13, morceau 1 : au dernier palier, le fond est l'antre du Gardien d'écorce, une salle dessinée à la main tout
-   en haut (10 × 8), au sol moussu, aux grosses racines le long des parois ; ni butin ni autre monstre dedans (antre). */
+   en haut (10 × 8), au sol moussu, aux grosses racines le long des parois ; ni butin ni autre monstre dedans (antre).
+   Étape 1.13, morceau 6 : la grotte du Marais brumeux, le Puits aux Brumes (zone « marais » ; Grand Carnet : « de la brume,
+   de la vase et des poches de gaz » ; bible : « brume qui réduit la vue, poches de gaz ») : le même plan de paliers, un sol
+   de vase verdâtre, une mare de boue dans chaque salle (vase : l'homme-tourbe et les sangsues y vivent), des poches de gaz
+   (gaz : elles bouillonnent et éclatent, monstres.js), des nappes de brume, des lianes qui pendent, des champignons
+   bleutés (la Mycène des feux-follets du carnet) ; une brume (interior.fog, réglée selon la caméra par main.js) qui
+   cache ce qui est loin. Au dernier palier, le repaire de l'Hydre des brumes, au milieu d'une grande mare. */
 import { G, part } from "./formes.js";
 import { rockMesh } from "./rochers.js";
 
@@ -28,10 +34,15 @@ const BUTIN = p => ({rochers: 4 + p * 2, cuivre: 2 + p, or: p - 1, tresors: p ==
 let plan = null;          // {palier, sol, objets (case → sorte), passages, depart, porte, salles, visite}
 let visites = 0;
 export const palierEnCours = () => plan && plan.palier;
+/* La grotte en cours : « foret » ou « marais » (étape 1.13, morceau 6) ; ses poches de gaz ; une case de vase */
+export const zoneEnCours = () => plan ? plan.zone : null;
+export const pochesDeGaz = () => plan ? plan.gaz : [];
+export const dansLaVase = (x, z) => { const i = gtile(x, z); return !!plan && i >= 0 && plan.vase.has(i); };
 /* Le numéro du palier tiré en dernier : il change à chaque palier, à chaque visite (les monstres s'en servent) */
 export const visiteEnCours = () => plan ? plan.visite : 0;
-function genere(palier){
+function genere(palier, zone = "foret"){
   const rnd = Math.random;                         // la grotte change à chaque visite (bible)
+  const marais = zone === "marais";
   const sol = new Uint8Array(W * D);
   const creuse = (x0, z0, x1, z1) => {
     for(let z = Math.max(1, Math.min(z0, z1)); z <= Math.min(D - 2, Math.max(z0, z1)); z++)
@@ -81,6 +92,20 @@ function genere(palier){
   for(let i = places.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [places[i], places[j]] = [places[j], places[i]]; }
   const objets = new Map(), b = BUTIN(palier);
   const poser = (n, sorte) => { for(let k = 0; k < n && places.length; k++) objets.set(places.pop(), sorte); };
+  /* au Marais : une mare de vase dans chaque salle (et une grande dans le repaire de l'Hydre), puis les poches de gaz */
+  const vase = new Set(), gaz = [];
+  if(marais){
+    for(const s of salles.slice(1)){
+      const [mx, mz] = centre(s), r = s === antre ? 2.6 : 1.2 + rnd() * .8;
+      for(let z = s.z0; z <= s.z1; z++) for(let x = s.x0; x <= s.x1; x++) if(Math.hypot(x - mx, (z - mz) * 1.2) < r) vase.add(z * W + x);
+    }
+    for(let k = places.length - 1, n = 0; k >= 0 && n < 2 + palier; k--){
+      const i = places[k];
+      if(vase.has(i) || gaz.some(g => Math.hypot(g.x - gcx(i), g.z - gcz(i)) < 3)) continue;
+      places.splice(k, 1); gaz.push({x: gcx(i), z: gcz(i)}); n++;
+    }
+  }
+  for(let k = places.length - 1; k >= 0; k--) if(vase.has(places[k])) places.splice(k, 1);   // pas de butin dans la vase
   poser(b.tresors, "tresor"); poser(b.or, "rockOr"); poser(b.cuivre, "rockCuivre"); poser(b.rochers, "rock");
   /* des champignons qui luisent (la Lanterne des bois du carnet), le long des parois : de quoi se repérer */
   const lueurs = [];
@@ -89,7 +114,7 @@ function genere(palier){
     if(!sol[i] || objets.has(i) || ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, c]) => !sol[(z + c) * W + x + a])) continue;
     lueurs.push(i);
   }
-  return {palier, sol, objets, passages, depart, porte: palier === 1, lueurs, salles, antre, visite: ++visites, rnd: [...Array(W * D)].map(() => rnd())};
+  return {palier, zone, sol, objets, passages, depart, porte: palier === 1, lueurs, salles, antre, vase, gaz, visite: ++visites, rnd: [...Array(W * D)].map(() => rnd())};
 }
 
 /* ----- Ce qu'il y a sur une case ; le miner, l'ouvrir ----- */
@@ -163,8 +188,9 @@ export function torcheAuSol(x, z, t = 0, lanterne = false){
   torcheSol.position.set(x, 0, z); if(flammeSol) flammeSol.scale.set(.14 * f, .26 * (2 - f), .14 * f);
   lueurSol.position.set(x, lanterne ? .7 : 1.2, z); lueurSol.intensity = (lanterne ? 1.9 : 1.8) * f; lueurSol.distance = lanterne ? 9 : 7.5;
 }
-export function makeGrotte(palier){
-  plan = genere(palier);
+export function makeGrotte(palier, zone){
+  plan = genere(palier, zone);
+  const marais = plan.zone === "marais";
   group = new THREE.Group(); meshes.clear(); torcheSol = null; lueurSol.intensity = 0;
   const {sol} = plan, estSol = (x, z) => x >= 0 && z >= 0 && x < W && z < D && sol[z * W + x];
   /* le sol de terre sombre */
@@ -173,7 +199,9 @@ export function makeGrotte(palier){
   const fond = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), new THREE.MeshLambertMaterial({color: 0xffffff}), cases.length), col = new THREE.Color();
   const dansAntre = (x, z) => plan.antre && x >= plan.antre.x0 && x <= plan.antre.x1 && z >= plan.antre.z0 && z <= plan.antre.z1;
   cases.forEach((i, k) => { m4.makeTranslation(gcx(i), -.1, gcz(i)); fond.setMatrixAt(k, m4);
-    fond.setColorAt(k, col.setHex(dansAntre(i % W, Math.floor(i / W)) ? ((i + Math.floor(i / W)) % 2 ? 0x3E4630 : 0x454E34) : (i + Math.floor(i / W)) % 2 ? 0x4A3A2E : 0x52412F)); });   // l'antre : un sol moussu
+    const pair = (i + Math.floor(i / W)) % 2;
+    fond.setColorAt(k, col.setHex(marais ? (pair ? 0x3A3C2C : 0x34372A)                       // le Marais : de la vase verdâtre
+      : dansAntre(i % W, Math.floor(i / W)) ? (pair ? 0x3E4630 : 0x454E34) : pair ? 0x4A3A2E : 0x52412F)); });   // l'antre : un sol moussu
   fond.instanceColor.needsUpdate = true; fond.receiveShadow = true; group.add(fond);
   /* les parois : des blocs de roche arrondis tout autour ; ceux de devant restent bas pour voir dedans */
   const murs = [];
@@ -189,15 +217,28 @@ export function makeGrotte(palier){
     const r = plan.rnd[z * W + x], devant = estSol(x, z - 1) || tunnel, h = devant ? .5 : 1.8 + r * 1.1;
     q.setFromAxisAngle(v.set(0, 1, 0), r * 6.28);
     m4.compose(v.set(cx(x) + (r - .5) * .2, h * .42, cz(z) + (r - .5) * .2), q, s3.set(1.5, h, 1.5));
-    paroi.setMatrixAt(k, m4); paroi.setColorAt(k, col.setHex(r < .5 ? 0x4E453E : 0x5A5047));
+    paroi.setMatrixAt(k, m4); paroi.setColorAt(k, col.setHex(marais ? (r < .5 ? 0x3E463C : 0x4A5246) : r < .5 ? 0x4E453E : 0x5A5047));
   });
   paroi.instanceColor.needsUpdate = true; group.add(paroi);
   /* des racines qui pendent le long des parois hautes (on est sous la forêt) */
   murs.forEach(([x, z]) => {
     const r = plan.rnd[z * W + x];
     if(r > .12 || estSol(x, z - 1)) return;
-    const rac = part(G.cyl, 0x5A4030, .08, 1.4, .08, cx(x) + (r - .06) * 4, 1.4, cz(z) + .5); rac.rotation.z = (r - .06) * 4; group.add(rac);
+    const rac = part(G.cyl, marais ? 0x4E6A3E : 0x5A4030, .08, 1.4, .08, cx(x) + (r - .06) * 4, 1.4, cz(z) + .5); rac.rotation.z = (r - .06) * 4; group.add(rac);   // au Marais : des lianes
   });
+  /* au Marais : la vase luisante des mares, et des nappes de brume qui flottent au ras du sol */
+  if(marais){
+    const mares = [...plan.vase];
+    const boue = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .02, 1), new THREE.MeshPhongMaterial({color: 0x2A2A1C, specular: 0x3A4A2A, shininess: 40}), mares.length);
+    mares.forEach((i, k) => { m4.makeTranslation(gcx(i), .012, gcz(i)); boue.setMatrixAt(k, m4); });
+    boue.receiveShadow = true; group.add(boue);
+    const voile = new THREE.MeshLambertMaterial({color: 0xB8C8B8, transparent: true, opacity: .14, depthWrite: false});
+    for(let n = 0, essai = 0; n < 16 && essai < 200; essai++){
+      const i = Math.floor(plan.rnd[essai] * W * D);
+      if(!sol[i]) continue;
+      const b = new THREE.Mesh(G.head, voile); b.scale.set(6 + plan.rnd[i] * 4, 1.4, 5 + plan.rnd[i] * 3); b.position.set(gcx(i), .25, gcz(i)); b.renderOrder = 3; group.add(b); n++;
+    }
+  }
   /* l'antre du Gardien : de grosses racines qui descendent des parois et rampent sur le sol */
   if(plan.antre){
     const a = plan.antre, RACINE = 0x5A4030;
@@ -209,8 +250,9 @@ export function makeGrotte(palier){
       const rac = part(G.cyl, RACINE, .16, 1.2, .16, cx(x) + (x === a.x0 ? .5 : -.5), .08, cz(z)); rac.rotation.z = Math.PI / 2; rac.rotation.y = (plan.rnd[z] - .5) * .6; group.add(rac);
     }
   }
-  /* les champignons lumineux */
-  const luit = new THREE.MeshLambertMaterial({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
+  /* les champignons lumineux (au Marais : bleutés, la Mycène des feux-follets du carnet) */
+  const luit = marais ? new THREE.MeshLambertMaterial({color: 0x9AD8F8, emissive: 0x3A8AD8, emissiveIntensity: .9})
+    : new THREE.MeshLambertMaterial({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
   for(const i of plan.lueurs){
     const r = plan.rnd[i], x = gcx(i) + (r - .5) * .5, z = gcz(i) + (r - .5) * .5;
     group.add(part(G.cyl, 0xE8E0D0, .05, .14, .05, x, .07, z));
@@ -241,6 +283,8 @@ export function makeGrotte(palier){
   for(const [i, o] of plan.objets) objetMesh(i, o);
   group.add(lueur, lueurSol);
   /* noir et silencieux : seule la torche met du chaud (bible) */
+  if(marais) return {group, w: W, d: D, doorX: plan.porte ? 0 : null, walk, passages: plan.passages, depart: plan.depart, brume: true,   // au Marais, une brume qui cache ce qui est loin
+    fond: 0x08100C, light: 0x80A890, power: .07, sky: 0x2A3A30, ground: 0x0E120A, hemi: .16};
   return {group, w: W, d: D, doorX: plan.porte ? 0 : null, walk, passages: plan.passages, depart: plan.depart,
     fond: 0x050407, light: 0x8090A8, power: .06, sky: 0x2A2E3A, ground: 0x0E0B08, hemi: .14};   // pas de brume : la pénombre vient de la lumière
 }

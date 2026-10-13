@@ -20,14 +20,22 @@
    s'illuminent sous le sol »), au fond du dernier palier, à chaque visite. Il dort jusqu'à ce qu'on approche, puis, tour
    à tour : de loin, un cercle s'illumine sous le personnage (ses racines) et elles en jaillissent ; de près, il lève ses
    branches et balaie. Après chaque attaque, il reprend son souffle : le moment de frapper. Vaincu, il laisse un cœur de
-   bois, et la première fois la carte du Marais (state.cartes). */
+   bois, et la première fois la carte du Marais (state.cartes).
+   Étape 1.13, morceau 6 : la grotte du Marais brumeux, le Puits aux Brumes (zoneEnCours, PALIER_MONSTRES_MARAIS ; Grand
+   Carnet) : le crapaud-poison (il garde ses distances, gonfle sa gorge, crache son venin là où l'on se tenait), la
+   sangsue géante (elle ondule, bondit et s'accroche : on avance moins vite), le feu-follet trompeur (il flotte au-dessus
+   d'une poche de gaz ; si l'on s'en approche, sa flamme vire au vert et la poche éclate), le serpent des brumes (caché dans
+   la brume, on ne peut pas le viser ; il siffle, se dresse et mord, puis se montre un moment), l'homme-tourbe (sous la
+   vase, des bulles ; des bulles remontent sous le personnage, il en jaillit et frappe autour de lui, puis reste dehors un
+   moment) ; les poches de gaz (GAZ : elles jaunissent et bouillonnent fort, puis un nuage s'en échappe) ; au fond,
+   l'Hydre des brumes : trois têtes, à couper vite (une tête coupée repousse), la carte du Récif la première fois. */
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
-import { MONSTRES, PALIER_MONSTRES, GIBIER, CARTES, objet } from "./donnees.js";
+import { MONSTRES, PALIER_MONSTRES, PALIER_MONSTRES_MARAIS, GAZ, GIBIER, CARTES, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
-import { player } from "./monde/personnage.js";
-import { tanieres, walk as walkGrotte, visiteEnCours, palierEnCours, antre } from "./monde/grotte.js";
+import { player, ralentir } from "./monde/personnage.js";
+import { tanieres, walk as walkGrotte, visiteEnCours, palierEnCours, antre, zoneEnCours, pochesDeGaz } from "./monde/grotte.js";
 import { walk as walkForet } from "./monde/foret.js";
 import { toast, renderHUD } from "./interface.js";
 import { flecheModele } from "./monde/outils3d.js";
@@ -37,7 +45,7 @@ const groupe = new THREE.Group(); interior.add(groupe); groupe.visible = false;
 const monstres = [];      // {k, x, y, z, ang, vie, etat, t, mesh, bulle, home, cible, pause, flash, recul, mord, tour, sens, dir, alpha, grp, foret}
 let milieu = null;        // "grotte" ou "foret"
 const walk = (x, z) => milieu === "foret" ? walkForet(x, z) : walkGrotte(x, z);
-const leNom = (k, maj) => { const L = MONSTRES[k], s = `${L.une ? "la" : "le"} ${L.nom.toLowerCase()}`; return maj ? s[0].toUpperCase() + s.slice(1) : s; };
+const leNom = (k, maj) => { const L = MONSTRES[k], s = `${/^[aeiouyhéèêâîôœ]/i.test(L.nom) ? "l'" : L.une ? "la " : "le "}${L.nom.toLowerCase()}`; return maj ? s[0].toUpperCase() + s.slice(1) : s; };
 
 /* ----- Les modèles : pointus et anguleux, les yeux qui luisent (la tête vers -z) ----- */
 const JAUNE = 0xFFD54A, ROUGE = 0xFF4A3A, ORANGE = 0xFF9A3A;
@@ -156,7 +164,115 @@ function gardienMesh(){
   g.userData = {corps, tete, bras, pattes: [], yeux, oeil: 0x9AF060, mats: [...Object.values(mats), yeux]};
   return g;
 }
-const MODELES = {loup: loupMesh, sanglier: sanglierMesh, chauveSouris: chauveMesh, gardien: gardienMesh};
+/* ----- La grotte du Marais brumeux (étape 1.13, morceau 6) : ses monstres, pointus et anguleux eux aussi ----- */
+/* Le crapaud-poison : trapu, vert et violet, couvert de pustules ; sa gorge jaune gonfle avant qu'il crache */
+function crapaudMesh(){
+  const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
+  const VERT = 0x6A8A3A, VIOLET = 0x8A4A9A, GORGE = 0xD8E070;
+  g.add(corps);
+  corps.add(part(G.dode, m(VERT), .6, .4, .62, 0, .22, .04));                                  // le corps, trapu
+  for(const [x, z] of [[-.16, .1], [.13, .16], [.04, -.04], [-.07, .26], [.18, -.08]]) corps.add(part(G.cone4, m(VIOLET), .08, .12, .08, x, .4, z));   // les pustules
+  tete.position.set(0, .3, -.24); corps.add(tete);
+  tete.add(part(G.dode, m(VERT), .44, .26, .34, 0, 0, 0));
+  const gorge = part(G.head, m(GORGE), .9, .65, .9, 0, -.09, -.08); tete.add(gorge);            // la gorge, qui gonfle (le signe)
+  for(const x of [-.13, .13]) tete.add(part(G.dode, m(VIOLET), .13, .13, .13, x, .1, -.05));   // les yeux saillants
+  const yeux = yeuxDe(tete, JAUNE, .12, -.1, .13, .9);
+  const pattes = pattesDe(corps, m, VIOLET, .12, [[-.22, -.12], [.22, -.12], [-.24, .22], [.24, .22]]);
+  g.userData = {corps, tete, pattes, yeux, oeil: JAUNE, gorge, mats: [...Object.values(mats), yeux]};
+  return g;
+}
+/* La sangsue géante : un long corps noir et luisant en anneaux, une bouche ronde pleine de petites dents */
+function sangsueMesh(){
+  const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
+  const LUISANT = new THREE.MeshPhongMaterial({color: 0x34303E, specular: 0x4A4A5C, shininess: 30});
+  g.add(corps);
+  const segments = [];
+  for(let k = 0; k < 5; k++){ const s = part(G.dode, LUISANT, .34 - k * .03, .22, .34, 0, .11, .32 - k * .16); corps.add(s); segments.push(s); }
+  tete.position.set(0, .12, -.48); corps.add(tete);
+  const bouche = part(G.tore, m(0x9A4A5A), .32, .32, .5, 0, 0, -.02); tete.add(bouche);
+  for(let k = 0; k < 6; k++){ const a = k / 6 * 6.28, d = part(G.cone4, m(0xE8E0D0), .03, .07, .03, Math.cos(a) * .1, Math.sin(a) * .1, -.03); d.rotation.x = -Math.PI / 2; tete.add(d); }   // les dents
+  const yeux = yeuxDe(tete, ROUGE, .13, .02, .08, .55);
+  g.userData = {corps, tete, pattes: [], segments, yeux, oeil: ROUGE, mats: [...Object.values(mats), LUISANT, yeux]};
+  return g;
+}
+/* Le feu-follet trompeur : une flamme bleue aux pointes vertes, un petit visage rusé ; elle vire au vert (le signe) */
+function feuFolletMesh(){
+  const g = new THREE.Group(), corps = new THREE.Group(), tete = new THREE.Group();
+  const flamme = new THREE.MeshLambertMaterial({color: 0x9AD0FF, emissive: 0x3A7AF0, emissiveIntensity: 1, transparent: true, opacity: .9});
+  g.add(corps); corps.position.y = .95;
+  corps.add(part(G.head, flamme, 1.1, 1.15, 1.1, 0, 0, 0));
+  corps.add(part(G.cone, flamme, .32, .6, .32, 0, .36, 0));
+  for(const [x, a] of [[-.13, .6], [.13, -.6]]){ const p = part(G.cone4, flamme, .1, .28, .1, x, .22, 0); p.rotation.z = a; corps.add(p); }   // ses pointes
+  tete.position.set(0, .02, -.22); corps.add(tete);
+  const yeux = yeuxDe(tete, 0x14204A, .05, 0, .07, .8);
+  const sourire = part(G.box, new THREE.MeshBasicMaterial({color: 0x14204A}), .12, .02, .02, .02, -.06, 0); sourire.rotation.z = .25; tete.add(sourire);   // un sourire en coin
+  corps.traverse(o => { o.castShadow = false; });
+  g.userData = {corps, tete, pattes: [], yeux, oeil: 0x14204A, flamme, lueurs: [flamme], mats: [flamme, yeux, sourire.material]};
+  return g;
+}
+/* Le serpent des brumes : enroulé, gris pâle, le cou dressé, la tête pointue aux écailles en crête, des crochets */
+function serpentMesh(){
+  const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
+  const GRIS = 0xB0B8B0, FONCE = 0x6A7470;
+  g.add(corps);
+  for(const [r, y] of [[1.15, .08], [.85, .2]]){ const anneau = part(G.tore, m(GRIS), r, r, 2.4, 0, y, .12); anneau.rotation.x = Math.PI / 2; corps.add(anneau); }   // ses anneaux
+  const cou = new THREE.Group(); cou.position.set(0, .22, -.12); corps.add(cou);
+  const c = part(G.cyl, m(GRIS), .16, .75, .16, 0, .37, 0); cou.add(c);
+  tete.position.set(0, .78, -.08); cou.add(tete);
+  const museau = part(G.cone4, m(GRIS), .26, .42, .2, 0, 0, -.16); museau.rotation.x = -Math.PI / 2; tete.add(museau);
+  for(let k = 0; k < 3; k++){ const pic = part(G.cone4, m(FONCE), .07, .16, .07, 0, .08 + k * .02, .02 + k * .08); pic.rotation.x = .5; tete.add(pic); }   // la crête
+  for(const x of [-.05, .05]){ const cr = part(G.cone4, m(0xF4F0E4), .03, .1, .03, x, -.07, -.28); cr.rotation.x = Math.PI; tete.add(cr); }                // les crochets
+  const yeux = yeuxDe(tete, 0xC8F05A, .07, -.14, .08, .8);
+  g.userData = {corps, tete, cou, pattes: [], yeux, oeil: 0xC8F05A, mats: [...Object.values(mats), yeux]};
+  return g;
+}
+/* L'homme-tourbe : un être massif de vase brune et de racines, aux gros poings, les yeux orange */
+function tourbeMesh(){
+  const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
+  const BOUE = 0x5A4630, FONCE = 0x34281C, RACINE = 0x6A5034;
+  g.add(corps);
+  corps.add(part(G.dode, m(BOUE), 1, 1.1, .8, 0, .6, 0));                                      // le corps de vase
+  corps.add(part(G.dode, m(FONCE), .78, .5, .62, 0, 1.12, -.04));                              // les épaules, la tête enfoncée
+  for(const [x, y, z, rz, rx] of [[-.3, .9, -.2, .7, .3], [.32, .7, -.22, -.6, .4], [0, 1.3, .1, .2, -.6], [-.2, .4, .3, 1.2, 0], [.25, 1.25, -.1, -.8, 0]]){   // les racines
+    const r = part(G.cone4, m(RACINE), .07, .5, .07, x, y, z); r.rotation.set(rx, 0, rz); corps.add(r);
+  }
+  tete.position.set(0, 1.18, -.3); corps.add(tete);
+  const yeux = yeuxDe(tete, ORANGE, 0, 0, .13, 1.2);
+  const bras = [-1, 1].map(s => {                                                                // les bras, les gros poings
+    const piv = new THREE.Group(); piv.position.set(s * .52, 1, 0);
+    piv.add(part(G.cyl, m(BOUE), .22, .7, .22, 0, -.35, 0));
+    piv.add(part(G.dode, m(FONCE), .38, .36, .38, 0, -.76, 0));
+    corps.add(piv); return piv;
+  });
+  g.userData = {corps, tete, bras, pattes: [], yeux, oeil: ORANGE, mats: [...Object.values(mats), yeux]};
+  return g;
+}
+/* L'Hydre des brumes : un grand corps d'écailles grises et vertes à demi dans la vase, trois cous, trois têtes à crêtes
+   pointues (environ 3 P) ; une tête coupée laisse un moignon, puis repousse */
+function hydreMesh(){
+  const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
+  const ECAILLE = 0x52645A, VERT = 0x6A8A5E, FONCE = 0x2E3A32;
+  g.add(corps); corps.add(tete);
+  corps.add(part(G.dode, m(ECAILLE), 1.9, 1.1, 1.7, 0, .5, .15));                              // le corps
+  for(const [x, z, h] of [[0, .5, .45], [-.35, .2, .35], [.35, .2, .35], [0, .9, .3]]){ const p = part(G.cone4, m(FONCE), .2, h, .2, x, .95 + h / 2, z); p.rotation.x = .3; corps.add(p); }   // les pics du dos
+  const queue = part(G.cone4, m(ECAILLE), .4, 1.2, .3, 0, .35, 1.2); queue.rotation.x = 1.75; corps.add(queue);
+  const yeux = new THREE.MeshBasicMaterial({color: 0xF0D040});
+  const tetes = [-1, 0, 1].map(s => {
+    const cou = new THREE.Group(); cou.position.set(s * .58, .85, -.4); cou.rotation.z = -s * .35; corps.add(cou);
+    const n = part(G.cyl, m(VERT), .36, 1.35, .36, 0, .67, 0); cou.add(n);
+    const h = new THREE.Group(); h.position.set(0, 1.38, -.04); cou.add(h);
+    h.add(part(G.dode, m(VERT), .44, .36, .44, 0, 0, .02));                                       // le crâne
+    const museau = part(G.cone4, m(ECAILLE), .46, .78, .38, 0, -.02, -.3); museau.rotation.x = -Math.PI / 2; h.add(museau);
+    for(let k = 0; k < 3; k++){ const pic = part(G.cone4, m(FONCE), .1, .3, .1, (k - 1) * .1, .2, .08); pic.rotation.set(.4, 0, (k - 1) * -.4); h.add(pic); }   // la crête
+    for(const x of [-.13, .13]){ const o = part(G.box, yeux, .1, .05, .03, x, .1, -.18); o.castShadow = false; h.add(o); }
+    const moignon = part(G.dode, m(FONCE), .34, .22, .34, 0, .72, 0); moignon.visible = false; cou.add(moignon);
+    return {cou, h, n, moignon};
+  });
+  g.userData = {corps, tete, tetes, pattes: [], yeux, oeil: 0xF0D040, mats: [...Object.values(mats), yeux]};
+  return g;
+}
+const MODELES = {loup: loupMesh, sanglier: sanglierMesh, chauveSouris: chauveMesh, gardien: gardienMesh,
+  crapaud: crapaudMesh, sangsue: sangsueMesh, feuFolletTrompeur: feuFolletMesh, serpent: serpentMesh, hommeTourbe: tourbeMesh, hydre: hydreMesh};
 /* Le modèle d'un monstre, aussi pour le sanglier de la chasse (chasse.js) */
 export const modeleMonstre = k => MODELES[k]();
 
@@ -171,7 +287,7 @@ function mot(texte, couleur){
   x.fillStyle = couleur; x.fillText(texte, 64, 34);
   return MOTS[texte] = new THREE.CanvasTexture(c);
 }
-const SIGNE_MOT = {loup: () => mot("Grrr…", "#FF7A5A"), chauveSouris: () => mot("Couic !", "#F4C8FF")};
+const SIGNE_MOT = {loup: () => mot("Grrr…", "#FF7A5A"), chauveSouris: () => mot("Couic !", "#F4C8FF"), serpent: () => mot("Sssss…", "#C8F0A0")};
 /* La poussière que le sanglier soulève en grattant le sol */
 const POUSSIERE = (() => {
   const c = document.createElement("canvas"); c.width = c.height = 64;
@@ -201,9 +317,10 @@ function ajouter(k, x, z, grp, foret){
   bulle.scale.set(.9, .45, 1); bulle.visible = false; bulle.renderOrder = 5;
   groupe.add(mesh, bulle);
   const g = grp || {k, membres: [], base: Math.random() * 6.28, attaquant: null};
-  const m = {k, x, y: k === "chauveSouris" ? 2.1 : 0, z, ang: Math.random() * 6.28, vie: MONSTRES[k].vie, etat: k === "chauveSouris" ? "dort" : "rode", t: 0, mesh, bulle,
+  const m = {k, x, y: k === "chauveSouris" ? 2.1 : k === "hommeTourbe" ? -1.6 : 0, z, ang: Math.random() * 6.28, vie: MONSTRES[k].vie, etat: k === "chauveSouris" ? "dort" : "rode", t: 0, mesh, bulle,
     home: {x, z}, cible: null, pause: Math.random() * 2, flash: 0, recul: null, mord: false, tour: 1 + Math.random() * 2, sens: 1, dir: 0,
     alpha: 1, grp: g, foret: !!foret, ph: Math.random() * 6.28};
+  if(k === "hydre") m.tetes = [0, 1, 2].map(() => ({vie: MONSTRES.hydre.tete, coupee: false, repousse: 0}));   // ses trois têtes
   g.membres.push(m); monstres.push(m);
   poser(m, 0, 0);
   return m;
@@ -219,12 +336,16 @@ function vider(){
   for(const m of [...monstres]) retirer(m); for(const n of nuages) groupe.remove(n.s); nuages.length = 0;
   for(const e of effets){ groupe.remove(e.cercle); if(e.pics) groupe.remove(e.pics); } effets.length = 0;
   for(const v of vols) groupe.remove(v.mesh); vols.length = 0;
+  for(const P of poches) groupe.remove(P.mesh); poches.length = 0;
+  for(const c of crachats){ groupe.remove(c.mesh); if(c.flaque) groupe.remove(c.flaque); } crachats.length = 0;
 }
 /* Les bandes d'un palier, chacune dans sa salle, ses membres autour de la tanière */
 function peupler(palier){
-  const a = antre();                                   // le Gardien d'écorce, endormi au fond de son antre (étape 1.13)
-  if(a){ const g = ajouter("gardien", a.x, a.z); g.etat = "dort"; g.ang = Math.PI / 2; }
-  const bandes = PALIER_MONSTRES[palier] || [], lieux = tanieres(bandes.length);
+  const marais = zoneEnCours() === "marais";
+  const a = antre();                                   // le Gardien d'écorce (ou l'Hydre des brumes), endormi au fond de son antre (étape 1.13)
+  if(a){ const g = ajouter(marais ? "hydre" : "gardien", a.x, a.z); g.etat = "dort"; g.ang = Math.PI / 2; }
+  if(marais) for(const g of pochesDeGaz()) creerPoche(g);   // les poches de gaz du Marais (morceau 6)
+  const bandes = (marais ? PALIER_MONSTRES_MARAIS : PALIER_MONSTRES)[palier] || [], lieux = tanieres(bandes.length);
   bandes.forEach(([k, n], j) => {
     const t = lieux[j];
     if(!t) return;
@@ -234,6 +355,12 @@ function peupler(palier){
       ajouter(k, walk(x, z) ? x : t.x, walk(x, z) ? z : t.z, g);
     }
   });
+  /* chaque feu-follet trompeur flotte au-dessus d'une poche de gaz : la plus proche, sinon une nouvelle, près de lui */
+  for(const m of monstres) if(m.k === "feuFolletTrompeur"){
+    let P = poches.reduce((b, q) => !b || Math.hypot(q.x - m.x, q.z - m.z) < Math.hypot(b.x - m.x, b.z - m.z) ? q : b, null);
+    if(!P || Math.hypot(P.x - m.x, P.z - m.z) > 6) P = creerPoche({x: m.x, z: m.z});
+    m.poche = P; m.home = {x: P.x, z: P.z};
+  }
 }
 
 /* ----- Se déplacer : en contournant les parois ; jamais sur le personnage ----- */
@@ -267,7 +394,13 @@ const CONSEIL = {
   loup: "🐺 Des loups ! L'un grogne : roule sur le côté (🤸). Il souffle : frappe (⚔️)",
   sanglier: "🐗 Un sanglier ! Il gratte le sol : roule sur le côté (🤸). Étourdi : frappe (⚔️)",
   chauveSouris: "🦇 Des chauves-souris ! Elles fuient la torche. L'une couine : roule (🤸)",
-  gardien: "🌳 Le Gardien d'écorce s'éveille ! Un cercle s'illumine sous toi : écarte-toi (🤸). Il lève ses branches : recule. Puis frappe (⚔️)"
+  gardien: "🌳 Le Gardien d'écorce s'éveille ! Un cercle s'illumine sous toi : écarte-toi (🤸). Il lève ses branches : recule. Puis frappe (⚔️)",
+  crapaud: "🐸 Un crapaud-poison ! Il gonfle sa gorge : bouge, il crache là où tu es. Puis frappe (⚔️)",
+  sangsue: "🪱 Des sangsues géantes ! L'une ondule : roule (🤸), sinon elle s'accroche et te ralentit",
+  feuFolletTrompeur: "🔵 Un feu-follet trompeur ! Il t'attire vers une poche de gaz : sa flamme vire au vert, écarte-toi de la poche",
+  serpent: "🐍 Un serpent, caché dans la brume ! Il siffle : roule (🤸). Il se montre : frappe (⚔️)",
+  hommeTourbe: "🗿 Quelque chose nage sous la vase… Des bulles remontent sous toi : écarte-toi (🤸). Il sort : frappe (⚔️)",
+  hydre: "🐉 L'Hydre des brumes s'éveille ! Ses trois têtes se dressent : recule. Un cercle vert sous toi : écarte-toi. Coupe ses trois têtes vite, sinon elles repoussent"
 };
 function alerter(m){
   for(const o of m.grp.membres) if(o.etat === "rode" || o.etat === "dort"){ o.etat = o.k === "chauveSouris" ? "vole" : "approche"; o.t = 0; }
@@ -402,9 +535,10 @@ function chauve(m, L, d, versP, dt, blesser){
 /* ----- Le Gardien d'écorce (étape 1.13) : ses racines, qu'on voit s'illuminer avant qu'elles jaillissent ----- */
 const effets = [];        // {cercle, pics, t, x, z}
 const LUEUR = new THREE.MeshBasicMaterial({color: 0x9AF060, transparent: true, opacity: .4, depthWrite: false});
-function illuminer(x, z, r){
+function illuminer(x, z, r, couleur){
   const cercle = new THREE.Group();
   const disque = new THREE.Mesh(new THREE.CircleGeometry(r, 24), LUEUR.clone()); disque.rotation.x = -Math.PI / 2; disque.position.y = .015; cercle.add(disque);
+  if(couleur) disque.material.color.setHex(couleur);
   for(let k = 0; k < 5; k++){                                                                    // les racines qui luisent sous la terre
     const l = new THREE.Mesh(new THREE.PlaneGeometry(.07, r * 1.7), disque.material); l.rotation.set(-Math.PI / 2, 0, k / 5 * Math.PI); l.position.y = .02; cercle.add(l);
   }
@@ -420,11 +554,24 @@ function jaillir(e){
   }
   e.pics.position.set(e.x, -1, e.z); groupe.add(e.pics);
 }
+/* Le nuage de brume empoisonnée de l'Hydre (morceau 6), là où le cercle s'est étendu */
+function souffler(e){
+  if(!e) return;
+  const mat = new THREE.MeshLambertMaterial({color: 0xC8E05A, emissive: 0x4A6A1A, transparent: true, opacity: .55, depthWrite: false});
+  e.pics = new THREE.Group(); e.t = 0; e.brume = mat;
+  for(let k = 0; k < 5; k++){ const a = k / 5 * 6.28, b = new THREE.Mesh(G.head, mat); b.position.set(Math.cos(a) * e.r * .45, .4, Math.sin(a) * e.r * .45); b.scale.setScalar(e.r * 2.4); b.renderOrder = 4; e.pics.add(b); }
+  e.pics.position.set(e.x, 0, e.z); groupe.add(e.pics);
+}
 function effetsVivent(dt){
   for(const e of [...effets]){
     e.t += dt;
     if(!e.pics){ e.disque.material.opacity = .3 + .3 * Math.abs(Math.sin(e.t * 9)); continue; }   // le cercle palpite : attention !
     e.cercle.visible = false;
+    if(e.brume){                                      // la brume de l'Hydre : elle gonfle, puis se dissipe
+      const u = Math.min(1, e.t / .9); e.pics.scale.setScalar(.6 + u * .6); e.brume.opacity = .55 * (1 - u);
+      if(e.t > .9){ groupe.remove(e.cercle, e.pics); e.disque.material.dispose(); e.brume.dispose(); effets.splice(effets.indexOf(e), 1); }
+      continue;
+    }
     e.pics.position.y = e.t < .12 ? -1 + e.t / .12 : e.t < .5 ? 0 : -(e.t - .5) / .3;            // elles jaillissent, puis rentrent sous terre
     if(e.t > .8){ groupe.remove(e.cercle, e.pics); e.disque.material.dispose(); effets.splice(effets.indexOf(e), 1); }
   }
@@ -468,7 +615,257 @@ function gardien(m, L, d, versP, dt, blesser){
   if(m.etat === "souffle"){ bras(.3); if(m.t > L.souffle){ m.etat = "approche"; m.t = 0; } }   // il reprend son souffle : le moment de frapper
   return 0;
 }
-const COMPORTE = {loup, sanglier, chauveSouris: chauve, gardien};
+/* ----- La grotte du Marais brumeux (étape 1.13, morceau 6) ----- */
+/* Les poches de gaz (GAZ ; bible : « poches de gaz ») : elles bouillonnent ; le signe : elles jaunissent et bouillonnent
+   fort ; puis un nuage de gaz s'en échappe (il étourdit : des cœurs en moins). Elles n'éclatent que si le personnage est
+   assez près ; le feu-follet trompeur les fait éclater */
+const poches = [];        // {x, z, etat ("bout" | "signe" | "nuage"), t, prochain, mesh, disque, bulles, nuage, touche}
+const BULLE = new THREE.MeshLambertMaterial({color: 0xB8D86A, transparent: true, opacity: .8});
+const delai = () => GAZ.intervalle[0] + Math.random() * (GAZ.intervalle[1] - GAZ.intervalle[0]);
+function creerPoche(g){
+  const mesh = new THREE.Group();
+  const disque = new THREE.Mesh(new THREE.CircleGeometry(.55, 20), new THREE.MeshBasicMaterial({color: 0x8AB83A, transparent: true, opacity: .55, depthWrite: false}));
+  disque.rotation.x = -Math.PI / 2; disque.position.y = .016; mesh.add(disque);
+  const bulles = [0, 1, 2, 3].map(k => { const b = part(G.head, BULLE, .35, .35, .35, Math.cos(k * 1.6) * .25, .05, Math.sin(k * 1.6) * .25); b.castShadow = false; mesh.add(b); return b; });
+  const nuage = new THREE.Mesh(G.head, new THREE.MeshLambertMaterial({color: 0xC8D86A, emissive: 0x4A5A1A, transparent: true, opacity: 0, depthWrite: false}));
+  nuage.position.y = .5; nuage.visible = false; nuage.renderOrder = 4; mesh.add(nuage);
+  mesh.position.set(g.x, 0, g.z); groupe.add(mesh);
+  const P = {x: g.x, z: g.z, etat: "bout", t: Math.random() * 3, prochain: delai(), mesh, disque, bulles, nuage, touche: false};
+  poches.push(P);
+  return P;
+}
+/* Le signe d'une poche (le feu-follet trompeur la fait éclater) */
+function eclater(P){ if(P && P.etat === "bout"){ P.etat = "signe"; P.t = 0; } }
+const JAUNE_GAZ = new THREE.Color(0xE8D040), VERT_GAZ = new THREE.Color(0x8AB83A);
+function pochesVivent(dt, blesser){
+  const p = player.position;
+  for(const P of poches){
+    P.t += dt;
+    const d = Math.hypot(p.x - P.x, p.z - P.z);
+    if(P.etat === "bout"){
+      P.bulles.forEach((b, k) => { b.position.y = .03 + ((P.t * .6 + k * .25) % 1) * .12; });
+      P.disque.material.color.copy(VERT_GAZ); P.disque.material.opacity = .5;
+      if(d < 4.5 && !presentes.has("gaz")){ presentes.add("gaz"); toast("☁️ Une poche de gaz bouillonne. Quand elle jaunit et bouillonne fort, écarte-toi !", 4200); }
+      if((P.prochain -= dt) <= 0){ if(d < 9){ P.etat = "signe"; P.t = 0; } else P.prochain = 2; }
+    } else if(P.etat === "signe"){                    // le signe : elle jaunit, elle bouillonne fort
+      const f = Math.min(1, P.t / GAZ.signe);
+      P.bulles.forEach((b, k) => { b.position.y = .03 + ((P.t * 2.6 + k * .25) % 1) * .3; b.scale.setScalar(.35 + f * .2); });
+      P.disque.material.color.copy(VERT_GAZ).lerp(JAUNE_GAZ, f); P.disque.material.opacity = .45 + .35 * Math.abs(Math.sin(P.t * 12));
+      if(P.t > GAZ.signe){ P.etat = "nuage"; P.t = 0; P.touche = false; P.nuage.visible = true; }
+    } else {                                           // le nuage de gaz s'échappe, puis se dissipe
+      const u = Math.min(1, P.t / GAZ.t), s = GAZ.r / .24 * (.4 + .6 * u);
+      P.nuage.scale.set(s, s * .7, s); P.nuage.material.opacity = .55 * (1 - u * u);
+      if(!P.touche && u < .7 && d < GAZ.r){ P.touche = true; if(blesser(GAZ.degats, P) && !presentes.has("tousse")){ presentes.add("tousse"); toast("☁️ Le gaz te fait tousser ! Écarte-toi des poches qui jaunissent", 3200); } }
+      if(P.t > GAZ.t){ P.etat = "bout"; P.t = 0; P.prochain = delai(); P.nuage.visible = false; P.bulles.forEach(b => b.scale.setScalar(.35)); }
+    }
+  }
+}
+/* Le venin du crapaud-poison : il vole en cloche jusqu'où se tenait le personnage, puis une flaque verte, un instant */
+const crachats = [];      // {mesh, x0, z0, x1, z1, t, T, r, degats, flaque}
+const VENIN = new THREE.MeshLambertMaterial({color: 0x9AE04A, emissive: 0x3A8A1A, emissiveIntensity: .8});
+function cracher(m, tx, tz, L){
+  const mesh = part(G.head, VENIN, .55, .55, .55, m.x, .35, m.z); mesh.castShadow = false; groupe.add(mesh);
+  crachats.push({mesh, x0: m.x, z0: m.z, x1: tx, z1: tz, t: 0, T: Math.max(.25, Math.hypot(tx - m.x, tz - m.z) / L.crachat.v), r: L.crachat.r, degats: L.degats, flaque: null});
+}
+function crachatsVolent(dt, blesser){
+  for(const c of [...crachats]){
+    c.t += dt;
+    if(!c.flaque){
+      const u = Math.min(1, c.t / c.T);
+      c.mesh.position.set(c.x0 + (c.x1 - c.x0) * u, .35 + Math.sin(u * Math.PI) * .7 - u * .3, c.z0 + (c.z1 - c.z0) * u);
+      if(u < 1) continue;
+      groupe.remove(c.mesh);
+      c.flaque = new THREE.Mesh(new THREE.CircleGeometry(c.r, 16), new THREE.MeshBasicMaterial({color: 0x8AD040, transparent: true, opacity: .55, depthWrite: false}));
+      c.flaque.rotation.x = -Math.PI / 2; c.flaque.position.set(c.x1, .02, c.z1); groupe.add(c.flaque); c.t = 0;
+      const p = player.position;
+      if(Math.hypot(p.x - c.x1, p.z - c.z1) < c.r) blesser(c.degats, {x: c.x1, z: c.z1});
+    } else {
+      c.flaque.material.opacity = .55 * Math.max(0, 1 - c.t / .8);
+      if(c.t > .8){ groupe.remove(c.flaque); c.flaque.material.dispose(); crachats.splice(crachats.indexOf(c), 1); }
+    }
+  }
+}
+/* Des bulles qui remontent de la vase (le signe de l'homme-tourbe) */
+const BULLES = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const x = c.getContext("2d"); x.strokeStyle = "rgba(200,220,150,.95)"; x.lineWidth = 4;
+  for(const [px, py, r] of [[22, 40, 9], [42, 34, 7], [30, 20, 6]]){ x.beginPath(); x.arc(px, py, r, 0, 6.3); x.stroke(); }
+  return new THREE.CanvasTexture(c);
+})();
+function bulles(x, z){
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map: BULLES, transparent: true, depthWrite: false}));
+  s.position.set(x + (Math.random() - .5) * .5, .1, z + (Math.random() - .5) * .5); s.scale.set(.3, .3, 1); groupe.add(s); nuages.push({s, t: 0});
+}
+
+function crapaud(m, L, d, versP, dt, blesser){
+  const u = m.mesh.userData, p = player.position;
+  if(m.etat === "rode"){ if(d < L.flair) alerter(m); else return roder(m, dt); }
+  if(m.etat === "approche" || m.etat === "tourne"){    // il garde ses distances, face au personnage
+    if(d > L.flair * 2.2){ calmer(m); return 0; }
+    m.ang = versP;
+    let vit = 0;
+    if(d > L.distance + .6){ avancer(m, versP, L.vitesse, dt, versP); vit = 9; }
+    else if(d < L.distance - .9){ avancer(m, versP + Math.PI, L.vitesse, dt, versP); vit = 9; }
+    if(m.t > 1.4 + m.tour * .6 && d < L.distance + 1.6){ m.etat = "signe"; m.t = 0; }
+    return vit;
+  }
+  if(m.etat === "signe"){                              // le signe : il gonfle sa gorge
+    m.ang = versP;
+    u.gorge.scale.setScalar(.9 + Math.min(1, m.t / L.signe) * .8);
+    if(m.t > L.signe){ u.gorge.scale.setScalar(.9); cracher(m, p.x, p.z, L); m.etat = "souffle"; m.t = 0; }
+    return 0;
+  }
+  if(m.etat === "souffle" && m.t > L.souffle){ m.etat = "tourne"; m.t = 0; m.tour = Math.random() * 2; }   // il souffle : le moment de frapper
+  return 0;
+}
+function sangsue(m, L, d, versP, dt, blesser){
+  const u = m.mesh.userData, p = player.position, signe = m.etat === "signe";
+  u.segments.forEach((s, k) => { s.position.y = .11 + Math.sin(m.t * (signe ? 20 : 6) + k * 1.2) * (signe ? .09 : .025); });   // elle ondule (fort : le signe)
+  if(m.etat === "rode"){ if(d < L.flair) alerter(m); else return roder(m, dt); }
+  if(m.etat === "approche"){
+    if(d > L.flair * 2.2){ calmer(m); return 0; }
+    if(d > 1.9){ avancer(m, versP, L.vitesse, dt); return 0; }
+    m.etat = "signe"; m.t = 0; return 0;
+  }
+  if(signe){ m.ang = versP; if(m.t > L.signe){ m.etat = "bond"; m.t = 0; m.mord = false; m.dir = versP; } return 0; }
+  if(m.etat === "bond"){                               // elle bondit, et s'accroche : le personnage avance moins vite un moment
+    const nx = m.x + Math.cos(m.dir) * L.bond.v * dt, nz = m.z + Math.sin(m.dir) * L.bond.v * dt;
+    if(walk(nx, nz) && Math.hypot(nx - p.x, nz - p.z) > .4){ m.x = nx; m.z = nz; }
+    if(!m.mord && Math.hypot(m.x - p.x, m.z - p.z) < .8){ m.mord = true;
+      if(blesser(L.degats, m)){ ralentir(L.ralentit); toast("🩸 La sangsue s'accroche : tu avances moins vite un moment", 2400); } }
+    if(m.t > L.bond.t){ m.etat = "souffle"; m.t = 0; }
+    return 0;
+  }
+  if(m.etat === "souffle" && m.t > L.souffle){ m.etat = "approche"; m.t = 0; }
+  return 0;
+}
+/* Le feu-follet trompeur flotte au-dessus de sa poche de gaz (m.poche) ; il attire : approche-t-on de la poche, sa flamme
+   vire au vert (le signe), et la poche éclate */
+const BLEU_F = new THREE.Color(0x3A7AF0), VERT_F = new THREE.Color(0x4AE04A);
+function feuFollet(m, L, d, versP, dt, blesser){
+  const u = m.mesh.userData, p = player.position, P = m.poche;
+  const vert = m.etat === "signe" ? Math.min(1, m.t / .3) : 0;
+  u.flamme.emissive.copy(BLEU_F).lerp(VERT_F, vert); u.flamme.color.setHex(vert > .5 ? 0xB8F0A0 : 0x9AD0FF);
+  u.corps.position.y = .95 + Math.sin(m.t * 2.6 + m.ph) * .12;
+  const flotter = (tx, tz, v) => { const dx = tx - m.x, dz = tz - m.z, dd = Math.hypot(dx, dz); if(dd > .05) avancer(m, Math.atan2(dz, dx), Math.min(v, dd / dt), dt, versP, true); };
+  const centre = P || m.home, a = m.t * .8 + m.ph;
+  if(m.etat === "rode"){ flotter(centre.x + Math.cos(a) * .7, centre.z + Math.sin(a) * .7, 1); if(d < L.flair) alerter(m); return 0; }
+  if(m.etat === "approche"){                           // il danse au-dessus de la poche, tourné vers le personnage : il l'attire
+    if(d > L.flair * 2.4){ calmer(m); return 0; }
+    flotter(centre.x + Math.cos(a) * .6, centre.z + Math.sin(a) * .6, 1.4);
+    if(P && P.etat === "bout" && Math.hypot(p.x - P.x, p.z - P.z) < 2.3){ m.etat = "signe"; m.t = 0; eclater(P); }
+    return 0;
+  }
+  if(m.etat === "signe"){ if(m.t > L.signe){ m.etat = "souffle"; m.t = 0; } return 0; }
+  if(m.etat === "souffle"){ flotter(centre.x + Math.cos(a) * 1.4, centre.z + Math.sin(a) * 1.4, 1.2); if(m.t > L.souffle){ m.etat = "approche"; m.t = 0; } }
+  return 0;
+}
+/* Le serpent des brumes : caché dans la brume (presque invisible : on ne peut pas le viser), il approche ; il siffle et se
+   dresse (le signe), mord, reste un moment visible (le moment de frapper), puis s'éloigne et se cache */
+function serpent(m, L, d, versP, dt, blesser){
+  const u = m.mesh.userData, p = player.position, montre = m.etat === "signe" || m.etat === "bond" || m.etat === "souffle";
+  m.vu = (m.vu === undefined ? .15 : m.vu) + ((montre ? 1 : .15) - (m.vu === undefined ? .15 : m.vu)) * Math.min(1, dt * 5);
+  for(const x of u.mats){ x.transparent = true; x.opacity = m.vu; }
+  u.cou.scale.y += ((m.etat === "signe" ? 1.3 : 1) - u.cou.scale.y) * Math.min(1, dt * 8);   // il se dresse
+  if(m.etat === "rode"){ if(d < L.flair) alerter(m); else return roder(m, dt); }
+  if(m.etat === "approche"){
+    if(d > L.flair * 2.4){ calmer(m); return 0; }
+    if(d > 1.7){ avancer(m, versP, L.vitesse, dt); return 0; }
+    m.etat = "signe"; m.t = 0; return 0;
+  }
+  if(m.etat === "signe"){ m.ang = versP; if(m.t > L.signe){ m.etat = "bond"; m.t = 0; m.mord = false; m.dir = versP; } return 0; }
+  if(m.etat === "bond"){
+    const nx = m.x + Math.cos(m.dir) * L.bond.v * dt, nz = m.z + Math.sin(m.dir) * L.bond.v * dt;
+    if(walk(nx, nz) && Math.hypot(nx - p.x, nz - p.z) > .45){ m.x = nx; m.z = nz; }
+    if(!m.mord && Math.hypot(m.x - p.x, m.z - p.z) < .85){ m.mord = true; blesser(L.degats, m); }
+    if(m.t > L.bond.t){ m.etat = "souffle"; m.t = 0; }
+    return 0;
+  }
+  if(m.etat === "souffle" && m.t > L.souffle){ m.etat = "cache"; m.t = 0; }
+  if(m.etat === "cache"){ avancer(m, versP + Math.PI, L.vitesse, dt); if(m.t > 1.3){ m.etat = "approche"; m.t = 0; } return 0; }
+  return 0;
+}
+/* L'homme-tourbe : il nage sous la vase (des bulles), des bulles remontent sous le personnage (le signe), il en sort et
+   frappe lourdement autour de lui, reste dehors un moment (le moment de frapper), puis replonge */
+function tourbe(m, L, d, versP, dt, blesser){
+  const u = m.mesh.userData, p = player.position;
+  const bras = a => u.bras.forEach((b, n) => { b.rotation.x += (a - b.rotation.x) * Math.min(1, dt * 10); });
+  const sous = m.etat === "rode" || m.etat === "approche" || m.etat === "signe";
+  if(sous){ m.y = -1.6; if(Math.floor(m.t * (m.etat === "signe" ? 8 : 2.5)) !== Math.floor((m.t - dt) * (m.etat === "signe" ? 8 : 2.5))) bulles(m.etat === "signe" ? m.cx : m.x, m.etat === "signe" ? m.cz : m.z); }
+  if(m.etat === "rode"){ if(d < L.flair) alerter(m); else roder(m, dt); return 0; }
+  if(m.etat === "approche"){                           // sous la vase, il vient vers le personnage
+    if(d > L.flair * 2.4){ calmer(m); return 0; }
+    if(d > .9) avancer(m, versP, L.vitesse, dt, undefined, true);
+    if(d < 1.2 && m.t > .6){ m.etat = "signe"; m.t = 0; m.cx = p.x; m.cz = p.z; }   // là où se tient le personnage
+    return 0;
+  }
+  if(m.etat === "signe"){ if(m.t > L.signe){ m.etat = "frappe"; m.t = 0; m.mord = false; m.x = m.cx; m.z = m.cz; m.ang = versP; } return 0; }
+  if(m.etat === "frappe"){                             // il jaillit de la vase et frappe autour de lui
+    m.y = Math.min(0, -1.6 + m.t / .2 * 1.6); bras(m.t < .2 ? -2.4 : .6);
+    if(!m.mord && m.t > .2){ m.mord = true; if(Math.hypot(p.x - m.x, p.z - m.z) < L.frappe.r) blesser(L.degats, m); for(let k = 0; k < 4; k++) soulever(m.x + Math.cos(k * 1.6) * .6, m.z + Math.sin(k * 1.6) * .6); }
+    if(m.t > .5){ m.etat = "souffle"; m.t = 0; }
+    return 0;
+  }
+  if(m.etat === "souffle"){ m.y = 0; m.ang = versP; bras(0); if(m.t > L.souffle){ m.etat = "plonge"; m.t = 0; } return 0; }
+  if(m.etat === "plonge"){ m.y = -m.t / .5 * 1.6; if(m.t > .5){ m.etat = "approche"; m.t = 0; } return 0; }
+  return 0;
+}
+/* L'Hydre des brumes (le gardien du Puits aux Brumes) : de près, les trois têtes se dressent ensemble (le signe) et
+   s'abattent devant elle ; de loin, un cercle vert s'étend sous le personnage, puis elles y soufflent un nuage de brume
+   empoisonnée. Ses têtes : frapper() les coupe une à une ; une tête coupée repousse (L.repousse secondes) ; vaincue
+   quand les trois sont coupées en même temps */
+function hydre(m, L, d, versP, dt, blesser){
+  const u = m.mesh.userData, p = player.position;
+  m.tetes.forEach((h, i) => {
+    if(!h.coupee) return;
+    if((h.repousse -= dt) > 0) return;
+    h.coupee = false; h.vie = L.tete; montrerTete(u, i, true);
+    if(m.etat !== "dort") toast("🐉 Une tête de l'Hydre a repoussé ! Coupe les trois têtes vite, l'une après l'autre", 3200);
+  });
+  const cous = a => u.tetes.forEach((t, i) => { if(!m.tetes[i].coupee) t.cou.rotation.x += (a - t.cou.rotation.x) * Math.min(1, dt * 10); });
+  if(m.etat === "dort"){
+    u.yeux.color.setHex(0x3A3A20); cous(-.4);
+    if(d < L.flair){ m.etat = "approche"; m.t = 0; if(!presentes.has("hydre")){ presentes.add("hydre"); toast(CONSEIL.hydre, 6400); } }
+    return 0;
+  }
+  if(m.etat === "approche"){
+    m.ang = versP; cous(-.1);
+    if(d > L.flair * 2.5){ m.etat = "dort"; m.t = 0; return 0; }
+    if(d > L.morsure.portee - .3) avancer(m, versP, L.vitesse, dt, versP);
+    if(m.t > L.pause){
+      m.attaque = d < L.morsure.portee ? "morsure" : "brume"; m.etat = "signe"; m.t = 0; m.mord = false;
+      if(m.attaque === "brume") m.racine = illuminer(p.x, p.z, L.brume.r, 0xC8E05A);   // le signe : un cercle vert s'étend sous lui
+    }
+    return 0;
+  }
+  if(m.etat === "signe"){
+    m.ang = versP;
+    if(m.attaque === "morsure"){ cous(.55); if(m.t > L.morsure.signe){ m.etat = "frappe"; m.t = 0; } }   // les trois têtes se dressent ensemble
+    else { cous(.3); if(m.t > L.brume.signe){ souffler(m.racine); m.etat = "frappe"; m.t = 0; } }
+    return 0;
+  }
+  if(m.etat === "frappe"){
+    if(m.attaque === "morsure"){                       // elles s'abattent devant elle
+      cous(-1.15);
+      const devant = Math.cos(Math.atan2(p.z - m.z, p.x - m.x) - m.ang) > .35;
+      if(!m.mord && m.t > .12 && d < L.morsure.portee + .2 && devant){ m.mord = true; blesser(L.degats, m); }
+      if(m.t > .45){ m.etat = "souffle"; m.t = 0; }
+    } else {
+      const e = m.racine;
+      if(!m.mord && e && Math.hypot(p.x - e.x, p.z - e.z) < e.r){ m.mord = true; blesser(L.brume.degats, e); }
+      if(m.t > L.brume.t){ m.etat = "souffle"; m.t = 0; }
+    }
+    return 0;
+  }
+  if(m.etat === "souffle"){ cous(.1); if(m.t > L.souffle){ m.etat = "approche"; m.t = 0; } }   // elle reprend son souffle : le moment de frapper
+  return 0;
+}
+/* Une tête de l'Hydre : coupée (un moignon, le cou plus court), ou là */
+function montrerTete(u, i, oui){
+  const t = u.tetes[i];
+  t.h.visible = oui; t.moignon.visible = !oui; t.n.scale.y = oui ? 1 : .55; t.n.position.y = oui ? .67 : .37;
+}
+const COMPORTE = {loup, sanglier, chauveSouris: chauve, gardien, crapaud, sangsue, feuFolletTrompeur: feuFollet, serpent, hommeTourbe: tourbe, hydre};
 
 /* ----- Ce que fait chaque monstre, à chaque image ; blesser(degats, monstre) : il touche le personnage ----- */
 function vivre(m, dt, actif, blesser){
@@ -511,13 +908,14 @@ function poser(m, vit, dt){
   } else {
     const souffle = m.etat === "souffle" || m.etat === "freine";
     u.tete.rotation.x += ((signe ? .5 : souffle ? .25 : 0) - u.tete.rotation.x) * k;
-    u.corps.position.y += ((signe ? -.07 : 0) + (souffle ? Math.sin(m.t * 14) * .015 : 0) - u.corps.position.y) * k;
+    if(!u.lueurs) u.corps.position.y += ((signe ? -.07 : 0) + (souffle ? Math.sin(m.t * 14) * .015 : 0) - u.corps.position.y) * k;   // le feu-follet flotte à sa façon
     const tremble = signe ? Math.sin(m.t * 55) * .02 : 0;
-    m.mesh.position.set(m.x + tremble, 0, m.z);
+    m.mesh.position.set(m.x + tremble, m.y || 0, m.z);
+    m.mesh.visible = !(m.k === "hommeTourbe" && m.y <= -1.55);      // l'homme-tourbe, sous la vase
     if(u.etoiles){ u.etoiles.visible = m.etat === "etourdi"; u.etoiles.rotation.y = m.t * 5; }
   }
-  if(m.etat !== "dort" || m.k !== "gardien") u.yeux.color.setHex(signe || charge ? ROUGE : u.oeil);
-  for(const x of u.mats) if(x.emissive) x.emissive.setScalar(m.flash > 0 ? .9 : 0);
+  if(!(m.etat === "dort" && (m.k === "gardien" || m.k === "hydre"))) u.yeux.color.setHex(signe || charge ? ROUGE : u.oeil);
+  for(const x of u.mats) if(x.emissive && !(u.lueurs && u.lueurs.includes(x))) x.emissive.setScalar(m.flash > 0 ? .9 : 0);
   m.mesh.rotation.y = -m.ang - Math.PI / 2;
   if(m.etat === "part") for(const x of u.mats){ x.transparent = true; x.opacity = Math.max(0, m.alpha); }
   m.bulle.visible = signe && !!SIGNE_MOT[m.k];
@@ -526,7 +924,10 @@ function poser(m, vit, dt){
 
 /* ----- Les coups du personnage (combat.js) ----- */
 let vaincus = 0;
-const visable = m => m.etat !== "tombe" && m.etat !== "dort" && m.etat !== "part";
+/* Caché : le serpent des brumes dans la brume, l'homme-tourbe sous la vase (on ne peut pas les viser) */
+const cache = m => m.k === "serpent" && (m.etat === "rode" || m.etat === "approche" || m.etat === "cache")
+  || m.k === "hommeTourbe" && m.etat !== "frappe" && m.etat !== "souffle";
+const visable = m => m.etat !== "tombe" && m.etat !== "dort" && m.etat !== "part" && !cache(m);
 /* Le monstre le plus proche à moins de r : {m, d}, ou null (une chauve-souris qui dort au plafond est hors d'atteinte) */
 export function plusProche(r){
   const p = player.position;
@@ -542,6 +943,18 @@ export function plusProche(r){
    signe, le bond) ; le sanglier, lourd, ne recule jamais. Une flèche qui touche se reprend quand il est vaincu */
 export function frapper(m, n, dx, dz, f){
   if(!monstres.includes(m) || !visable(m)) return;
+  if(m.k === "hydre"){                                 // l'Hydre (morceau 6) : on coupe ses têtes, une à une
+    const i = m.tetes.findIndex(h => !h.coupee);
+    if(i < 0) return;
+    const h = m.tetes[i]; h.vie -= n; m.flash = .16;
+    if(f){ m.fleches = m.fleches || {}; m.fleches[f] = (m.fleches[f] || 0) + 1; }
+    if(h.vie > 0) return;
+    h.coupee = true; h.repousse = MONSTRES.hydre.repousse; montrerTete(m.mesh.userData, i, false);
+    if(m.tetes.every(t => t.coupee)){ vaincre(m); return; }
+    const reste = m.tetes.filter(t => !t.coupee).length;
+    toast(`🐉 Une tête tombe ! Plus que ${reste} : coupe-${reste > 1 ? "les" : "la"} vite, sinon elle repousse`, 2600);
+    return;
+  }
   m.vie -= n; m.flash = .16;
   if(f){ m.fleches = m.fleches || {}; m.fleches[f] = (m.fleches[f] || 0) + 1; }
   if(m.vie <= 0){ vaincre(m); return; }
@@ -564,7 +977,7 @@ function vaincre(m){
   }
   const c = m.foret ? state.carnet.gibier : state.carnet.monstres, e = c[m.k] || (c[m.k] = {n: 0}), nouveau = !e.n;
   e.n++;
-  if(m.racine && effets.includes(m.racine)){ groupe.remove(m.racine.cercle); effets.splice(effets.indexOf(m.racine), 1); }
+  if(m.racine && effets.includes(m.racine)){ groupe.remove(m.racine.cercle); if(m.racine.pics) groupe.remove(m.racine.pics); effets.splice(effets.indexOf(m.racine), 1); }
   const carte = L.carte && !(state.cartes && state.cartes[L.carte]);         // la carte de la destination suivante : une seule fois
   if(carte) (state.cartes || (state.cartes = {}))[L.carte] = Date.now();
   save(); renderHUD();
@@ -621,6 +1034,7 @@ export function updateMonstres(dt, ou, actif, blesser){
   for(const m of [...monstres]) if(monstres.includes(m)) vivre(m, dt, actif, blesser);
   nuagesVolent(dt);
   if(actif){ effetsVivent(dt); volent(dt); }
+  if(actif && ou === "grotte"){ pochesVivent(dt, blesser); crachatsVolent(dt, blesser); }   // le Marais (morceau 6)
 }
 /* Ceux qui se battent encore (le combat de la forêt s'arrête quand il n'y en a plus) */
 export const monstresIci = () => monstres.filter(visable);
@@ -631,6 +1045,9 @@ export function oublierMonstres(){ vider(); }
 export const monstresVaincus = () => vaincus;
 export const racinesIci = () => effets.length;
 export const gardienIci = () => monstres.some(m => m.k === "gardien");
+export const hydreIci = () => monstres.find(m => m.k === "hydre") || null;
+export const pochesIci = () => poches;
+export const eclaterPoche = P => eclater(P);
 /* Plus de monstres : ceux qui sont là s'en vont, aucun n'arrive aux paliers suivants */
 export function pauseMonstres(oui){ enPause = oui; if(oui) vider(); }
 /* Un monstre à un endroit précis, dans un état donné (sinon : il rôde, ou il dort) */

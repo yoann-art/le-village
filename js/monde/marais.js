@@ -91,6 +91,9 @@ const LIENS = [[0, 3], [3, 6], [6, 9], [0, 1], [1, 4], [4, 7], [7, 9], [0, 2], [
 export const marais = {type: new Array(W * D).fill("eau"), obj: new Array(W * D).fill(null), r: new Array(W * D).fill(0)};
 export const EMBARCADERE = [];                            // les planches de l'embarcadère, vers le sud (vers le village)
 export const CHICOTS = [];                                // les arbres morts (morceau 5)
+/* L'entrée de la grotte du Marais, le Puits aux Brumes (morceau 6) : le bord nord de son ouverture (comme ENTREE_GROTTE dans
+   la forêt : on y entre en marchant vers le haut, lieux.js) */
+export const PUITS = {x: 0, z: 0};
 let BARQUE_EN = null, PANNEAU = -1;
 {
   const rnd = rand(4207), T = marais.type, O = marais.obj, at = (x, z) => z * W + x, dans = (x, z) => x >= 0 && z >= 0 && x < W && z < D;
@@ -180,6 +183,15 @@ let BARQUE_EN = null, PANNEAU = -1;
     if([-1, 1, -W, W].some(d => O[i + d] === "chicot")) continue;
     O[i] = "chicot"; CHICOTS.push(i);
   }
+  /* le Puits aux Brumes (morceau 6) : au milieu de l'îlot du nord, au bout du sentier, une ouverture de deux cases dans un
+     cercle de grosses pierres moussues (les cases « puits », où l'on ne passe pas) */
+  const [px, pz] = nord;
+  for(let z = pz - 2; z <= pz; z++) for(let x = px - 1; x <= px + 2; x++){
+    const i = at(x, z);
+    if(T[i] === "eau") T[i] = "terre";
+    O[i] = z === pz && (x === px || x === px + 1) ? null : "puits";
+  }
+  PUITS.x = cx(px) + .5; PUITS.z = cz(pz) - .5;
 }
 const passe = new Set(EMBARCADERE.map(([x, z]) => z * W + x));
 export const surEmbarcadere = (x, z) => passe.has(mtile(x, z));
@@ -370,6 +382,18 @@ export function makeMarais(){
     c.add(part(G.cone, 0x6A6660, .3, .25, .3, 0, 2.3, 0));
     c.position.set(mcx(i), eau ? EAU : 0, mcz(i)); c.rotation.y = r * 6.28;
     g.add(c);
+  }
+  /* le Puits aux Brumes : un cercle de grosses pierres moussues autour d'un trou noir, d'où monte la brume ; son écriteau */
+  {
+    const {x, z} = PUITS, cz0 = z - .4;
+    g.add(part(G.box, 0x040604, 1.9, .04, 1.4, x, .02, cz0 - .4));                                  // le trou, noir
+    for(let k = 0; k <= 10; k++){                                                                    // les pierres, en fer à cheval
+      const a = Math.PI * (k / 10), r = 1.25 + (k % 2) * .15, s = .55 + (k % 3) * .12;
+      g.add(part(G.dode, k % 2 ? 0x5E6A5A : 0x6A7664, s, s * .8, s, x - Math.cos(a) * r, s * .3, cz0 - .4 - Math.sin(a) * r * .9));
+      g.add(part(G.head, 0x4E7A3E, s * 1.6, s * .5, s * 1.6, x - Math.cos(a) * r, s * .62, cz0 - .4 - Math.sin(a) * r * .9));   // leur mousse
+    }
+    for(const [dx, dz] of [[-.4, -.5], [.3, -.8], [0, -.3]]) brume(g, x + dx, cz0 + dz, .35);
+    ecriteau(g, x + 1.9, z + .4, "Le Puits aux Brumes");
   }
   /* la Libellule amarrée à l'embarcadère, le poteau « Marais brumeux » */
   const barque = barqueModele(false); barque.position.set(BARQUE_EN.x, .02, BARQUE_EN.z); g.add(barque);

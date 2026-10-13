@@ -25,7 +25,7 @@ import { updateVitrine } from "./vitrine.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
-import { lampeSur, nuitForet, penombre } from "./monde/interieurs.js";
+import { lampeSur, nuitForet, penombre, ajusterBrume } from "./monde/interieurs.js";
 import { updateLumieres } from "./lumieres.js";
 import { updateBarque, posBarque } from "./barque.js";
 import { deplaceEnCours } from "./deplacer.js";
@@ -123,6 +123,7 @@ function camera_(now, dt){
   const dv = decoView();
   const foret = isInside() && ["foret", "grotte", "marais", "trajet"].includes(currentPlace().b.type);   // la forêt et la grotte se voient comme dehors, en grand
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
+  ajusterBrume(D);                                         // la brume de la grotte du Marais suit la caméra (étape 1.13)
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
   if(takeJump()) camT.copy(target);
   else camT.lerp(target, 1 - Math.pow(.0005, dt));

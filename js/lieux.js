@@ -17,6 +17,7 @@ import { interior, buildRoom } from "./monde/interieurs.js";
 import { meubleAt, hasPlan } from "./monde/meubles.js";
 import { ENTREE_GROTTE } from "./monde/foret.js";
 import { PALIERS } from "./monde/grotte.js";
+import { PUITS } from "./monde/marais.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable, degager } from "./monde/personnage.js";
 import { placing } from "./construire.js";
 import { toast } from "./interface.js";
@@ -84,26 +85,32 @@ function enter(b){
 const MOTS = ["", "🕳️ La grotte, sous les racines : il y fait noir. Une torche (établi de la Scierie) éclaire autour de toi. Au fond, un trou descend plus bas ; plus on descend, plus il y a de butin.",
   "🕳️ Deuxième palier : plus sombre, plus riche. La corde, près de l'échelle, remonte à la forêt.",
   "🕳️ Le fond de la grotte : le dernier palier. La corde, près de l'échelle, remonte à la forêt."];
+/* La grotte du Marais brumeux, le Puits aux Brumes (étape 1.13, morceau 6) : on y entre depuis l'îlot du nord du Marais ;
+   ses cordes et son tunnel ramènent au Marais (inside.ponton suit : rouvrir le jeu ramène au bout du ponton) */
+const MOTS_MARAIS = ["", "🌫️ Le Puits aux Brumes : de la vase, de la brume, et des poches de gaz qui jaunissent avant d'éclater (écarte-toi !). Une torche éclaire autour de toi. Au fond, un trou descend plus bas.",
+  "🌫️ Deuxième palier : la brume s'épaissit. La corde, près de l'échelle, remonte au Marais.",
+  "🌫️ Le fond du Puits aux Brumes : l'Hydre des brumes y dort, au milieu de sa mare. La corde, près de l'échelle, remonte au Marais."];
 export function entrerGrotte(palier){
-  const foret = inside && (inside.foret || inside.b);
+  const foret = inside && (inside.foret || inside.b), ponton = inside && inside.ponton, zone = foret && foret.type === "marais" ? "marais" : "foret";
   fade(() => {
-    const b = {type: "grotte", palier}, room = buildRoom(b);
-    inside = {b, room, foret};
+    const b = {type: "grotte", palier, zone}, room = buildRoom(b);
+    inside = {b, room, foret, ponton};
     setWalkable(room.walk);
     if(room.depart) placePlayer(room.depart.x, room.depart.z, 0, 1);
     else placePlayer(room.doorX, room.d/2 - R - .3, 0, -1);
     $("#btn-deco").hidden = true;
-    setTimeout(() => toast(MOTS[palier], 5000), 400);
+    setTimeout(() => toast((zone === "marais" ? MOTS_MARAIS : MOTS)[palier], 5000), 400);
   });
 }
-/* Sortir de la grotte : on se retrouve dans la forêt, devant les racines du vieux chêne */
+/* Sortir de la grotte : on se retrouve dans la forêt, devant les racines du vieux chêne (ou au Marais, devant le Puits) */
 function sortirGrotte(){
-  const b = inside.foret;
+  const b = inside.foret, ponton = inside.ponton;
   fade(() => {
     const room = buildRoom(b);
-    inside = {b, room};
+    inside = {b, room, ponton};
     setWalkable(room.walk);
-    placePlayer(ENTREE_GROTTE.x, ENTREE_GROTTE.z + 1.2, 0, 1);
+    if(b.type === "marais") placePlayer(PUITS.x, PUITS.z + 1.3, 0, 1);
+    else placePlayer(ENTREE_GROTTE.x, ENTREE_GROTTE.z + 1.2, 0, 1);
     $("#btn-deco").hidden = true;
   });
 }
@@ -176,7 +183,11 @@ export function checkDoors(pushing){
   const p = player.position, d = dir4();
   if(inside){
     const {room, b} = inside;
-    if(b.type === "trajet" || b.type === "marais") return;     // en voyage : pas de porte (voyage.js)
+    if(b.type === "trajet") return;                  // en voyage : pas de porte (voyage.js)
+    if(b.type === "marais"){                          // le Puits aux Brumes, en marchant vers le haut dans l'ouverture (morceau 6)
+      if(d.z === -1 && Math.abs(p.x - PUITS.x) < .6 && p.z < PUITS.z + R + .12 && p.z > PUITS.z - .6) entrerGrotte(1);
+      return;
+    }
     if(b.type === "grotte"){                         // le trou qui descend, la corde qui remonte, le tunnel du premier palier
       for(const q of room.passages) if(Math.hypot(p.x - q.x, p.z - q.z) < .45){
         if(q.vers === "bas" && b.palier < PALIERS) entrerGrotte(b.palier + 1); else sortirGrotte();

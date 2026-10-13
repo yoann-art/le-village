@@ -223,6 +223,7 @@ function actionOf(t){
   if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
   if(t.w === MARAIS && plante(t.o)) return planteAction(t);
   if(t.o === "chicot") return info("🪵 Un arbre mort, gris et noueux : le corbeau des brumes aime s'y poser, par brouillard");
+  if(t.o === "puits") return info("🕳️ Le Puits aux Brumes, la grotte du Marais : avance dans l'ouverture pour y descendre. Emporte des torches");
   /* Les arbres de la forêt (dans la forêt, ou plantés sur l'île) : chacun son bois et sa graine ; le houx et le
      sureau se cueillent (baies, fleurs), et se coupent hache en main */
   if(ESSENCES.includes(t.o)){

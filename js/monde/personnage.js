@@ -139,7 +139,11 @@ function bouger(dt){
   legL.rotation.x = legR.rotation.x = e.roule ? -.9 : 0;
   if(e.t >= e.T){ elanEnCours = null; body.rotation.x = 0; body.position.set(0, 0, 0); }
 }
+/* Ralenti un moment (étape 1.13, morceau 6 : la sangsue géante s'accroche) */
+let lent = 0;
+export function ralentir(t){ lent = Math.max(lent, t); }
 export function updatePlayer(dt){
+  if(lent > 0) lent = Math.max(0, lent - dt);
   degager();                                          // coincé (un arbre planté, un bâtiment, un meuble posé dessus) : il se dégage
   if(clign > 0){ clign -= dt; body.visible = clign <= 0 || Math.floor(clign * 12) % 2 === 0; }
   else if(!body.visible) body.visible = true;
@@ -152,7 +156,7 @@ export function updatePlayer(dt){
   const mag = Math.min(1, Math.hypot(ix, iz));
   allureNow = mag;
   if(mag > 0){
-    const sp = SPEED * mag * dt, p = player.position, l = Math.hypot(ix, iz);
+    const sp = SPEED * mag * dt * (lent > 0 ? .55 : 1), p = player.position, l = Math.hypot(ix, iz);
     const ux = ix / l, uz = iz / l;
     const nx = p.x + ux * sp, nz = p.z + uz * sp;
     if(free(nx, p.z)) p.x = nx;

@@ -86,6 +86,10 @@ export function penombre(n){
   FENETRE.emissiveIntensity = .8 - .4 * n;
 }
 export const penombreIci = () => !!dedans;
+/* La brume de la grotte du Marais (étape 1.13, morceau 6 ; bible : « brume qui réduit la vue ») : comptée depuis la caméra,
+   elle commence juste avant le personnage et cache tout ce qui est à plus de quelques pas (main.js, avec la distance D) */
+let brumeGrotte = false;
+export function ajusterBrume(D){ if(brumeGrotte && interior.fog){ interior.fog.near = D - 2.5; interior.fog.far = D + 6; } }
 /* Une fenêtre sur un mur : sur le fond (cote = null, à la place x) ou sur un côté (cote = -1 ou 1, à la place z) */
 function fenetre(a, w, d, cote, u){
   const y = 1.35, nx = cote ? -cote : 0, nz = cote ? 0 : 1, bx = cote ? cote * w/2 : u, bz = cote ? u : -d/2;
@@ -102,7 +106,7 @@ export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
-  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null; dedans = null;
+  interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null; dedans = null; brumeGrotte = false;
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
     const m = makeForet();
     room = m.group; floor.count = 0; base = m;
@@ -121,9 +125,10 @@ export function buildRoom(b){
     return {w: m.w, d: m.d, doorX: null, walk: m.walk, depart: m.depart};
   }
   if(b.type === "grotte"){                           // la grotte de la forêt (étape 1.8) : construite par grotte.js, noire
-    const m = makeGrotte(b.palier);
+    const m = makeGrotte(b.palier, b.zone);
     room = m.group; floor.count = 0;
     interior.background.setHex(m.fond);
+    if(m.brume){ interior.fog = new THREE.Fog(m.fond, 14, 22); brumeGrotte = true; }   // la grotte du Marais : sa brume (ajusterBrume)
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
     interior.add(room); lampeSur(0, 0);
     return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk, passages: m.passages, depart: m.depart};
