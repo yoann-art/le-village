@@ -44,7 +44,7 @@ import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
-import { maraisObj, maraisMesh, setMaraisObj, mtile, W as W_MARAIS, maraisCueilliLeft, cueillirMarais, plante, planteDispo } from "./monde/marais.js";
+import { marais, maraisObj, maraisMesh, setMaraisObj, mtile, W as W_MARAIS, maraisCueilliLeft, cueillirMarais, plante, planteDispo } from "./monde/marais.js";
 import { nuitIci } from "./monde/ciel.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
@@ -81,9 +81,12 @@ const MARAIS = {obj: maraisObj, mesh: maraisMesh, set: setMaraisObj, cx: x => x 
 const inMarais = () => { const p = currentPlace(); return !!p && p.b.type === "marais"; };
 function targetMarais(){
   const d = dir4(), p = player.position, cible = i => ({w: MARAIS, i, x: i % W_MARAIS, z: Math.floor(i / W_MARAIS), o: maraisObj(i)});
+  const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
+  const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case";   // la canne en main, ou dans une case (mains libres)
   for(const dist of [.8, 1.3]){
     const i = mtile(p.x + d.x * dist, p.z + d.z * dist);
     if(i >= 0 && maraisObj(i) && maraisObj(i) !== "panneau") return cible(i);
+    if(i >= 0 && marais.type[i] === "eau" && !maraisObj(i) && (arrosoir || canne)) return {w: MARAIS, i, eau: true, peche: !arrosoir};   // les chenaux (morceau 5)
   }
   const ici = mtile(p.x, p.z);
   return ici >= 0 && plante(maraisObj(ici)) ? cible(ici) : null;
@@ -219,6 +222,7 @@ function actionOf(t){
   if(t.o === "racines") return info("🕳️ La grotte, sous les racines du vieux chêne : avance dans l'ouverture pour y descendre");
   if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
   if(t.w === MARAIS && plante(t.o)) return planteAction(t);
+  if(t.o === "chicot") return info("🪵 Un arbre mort, gris et noueux : le corbeau des brumes aime s'y poser, par brouillard");
   /* Les arbres de la forêt (dans la forêt, ou plantés sur l'île) : chacun son bois et sa graine ; le houx et le
      sureau se cueillent (baies, fleurs), et se coupent hache en main */
   if(ESSENCES.includes(t.o)){
@@ -296,7 +300,7 @@ function showCase(t){
 }
 export function updateRecolte(dt, active){
   if(anim) animate(dt);
-  const milieu = !currentPlace() ? "ile" : inForet() ? "foret" : null;   // les poissons, les insectes et les oiseaux : dehors et dans la forêt
+  const milieu = !currentPlace() ? "ile" : inForet() ? "foret" : inMarais() ? "marais" : null;   // les poissons, les insectes, les oiseaux, le gibier : dehors, dans la forêt, au Marais
   updatePeche(dt, active, milieu);
   updateInsectes(dt, active, milieu);
   updateOiseaux(dt, active, milieu);

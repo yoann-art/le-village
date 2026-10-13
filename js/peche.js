@@ -14,7 +14,10 @@
    Bouger, lâcher la canne ou ouvrir un panneau remonte la ligne. Sac plein : on ne pêche pas.
    En barque (étape 1.13, morceau 2 ; barque.js) : les ombres nagent tout autour, en pleine mer aussi ; au large
    (auLarge), les poissons « depuis la barque » (le thon, en été). Un poisson qui se débat (tenir : le thon, « il faut
-   tenir longtemps ») : ferré, il faut encore mouliner tenir fois en PECHE.tenir secondes, sinon il s'échappe. */
+   tenir longtemps ») : ferré, il faut encore mouliner tenir fois en PECHE.tenir secondes, sinon il s'échappe.
+   Au Marais brumeux (étape 1.13, morceau 5) : on pêche dans les chenaux depuis les îlots, les passerelles et
+   l'embarcadère (lieu « chenal ») ; l'ombre de l'anguille-lanterne s'allume quand elle mord, celle du poisson-brume
+   est pâle et flotte au ras de l'eau ; le poisson-brume ne vient que par brouillard. */
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
@@ -27,7 +30,8 @@ import { foret, ftile, fcx, fcz, sources } from "./monde/foret.js";
 import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
-import { meteo, mouille } from "./monde/meteo.js";
+import { meteo, mouille, brouillard } from "./monde/meteo.js";
+import { marais, maraisObj, mtile, mcx, mcz, W as WM } from "./monde/marais.js";
 import { user } from "./usure.js";
 import { enBarque, auLarge } from "./barque.js";
 
@@ -49,7 +53,7 @@ export function presents(lieu, depuis, d = new Date()){
   return Object.keys(POISSONS).filter(k => { const p = POISSONS[k], l = lieuxDe(p);
     return (l.includes(lieu) || lieu === "source" && l.includes("ruisseau")) && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
       && (!p.lune || lune)
-      && temps(p) && (!p.depuis || p.depuis === dep)
+      && temps(p) && (!p.depuis || p.depuis === dep) && (!p.brouillard || brouillard())
       && !(p.rarete === "legendaire" && (dejaPris(k) || ombres.some(o => o.k === k))); });
 }
 /* Un poisson : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille penche
@@ -107,11 +111,14 @@ export function poissonMesh(k, cm){
     return g;
   }
   const lx = p.forme === "long" ? 1.6 : 1.25, ly = lx * ({long: .25, fin: .4, rond: .72}[p.forme] || .52), demi = .24 * lx;
-  const m = p.rarete === "legendaire" || p.brille ? new THREE.MeshLambertMaterial({color: p.couleur, emissive: p.brille ? 0x5A6A7A : 0x6B4A00}) : p.couleur;
+  const m = p.rarete === "legendaire" || p.brille || p.lanterne ? new THREE.MeshLambertMaterial({color: p.couleur, emissive: p.brille ? 0x5A6A7A : p.lanterne ? 0x5A4A10 : 0x6B4A00})
+    : p.brume ? new THREE.MeshLambertMaterial({color: p.couleur, emissive: 0x4A5A5A, transparent: true, opacity: .6}) : p.couleur;   // le poisson-brume, translucide
   g.add(part(G.head, m, lx, ly, .55, 0, 0, 0));                                       // le corps
   const queue = part(G.cone, m, .9 * ly, .26, .14, demi + .1, 0, 0); queue.rotation.z = Math.PI/2; g.add(queue);
   const dos = part(G.cone, m, .3, .14, .06, -.02, .24 * ly * .9, 0); g.add(dos);      // la nageoire du dos
   for(const z of [-.12, .12]) g.add(part(G.eye, 0x1C2230, 1.3, 1.3, 1.3, -demi * .62, .24 * ly * .25, z));
+  if(p.lanterne){ const lum = new THREE.MeshLambertMaterial({color: 0xF8D860, emissive: 0xF0B020, emissiveIntensity: 1});   // ses taches lumineuses
+    for(const x of [-.25, 0, .25]) for(const z of [-.14, .14]) g.add(part(G.head, lum, .2, .16, .12, x * lx, .02, z)); }
   g.scale.setScalar(.65 + Math.min(1.4, cm / 100) * .55);
   return g;
 }
@@ -127,9 +134,17 @@ const FORMES = {long: .22, fin: .32, rond: .55, crustace: .6, calmar: .4};
 /* Le milieu où l'on pêche (morceau 4) : « ile » (dehors) ou « foret » (le ruisseau et la source de la Forêt
    profonde, dans la scène des intérieurs). En changeant de milieu, les ombres s'effacent et tout change de scène. */
 let ici = "ile";
-const sceneIci = () => ici === "foret" ? interior : scene;
+const sceneIci = () => ici === "ile" ? scene : interior;
 const eauForet = (x, z) => { const i = ftile(x, z); return i >= 0 && foret.type[i] === "eau"; };
-const enEau = (x, z) => { if(ici === "foret") return eauForet(x, z); const a = tileOf(x), b = tileOf(z); return !inb(a, b) || eauLibre(idx(a, b)); };
+/* Au Marais : l'eau sans arbre ni chicot ; près d'un bord, à deux cases au plus d'un îlot, d'une passerelle ou de l'embarcadère */
+const eauMarais = (x, z) => { const i = mtile(x, z); return i >= 0 && marais.type[i] === "eau" && !maraisObj(i); };
+function bordMarais(x, z){
+  for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++){ const i = mtile(x + dx, z + dz); if(i >= 0 && marais.type[i] !== "eau") return true; }
+  return false;
+}
+const enEau = (x, z) => { if(ici === "foret") return eauForet(x, z); if(ici === "marais") return eauMarais(x, z); const a = tileOf(x), b = tileOf(z); return !inb(a, b) || eauLibre(idx(a, b)); };
+/* Une place où une ombre peut nager (en coordonnées du monde) */
+const nageable = (x, z) => ici === "foret" || (ici === "marais" ? bordMarais(x, z) : presDuBord(tileOf(x), tileOf(z)));
 /* Près d'un bord (terre ou ponton à deux cases au plus) : on peut y lancer depuis la rive (le ruisseau et la
    source sont étroits : toujours) */
 function presDuBord(x, z){
@@ -140,12 +155,12 @@ function presDuBord(x, z){
 const presDuPonton = (x, z) => ici === "ile" && [...pontonCases].some(j => Math.hypot(centerOf(j % N) - x, centerOf(Math.floor(j / N)) - z) < 2.2);
 function ajouterOmbre(k, cm, x, z, lieu){
   const p = POISSONS[k], L = .45 + .9 * Math.min(1, cm / 160), W = L * (FORMES[p.forme] || .42);
-  const mat = new THREE.MeshBasicMaterial({color: 0x10303C, transparent: true, opacity: 0, depthWrite: false});
+  const mat = new THREE.MeshBasicMaterial({color: p.brume ? 0xEEF4F4 : 0x10303C, transparent: true, opacity: 0, depthWrite: false});   // le poisson-brume : une ombre pâle
   const mesh = new THREE.Group(), corps = new THREE.Mesh(DISQUE, mat);
   corps.rotation.x = -Math.PI/2; corps.scale.set(L, W, 1); mesh.add(corps);
   const pivot = new THREE.Group(); pivot.position.x = -L * .45; mesh.add(pivot);    // la queue, qui bat
   const queue = new THREE.Mesh(QUEUE, mat); queue.rotation.x = -Math.PI/2; queue.scale.set(L * .32, W * 1.1, 1); queue.position.x = -L * .14; pivot.add(queue);
-  mesh.position.y = EAU + .035; mesh.renderOrder = 2;
+  mesh.position.y = EAU + (p.brume ? .2 : .035); mesh.renderOrder = 2;   // le poisson-brume nage dans l'air humide, au ras de l'eau
   ombresGroupe.add(mesh);
   const o = {k, cm, lieu, x, z, ang: Math.random() * 6.28, L, etat: "nage", t: 0, vie: PECHE.ombres.vie[0] + Math.random() * (PECHE.ombres.vie[1] - PECHE.ombres.vie[0]),
     alpha: 0, cible: null, pause: Math.random() * 2, mesh, mat, pivot, bat: 0};
@@ -184,6 +199,22 @@ function pondreForet(){
     return;
   }
 }
+/* Au Marais : une ombre dans un chenal, près d'un bord, autour du personnage (pas trop près) */
+function pondreMarais(){
+  const R = PECHE.ombres.rayon, p = player.position, cand = [];
+  for(let z = -R; z <= R; z++) for(let x = -R; x <= R; x++){
+    const d = Math.hypot(x, z), wx = p.x + x, wz = p.z + z;
+    if(d >= 2 && d <= R && eauMarais(wx, wz) && bordMarais(wx, wz)) cand.push(mtile(wx, wz));
+  }
+  for(let essai = 0; essai < 6 && cand.length; essai++){
+    const i = cand[Math.floor(Math.random() * cand.length)];
+    const x = mcx(i) + (Math.random() - .5) * .5, z = mcz(i) + (Math.random() - .5) * .5;
+    if(ombres.some(o => Math.hypot(o.x - x, o.z - z) < 1.3)) continue;
+    const f = tirer("chenal", false);
+    if(f){ ajouterOmbre(f.k, f.cm, x, z, "chenal"); banc(f, x, z, "chenal"); }
+    return;
+  }
+}
 /* En barque : une ombre en mer tout autour (en pleine mer aussi, au-delà de l'île) ; au large, ceux du large */
 const enMer = (x, z) => !inb(x, z) ? Math.min(x, z) > -10 && Math.max(x, z) < N + 10 : eauLibre(idx(x, z)) && lieuEau(idx(x, z)) === "mer";
 const depuisIci = (x, z) => enBarque() && auLarge(x, z) ? "barque" : presDuPonton(x, z) ? "ponton" : null;
@@ -202,6 +233,7 @@ function pondreBarque(){
 /* Une nouvelle ombre, sur une case d'eau près d'un bord, autour du personnage (pas trop près) */
 function pondre(){
   if(ici === "foret"){ pondreForet(); return; }
+  if(ici === "marais"){ pondreMarais(); return; }
   if(enBarque()){ pondreBarque(); return; }
   const R = PECHE.ombres.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), cand = [];
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
@@ -225,7 +257,7 @@ export const ombresIci = () => ombres;
 /* Pour la vérification automatique : une ombre à un endroit précis (sur l'île, en mer ou dans la forêt) ; k : ce poisson-là */
 export function lacherOmbre(x, z, k){
   const fi = ftile(x, z), tx = tileOf(x), tz = tileOf(z);
-  const lieu = ici === "foret" ? (sources.has(fi) ? "source" : "ruisseau") : inb(tx, tz) ? lieuEau(idx(tx, tz)) : "mer";
+  const lieu = ici === "foret" ? (sources.has(fi) ? "source" : "ruisseau") : ici === "marais" ? "chenal" : inb(tx, tz) ? lieuEau(idx(tx, tz)) : "mer";
   const f = k ? {k, cm: POISSONS[k].taille[0]} : tirer(lieu, depuisIci(x, z));
   if(!f) return null;
   const o = ajouterOmbre(f.k, f.cm, x, z, lieu); o.alpha = 1; o.pause = 99;
@@ -263,7 +295,7 @@ function nager(o, dt){
       if(!o.cible){
         for(let essai = 0; essai < 5 && !o.cible; essai++){
           const a = Math.random() * 6.28, r = .6 + Math.random() * 1.4, x = o.x + Math.cos(a) * r, z = o.z + Math.sin(a) * r;
-          if(enEau(x, z) && (o.libre || presDuBord(tileOf(x), tileOf(z)))) o.cible = {x, z};
+          if(enEau(x, z) && (o.libre || nageable(x, z))) o.cible = {x, z};
         }
         if(!o.cible) o.pause = 1;
       }
@@ -281,7 +313,9 @@ function nager(o, dt){
   o.bat += dt * (4 + v * 14);
   o.mesh.position.x = o.x; o.mesh.position.z = o.z; o.mesh.rotation.y = -o.ang;
   o.pivot.rotation.y = Math.sin(o.bat) * .35;
-  o.mat.opacity = .42 * Math.max(0, o.alpha);
+  const p = POISSONS[o.k], allume = p.lanterne && o.etat === "mord";        // l'anguille-lanterne s'allume quand elle mord (carnet)
+  if(p.lanterne) o.mat.color.setHex(allume ? 0xF8D860 : 0x10303C);
+  o.mat.opacity = (allume ? .8 : p.brume ? .55 : .42) * Math.max(0, o.alpha);
 }
 let ponte = 0;
 function updateOmbres(dt, ou){

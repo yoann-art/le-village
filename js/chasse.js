@@ -13,7 +13,11 @@
    Le sanglier (étape 1.8, morceau 3 ; carnet : « charge s'il est blessé ») : touché, il ne tombe pas, il se
    retourne et charge (il devient un monstre : enrager, dans monstres.js ; on le finit à l'épée).
    Le Cerf blanc (légendaire, les nuits de pleine lune, au cœur de la forêt) ne se chasse pas : on le suit sans
-   courir ; au bout de son chemin, il laisse son bois d'argent, une seule fois dans tout le jeu (state.cerfBlanc). */
+   courir ; au bout de son chemin, il laisse son bois d'argent, une seule fois dans tout le jeu (state.cerfBlanc).
+   Le Marais brumeux (étape 1.13, morceau 5 ; zone « marais », lieu) : le canard sauvage nage sur les eaux calmes à
+   l'aube et s'envole d'un coup ; le ragondin, sur les berges, file vers l'eau et plonge ; la bécasse, au crépuscule au pied
+   des arbres, est si bien camouflée qu'on ne la voit que de près ; le cerf des brumes, par brouillard, ne fuit pas : il
+   disparaît dans le brouillard. */
 import { $ } from "./outils.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part } from "./monde/formes.js";
@@ -25,6 +29,8 @@ import { foret, foretObj, walk, W, CHEMIN_BLANC } from "./monde/foret.js";
 import { ARBRES } from "./monde/essences.js";
 import { player, placePlayer, allure, ALLURE_DOUCE, pencheMain } from "./monde/personnage.js";
 import { saisonDe, pleineLune } from "./peche.js";
+import { brouillard } from "./monde/meteo.js";
+import { marais, maraisObj, plante, mtile, marche as marcheMarais, W as WM } from "./monde/marais.js";
 import { toast, renderHUD } from "./interface.js";
 import { tenu } from "./barre.js";
 import { flecheModele } from "./monde/outils3d.js";
@@ -39,10 +45,11 @@ const nomDe = (k, n) => (n > 1 ? objet(k).pluriel || objet(k).nom : objet(k).nom
 const leNom = (k, maj) => { const p = GIBIER[k], s = `${p.une ? "la" : "le"} ${k === "cerfBlanc" ? p.nom : p.nom.toLowerCase()}`; return maj ? s[0].toUpperCase() + s.slice(1) : s; };
 
 /* ----- Qui vit ici et maintenant (vraie horloge du téléphone) ----- */
-export function gibierPresent(d = new Date()){
+export function gibierPresent(zone = "foret", d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60;
   return Object.keys(GIBIER).filter(k => { const p = GIBIER[k];
-    return k !== "cerfBlanc" && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b); });
+    return k !== "cerfBlanc" && (p.zone || "foret") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
+      && (!p.brouillard || brouillard()); });
 }
 
 /* ----- Le vent : il tourne lentement (un tour en une demi-heure, avec des sautes) ; {x, z} : où il va ----- */
@@ -58,7 +65,16 @@ function modele(k){
   const patte = (x, z, h, r, col) => { const piv = new THREE.Group(); piv.position.set(x, h, z); piv.add(part(G.cyl, col, r, h, r, 0, -h / 2, 0)); g.add(piv); pattes.push(piv); };
   const yeux = (y, z, e) => { for(const x of [-e, e]) tete.add(part(G.eye, 0x1C1C1C, 1.1, 1.1, 1.1, x, y, z)); };
   g.add(tete);
-  if(p.forme === "lapin"){
+  if(p.forme === "lapin" && p.ragondin){               // le ragondin : un gros rongeur rond, une longue queue fine, des dents orange
+    g.add(part(G.head, c, 1.05, .8, 1.55, 0, .19, .04));
+    const q = part(G.cyl, c2, .05, .5, .05, 0, .1, .55); q.rotation.x = Math.PI / 2 - .25; g.add(q);
+    tete.position.set(0, .26, -.3);
+    tete.add(part(G.head, c, .72, .6, .8, 0, 0, -.04));
+    tete.add(part(G.box, 0xE8902A, .06, .07, .02, 0, -.07, -.22));
+    yeux(.05, -.17, .08);
+    for(const x of [-.09, .09]) tete.add(part(G.head, c2, .18, .18, .12, x, .12, .02));
+    patte(-.09, -.15, .1, .07, c2); patte(.09, -.15, .1, .07, c2); patte(-.1, .17, .1, .08, c2); patte(.1, .17, .1, .08, c2);
+  } else if(p.forme === "lapin"){
     g.add(part(G.head, c, 1, .85, 1.25, 0, .2, .04));                                   // le corps, tout rond
     g.add(part(G.head, c2, .4, .4, .4, 0, .25, .33));                                   // la queue, un pompon blanc
     tete.position.set(0, .3, -.18);
@@ -76,7 +92,7 @@ function modele(k){
     tete.position.set(0, .42, -.2);
     tete.add(part(G.head, p.tete, .55, .6, .55, 0, .04, -.04));
     if(k === "faisan") tete.add(part(G.head, 0xD8302A, .3, .3, .2, 0, .05, -.1));      // le masque rouge
-    const bec = part(G.cone, 0xD8C8A0, .04, .08, .04, 0, .03, -.18); bec.rotation.x = -Math.PI / 2; tete.add(bec);
+    const bec = part(G.cone, 0xD8C8A0, .04, p.longBec ? .26 : .08, .04, 0, .03, p.longBec ? -.27 : -.18); bec.rotation.x = -Math.PI / 2; tete.add(bec);   // la bécasse : un très long bec
     yeux(.07, -.12, .06);
     patte(-.05, .02, .14, .02, 0x8A6A4A); patte(.05, .02, .14, .02, 0x8A6A4A);
   } else if(p.forme === "renard"){
@@ -114,13 +130,34 @@ function modele(k){
   return g;
 }
 
-/* ----- Les places : les cases de la forêt où chaque espèce se promène ----- */
-const at = (x, z) => x >= 0 && z >= 0 && x < W && z < W ? z * W + x : -1;
+/* ----- Les places : les cases de la forêt (ou du Marais) où chaque espèce se promène ----- */
+let lieu = "foret";                                      // où l'on chasse : « foret » ou « marais »
+const Wl = () => lieu === "marais" ? WM : W;
+const at = (x, z) => { const w = Wl(); return x >= 0 && z >= 0 && x < w && z < w ? z * w + x : -1; };
 const libre = i => i >= 0 && foret.type[i] !== "eau" && !foretObj(i);
 const ouvert = i => libre(i) && (foret.type[i] === "herbe" || foret.type[i] === "sentier");
 const arbre = i => i >= 0 && ARBRES.has(foretObj(i));
 const VOIS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+/* Au Marais : l'eau libre (sans arbre ni chicot) ; où chaque bête peut aller (le canard nage, le ragondin plonge pour fuir) */
+const eauM = (x, z) => { const i = mtile(x, z); return i >= 0 && marais.type[i] === "eau" && !maraisObj(i); };
+function marcheBete(k, x, z, fuite){
+  if(lieu !== "marais") return walk(x, z);
+  const p = GIBIER[k];
+  return p.nage ? eauM(x, z) : marcheMarais(x, z) || !!(fuite && p.plonge && eauM(x, z));
+}
+function convientMarais(ou, x, z){
+  const i = at(x, z);
+  if(i < 0) return false;
+  const T = marais.type, t = T[i], o = maraisObj(i), vide = !o || plante(o);
+  const autour = (d, f) => { for(let b = -d; b <= d; b++) for(let a = -d; a <= d; a++){ const j = at(x + a, z + b); if(j >= 0 && f(j)) return true; } return false; };
+  if(ou === "eauxCalmes") return t === "eau" && !o && autour(2, j => T[j] === "terre") && !autour(1, j => T[j] === "passerelle" || T[j] === "embarcadere");
+  if(ou === "berges") return t === "terre" && vide && autour(1, j => T[j] === "eau");
+  if(ou === "sousBoisHumides") return t === "terre" && vide && autour(1, j => ARBRES.has(maraisObj(j)));
+  if(ou === "brume") return t === "terre" && vide && !autour(1, j => T[j] === "eau");
+  return false;
+}
 function convient(ou, x, z){
+  if(lieu === "marais") return convientMarais(ou, x, z);
   const i = at(x, z), t = libre(i) && foret.type[i];
   if(!t) return false;
   if(ou === "clairieres") return t === "herbe";
@@ -133,7 +170,7 @@ function convient(ou, x, z){
   if(ou === "sousBois") return t === "mousse";
   return false;
 }
-const monde = (x, z) => ({x: x - W / 2 + .5, z: z - W / 2 + .5});
+const monde = (x, z) => ({x: x - Wl() / 2 + .5, z: z - Wl() / 2 + .5});
 
 /* ----- Les bêtes, leurs empreintes, les feuilles du vent ----- */
 const groupe = new THREE.Group(); interior.add(groupe); groupe.visible = false;
@@ -141,9 +178,10 @@ const betes = [];        // {k, x, y, z, ang, etat ("paisible" | "aguets" | "fui
 function ajouter(k, x, z, grp){
   const mesh = modele(k), mats = [];
   mesh.traverse(m => { if(m.material){ m.material = m.material.clone(); m.material.transparent = true; mats.push(m.material); m.material.opacity = 0;
-    if(GIBIER[k].argent && m.material.emissive){ m.material.emissive.setHex(0x7A8AA0); m.material.emissiveIntensity = .7; } } });   // le Cerf blanc luit
+    if(GIBIER[k].argent && m.material.emissive){ m.material.emissive.setHex(0x7A8AA0); m.material.emissiveIntensity = .7; }   // le Cerf blanc luit
+    if(GIBIER[k].brume && m.material.emissive){ m.material.emissive.setHex(0x4A5A68); m.material.emissiveIntensity = .5; } } });   // le cerf des brumes, pâle
   groupe.add(mesh);
-  const a = {k, x, y: 0, z, ang: Math.random() * 6.28, etat: "paisible", t: 0, alpha: 0, mesh, mats, home: {x, z}, cible: null,
+  const a = {k, x, y: GIBIER[k].nage ? -.15 : 0, z, vis: 1, ang: Math.random() * 6.28, etat: "paisible", t: 0, alpha: 0, mesh, mats, home: {x, z}, cible: null,
     pause: 1 + Math.random() * 3, grp, pas: 0, cote: 1, v: 0};
   betes.push(a);
   return a;
@@ -164,16 +202,17 @@ function empreinte(k, x, z, ang, age = 0){
 /* Une bête qui avance : elle laisse des empreintes, à gauche puis à droite */
 function avancer(a, x, z, ang){
   a.pas += Math.hypot(x - a.x, z - a.z); a.x = x; a.z = z; a.ang = ang;
-  if(a.pas > .45){ a.pas = 0; a.cote = -a.cote; empreinte(a.k, x - Math.sin(ang) * .06 * a.cote, z + Math.cos(ang) * .06 * a.cote, ang); }
+  if(a.pas > .45 && !(lieu === "marais" && eauM(x, z))){ a.pas = 0; a.cote = -a.cote; empreinte(a.k, x - Math.sin(ang) * .06 * a.cote, z + Math.cos(ang) * .06 * a.cote, ang); }   // pas d'empreintes sur l'eau
 }
 /* Les traces d'une bête qui vient d'arriver : d'où elle vient (à peu près du côté du personnage), les plus anciennes au bout */
 function trace(k, x, z){
+  if(GIBIER[k].nage) return;                          // sur l'eau, pas de traces
   const p = player.position, pts = [];
   let ang = Math.atan2(p.z - z, p.x - x) + (Math.random() - .5) * 1.6, cx = x, cz = z;
   for(let n = 0; n < 24 && pts.length < 16; n++){
     ang += (Math.random() - .5) * .7;
     const nx = cx + Math.cos(ang) * .5, nz = cz + Math.sin(ang) * .5;
-    if(!walk(nx, nz)){ ang += Math.PI / 2 * (Math.random() < .5 ? 1 : -1); continue; }
+    if(!marcheBete(k, nx, nz)){ ang += Math.PI / 2 * (Math.random() < .5 ? 1 : -1); continue; }
     cx = nx; cz = nz; pts.push([cx, cz, ang]);
   }
   pts.forEach(([px, pz, a], n) => { const s = n % 2 ? .06 : -.06; empreinte(k, px - Math.sin(a) * s, pz + Math.cos(a) * s, a + Math.PI, n * 5); });
@@ -206,7 +245,7 @@ function feuillesAuVent(dt){
 /* ----- Une nouvelle bête, hors de vue, à sa place, avec ses traces ----- */
 let brame = -1e9;
 function pondre(){
-  const ks = gibierPresent();
+  const ks = gibierPresent(lieu);
   if(!ks.length) return;
   const par = {};
   ks.forEach(k => { const r = GIBIER[k].rarete; (par[r] = par[r] || []).push(k); });
@@ -214,7 +253,7 @@ function pondre(){
   let x0 = Math.random() * rangs.reduce((n, r) => n + PECHE.poids[r], 0);
   const r = rangs.find(r => (x0 -= PECHE.poids[r]) < 0) || rangs[0];
   const k = par[r][Math.floor(Math.random() * par[r].length)], p = GIBIER[k];
-  const px = Math.floor(player.position.x + W / 2), pz = Math.floor(player.position.z + W / 2), cand = [];
+  const px = Math.floor(player.position.x + Wl() / 2), pz = Math.floor(player.position.z + Wl() / 2), cand = [];
   for(let z = pz - CHASSE.a; z <= pz + CHASSE.a; z++) for(let x = px - CHASSE.a; x <= px + CHASSE.a; x++){
     const d = Math.hypot(x - px, z - pz);
     if(d >= CHASSE.de && d <= CHASSE.a && convient(p.ou, x, z)) cand.push([x, z]);
@@ -224,7 +263,7 @@ function pondre(){
   const n = p.groupe ? 2 + (Math.random() < .5 ? 1 : 0) : 1, grp = n > 1 ? {} : null;
   for(let m = 0; m < n; m++){
     const a = Math.random() * 6.28, rr = m ? .6 + Math.random() * .5 : 0, bx = x + Math.cos(a) * rr, bz = z + Math.sin(a) * rr;
-    if(!m || walk(bx, bz)) ajouter(k, bx, bz, grp);
+    if(!m || marcheBete(k, bx, bz)) ajouter(k, bx, bz, grp);
   }
   trace(k, x, z);
   if(k === "cerf" && performance.now() - brame > 120000){ brame = performance.now(); toast("🦌 Un cerf brame, quelque part dans les grandes clairières…", 3200); }
@@ -247,6 +286,9 @@ function fuir(a, pourquoi){
   a.etat = "fuite"; a.t = 0; a.ang = Math.atan2(a.z - player.position.z, a.x - player.position.x);
   if(a.k === "chevreuil") toast("🦌 Le chevreuil aboie, puis s'enfuit !", 2200);
   else if(a.k === "faisan") toast("🐦 Le faisan s'envole bruyamment !", 2000);
+  else if(a.k === "canardSauvage") toast("🦆 Le canard sauvage s'envole d'un coup !", 2000);
+  else if(a.k === "ragondin") toast("🦫 Le ragondin file vers l'eau et plonge !", 2200);
+  else if(a.k === "cerfBrumes") toast("🌫️ Le cerf des brumes disparaît dans le brouillard…", 2600);
   dire(a, pourquoi);
 }
 function alerte(a, pourquoi){
@@ -264,15 +306,17 @@ function vivre(a, dt){
     if(a.t > 1.2) a.alpha -= dt / .8;
     if(a.alpha <= 0){ retirer(a); return; }
   } else if(a.etat === "fuite"){
-    bouge = true;
+    bouge = !p.brume;
     const v = FUITE[p.forme];
-    if(a.k === "faisan"){ a.y += 2.2 * dt; a.x += Math.cos(a.ang) * v * dt; a.z += Math.sin(a.ang) * v * dt; }
+    if(p.brume) a.alpha -= dt / .5;                     // le cerf des brumes ne fuit pas : il disparaît dans le brouillard
+    else if(p.envol){ a.y += 2.2 * dt; a.x += Math.cos(a.ang) * v * dt; a.z += Math.sin(a.ang) * v * dt; }   // le faisan, le canard sauvage s'envolent
     else {
       const ang = a.ang + (a.k === "lapin" ? Math.sin(a.t * 9) * .7 : 0);      // le lapin détale en zigzag
       for(const da of [0, .5, -.5, 1, -1, 1.6, -1.6]){
         const t2 = ang + da, nx = a.x + Math.cos(t2) * v * dt, nz = a.z + Math.sin(t2) * v * dt;
-        if(walk(nx, nz)){ avancer(a, nx, nz, t2); break; }
+        if(marcheBete(a.k, nx, nz, true)){ avancer(a, nx, nz, t2); break; }
       }
+      if(p.plonge && lieu === "marais" && eauM(a.x, a.z)){ a.y = Math.max(-.6, a.y - dt * .8); a.alpha -= dt / .6; }   // le ragondin plonge
     }
     if(a.t > 2.2) a.alpha -= dt / .6;
     if(a.alpha <= 0){ retirer(a); return; }
@@ -285,12 +329,12 @@ function vivre(a, dt){
     else {
       if(!a.cible) for(let essai = 0; essai < 6 && !a.cible; essai++){
         const an = Math.random() * 6.28, r = .8 + Math.random() * 1.8, x = a.home.x + Math.cos(an) * r, z = a.home.z + Math.sin(an) * r;
-        if(walk(x, z)) a.cible = {x, z};
+        if(marcheBete(a.k, x, z)) a.cible = {x, z};
       }
       if(!a.cible) a.pause = 2;
       else {
         const dx = a.cible.x - a.x, dz = a.cible.z - a.z, d = Math.hypot(dx, dz), v = Math.min(d, PAS[p.forme] * dt);
-        if(d < .05 || !walk(a.x + dx / d * v, a.z + dz / d * v)){ a.cible = null; a.pause = 2 + Math.random() * 4; }
+        if(d < .05 || !marcheBete(a.k, a.x + dx / d * v, a.z + dz / d * v)){ a.cible = null; a.pause = 2 + Math.random() * 4; }
         else { avancer(a, a.x + dx / d * v, a.z + dz / d * v, Math.atan2(dz, dx)); bouge = true; }
       }
     }
@@ -302,7 +346,9 @@ function vivre(a, dt){
   u.tete.rotation.x += ((broute && p.forme !== "lapin" ? (p.forme === "oiseau" ? .9 : .8) : 0) - u.tete.rotation.x) * Math.min(1, dt * 4);
   a.mesh.position.set(a.x, a.y + bond, a.z);
   a.mesh.rotation.y = -a.ang - Math.PI / 2;
-  for(const m of a.mats) m.opacity = Math.max(0, a.alpha);
+  /* la bécasse, parfaitement camouflée : on ne la voit vraiment que de près ; le cerf des brumes est à demi transparent */
+  a.vis = p.camouflee ? Math.max(.12, Math.min(1, (5 - Math.hypot(a.x - player.position.x, a.z - player.position.z)) / 1.5)) : 1;
+  for(const m of a.mats) m.opacity = Math.max(0, a.alpha) * a.vis * (p.brume ? .72 : 1);
 }
 
 /* ----- Tirer à l'arc ----- */
@@ -319,7 +365,7 @@ function cible(){
   const p = player.position;
   let mieux = null, md = CHASSE.portee;
   for(const a of betes){
-    if(a.k === "cerfBlanc" || a.alpha < .5 || (a.etat !== "paisible" && a.etat !== "aguets")) continue;
+    if(a.k === "cerfBlanc" || a.alpha * a.vis < .5 || (a.etat !== "paisible" && a.etat !== "aguets")) continue;
     const d = Math.hypot(a.x - p.x, a.z - p.z);
     if(d < md){ md = d; mieux = a; }
   }
@@ -382,7 +428,7 @@ function voler(dt){
     groupe.remove(T.mesh); tir = null; pencheMain();
   } else {
     if(betes.includes(a)) alerte(a, "rate");
-    toast(`🏹 Raté ! La flèche se perd dans les bois, et ${leNom(a.k)} s'enfuit.`, 2600);
+    toast(`🏹 Raté ! La flèche se perd ${lieu === "marais" ? "dans les roseaux" : "dans les bois"}, et ${leNom(a.k)} ${GIBIER[a.k].brume ? "disparaît dans le brouillard" : "s'enfuit"}.`, 2600);
     T.fini = 1.5;
   }
 }
@@ -491,9 +537,10 @@ function quitter(){
   feuilles.forEach(f => { f.vu = false; });
 }
 export function updateChasse(dt, actif, ou){
-  const ici = ou === "foret";
-  if(dans && !ici) quitter();
+  const ici = ou === "foret" || ou === "marais";      // la chasse : dans la Forêt profonde et au Marais brumeux
+  if(dans && (!ici || ou !== lieu)) quitter();
   dans = ici;
+  if(ici) lieu = ou;
   groupe.visible = ici;
   if(fleche) fleche.hidden = !ici;
   if(!ici) return;
@@ -520,7 +567,7 @@ export function updateChasse(dt, actif, ou){
   }
   /* le Cerf blanc : les nuits de pleine lune, au cœur de la forêt, une fois par visite, tant qu'il n'a pas offert son bois */
   const h = new Date().getHours();
-  if(!blancVu && !state.cerfBlanc && pleineLune() && (h >= 21 || h < 5) && Math.hypot(CHEMIN[0].x - p.x, CHEMIN[0].z - p.z) < 10) apparaitreBlanc();
+  if(lieu === "foret" && !blancVu && !state.cerfBlanc && pleineLune() && (h >= 21 || h < 5) && Math.hypot(CHEMIN[0].x - p.x, CHEMIN[0].z - p.z) < 10) apparaitreBlanc();
   if(!actif || enPause) return;
   ponte -= dt;
   if(ponte <= 0){

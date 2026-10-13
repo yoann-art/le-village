@@ -9,7 +9,10 @@
    Une bête attrapée va dans le sac (vendue au comptoir, plus tard exposée à la Maison des ailes) ; le carnet la
    garde (state.carnet.insectes = {k: {n}}).
    Morceau 4 : ceux de la Forêt profonde (zone « foret ») vivent dans la forêt (scène des intérieurs) : sur les
-   arbres, les vieux chênes, au pied des arbres (le bois mort), dans les clairières. */
+   arbres, les vieux chênes, au pied des arbres (le bois mort), dans les clairières.
+   Étape 1.13, morceau 5 : ceux du Marais brumeux (zone « marais ») : sur l'eau près des bords (l'araignée d'eau qui
+   patine, le dytique qui file), dans la brume (la luciole des brumes, au bocal, qui flotte), dans les roseaux (la
+   libellule de verre, par brouillard : on l'entend tinter). */
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { foret, foretObj, arbreEn, fcx, fcz, W as WF } from "./monde/foret.js";
@@ -24,7 +27,8 @@ import { lanternes } from "./monde/ponton.js";
 import { lumieresIle } from "./lumieres.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe, pleineLune } from "./peche.js";
-import { meteo } from "./monde/meteo.js";
+import { meteo, brouillard } from "./monde/meteo.js";
+import { marais, maraisObj, plante, mcx, mcz, W as WM } from "./monde/marais.js";
 import { toast } from "./interface.js";
 import { tenu } from "./barre.js";
 import { user } from "./usure.js";
@@ -40,7 +44,7 @@ export function insectesPresents(zone = "ile", d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d), abri = meteo() !== "beau" && meteo() !== "nuages";
   return Object.keys(INSECTES).filter(k => { const p = INSECTES[k];
     return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.lune || lune)
-      && !(abri && p.forme === "papillon"); });
+      && !(abri && p.forme === "papillon") && (!p.brouillard || brouillard()); });
 }
 const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`;
   return maj ? s[0].toUpperCase() + s.slice(1) : s; };
@@ -63,8 +67,9 @@ function modele(k){
     g.add(part(G.head, d, .56, .3, .3, 0, 0, .02));
     aile(.12, .08, .08, -.02, 0xDDEFF7, .7); aile(.12, .08, -.08, -.02, 0xDDEFF7, .7);
   } else if(p.forme === "libellule"){
-    const corps = part(G.cyl, c, .035, .36, .035, 0, 0, .06); corps.rotation.x = Math.PI/2; g.add(corps);
-    g.add(part(G.head, c, .3, .3, .3, 0, 0, -.13));
+    const verre = p.verre ? mat(c, {transparent: true, opacity: .55, emissive: 0x6A8A9A, emissiveIntensity: .5}) : c;   // la libellule de verre
+    const corps = part(G.cyl, verre, .035, .36, .035, 0, 0, .06); corps.rotation.x = Math.PI/2; g.add(corps);
+    g.add(part(G.head, verre, .3, .3, .3, 0, 0, -.13));
     aile(.2, .05, .11, -.06, 0xDDEFF7, .6); aile(.2, .05, -.11, -.06, 0xDDEFF7, .6); aile(.18, .05, .1, .0, 0xDDEFF7, .6); aile(.18, .05, -.1, .0, 0xDDEFF7, .6);
   } else if(p.forme === "coleo"){
     g.add(part(G.hair, c, .45, .45, .55, 0, 0, 0));
@@ -78,6 +83,13 @@ function modele(k){
   } else if(p.forme === "sauteur"){
     g.add(part(G.head, c, .32, .32, .9, 0, .05, 0));
     for(const x of [-.06, .06]){ const patte = part(G.cyl, c, .02, .2, .02, x, .08, .1); patte.rotation.x = -.9; g.add(patte); }
+  } else if(p.forme === "araignee" && p.gerris){       // l'araignée d'eau : un corps fin, six longues pattes posées sur l'eau
+    const corps = part(G.cyl, c, .04, .24, .04, 0, .03, 0); corps.rotation.x = Math.PI/2; g.add(corps);
+    g.add(part(G.head, c, .18, .16, .2, 0, .03, -.13));
+    for(const [z, l, a] of [[-.08, .16, .5], [0, .3, 1.35], [.06, .3, 2.1]]) for(const s of [-1, 1]){
+      const pa = part(G.cyl, d, .01, l, .01, s * Math.sin(a) * l / 2, .01, z - Math.cos(a) * l / 2);
+      pa.rotation.order = "YXZ"; pa.rotation.set(Math.PI/2, Math.PI - s * a, 0); g.add(pa);   // couchée, tournée vers l'avant, le côté ou l'arrière
+    }
   } else if(p.forme === "araignee"){
     g.add(part(G.head, c, .45, .4, .5, 0, .05, .04));
     g.add(part(G.head, c, .25, .22, .25, 0, .04, -.08));
@@ -120,8 +132,24 @@ function placesForet(ou){
   }
   return out;
 }
+/* Au Marais brumeux (étape 1.13, morceau 5) : sur l'eau près d'un bord (surface, mares), dans les roseaux au bord des
+   îlots, dans la brume au-dessus des îlots et de l'eau */
+const EAU = -.2;
+function placesMarais(ou){
+  const R = INSECTE.rayon, p = player.position, out = [], x0 = Math.floor(p.x + WM/2), z0 = Math.floor(p.z + WM/2), T = marais.type;
+  const voisin = (x, z, f) => [[1,0],[-1,0],[0,1],[0,-1]].some(([a, b]) => x + a >= 0 && z + b >= 0 && x + a < WM && z + b < WM && f(T[(z + b) * WM + x + a]));
+  for(let z = z0 - R; z <= z0 + R; z++) for(let x = x0 - R; x <= x0 + R; x++){
+    if(x < 0 || z < 0 || x >= WM || z >= WM || Math.hypot(x - x0, z - z0) < 2) continue;
+    const i = z * WM + x, o = maraisObj(i), vide = !o || plante(o), r = Math.random() - .5;
+    if((ou === "surface" || ou === "mares") && T[i] === "eau" && !o && voisin(x, z, t => t !== "eau")) out.push({x: mcx(i) + r * .4, y: EAU + .03, z: mcz(i) - r * .4});
+    else if(ou === "roseaux" && T[i] === "terre" && vide && voisin(x, z, t => t === "eau")) out.push({x: mcx(i) + r * .5, y: .45, z: mcz(i) + r * .3});
+    else if(ou === "brume" && (T[i] === "terre" || T[i] === "eau") && vide) out.push({x: mcx(i), y: .8 + Math.random() * .6, z: mcz(i)});
+  }
+  return out;
+}
 function places(ou){
   if(ici === "foret") return placesForet(ou);
+  if(ici === "marais") return placesMarais(ou);
   const R = INSECTE.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), out = [];
   if(ou === "lanternes"){
     for(const l of [...lanternes, ...lumieresIle()])          // la lanterne du ponton, et les lumières posées (demande de Yo, 11 octobre 2026)
@@ -146,7 +174,7 @@ const betes = [];                  // {k, x, y, z, base, t, vie, etat ("vit" | "
 const groupe = new THREE.Group(); scene.add(groupe);
 /* Le milieu (morceau 4) : « ile » (dehors) ou « foret » (la scène des intérieurs) ; en changeant, les bêtes s'en vont */
 let ici = "ile";
-const sceneIci = () => ici === "foret" ? interior : scene;
+const sceneIci = () => ici === "ile" ? scene : interior;
 function changer(ou){
   if(!ou || ou === ici) return;
   for(const b of [...betes]) retirer(b);
@@ -179,9 +207,11 @@ function pondre(){
     const libres = pl.filter(q => !betes.some(b => Math.hypot(b.base.x - q.x, b.base.z - q.z) < .8));
     if(!libres.length) continue;
     ajouter(k, libres[Math.floor(Math.random() * libres.length)]);
+    if(p.verre && performance.now() - tinte > 90000){ tinte = performance.now(); toast("🎐 Un tintement de verre, dans les roseaux… Une libellule de verre est tout près", 3400); }   // carnet : « des ailes qui tintent »
     return;
   }
 }
+let tinte = -1e9;
 /* Pour la vérification automatique : une bête à un endroit précis */
 export function lacherInsecte(k, x, z, y = .3){ const b = ajouter(k, {x, y, z}); b.alpha = 1; return b; }
 let conseil = -1e9;
@@ -214,15 +244,19 @@ function vivre(b, dt){
     } else if(f === "bourdon"){                       // petites boucles autour des fleurs
       const nx = base.x + Math.cos(b.t * 2.6) * .35, nz = base.z + Math.sin(b.t * 3.3) * .3;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + .15 + Math.sin(b.t * 5) * .06;
-    } else if(f === "libellule"){                     // elle file d'un point à l'autre, puis fait du sur-place
+    } else if(p.flotte){                              // la luciole des brumes flotte doucement dans l'air
+      const nx = base.x + Math.sin(b.t * .45) * .6, nz = base.z + Math.cos(b.t * .35) * .5;
+      b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + Math.sin(b.t * .9) * .2;
+    } else if(f === "libellule" || p.nage || p.gerris){   // elle file d'un point à l'autre, puis fait du sur-place (sur l'eau : le dytique, l'araignée d'eau)
       if(b.pause > 0) b.pause -= dt;
       else {
-        if(!b.cible){ const a = Math.random() * 6.28, r = Math.random() * 1.2; b.cible = {x: base.x + Math.cos(a) * r, z: base.z + Math.sin(a) * r}; }
+        const loin = f === "libellule" ? 1.2 : .5;      // sur l'eau, elles restent près de leur place (près du bord)
+        if(!b.cible){ const a = Math.random() * 6.28, r = Math.random() * loin; b.cible = {x: base.x + Math.cos(a) * r, z: base.z + Math.sin(a) * r}; }
         const dx = b.cible.x - b.x, dz = b.cible.z - b.z, d = Math.hypot(dx, dz);
         if(d < .05){ b.cible = null; b.pause = .6 + Math.random() * 1.5; }
-        else { const v = Math.min(d, 2.4 * dt); b.x += dx / d * v; b.z += dz / d * v; b.ang = Math.atan2(dz, dx); }
+        else { const v = Math.min(d, (f === "libellule" ? 2.4 : 1.6) * dt); b.x += dx / d * v; b.z += dz / d * v; b.ang = Math.atan2(dz, dx); }
       }
-      b.y = base.y + Math.sin(b.t * 6) * .03;
+      b.y = f === "libellule" ? base.y + Math.sin(b.t * 6) * .03 : base.y;
     } else if(f === "sauteur"){                       // posé dans l'herbe, il fait un bond de temps en temps
       if(b.saut){
         b.saut.t += dt; const u = Math.min(1, b.saut.t / .4);

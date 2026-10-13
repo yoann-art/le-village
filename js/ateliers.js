@@ -44,7 +44,7 @@ function chain(q){
 }
 /* Les recettes d'un plan de travail (key : pour les retrouver au toucher) ; le comptoir y ajoute la vente des
    poissons et des plats qu'on possède, avec leur prix (POISSONS, PRODUITS) */
-const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf"];
+const CHASSE_VENTE = ["viandeGibier", "fourrureDouce", "fourrure", "fourrureRousse", "plumesColorees", "plumes", "cuir", "boisDeCerf", "duvet", "fourrureImper", "cuirArgente"];
 const FLEURS_VENTE = Object.keys(FLEURS);
 const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse", "coeurDeBois"];
 const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "quartzRose", "citrine", "oeilTigre", "bronze", "verre"];   // pas le Cœur de la mine

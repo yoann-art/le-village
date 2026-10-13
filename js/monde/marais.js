@@ -14,6 +14,8 @@
      donnees.js : cresson, riz sauvage, canneberge, mandragore, chou-lune, iris, nénuphar, lotus, feu-follet, rose des
      brumes), chacune à sa place (rive, eau, îlot), à sa saison, certaines la nuit seulement : cueillies, elles
      reviennent (state.marais.cueillis). Sa vie (insectes, oiseaux, poissons, gibier) viendra au morceau 5.
+   Sa vie (morceau 5 : insectes.js, oiseaux.js, peche.js, chasse.js) : sur l'eau près des bords, dans les roseaux, dans la
+   brume ; des arbres morts (chicots) où se pose le corbeau des brumes (CHICOTS).
    Les deux lieux se construisent dans la scène des intérieurs (interieurs.js, buildRoom), comme la forêt ; le sol, les
    planches, les arbres et les roseaux sont dessinés en série, pour un téléphone modeste. */
 import { G, part, mat } from "./formes.js";
@@ -88,6 +90,7 @@ const LIENS = [[0, 3], [3, 6], [6, 9], [0, 1], [1, 4], [4, 7], [7, 9], [0, 2], [
    poteau), et un nombre au hasard (fixe) qui fait varier les modèles */
 export const marais = {type: new Array(W * D).fill("eau"), obj: new Array(W * D).fill(null), r: new Array(W * D).fill(0)};
 export const EMBARCADERE = [];                            // les planches de l'embarcadère, vers le sud (vers le village)
+export const CHICOTS = [];                                // les arbres morts (morceau 5)
 let BARQUE_EN = null, PANNEAU = -1;
 {
   const rnd = rand(4207), T = marais.type, O = marais.obj, at = (x, z) => z * W + x, dans = (x, z) => x >= 0 && z >= 0 && x < W && z < D;
@@ -160,6 +163,22 @@ let BARQUE_EN = null, PANNEAU = -1;
   for(const k of PLANTES_MARAIS){
     const p = PRODUITS[k].plante, l = places[p.ou];
     for(let n = 0; n < COMBIEN[p.rarete] && l.length; n++) O[l.pop()] = k;
+  }
+  /* les arbres morts (morceau 5) : des chicots gris au bord des îlots et dans l'eau, loin des chemins et des plantes ;
+     posés après tout le reste, avec leur propre tirage (rien d'autre ne bouge) */
+  const rc = rand(9173), chic = [];
+  for(let z = 1; z < D - 1; z++) for(let x = 1; x < W - 1; x++){
+    const i = at(x, z), t = T[i];
+    if(O[i] || !libre(x, z) || autour(x, z, 1, u => u === "sentier" || u === "passerelle" || u === "embarcadere")) continue;
+    let plantes = false;
+    for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++) if(PRODUITS[O[at(x + dx, z + dz)]]) plantes = true;
+    if(plantes) continue;
+    if(t === "terre" && autour(x, z, 1, u => u === "eau") || t === "eau" && autour(x, z, 1, u => u === "terre")) chic.push(i);
+  }
+  for(let n = 0; n < 12 && chic.length; n++){
+    const i = chic.splice(Math.floor(rc() * chic.length), 1)[0];
+    if([-1, 1, -W, W].some(d => O[i + d] === "chicot")) continue;
+    O[i] = "chicot"; CHICOTS.push(i);
   }
 }
 const passe = new Set(EMBARCADERE.map(([x, z]) => z * W + x));
@@ -342,6 +361,16 @@ export function makeMarais(){
   }
   /* les plantes, chacune à elle */
   marais.obj.forEach((o, i) => { if(plante(o)) ajouterPlante(i); });
+  /* les arbres morts : un tronc gris penché, cassé en haut, deux branches nues */
+  for(const i of CHICOTS){
+    const c = new THREE.Group(), r = marais.r[i], eau = T[i] === "eau";
+    const tronc = part(G.cyl, 0x8A8680, .3, 2.2, .3, 0, 1.1, 0); tronc.rotation.z = (r - .5) * .25; c.add(tronc);
+    c.add(part(G.cone, 0x7A7670, .5, .5, .5, 0, .1, 0));
+    for(const [s, y, a] of [[1, 1.55, .9], [-1, 1.85, -.8]]){ const b = part(G.cyl, 0x8A8680, .08, .8, .08, s * .28, y, 0); b.rotation.z = -a; c.add(b); }
+    c.add(part(G.cone, 0x6A6660, .3, .25, .3, 0, 2.3, 0));
+    c.position.set(mcx(i), eau ? EAU : 0, mcz(i)); c.rotation.y = r * 6.28;
+    g.add(c);
+  }
   /* la Libellule amarrée à l'embarcadère, le poteau « Marais brumeux » */
   const barque = barqueModele(false); barque.position.set(BARQUE_EN.x, .02, BARQUE_EN.z); g.add(barque);
   ecriteau(g, mcx(PANNEAU), mcz(PANNEAU), "Marais brumeux");

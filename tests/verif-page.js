@@ -7,7 +7,8 @@
    les ingrédients du poisson grillé, la barque (la construire au bout du ponton, ramer au large, y pêcher le thon
    en moulinant, accoster), le voyage (vers le Marais brumeux avec sa carte, la scène qu'on passe, le retour), le Marais brumeux
    (ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit, la torche qui
-   s'allume quand il fait sombre), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   s'allume quand il fait sombre), la vie du Marais (une araignée d'eau, un canard colvert, un poisson-chat, un ragondin),
+   vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -54,7 +55,7 @@ import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
 import { checkDoors, isInside, currentPlace, doorOf, retourIle, allerA } from "../js/lieux.js";
-import { marais, maraisObj, marche as marcheMarais, plante, mcx, mcz, W as WM, D as DM, DEPART } from "../js/monde/marais.js";
+import { marais, maraisObj, marche as marcheMarais, plante, mcx, mcz, mtile, W as WM, D as DM, DEPART } from "../js/monde/marais.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
@@ -622,6 +623,71 @@ export async function verifier(){
     } finally {
       forcerHeure(null); forcerMeteo(null); updateCiel(0, 0);
       state.sac = sac0; state.barre = barre0; state.torche = torche0; hold(null);
+      if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
+    }
+  });
+  await etape("La vie du Marais brumeux : un insecte, un oiseau, un poisson des chenaux, un gibier", async () => {
+    const P = state.ponton, sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));
+    const bouton = () => $("#btn-act").textContent;
+    pauseChasse(true);
+    try {
+      allerA({type: "marais"}, DEPART, {x: centerOf(P.x), z: centerOf(P.z + P.n - 1)});
+      if(!await attendre(() => currentPlace() && currentPlace().b.type === "marais")) throw new Error("on n'arrive pas au Marais");
+      state.sac = []; state.barre = [null, null, null]; hold(null);
+      keys.u = keys.d = keys.l = keys.r = 0;
+      /* au bord d'un îlot, face à l'eau libre */
+      let t = null;
+      for(let i = 0; i < WM * DM && !t; i++){
+        if(marais.type[i] !== "eau" || maraisObj(i)) continue;
+        for(const [dx, dz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]){
+          const j = i + dz * WM + dx;
+          if(marais.type[j] === "terre" && marcheMarais(mcx(j), mcz(j)) && !plante(maraisObj(j))){ t = {i, j, dx: -dx, dz: -dz}; break; }
+        }
+      }
+      if(!t) throw new Error("aucun bord d'îlot au Marais");
+      placePlayer(mcx(t.j), mcz(t.j), t.dx, t.dz); frames(2);
+      /* une araignée d'eau qui patine, puis un canard colvert posé sur l'eau */
+      sacAdd("filet", 1); enMain("filet");
+      lacherInsecte("araigneeEau", mcx(t.i), mcz(t.i), -.17); frames(2);
+      if(!bouton().includes("Attraper")) throw new Error(`le bouton dit « ${bouton()} » (pas d'araignée d'eau à attraper)`);
+      $("#btn-act").click(); frames(40);
+      if(!state.carnet.insectes.araigneeEau) throw new Error("l'araignée d'eau n'est pas au carnet");
+      lacherOiseau("colvert", mcx(t.i), mcz(t.i), -.18); frames(2);
+      if(!bouton().includes("Lancer le filet")) throw new Error(`le bouton dit « ${bouton()} » (pas de canard colvert)`);
+      $("#btn-act").click(); frames(40);
+      if(!state.carnet.oiseaux.colvert) throw new Error("le canard colvert n'est pas au carnet");
+      /* pêcher dans le chenal : un poisson-chat, juste devant */
+      sacAdd("canneBois", 1); enMain("canneBois"); frames(2);
+      if(!bouton().includes("Lancer")) throw new Error(`au bord du chenal, le bouton dit « ${bouton()} »`);
+      if(!lacherOmbre(mcx(t.i) + t.dx * .3, mcz(t.i) + t.dz * .3, "poissonChat")) throw new Error("pas d'ombre de poisson possible dans le chenal");
+      $("#btn-act").click();
+      let k = 0;
+      while(!bouton().includes("Ferrer") && k < 400){ frames(1); k++; }
+      if(k >= 400) throw new Error("rien ne mord dans le chenal");
+      $("#btn-act").click();
+      if(!state.carnet.poissons.poissonChat) throw new Error("le poisson-chat n'est pas au carnet");
+      frames(40);
+      /* chasser : un ragondin sur un îlot, à 2,5 P, du côté d'où vient le vent */
+      sacAdd("arcIf", 1); sacAdd("fleche", 5); enMain("arcIf");
+      const w = vent();
+      let s = null;
+      for(let i = 0; i < WM * DM && !s; i++){
+        if(marais.type[i] !== "terre" || !marcheMarais(mcx(i), mcz(i))) continue;
+        const rx = mcx(i) - w.x * 2.5, rz = mcz(i) - w.z * 2.5, j = mtile(rx, rz);
+        if(j >= 0 && marais.type[j] === "terre" && marcheMarais(rx, rz)) s = {x: mcx(i), z: mcz(i), rx, rz};
+      }
+      if(!s) throw new Error("aucune place pour chasser au Marais");
+      placePlayer(s.x, s.z, -w.x, -w.z); frames(2);
+      lacherGibier("ragondin", s.rx, s.rz); frames(2);
+      if(!bouton().includes("Tirer")) throw new Error(`le bouton dit « ${bouton()} » (pas de ragondin à portée)`);
+      $("#btn-act").click();
+      k = 0;
+      while(!state.carnet.gibier.ragondin && k < 60){ frames(1); k++; }
+      if(!state.carnet.gibier.ragondin || !owned("fourrureImper")) throw new Error("le ragondin n'est pas touché, ou pas de fourrure imperméable");
+      frames(40);
+      return "une araignée d'eau et un canard colvert au filet, un poisson-chat, un ragondin à l'arc (sa fourrure imperméable)";
+    } finally {
+      state.sac = sac0; state.barre = barre0; hold(null); pauseChasse(true);
       if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
     }
   });

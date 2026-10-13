@@ -10,7 +10,10 @@
    (state.carnet.oiseaux = {k: {n}}).
    Morceau 4 : ceux de la Forêt profonde (zone « foret », carnet : « on les entend partout, on les voit rarement »)
    s'agrippent aux troncs, se posent dans les chênes, à la lisière, dans les vieux arbres, dans le feuillage. Le pic
-   vert tambourine sur le tronc ; le coucou, farouche, s'envole de plus loin, et on l'entend chanter. */
+   vert tambourine sur le tronc ; le coucou, farouche, s'envole de plus loin, et on l'entend chanter.
+   Étape 1.13, morceau 5 : ceux du Marais brumeux (zone « marais ») : le canard colvert posé sur l'eau, près du bord (il
+   barbote, la tête sous l'eau) ; dans les roseaux, le butor étoilé (figé, le bec vers le ciel) et la grue cendrée (elle
+   danse) ; sur les arbres morts, par brouillard, le corbeau des brumes, qui répète des mots entendus ailleurs. */
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { foret, foretObj, arbreEn, W as WF } from "./monde/foret.js";
@@ -25,6 +28,8 @@ import { ARBRES } from "./monde/essences.js";
 import { pontonCases, eauLibre } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe } from "./peche.js";
+import { brouillard } from "./monde/meteo.js";
+import { marais, maraisObj, plante, mcx, mcz, W as WM, CHICOTS } from "./monde/marais.js";
 import { toast } from "./interface.js";
 import { tenu } from "./barre.js";
 import { user } from "./usure.js";
@@ -35,7 +40,7 @@ export const OISEAU = {max: 4, rayon: 10, vie: [60, 150], portee: 1.8, peur: 3.5
 export function oiseauxPresents(zone = "ile", d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60;
   return Object.keys(OISEAUX).filter(k => { const p = OISEAUX[k];
-    return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b); });
+    return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.brouillard || brouillard()); });
 }
 const leNom = k => { const p = OISEAUX[k]; return `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`; };
 
@@ -44,12 +49,23 @@ function modele(k){
   const p = OISEAUX[k], g = new THREE.Group(), ailes = [], c = p.couleur, ailesC = p.ailes !== undefined ? p.ailes : c;
   const aile = (x, y, z, w, h) => { const pivot = new THREE.Group(); pivot.position.set(x, y, z);
     pivot.add(part(G.head, ailesC, w, .12, h, Math.sign(x) * w * .2, 0, 0)); g.add(pivot); ailes.push({pivot, cote: Math.sign(x)}); };
-  if(p.forme === "echassier"){
+  if(p.forme === "canard"){                                                                          // posé sur l'eau : un corps rond et bas
+    g.add(part(G.head, c, 1.2, .7, 1.55, 0, .1, .04));
+    g.add(part(G.head, p.poitrine, .8, .55, .6, 0, .12, -.2));
+    g.add(part(G.head, p.tete, .62, .6, .62, 0, .33, -.26));                                        // la tête verte
+    const collier = part(G.tore, 0xF4F4F0, .18, .18, .5, 0, .24, -.24); collier.rotation.x = Math.PI/2; g.add(collier);
+    g.add(part(G.box, p.bec, .09, .035, .15, 0, .31, -.42));                                         // le bec plat
+    for(const x of [-.07, .07]) g.add(part(G.eye, 0x1C1C1C, .9, .9, .9, x, .37, -.36));
+    const queue = part(G.cone, 0x2A2A2A, .1, .12, .1, 0, .2, .4); queue.rotation.x = -1.2; g.add(queue);
+    aile(-.15, .17, .05, .4, .95); aile(.15, .17, .05, .4, .95);
+  } else if(p.forme === "echassier"){
     for(const x of [-.06, .06]) g.add(part(G.cyl, p.bec, .03, .5, .03, x, .25, .02));                  // les longues pattes
     g.add(part(G.head, c, .75, .6, 1.1, 0, .58, .04));                                                // le corps
     const cou = part(G.cyl, p.poitrine, .07, .4, .07, 0, .82, -.16); cou.rotation.x = .35; g.add(cou);
     g.add(part(G.head, p.tete, .42, .4, .45, 0, 1.02, -.24));
-    const bec = part(G.cone, p.bec, .06, .32, .06, 0, 1.0, -.42); bec.rotation.x = -Math.PI/2; g.add(bec);
+    if(p.calotte) g.add(part(G.head, p.calotte, .2, .1, .22, 0, 1.11, -.24));                          // la calotte rouge (la grue)
+    const bec = part(G.cone, p.bec, .06, .32, .06, 0, p.becCiel ? 1.18 : 1.0, p.becCiel ? -.28 : -.42);
+    bec.rotation.x = p.becCiel ? -.25 : -Math.PI/2; g.add(bec);                                       // le butor : le bec vers le ciel
     for(const x of [-.06, .06]) g.add(part(G.eye, 0x1C1C1C, 1, 1, 1, x, 1.05, -.3));
     aile(-.14, .62, .05, .5, 1); aile(.14, .62, .05, .5, 1);
   } else if(p.forme === "rapace"){
@@ -99,8 +115,25 @@ function placesForet(ou){
   }
   return out;
 }
+/* Au Marais brumeux (étape 1.13, morceau 5) : sur l'eau près d'un bord, dans les roseaux au bord des îlots, sur les arbres morts */
+function placesMarais(ou){
+  const R = OISEAU.rayon, p = player.position, out = [], x0 = Math.floor(p.x + WM/2), z0 = Math.floor(p.z + WM/2), T = marais.type;
+  if(ou === "arbresMorts"){
+    for(const i of CHICOTS) if(Math.hypot(mcx(i) - p.x, mcz(i) - p.z) < R) out.push({x: mcx(i) + .12, y: 2.2, z: mcz(i), perche: true});
+    return out;
+  }
+  const voisin = (x, z, f) => [[1,0],[-1,0],[0,1],[0,-1]].some(([a, b]) => x + a >= 0 && z + b >= 0 && x + a < WM && z + b < WM && f(T[(z + b) * WM + x + a]));
+  for(let z = z0 - R; z <= z0 + R; z++) for(let x = x0 - R; x <= x0 + R; x++){
+    if(x < 0 || z < 0 || x >= WM || z >= WM || Math.hypot(x - x0, z - z0) < 2.5) continue;
+    const i = z * WM + x, o = maraisObj(i);
+    if(ou === "eauxCalmes" && T[i] === "eau" && !o && voisin(x, z, t => t !== "eau")) out.push({x: mcx(i), y: -.18, z: mcz(i)});
+    else if(ou === "roseaux" && T[i] === "terre" && (!o || plante(o)) && voisin(x, z, t => t === "eau")) out.push({x: mcx(i), y: 0, z: mcz(i)});
+  }
+  return out;
+}
 function places(ou){
   if(ici === "foret") return placesForet(ou);
+  if(ici === "marais") return placesMarais(ou);
   const R = OISEAU.rayon, pp = player.position, px = tileOf(pp.x), pz = tileOf(pp.z), out = [];
   if(ou === "toits"){
     for(const b of state.buildings){
@@ -129,7 +162,7 @@ const oiseaux = [];                // {k, x, y, z, pl (sa place), t, age, vie, e
 const groupe = new THREE.Group(); scene.add(groupe);
 /* Le milieu (morceau 4) : « ile » (dehors) ou « foret » (la scène des intérieurs) ; en changeant, les oiseaux s'en vont */
 let ici = "ile";
-const sceneIci = () => ici === "foret" ? interior : scene;
+const sceneIci = () => ici === "ile" ? scene : interior;
 function changer(ou){
   if(!ou || ou === ici) return;
   for(const o of [...oiseaux]) retirer(o);
@@ -161,6 +194,9 @@ function pondre(){
     const o = ajouter(k, pl[Math.floor(Math.random() * pl.length)]);
     /* il arrive en volant, de haut */
     o.vol = {x0: o.x + 3, y0: o.y + 3, z0: o.z - 2, t: 0, d: 1.4}; o.etat = "vol";
+    /* le corbeau des brumes répète des mots entendus ailleurs (carnet) */
+    if(p.mots && performance.now() - chant > 90000){ chant = performance.now();
+      toast(`🐦 ${["« Bonjour ! »", "« Ferrer ! »", "« Coucou ! Coucou ! »", "« Couic ! »", "« Grrr… »", "« Planches ! »"][Math.floor(Math.random() * 6)]} … Un corbeau des brumes répète des mots entendus ailleurs, sur un arbre mort`, 3800); }
     /* le coucou : on l'entend avant de le voir (carnet) */
     if(p.farouche && performance.now() - chant > 90000){ chant = performance.now(); toast(`🎶 « Coucou ! Coucou ! » ${leNom(k)[0].toUpperCase() + leNom(k).slice(1)} chante, quelque part ${OU_OISEAU[p.ou[0]]}`, 3400); }
     return;
@@ -213,13 +249,17 @@ function vivre(o, dt){
       else o.ang += (Math.random() - .5) * 2;
     }
     if(o.pique > 0) o.pique = Math.max(0, o.pique - dt);
+    if(OISEAUX[o.k].danse){                           // la grue danse : de petits bonds, les ailes ouvertes
+      if(!(o.danse > 0) && Math.random() < dt * .25) o.danse = 1.6;
+      if(o.danse > 0){ o.danse -= dt; bat = true; o.y = o.pl.y + Math.abs(Math.sin(o.danse * 6)) * .3; o.ang += dt * 2; if(o.danse <= 0) o.y = o.pl.y; }
+    }
     if((o.bouge -= dt) <= 0) envoler(o, false);       // de temps en temps, il change de place
   }
   for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (bat ? Math.sin(o.t * 22) * .9 : .05);
   o.mesh.position.set(o.x, o.y, o.z);
   o.mesh.rotation.y = -o.ang - Math.PI/2;
   o.mesh.rotation.x = o.pique > 0 ? Math.sin(o.pique / (o.pl.face !== undefined ? .16 : .4) * Math.PI) * .5 : 0;
-  const al = Math.max(0, o.alpha);
+  const al = Math.max(0, o.alpha) * (OISEAUX[o.k].brume ? .78 : 1);   // le corbeau des brumes se fond dans la brume
   for(const m of o.mats) m.opacity = al;
 }
 

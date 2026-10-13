@@ -33,6 +33,11 @@ let forcee = null;
 export const forcerMeteo = m => { forcee = m; };             // pour la vérification et les essais (null : la vraie)
 export const meteo = () => forcee || meteoA(Date.now());
 export const mouille = (m = meteo()) => m === "pluie" || m === "orage";
+/* Le brouillard du Marais brumeux (étape 1.13, morceau 5 ; Grand Carnet : « par brouillard » ; choisi par Claude) : le
+   matin (5 h – 11 h), et quand le ciel n'est pas dégagé. forcerBrouillard (true, false, null) pour la vérification */
+let brouillardForce = null;
+export const forcerBrouillard = b => { brouillardForce = b; };
+export const brouillard = () => { if(brouillardForce !== null) return brouillardForce; const h = new Date().getHours(); return h >= 5 && h < 11 || meteo() !== "beau"; };
 /* La pluie arrose (étape 1.10, morceau 4) : le premier moment de pluie (ou d'orage) depuis t0, jusqu'à maintenant (même
    jeu fermé), ou null */
 export function pluieDepuis(t0){

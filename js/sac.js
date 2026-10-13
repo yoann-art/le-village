@@ -13,7 +13,7 @@
    on peut le prendre en main (outil, graine, coffre à poser). Sous le sac, les trois cases rapides : ce qui y est
    est sorti du sac (demande de Yo, v1.7.6) ; on peut l'y remettre. */
 import { $ } from "./outils.js";
-import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, CARTES, SAC, SACS, COFFRE, objet, icone, ouPoisson, lieuxDe } from "./donnees.js";
+import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, CARTES, SAC, SACS, COFFRE, objet, icone, ouPoisson, lieuxDe, DANS_ZONE } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { coffresCount, pierresTrouvees, placesSac, sacActuel } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
@@ -80,7 +80,8 @@ const ENDROITS = [
   ["En mer, depuis la plage", p => p.lieu === "mer" && !p.depuis],
   ["En mer, depuis le ponton", p => p.depuis === "ponton"],
   ["Au large, en barque", p => p.depuis === "barque"],
-  ["Dans la Forêt profonde, au ruisseau et à la source", p => lieuxDe(p).some(l => l === "ruisseau" || l === "source")]
+  ["Dans la Forêt profonde, au ruisseau et à la source", p => lieuxDe(p).some(l => l === "ruisseau" || l === "source")],
+  ["Au Marais brumeux, dans les chenaux", p => lieuxDe(p).includes("chenal")]
 ];
 /* Les insectes, rangés par endroit (le premier où on les trouve) */
 const COINS = [
@@ -89,7 +90,8 @@ const COINS = [
   ["Sur les arbres et sous les pierres", p => !p.zone && (p.ou[0] === "arbres" || p.ou[0] === "pierres")],
   ["Au bord de l'étang", p => !p.zone && p.ou[0] === "etang"],
   ["Autour des lanternes, la nuit", p => !p.zone && p.ou[0] === "lanternes"],
-  ["Dans la Forêt profonde", p => p.zone === "foret"]
+  ["Dans la Forêt profonde", p => p.zone === "foret"],
+  ["Au Marais brumeux", p => p.zone === "marais"]
 ];
 function insectesHTML(){
   const c = state.carnet.insectes, ks = Object.keys(INSECTES), pris = k => c[k] && c[k].n > 0;
@@ -100,7 +102,7 @@ function insectesHTML(){
   const f = fiche && INSECTES[fiche];
   const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche une bête pour voir sa fiche.</p>`
     : pris(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(fiche)}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>Attrapé${f.une ? "e" : ""} ${c[fiche].n} fois</p></div></div>`
-    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore attrapé${f.une ? "e" : ""}</b><p>On la trouve ${f.zone === "foret" ? "dans la Forêt profonde, " : ""}${f.ou.map(o => OU_INSECTE[o]).join(" ou ")}. À toi de découvrir quand !</p></div></div>`;
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore attrapé${f.une ? "e" : ""}</b><p>On ${f.une ? "la" : "le"} trouve ${DANS_ZONE[f.zone] || ""}${f.ou.map(o => OU_INSECTE[o]).join(" ou ")}. À toi de découvrir quand !</p></div></div>`;
   return `<p class="muted" style="margin:0 0 8px">🦋 Insectes : ${ks.filter(pris).length} sur ${ks.length}. Approche à pas de loup, puis attrape-les au filet.</p>` + detail +
     COINS.map(([titre, test]) => `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => test(INSECTES[k])).map(tuile).join("")}</div>`).join("");
 }
@@ -110,7 +112,8 @@ const PERCHOIRS = [
   ["Dans les arbres et les haies", p => !p.zone && (p.ou[0] === "arbres" || p.ou[0] === "buissons")],
   ["Sur les toits", p => !p.zone && p.ou[0] === "toits"],
   ["Au bord de l'eau", p => !p.zone && (p.ou[0] === "plage" || p.ou[0] === "etang")],
-  ["Dans la Forêt profonde", p => p.zone === "foret"]
+  ["Dans la Forêt profonde", p => p.zone === "foret"],
+  ["Au Marais brumeux", p => p.zone === "marais"]
 ];
 function oiseauxHTML(){
   const c = state.carnet.oiseaux, ks = Object.keys(OISEAUX), pris = k => c[k] && c[k].n > 0;
@@ -121,7 +124,7 @@ function oiseauxHTML(){
   const f = fiche && OISEAUX[fiche];
   const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche un oiseau pour voir sa fiche.</p>`
     : pris(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${icone(fiche)}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>Attrapé${f.une ? "e" : ""} ${c[fiche].n} fois</p></div></div>`
-    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore attrapé</b><p>On le trouve ${f.zone === "foret" ? "dans la Forêt profonde, " : ""}${f.ou.map(o => OU_OISEAU[o]).join(" ou ")}. À toi de découvrir quand !</p></div></div>`;
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>Pas encore attrapé${f.une ? "e" : ""}</b><p>On ${f.une ? "la" : "le"} trouve ${DANS_ZONE[f.zone] || ""}${f.ou.map(o => OU_OISEAU[o]).join(" ou ")}. À toi de découvrir quand !</p></div></div>`;
   return `<p class="muted" style="margin:0 0 8px">🐦 Oiseaux : ${ks.filter(pris).length} sur ${ks.length}. Approche à pas de loup d'un oiseau posé, puis lance le filet.</p>` + detail +
     PERCHOIRS.map(([titre, test]) => `<h3 style="margin:8px 0 4px">${titre}</h3><div class="res-grid">${ks.filter(k => test(OISEAUX[k])).map(tuile).join("")}</div>`).join("");
 }
@@ -192,6 +195,7 @@ function monstresHTML(){
    qui ne se chasse pas, s'y inscrit quand il a offert son bois d'argent */
 function gibierHTML(){
   const c = state.carnet.gibier, ks = Object.keys(GIBIER).filter(k => k !== "cerfBlanc"), pris = k => c[k] && c[k].n > 0;
+  const foret = ks.filter(k => (GIBIER[k].zone || "foret") === "foret"), auMarais = ks.filter(k => GIBIER[k].zone === "marais");
   const tuile = k => { const p = GIBIER[k], on = fiche === k ? " on" : "";
     return pris(k)
       ? `<button class="tile${on}${k === "cerfBlanc" ? " legende" : ""}" data-carnet="${k}"><div class="te" aria-hidden="true">${p.emoji}</div><div class="tl">${p.nom}</div><div class="tn">${k === "cerfBlanc" ? "👑" : "🏆"}</div></button>`
@@ -199,9 +203,10 @@ function gibierHTML(){
   const f = fiche && GIBIER[fiche];
   const detail = !f ? `<p class="muted" style="margin:0 0 4px;font-size:14px">Touche une bête pour voir sa fiche.</p>`
     : pris(fiche) ? `<div class="pick"><span class="pe" aria-hidden="true">${f.emoji}</span><div class="pt"><b>${f.nom}</b><p>${f.usage}</p><p>${fiche === "cerfBlanc" ? "Suivi jusqu'au bout : son bois d'argent est à toi" : `Chassé${f.une ? "e" : ""} ${c[fiche].n} fois · 🏆 son trophée est au carnet`}</p></div></div>`
-    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>${fiche === "cerfBlanc" ? "Pas encore rencontré" : `Pas encore chassé${f.une ? "e" : ""}`}</b><p>On ${f.une ? "la" : "le"} trouve dans la Forêt profonde, ${OU_GIBIER[f.ou]}${fiche === "cerfBlanc" ? ", les nuits de pleine lune" : ""}. ${fiche === "cerfBlanc" ? "Il ne se chasse pas." : "À toi de découvrir quand !"}</p></div></div>`;
+    : `<div class="pick"><span class="pe" aria-hidden="true">?</span><div class="pt"><b>${fiche === "cerfBlanc" ? "Pas encore rencontré" : `Pas encore chassé${f.une ? "e" : ""}`}</b><p>On ${f.une ? "la" : "le"} trouve ${DANS_ZONE[f.zone || "foret"]}${OU_GIBIER[f.ou]}${fiche === "cerfBlanc" ? ", les nuits de pleine lune" : ""}. ${fiche === "cerfBlanc" ? "Il ne se chasse pas." : "À toi de découvrir quand !"}</p></div></div>`;
   return `<p class="muted" style="margin:0 0 8px">🦌 Gibier : ${ks.filter(pris).length} sur ${ks.length}. Suis les traces, approche à pas de loup et sous le vent, puis tire à l'arc.</p>` + detail +
-    `<h3 style="margin:8px 0 4px">Dans la Forêt profonde</h3><div class="res-grid">${ks.map(tuile).join("")}</div>` +
+    `<h3 style="margin:8px 0 4px">Dans la Forêt profonde</h3><div class="res-grid">${foret.map(tuile).join("")}</div>` +
+    `<h3 style="margin:8px 0 4px">Au Marais brumeux</h3><div class="res-grid">${auMarais.map(tuile).join("")}</div>` +
     `<h3 style="margin:8px 0 4px">👑 Le légendaire</h3><div class="res-grid">${tuile("cerfBlanc")}</div>`;
 }
 function poissonsHTML(){
