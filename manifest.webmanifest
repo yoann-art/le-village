@@ -1,0 +1,17 @@
+{
+  "name": "Hearthwild : le Village",
+  "short_name": "Le Village",
+  "description": "Bâtis ton île en paix, puis pars chercher l'aventure au-dehors.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1E1813",
+  "theme_color": "#2F6B3A",
+  "icons": [
+    {"src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

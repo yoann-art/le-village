@@ -5,6 +5,7 @@
    (lumières, île, bâtiments, personnage). */
 import "./miseajour.js";
 import "./verification.js";
+import "./pleinecran.js";                                 // le plein écran (demande de Yo, 13 octobre 2026)
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
 import { B } from "./donnees.js";
