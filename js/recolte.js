@@ -40,6 +40,7 @@ import { ESSENCES, ARBRES, FRUITS, cueilletteDe } from "./monde/essences.js";
 import { occ, placeMesh, colPorte } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, dir4 } from "./monde/personnage.js";
+import { compteGestes, gesteAction } from "./monde/mains.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser, coeurEn, majCoeur } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
@@ -319,7 +320,12 @@ export function updateRecolte(dt, active){
   if(btn.textContent !== act.label) btn.textContent = act.label;
   if(btn.hidden) btn.hidden = false;
 }
-btn.addEventListener("click", () => { if(act && !anim) act.run(); });
+btn.addEventListener("click", () => {
+  if(!act || anim) return;
+  const avant = compteGestes();
+  act.run();
+  gesteAction(avant);                                   // à la première personne : à mains nues, la main se tend (mains.js)
+});
 
 /* ----- Un coffre au trésor de la grotte (étape 1.8) : de l'or, et de quoi continuer (plus on descend, plus il y en a) ----- */
 function ouvrirTresor(t){

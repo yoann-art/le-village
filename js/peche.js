@@ -28,6 +28,7 @@ import { idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
 import { eauLibre, pontonCases } from "./monde/ponton.js";
 import { foret, ftile, fcx, fcz, sources } from "./monde/foret.js";
 import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
+import { boutFPS } from "./monde/mains.js";
 import { jv, keys } from "./commandes.js";
 import { toast } from "./interface.js";
 import { meteo, mouille, brouillard } from "./monde/meteo.js";
@@ -340,6 +341,7 @@ const bouge = () => jv.x || jv.z || keys.u || keys.d || keys.l || keys.r;
 const vibre = ms => { try{ const u = navigator.userActivation; if(navigator.vibrate && (!u || u.hasBeenActive)) navigator.vibrate(ms); }catch(_){} };
 const bout = new THREE.Vector3();
 function boutDeCanne(){
+  if(boutFPS(bout)) return bout;                       // à la première personne : le bout de la canne qu'on voit (mains.js)
   const o = player.getObjectByName("bout");
   if(o) o.getWorldPosition(bout); else bout.set(player.position.x, .9, player.position.z);
   return bout;

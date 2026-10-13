@@ -36,7 +36,8 @@ import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
-import { vuePremiere, activerVue, tangageVue, horizon } from "./vue.js";
+import { vuePremiere, activerVue, tangageVue, horizon, premiereActive } from "./vue.js";
+import { updateMains, dessinerMains, mainsInactives } from "./monde/mains.js";
 import { enBarque } from "./barque.js";
 import "./sac.js";
 import "./barre.js";
@@ -125,6 +126,8 @@ function tick(now){
   garde("combat", () => updateCombat(dt, wrap.hidden && !isBusy()));   // dans la grotte : les cœurs, les coups, les monstres
   garde("chemins", () => updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating()));   // sur l'île : tracer les chemins en marchant
   garde("dessin", () => renderer.render(currentScene(), camera));
+  if(premiereActive()) garde("mains", () => { updateMains(dt, isInside()); dessinerMains(); });   // à la première personne : les mains, par-dessus
+  else mainsInactives();
   if(dirty && now - lastSave > 2000) garde("sauvegarde", () => {
     const p = posBarque() || islandPos();                  // en barque : on se retrouvera au bout du ponton
     state.player = {x:+p.x.toFixed(2), z:+p.z.toFixed(2)};

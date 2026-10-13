@@ -12,6 +12,7 @@ import { state, save } from "./sauvegarde.js";
 import { sacCount, sacTake } from "./regles.js";
 import { syncBarre, renderBarre } from "./barre.js";
 import { toast } from "./interface.js";
+import { gesteOutil } from "./monde/mains.js";
 
 if(!state.usure) state.usure = {};
 export const solidite = k => OUTILS[k] && OUTILS[k].solidite || 0;
@@ -27,6 +28,7 @@ const ou = k => { const b = FABRIQUE_A[k], a = b && ATELIERS[b]; return a ? ` ${
 /* Un usage de l'outil k ; renvoie true s'il vient de se casser */
 export function user(k, n = 1){
   if(!solidite(k) || !sacCount(k)) return false;
+  gesteOutil(k);                                        // à la première personne, la main fait le geste (mains.js)
   const u = state.usure[k] = (state.usure[k] || 0) + n;
   if(u < solidite(k)){
     if(reste(k) === alerte(k)) setTimeout(() => toast(`⚠️ ${ta(k)} ${objet(k).nom.toLowerCase()} est presque usé${objet(k).une ? "e" : ""} : encore ${reste(k)} usages. Pense à en fabriquer ${un(k)} autre${ou(k)}`, 3800), 1300);

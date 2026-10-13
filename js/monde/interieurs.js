@@ -31,6 +31,7 @@ lamp.shadow.bias = -0.0008;
 Object.assign(lamp.shadow.camera, {left:-10, right:10, top:10, bottom:-10, near:1, far:30});
 lamp.shadow.camera.updateProjectionMatrix();
 interior.add(lamp, lamp.target);
+export { hemi as hemiDedans, lamp as lampeDedans };   // les mains à la première personne prennent leur lumière (mains.js)
 
 /* Ambiances, d'après le tableau des intérieurs de la bible :
    sol (deux tons), murs, poutres, bande décorative éventuelle, lumière */

@@ -28,13 +28,18 @@ hand.rotation.x = .35;
 hand.add(part(G.head, 0xF2C9A0, .38,.38,.38, 0,0,0));
 hand.visible = false;
 body.add(hand);
-let held = null;
+let held = null, heldK = null;
 /* Met un outil dans la main du personnage (une clé de OUTILS), ou la vide (null) */
 export function holdTool(k){
   if(held){ hand.remove(held); held = null; }
   if(k){ held = makeOutil(k); hand.add(held); }
+  heldK = k || null;
   hand.visible = !!k;
 }
+/* Pour les mains à la première personne (mains.js) : ce que tient la main droite, son angle (les gestes), et la gauche */
+export const outilTenu = () => heldK;
+export const angleMain = () => hand.rotation.x;
+export const mainGauche = () => torche.visible ? "torche" : lanterneG.visible ? "lanterne" : null;
 /* La torche, dans la main gauche (étape 1.8) : allumée dans la grotte, sa flamme vacille (t : le temps) */
 const torche = new THREE.Group();
 torche.position.set(.27, .4, .1);
