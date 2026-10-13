@@ -230,6 +230,15 @@ export const GRAINES = {
     usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un houx y poussera."},
   graineChene: {nom:"Gland de chêne séculaire", pluriel:"glands de chêne séculaire", emoji:"🌰", plante:"chene", pousse:86400, sachet:0x6A5440,
     usage:"Prends-le en main, puis « Planter » devant une case d'herbe libre : un chêne séculaire y poussera, en un jour (jamais collé à un autre arbre)."},
+  /* Les graines des arbres du Marais brumeux (étape 1.13, morceau 4) : les mêmes règles que celles de la forêt */
+  graineCypres:{nom:"Graine de cyprès des marais", pluriel:"graines de cyprès des marais", emoji:"🌰", plante:"cypres", pousse:7200, sachet:0xB8683A,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un cyprès des marais y poussera (jamais collé à un autre arbre)."},
+  graineAulne: {nom:"Graine d'aulne", pluriel:"graines d'aulne", emoji:"🌰", plante:"aulne", pousse:7200, sachet:0x4E8A48,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un aulne y poussera (jamais collé à un autre arbre)."},
+  graineSaule: {nom:"Graine de saule des brumes", pluriel:"graines de saule des brumes", emoji:"🌰", plante:"sauleBrumes", pousse:86400, sachet:0xC4D4CE,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un saule des brumes y poussera, en un jour, avec son voile de brume (jamais collé à un autre arbre)."},
+  graineLanterne:{nom:"Graine d'arbre-lanterne", pluriel:"graines d'arbre-lanterne", emoji:"🌰", plante:"arbreLanterne", pousse:86400, sachet:0xF0A030,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un arbre-lanterne y poussera, en un jour ; ses fruits s'allumeront la nuit (jamais collé à un autre arbre)."},
   graineThym:{nom:"Graine de thym", pluriel:"graines de thym", emoji:"🌱", plante:"thym", pousse:3600,
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10Q6 21 12 21Q18 21 18 10Z" fill="#EFE6D2" stroke="#8A6B4A" stroke-width="1.2"/><rect x="7" y="7.5" width="10" height="3" rx="1.5" fill="#8A6B4A"/><circle cx="12" cy="15" r="2.6" fill="#B79AD6"/></svg>',
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : du thym y poussera."}
@@ -277,7 +286,14 @@ export const RECOLTE = {
   sureau: {nom:"le sureau", outil:"hache", coups:2, parCoup:0, graine:"graineSureau", chance:.75, repousse:86400, n:3, retour:43200},
   if:     {nom:"l'if", outil:"hache", coups:3, res:"boisIf", parCoup:1, graine:"graineIf", chance:.5, repousse:259200},
   houx:   {nom:"le houx", outil:"hache", coups:2, parCoup:0, graine:"graineHoux", chance:.5, repousse:259200, n:2, retour:43200},
-  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:1, force:3, graine:"graineChene", chance:.2, repousse:604800}
+  chene:  {nom:"le chêne séculaire", outil:"hache", coups:5, res:"boisChene", parCoup:1, force:3, graine:"graineChene", chance:.2, repousse:604800},
+  /* Les arbres du Marais brumeux (étape 1.13, morceau 4 ; Grand Carnet) : le cyprès et l'aulne, communs, des bois tendres
+     (toute hache) ; le saule des brumes et l'arbre-lanterne, rares, sans bois (carnet : « — ») : on y recueille l'eau de
+     brume (au bocal : bocal) ou on y cueille les fruits-lanternes, qui reviennent (retour) ; hache en main, on les coupe */
+  cypres: {nom:"le cyprès des marais", outil:"hache", coups:3, res:"boisCypres", parCoup:1, graine:"graineCypres", chance:.75, repousse:86400},
+  aulne:  {nom:"l'aulne", outil:"hache", coups:3, res:"boisAulne", parCoup:1, graine:"graineAulne", chance:.75, repousse:86400},
+  sauleBrumes:{nom:"le saule des brumes", outil:"hache", coups:2, parCoup:0, graine:"graineSaule", chance:.2, repousse:604800, n:1, retour:43200, bocal:true},
+  arbreLanterne:{nom:"l'arbre-lanterne", outil:"hache", coups:2, parCoup:0, graine:"graineLanterne", chance:.2, repousse:604800, n:2, retour:86400}
 };
 
 /* Ce qu'on trouve au sol et qu'on ramasse à la main (demande de Yo) : une partie commence sans rien ; de quoi
@@ -644,6 +660,41 @@ export const PRODUITS = {
     usage:"Des fleurs pour les potions (carnet). Elles se cueillent au printemps et en été."},
   baiesSureau:{nom:"Baies de sureau", pluriel:"baies de sureau", emoji:"🫐", prix:1, aide:"Les baies de sureau se cueillent en automne, sur les sureaux de la Forêt profonde.",
     usage:"Des baies noires pour les potions (carnet). Elles se cueillent en automne."},
+  /* Le Marais brumeux (étape 1.13, morceau 4 ; Grand Carnet) : ses bois, l'eau de brume et les fruits-lanternes */
+  boisCypres:{nom:"Bois de cyprès", pluriel:"bois de cyprès", emoji:"🪵", bois:0xB4643A, prix:1, aide:"Le bois de cyprès se coupe sur les cyprès des marais, au Marais brumeux.",
+    usage:"Roux. Un bois qui résiste à l'eau (carnet). Il se coupe sur les cyprès des marais, au Marais brumeux."},
+  boisAulne: {nom:"Bois d'aulne", pluriel:"bois d'aulne", emoji:"🪵", bois:0xE07A3A, prix:1, aide:"Le bois d'aulne se coupe sur les aulnes du Marais brumeux.",
+    usage:"Orange rougeoyant. Un bois qui ne pourrit pas, pour les pontons (carnet). Il se coupe sur les aulnes du Marais brumeux."},
+  eauBrume:  {nom:"Eau de brume", pluriel:"eau de brume", une:true, emoji:"💧", prix:4, aide:"L'eau de brume se recueille au bocal, sous les saules des brumes du Marais brumeux.",
+    usage:"Pour les potions (carnet ; elles viendront plus tard). Elle se recueille au bocal, sous les saules des brumes du Marais, et revient en 12 heures."},
+  fruitLanterne:{nom:"Fruit-lanterne", pluriel:"fruits-lanternes", emoji:"🏮", prix:4, aide:"Les fruits-lanternes se cueillent sur les arbres-lanternes du Marais brumeux.",
+    usage:"Un fruit qui luit : une lampe naturelle (carnet). Il se cueille sur les arbres-lanternes du Marais, toute l'année, et revient en un jour."},
+  /* Les plantes du Marais (Grand Carnet : « Les rives du Marais brumeux : des plantes qui aiment l'eau, et les premières
+     plantes merveilleuses » ; « Les eaux du Marais brumeux : des fleurs qui flottent, et d'autres qu'on croirait sorties d'un
+     rêve » ; bible : « herbes à potions (Marais) »). plante : où elle pousse (rive : au bord d'un îlot, on la traverse ;
+     eau : dans l'eau, tout au bord ; ilot : sur l'îlot), ses saisons (aucune : toute l'année), sa rareté, nuit : seulement
+     la nuit (carnet), verbe : « Arracher » plutôt que « Cueillir ». On la cueille au Marais (n), elle revient sur place
+     (PLANTE_RETOUR) ; les potions viendront plus tard : en attendant, tout se vend au comptoir. Prix choisis par Claude */
+  cresson:   {nom:"Cresson", pluriel:"cresson", emoji:"🌿", prix:1, n:2, note:"Cuisine et potions",
+    plante:{ou:"rive", saisons:["printemps"], rarete:"commun"}},
+  rizSauvage:{nom:"Riz sauvage", pluriel:"riz sauvage", emoji:"🌾", prix:2, n:2, note:"Des grains pour la cuisine",
+    plante:{ou:"eau", saisons:["ete"], rarete:"peuCommun"}},
+  canneberge:{nom:"Canneberge", pluriel:"canneberges", une:true, emoji:"🔴", prix:2, n:3, note:"Des baies rouges pour la cuisine, et une teinture rose",
+    plante:{ou:"rive", saisons:["automne"], rarete:"peuCommun"}},
+  mandragore:{nom:"Mandragore", pluriel:"mandragores", une:true, emoji:"🌱", prix:8, n:1, note:"Une racine qui crie quand on l'arrache ; potions puissantes",
+    plante:{ou:"ilot", saisons:["automne"], rarete:"rare", verbe:"Arracher"}},
+  chouLune:  {nom:"Chou-lune", pluriel:"choux-lune", emoji:"🥬", prix:8, n:1, note:"Un chou pâle et lumineux, qui ne pousse que la nuit ; potion pour voir la nuit",
+    plante:{ou:"ilot", rarete:"rare", nuit:true}},
+  iris:      {nom:"Iris des marais", pluriel:"iris des marais", emoji:"🌼", prix:1, n:1, note:"Il borde les bassins",
+    plante:{ou:"rive", saisons:["printemps"], rarete:"commun"}},
+  nenuphar:  {nom:"Nénuphar", pluriel:"nénuphars", emoji:"🌸", prix:2, n:1, note:"Il flotte sur les bassins et les mares",
+    plante:{ou:"eau", saisons:["ete"], rarete:"peuCommun"}},
+  lotus:     {nom:"Lotus", pluriel:"lotus", emoji:"🌸", prix:2, n:1, note:"Potions de calme",
+    plante:{ou:"eau", saisons:["ete"], rarete:"peuCommun"}},
+  feuFollet: {nom:"Feu-follet", pluriel:"feux-follets", emoji:"🔵", prix:8, n:1, note:"Une flamme bleue qui danse la nuit ; elle attire les lucioles des brumes",
+    plante:{ou:"eau", saisons:["automne"], rarete:"rare", nuit:true}},
+  roseBrumes:{nom:"Rose des brumes", pluriel:"roses des brumes", une:true, emoji:"🌹", prix:8, n:1, note:"Des pétales translucides : des bouquets qui ne fanent jamais",
+    plante:{ou:"ilot", rarete:"rare"}},
   /* La chasse (étape 1.7, morceau 5, carnet : « de la viande pour la cuisine, et du cuir, de la fourrure ou des
      plumes pour l'équipement ») : les flèches, et ce que donne le gibier. En attendant le potager (le ragoût) et
      l'équipement, tout se vend au comptoir (décidé par Yo) ; le bois d'argent du Cerf blanc ne se vend pas. */
@@ -935,6 +986,18 @@ export function tempsDePousse(debut, fin){
 const QUAND_FLEUR = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
 export const quandFleur = f => f.saisons.map(s => QUAND_FLEUR[s]).join(" et ");
 export const enFleur = f => f.saisons.includes(saisonDu(new Date()));
+/* Les plantes du Marais brumeux (étape 1.13, morceau 4 ; PRODUITS[…].plante) : à leur saison (toute l'année sans
+   saisons) ; elles reviennent sur place selon leur rareté (comme les fleurs : 12 h, 1 jour, 3 jours) */
+export const PLANTE_RETOUR = {commun:43200, peuCommun:86400, rare:259200};
+export const PLANTES_MARAIS = Object.keys(PRODUITS).filter(k => PRODUITS[k].plante);
+export const enSaisonPlante = p => !p.plante.saisons || p.plante.saisons.includes(saisonDu(new Date()));
+export const quandPlante = p => p.plante.saisons ? p.plante.saisons.map(s => QUAND_FLEUR[s]).join(" et ") : "toute l'année";
+for(const k of PLANTES_MARAIS){
+  const p = PRODUITS[k], r = {commun:"commune", peuCommun:"peu commune", rare:"rare"}[p.plante.rarete];
+  const ou = {rive:"au bord des îlots", eau:"dans l'eau, au bord des îlots et des passerelles", ilot:"sur les îlots"}[p.plante.ou];
+  p.aide = `${p.une ? "La" : "Le"} ${p.nom.toLowerCase()} se cueille au Marais brumeux, ${ou}, ${quandPlante(p)}${p.plante.nuit ? ", la nuit" : ""}.`;
+  p.usage = `${p.note} (carnet). Plante ${r} du Marais brumeux, ${ou}, ${quandPlante(p)}${p.plante.nuit ? ", seulement la nuit" : ""}. Elle se vend au comptoir ; les potions viendront plus tard.`;
+}
 /* On traverse les herbes hautes, le thym et les fleurs */
 export const traversable = o => !o || o === "herbe" || o === "thym" || !!FLEURS[o];
 const majuscule = t => t[0].toUpperCase() + t.slice(1);
@@ -986,6 +1049,23 @@ export const CHEMIN_DE = {gravier:"gravier", bloc:"paves", planche:"planches", g
   PRODUITS.baiesSureau.icone = grappe("#3A2A40");
   PRODUITS.fleursSureau.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">` +
     [[12, 6], [7, 10], [17, 10], [9, 15], [15, 15], [12, 19]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.2" fill="#F8F4E8" stroke="#C8B878"/><circle cx="${x}" cy="${y}" r=".9" fill="#E8C84A"/>`).join("") + `</svg>`;
+  /* Le Marais brumeux (étape 1.13, morceau 4) */
+  const svg = s => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${s}</svg>`, trait = `stroke="#1C2230" stroke-opacity=".35"`;
+  const tige = `<path d="M12 13V22" stroke="#4E8A3A" stroke-width="1.6"/><path d="M12 19Q8 16 6 17Q8 20 12 19Z" fill="#6FA85A"/>`;
+  PRODUITS.canneberge.icone = grappe("#C8203A");
+  PRODUITS.eauBrume.icone = svg(`<rect x="9" y="3" width="6" height="4" rx="1" fill="#8A6B4A"/><path d="M8 8h8l1 3v8a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-8z" fill="#E4EEF0" ${trait}/><path d="M8 14h9v5a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3z" fill="#B8D4DC"/><circle cx="11" cy="12" r="1" fill="#FFFFFF"/>`);
+  PRODUITS.fruitLanterne.icone = svg(`<circle cx="12" cy="13" r="8" fill="#F8D870" opacity=".35"/><path d="M12 3v4" stroke="#5A4A50" stroke-width="1.6"/><ellipse cx="12" cy="13" rx="5" ry="6" fill="#F8E08A" ${trait}/><ellipse cx="10.5" cy="11" rx="1.5" ry="2.2" fill="#FFF8D8"/>`);
+  PRODUITS.cresson.icone = svg([[8, 14], [12, 10], [16, 14], [10, 18], [14, 18], [12, 14]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3" fill="#5A9A44" ${trait}/>`).join(""));
+  PRODUITS.rizSauvage.icone = svg(`<path d="M12 22V6" stroke="#8AA05A" stroke-width="1.5"/>` + [4, 7, 10, 13].map((y, k) => `<ellipse cx="${k % 2 ? 14.5 : 9.5}" cy="${y + 2}" rx="2" ry="1.3" fill="#D8B860" ${trait}/>`).join(""));
+  PRODUITS.mandragore.icone = svg(`<path d="M12 9Q16 12 15 17Q14 21 16 22M12 9Q8 12 9 17Q10 21 8 22M12 15L14 18" stroke="#8A6A48" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M12 9Q9 3 5 4Q8 7 12 9Q15 3 19 4Q16 7 12 9Z" fill="#2E5A30"/><circle cx="12" cy="9" r="2" fill="#E8902A"/>`);
+  PRODUITS.chouLune.icone = svg(`<circle cx="12" cy="13" r="9" fill="#D8F0E0" opacity=".45"/><circle cx="12" cy="13" r="6.5" fill="#E8F4E0" ${trait}/><path d="M8 13Q12 7 16 13M9 16Q12 11 15 16" stroke="#9AC0A0" fill="none"/>`);
+  PRODUITS.iris.icone = svg(tige + `<path d="M12 4Q15 8 12 12Q9 8 12 4Z" fill="#F2C430" ${trait}/><path d="M12 11Q7 12 6 8Q10 8 12 11ZM12 11Q17 12 18 8Q14 8 12 11Z" fill="#E8B020" ${trait}/>`);
+  const nenuphar = c => svg(`<ellipse cx="12" cy="17" rx="9" ry="4" fill="#4A8A4A" ${trait}/><path d="M12 17L21 15" stroke="#3A6A3A"/>` +
+    [-50, -25, 0, 25, 50].map(a => `<ellipse cx="12" cy="11" rx="2" ry="4.5" fill="${c}" ${trait} transform="rotate(${a} 12 15)"/>`).join("") + `<circle cx="12" cy="14" r="1.6" fill="#F2C94C"/>`);
+  PRODUITS.nenuphar.icone = nenuphar("#F8F4F0");
+  PRODUITS.lotus.icone = nenuphar("#F4A8C0");
+  PRODUITS.feuFollet.icone = svg(`<circle cx="12" cy="12" r="9" fill="#9AD8FF" opacity=".35"/><path d="M12 3Q18 10 16 15Q14 20 12 20Q10 20 8 15Q6 10 12 3Z" fill="#7AC4F8" ${trait}/><path d="M12 10Q15 14 13 17Q12 18 11 17Q9 14 12 10Z" fill="#E8F6FF"/>`);
+  PRODUITS.roseBrumes.icone = svg(tige + `<circle cx="12" cy="9" r="5.5" fill="#F4E8F4" opacity=".75" ${trait}/><path d="M9.5 9Q12 6 14.5 9Q12 12 9.5 9" stroke="#C8A8D0" fill="none"/>`);
 }
 /* Des ingrédients « au choix » : poisson = n'importe quel poisson sauf un légendaire ; on prend d'abord les
    moins précieux (membres, du moins cher au plus cher) */

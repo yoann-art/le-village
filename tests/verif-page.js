@@ -5,7 +5,8 @@
    demande une hache en cuivre, le chêne séculaire une hache en bronze), l'épée en bronze, les outils en cuivre et en bronze (le filet en cuivre attrape de plus loin, l'arrosoir en bronze
    arrose plusieurs buissons, un poisson légendaire casse le fil de la canne en bois), les flèches à pointe de métal (plus sûres), une case rapide (ce qu'on y met sort du sac), entrer dans la mine, pêcher (depuis la plage et depuis le ponton), cueillir le thym, le carnet,
    les ingrédients du poisson grillé, la barque (la construire au bout du ponton, ramer au large, y pêcher le thon
-   en moulinant, accoster), le voyage (vers le Marais brumeux avec sa carte, la scène qu'on passe, le retour), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
+   en moulinant, accoster), le voyage (vers le Marais brumeux avec sa carte, la scène qu'on passe, le retour), le Marais brumeux
+   (ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit), vendre au comptoir, le sac qui s'agrandit (la toile, le sac de cuir), les lumières (la pénombre, une torche sur la torchère, le feu de camp (déplacé d'un appui long), le suif et la chandelle, une lanterne murale sur une façade qui s'allume seule la nuit, la lanterne à main dans la grotte), les pierres (ouvrir une géode, la page du carnet, la vitrine,
    le Cœur de la mine), attraper un insecte et un oiseau au filet, aller dans la Forêt profonde et y couper un arbre,
    ranger au coffre (fiche puis bouton), déplacer un coffre plein et le ranger dans un autre coffre,
    poser un coffre dans la Scierie, l'ouvrir et l'emporter, la vie de la forêt (un insecte, un oiseau, un poisson du ruisseau),
@@ -51,7 +52,8 @@ import { player, placePlayer, updatePlayer, R, islandWalkable } from "../js/mond
 import { keys } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
-import { checkDoors, isInside, currentPlace, doorOf, retourIle } from "../js/lieux.js";
+import { checkDoors, isInside, currentPlace, doorOf, retourIle, allerA } from "../js/lieux.js";
+import { marais, maraisObj, marche as marcheMarais, plante, mcx, mcz, W as WM, D as DM, DEPART } from "../js/monde/marais.js";
 import { startPlacing, updateInteraction } from "../js/construire.js";
 import { openAtelier } from "../js/ateliers.js";
 import { openCoffre, poserCoffre, poseProblem, updateCoffrePiece } from "../js/coffres.js";
@@ -552,6 +554,66 @@ export async function verifier(){
     } finally {
       state.cartes = cartes;
       if(currentPlace() && ["marais", "trajet"].includes(currentPlace().b.type)){ passerTrajet(); await wait(500); }
+      if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
+    }
+  });
+  await etape("Le Marais brumeux : ses passerelles, couper un cyprès, l'eau de brume au bocal, une rose des brumes, le chou-lune la nuit", async () => {
+    const P = state.ponton, sac0 = JSON.parse(JSON.stringify(state.sac)), barre0 = JSON.parse(JSON.stringify(state.barre));
+    /* devant : une case où il y a ce qu'on cherche, et la case d'à côté où l'on se tient, tourné vers elle */
+    const devant = (f, ou) => {
+      for(let i = 0; i < WM * DM; i++){
+        if(!f(maraisObj(i)) || ou && marais.type[i] !== ou) continue;
+        for(const [dx, dz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]){
+          const x = mcx(i) + dx, z = mcz(i) + dz;
+          if(marcheMarais(x, z) && !plante(maraisObj(i + dz * WM + dx))) return {i, x, z, fx: -dx, fz: -dz};
+        }
+      }
+      throw new Error("introuvable au Marais");
+    };
+    const bouton = () => $("#btn-act").textContent;
+    const face = t => { placePlayer(t.x, t.z, t.fx, t.fz); frames(2, .016); };
+    try {
+      allerA({type: "marais"}, DEPART, {x: centerOf(P.x), z: centerOf(P.z + P.n - 1)});
+      if(!await attendre(() => currentPlace() && currentPlace().b.type === "marais")) throw new Error("on n'arrive pas au Marais");
+      state.sac = []; state.barre = [null, null, null]; hold(null);
+      /* des îlots reliés par des passerelles : on marche sur les planches, pas dans l'eau */
+      const pas = marais.type.indexOf("passerelle"), eau = marais.type.indexOf("eau");
+      if(pas < 0 || !marcheMarais(mcx(pas), mcz(pas)) || marcheMarais(mcx(eau), mcz(eau))) throw new Error("on ne marche pas sur les passerelles, ou bien dans l'eau");
+      /* un cyprès des marais, à la hache : son bois */
+      const c = devant(o => o === "cypres", "terre");
+      sacAdd("hachePierre", 1); enMain("hachePierre"); face(c);
+      if(!bouton().includes("Couper le cyprès")) throw new Error(`devant un cyprès, le bouton dit « ${bouton()} »`);
+      for(let k = 0; k < RECOLTE.cypres.coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
+      if(maraisObj(c.i)) throw new Error(`le cyprès est toujours là (le bouton dit « ${bouton()} »)`);
+      if(owned("boisCypres") < RECOLTE.cypres.coups) throw new Error("pas de bois de cyprès");
+      /* l'eau de brume du saule : seulement au bocal */
+      hold(null);
+      const s = devant(o => o === "sauleBrumes");
+      face(s);
+      if(!bouton().includes("bocal")) throw new Error(`sans bocal, devant un saule des brumes, le bouton dit « ${bouton()} »`);
+      sacAdd("bocal", 1); enMain("bocal"); frames(2, .016);
+      if(!bouton().includes("Recueillir")) throw new Error(`le bocal en main, le bouton dit « ${bouton()} »`);
+      $("#btn-act").click(); frames(1, .016);
+      if(!owned("eauBrume")) throw new Error("pas d'eau de brume dans le sac");
+      /* une rose des brumes (toute l'année) */
+      hold(null);
+      const r = devant(o => o === "roseBrumes");
+      face(r);
+      if(!bouton().includes("Cueillir : rose des brumes")) throw new Error(`devant une rose des brumes, le bouton dit « ${bouton()} »`);
+      $("#btn-act").click(); frames(1, .016);
+      if(!owned("roseBrumes") || !bouton().includes("de retour")) throw new Error(`la rose des brumes n'est pas cueillie (le bouton dit « ${bouton()} »)`);
+      /* le chou-lune ne pousse que la nuit */
+      const ch = devant(o => o === "chouLune");
+      forcerHeure(12.5); updateCiel(0, 0); face(ch);
+      if(!bouton().includes("que la nuit")) throw new Error(`le jour, devant un chou-lune, le bouton dit « ${bouton()} »`);
+      forcerHeure(23.5); updateCiel(0, 0); frames(2, .016);
+      if(!bouton().includes("Cueillir : chou-lune")) throw new Error(`la nuit, devant un chou-lune, le bouton dit « ${bouton()} »`);
+      $("#btn-act").click(); frames(1, .016);
+      if(!owned("chouLune")) throw new Error("pas de chou-lune dans le sac");
+      return `${owned("boisCypres")} bois de cyprès, l'eau de brume au bocal, une rose des brumes, et la nuit un chou-lune`;
+    } finally {
+      forcerHeure(null); updateCiel(0, 0);
+      state.sac = sac0; state.barre = barre0; hold(null);
       if(currentPlace() && currentPlace().b.type === "marais"){ retourIle(centerOf(P.x), centerOf(P.z + P.n - 1), -1, 0); await attendre(() => !isInside()); }
     }
   });

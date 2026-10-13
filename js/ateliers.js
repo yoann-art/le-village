@@ -12,7 +12,7 @@
    Étape 1.11, morceau 4 : à la table de taille, « Ouvrir une géode » (hasard) : le cristal est tiré au sort quand la
    géode est prête (tirerCristal), et s'inscrit au carnet. */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, objet, icone, tirerCristal } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, objet, icone, tirerCristal } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre, placesSac } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
@@ -49,6 +49,7 @@ const FLEURS_VENTE = Object.keys(FLEURS);
 const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse", "coeurDeBois"];
 const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "quartzRose", "citrine", "oeilTigre", "bronze", "verre"];   // pas le Cœur de la mine
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
+const MARAIS_VENTE = ["boisCypres", "boisAulne", "eauBrume", "fruitLanterne", ...PLANTES_MARAIS];   // étape 1.13, morceau 4
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 /* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : seul le sac suivant se fabrique, et pas s'il est déjà en cours */
 const sacEnCours = () => state.buildings.some(b => b.atelier && b.atelier.queue.some(j => objet(j.out).sac));
@@ -64,6 +65,7 @@ function recettesDe(b){
   for(const k of aVendre) list.push({key: "v:" + k, cat, out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* les bois et la cueillette de la Forêt profonde (pas dans « Tout vendre » : on les garde souvent) */
   for(const k of FORET_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La Forêt profonde", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
+  for(const k of MARAIS_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Le Marais brumeux", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* la chasse (morceau 5) : la viande et les peaux, en attendant le potager et l'équipement (décidé par Yo) */
   for(const k of CHASSE_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La chasse", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* les fleurs cueillies (étape 1.9), en attendant les bouquets et les pots */

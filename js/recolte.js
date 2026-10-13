@@ -23,14 +23,16 @@
    - la pelle en main (étape 1.9) : « 🪏 Creuser » l'herbe devant soi, « 🪏 Combler » l'eau douce (voir terraformer.js) ;
    - dans la mine, ses rochers (voir monde/mine.js), ses galeries, et le Cœur de la mine (étape 1.11 : chaque pierre de
      la mine trouvée s'inscrit au carnet, noterPierre) ; dans la Forêt profonde, ses arbres et ses rochers, qui
-     repoussent (voir monde/foret.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
+     repoussent (voir monde/foret.js) ; au Marais brumeux (étape 1.13, morceau 4), ses arbres (l'eau de brume du saule
+     se recueille au bocal) et ses plantes à cueillir, à leur saison, certaines la nuit (voir monde/marais.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre.
    Demande de Yo (11 octobre 2026) : un outil ne sert que s'il est tenu en main, pris dans une case rapide ; sinon le bouton
    dit de le prendre (`avecOutil`, `outilPour` et `prendreAction` dans barre.js). */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse } from "./donnees.js";
+import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse,
+  PRODUITS, enSaisonPlante, quandPlante } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh } from "./monde/ile.js";
@@ -42,6 +44,8 @@ import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
+import { maraisObj, maraisMesh, setMaraisObj, mtile, W as W_MARAIS, maraisCueilliLeft, cueillirMarais, plante, planteDispo } from "./monde/marais.js";
+import { nuitIci } from "./monde/ciel.js";
 import { currentPlace } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre, tenu, outilPour, prendreAction } from "./barre.js";
@@ -72,6 +76,18 @@ const MINE = {obj: mineRock, mesh: mineRockMesh, set: setMineRock, cx: () => 0};
 const inMine = () => { const p = currentPlace(); return !!p && p.b.type === "mine"; };
 const FORET = {obj: foretObj, mesh: foretMesh, set: setForetObj, cx: x => x - W_FORET/2 + .5};
 const inForet = () => { const p = currentPlace(); return !!p && p.b.type === "foret"; };
+/* Le Marais brumeux (étape 1.13, morceau 4) : ses arbres et ses plantes ; on traverse les plantes des îlots */
+const MARAIS = {obj: maraisObj, mesh: maraisMesh, set: setMaraisObj, cx: x => x - W_MARAIS/2 + .5};
+const inMarais = () => { const p = currentPlace(); return !!p && p.b.type === "marais"; };
+function targetMarais(){
+  const d = dir4(), p = player.position, cible = i => ({w: MARAIS, i, x: i % W_MARAIS, z: Math.floor(i / W_MARAIS), o: maraisObj(i)});
+  for(const dist of [.8, 1.3]){
+    const i = mtile(p.x + d.x * dist, p.z + d.z * dist);
+    if(i >= 0 && maraisObj(i) && maraisObj(i) !== "panneau") return cible(i);
+  }
+  const ici = mtile(p.x, p.z);
+  return ici >= 0 && plante(maraisObj(ici)) ? cible(ici) : null;
+}
 /* La grotte de la forêt (étape 1.8) : ses rochers, ses veines et ses coffres au trésor, pour la visite en cours */
 const GROTTE = {obj: grotteObj, mesh: grotteMesh, set: setGrotteObj, cx: x => x - W_GROTTE/2 + .5};
 const inGrotte = () => { const p = currentPlace(); return !!p && p.b.type === "grotte"; };
@@ -114,7 +130,8 @@ function target(){
   if(inMine()) return targetMine();
   if(inForet()) return targetForet();
   if(inGrotte()) return targetGrotte();
-  if(currentPlace() && ["marais", "trajet"].includes(currentPlace().b.type)) return null;   // le Marais : ses récoltes viendront (morceaux 4 et 5)
+  if(inMarais()) return targetMarais();
+  if(currentPlace() && currentPlace().b.type === "trajet") return null;   // en route : rien à faire
   if(enBarque()){                                     // en barque (étape 1.13, morceau 2) : seulement pêcher, tout autour
     const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case", [x, z] = frontTile(1.3);
     return canne ? {i: inb(x, z) ? idx(x, z) : -1, eau: true, peche: true} : null;
@@ -182,7 +199,7 @@ function giveSeed(k){
 /* ----- Le bouton d'action : son texte, et ce qu'il fait ----- */
 let cur = null, act = null, anim = null;              // ce qu'on vise ; son action {label, run} ; l'animation {i, t, kind}
 const hits = new Map();                               // coups déjà donnés à chaque arbre, buisson ou rocher
-const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : t.w === GROTTE ? "g" : "") + t.i;
+const hk = t => (t.w === MINE ? "m" : t.w === FORET ? "f" : t.w === GROTTE ? "g" : t.w === MARAIS ? "b" : "") + t.i;
 const info = label => ({label, run: () => toast(label)});
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
@@ -201,15 +218,18 @@ function actionOf(t){
   if(t.o === "rockOr") return avecOutil("pioche", 0, {label: `⛏️ Miner la veine d'or${h ? ` (${RECOLTE.rockOr.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
   if(t.o === "racines") return info("🕳️ La grotte, sous les racines du vieux chêne : avance dans l'ouverture pour y descendre");
   if(t.o === "grandChene" || t.o === "bloc") return info("👑 Le Grand Chêne millénaire : on ne l'abat pas. Il veille sur la forêt depuis mille ans");
+  if(t.w === MARAIS && plante(t.o)) return planteAction(t);
   /* Les arbres de la forêt (dans la forêt, ou plantés sur l'île) : chacun son bois et sa graine ; le houx et le
      sureau se cueillent (baies, fleurs), et se coupent hache en main */
   if(ESSENCES.includes(t.o)){
     const R = RECOLTE[t.o], nom = R.nom.replace(/^(le |l')/, "");
     if(g < 1) return info(`🌱 Jeune ${nom} : adulte dans ${duree(growthLeft(t.i))}`);
     if(FRUITS[t.o] && tenue !== "hache"){
-      const reste = t.w === FORET ? foretFruitsLeft(t.i) : fruitsLeft(t.i), k = cueilletteDe(t.o);
+      const reste = t.w === FORET ? foretFruitsLeft(t.i) : t.w === MARAIS ? maraisCueilliLeft(t.i) : fruitsLeft(t.i), k = cueilletteDe(t.o);
       if(!k) return info(`🌿 ${nom[0].toUpperCase() + nom.slice(1)} : rien à cueillir en cette saison (la hache le coupe)`);
       if(reste > 0) return info(`🌿 ${objet(k).nom} : de retour dans ${duree(reste)}`);
+      if(R.bocal) return avecOutil("bocal", 0, {label: `🫙 Recueillir : ${objet(k).nom.toLowerCase()}`, run: () => { if(tenu("bocal")) cueillirFruits(t, k); }},   // l'eau de brume du saule (étape 1.13)
+        `🫙 ${objet(k).nom} : il te faut un bocal pour la recueillir (enclume de la Forge)`);
       return {label: `✋ Cueillir : ${objet(k).nom.toLowerCase()}`, run: () => cueillirFruits(t, k)};
     }
     return avecOutil("hache", R.force || 0, {label: `🪓 Couper ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)},   // la hache selon l'essence
@@ -324,9 +344,28 @@ function cueillirFruits(t, k){
   const R = RECOLTE[t.o];
   if(!sacOk(k, R.n)) return;
   sacAdd(k, R.n);
-  if(t.w === FORET) cueillirForet(t.i); else setEtat(t.i, {cueilli: Date.now()});
+  if(t.w === FORET) cueillirForet(t.i); else if(t.w === MARAIS) cueillirMarais(t.i); else setEtat(t.i, {cueilli: Date.now()});
   save();
-  toast(`${objet(k).emoji} +${R.n} ${nomDe(k, R.n)}. Elles reviennent dans ${duree(R.retour)}`, 3000);
+  toast(`${objet(k).emoji} +${R.n} ${nomDe(k, R.n)}. De retour ici dans ${duree(R.retour)}`, 3000);
+}
+/* Les plantes du Marais brumeux (étape 1.13, morceau 4 ; Grand Carnet) : à leur saison, certaines la nuit ; cueillies,
+   elles reviennent sur place (PLANTE_RETOUR) */
+function planteAction(t){
+  const p = PRODUITS[t.o], P = p.plante, nom = p.nom.toLowerCase(), elle = p.une ? "elle" : "il";
+  if(!enSaisonPlante(p)) return info(`🌿 ${p.nom} : ${elle} se cueille ${quandPlante(p)}`);
+  if(P.nuit && nuitIci() <= .5) return info(`🌙 ${p.nom} : ${t.o === "feuFollet" ? "il ne danse que la nuit" : `${elle} ne pousse que la nuit`}`);
+  const r = maraisCueilliLeft(t.i);
+  if(r > 0) return info(`🌿 ${p.nom} : de retour dans ${duree(r)}`);
+  return planteDispo(t.i) ? {label: `✋ ${P.verbe || "Cueillir"} : ${nom}`, run: () => cueillirPlante(t)} : null;
+}
+function cueillirPlante(t){
+  const k = t.o, p = PRODUITS[k];
+  if(!planteDispo(t.i) || !sacOk(k, p.n)) return;
+  sacAdd(k, p.n);
+  cueillirMarais(t.i);
+  if(k === "mandragore") try{ if(navigator.userActivation && navigator.userActivation.hasBeenActive && navigator.vibrate) navigator.vibrate([60, 40, 120]); }catch(_){}
+  toast(k === "mandragore" ? "😱 « AAAAAAH ! » La mandragore crie quand on l'arrache… +1 mandragore, pour les potions puissantes"
+    : `${p.emoji} +${p.n} ${nomDe(k, p.n)}. ${p.une ? "Elle" : "Il"} revient ici dans ${duree(maraisCueilliLeft(t.i))}`, 3200);
 }
 function cueillirHerbe(t){
   const R = RECOLTE.herbe, n = gain(R.n, R.cueille);

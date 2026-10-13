@@ -9,7 +9,7 @@ import { state } from "./sauvegarde.js";
 import { centerOf } from "./monde/ile.js";
 import { interior } from "./monde/interieurs.js";
 import { barqueModele } from "./monde/ponton.js";
-import { surEmbarcadere } from "./monde/marais.js";
+import { surEmbarcadere, DEPART } from "./monde/marais.js";
 import { player } from "./monde/personnage.js";
 import { allerA, retourIle, currentPlace, isBusy } from "./lieux.js";
 import { resetJoy } from "./commandes.js";
@@ -53,8 +53,8 @@ function arriver(){
   if(bateau){ interior.remove(bateau); bateau = null; }
   passer.hidden = true; hint(null);
   document.getElementById("actions").hidden = false; document.getElementById("joy").hidden = false;
-  if(vers === "marais") allerA({type: "marais"}, {x: 0, z: 4.6, fx: 0, fz: -1}, bout(), () =>
-    setTimeout(() => toast("🌫️ Le Marais brumeux… La Libellule accoste un îlot moussu, perdu dans la brume. (Ses îlots, ses arbres, ses plantes et ses bêtes arrivent bientôt.) Pour rentrer, reviens à la barque, sur l'embarcadère.", 6400), 400));
+  if(vers === "marais") allerA({type: "marais"}, DEPART, bout(), () =>
+    setTimeout(() => toast("🌫️ Le Marais brumeux… Des îlots perdus dans la brume, reliés par des passerelles : cyprès, aulnes, et des plantes à potions au bord de l'eau. Pour rentrer, reviens à la barque, sur l'embarcadère.", 6400), 400));
   else { const b = bout(); retourIle(b.x, b.z, -1, 0, () => setTimeout(() => toast("🏡 De retour au village : la Libellule est amarrée au bout du ponton", 3200), 400)); }
 }
 

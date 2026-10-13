@@ -114,9 +114,10 @@ export function buildRoom(b){
   if(b.type === "trajet" || b.type === "marais"){    // le voyage en barque et le Marais brumeux (étape 1.13) : marais.js
     const m = b.type === "trajet" ? makeTrajet() : makeMarais();
     room = m.group; floor.count = 0;
+    if(b.type === "marais") base = m;                 // le Marais suit l'heure, comme la forêt (nuitForet)
     interior.background.setHex(m.fond); interior.fog = new THREE.Fog(m.fond, m.brume[0], m.brume[1]);
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
-    interior.add(room); lampeSur(0, 0);
+    interior.add(room); lampeSur(m.depart.x, m.depart.z);
     return {w: m.w, d: m.d, doorX: null, walk: m.walk, depart: m.depart};
   }
   if(b.type === "grotte"){                           // la grotte de la forêt (étape 1.8) : construite par grotte.js, noire

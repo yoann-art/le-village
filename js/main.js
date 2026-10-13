@@ -30,6 +30,8 @@ import { updateLumieres } from "./lumieres.js";
 import { updateBarque, posBarque } from "./barque.js";
 import { deplaceEnCours } from "./deplacer.js";
 import { updateVoyage, voyageEnCours } from "./voyage.js";
+import { updateMarais } from "./monde/marais.js";
+import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
@@ -103,6 +105,7 @@ function tick(now){
   garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
   garde("barque", () => updateBarque(dt));                  // la barque du ponton : ses travaux, à bord (étape 1.13)
   garde("voyage", () => updateVoyage(dt));                  // le trajet en barque vers le Marais, et le retour
+  garde("marais", () => updateMarais(dt));                  // au Marais : ses plantes suivent la nuit et la saison, les feux-follets dansent
   garde("lumières", () => updateLumieres(dt, isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // les lumières posées, la torche sur la torchère
   garde("récolte", () => updateRecolte(dt, (!isInside() || ["mine", "foret", "grotte", "marais"].includes(currentPlace().b.type)) && wrap.hidden && !isBusy() && !placing));   // couper, planter, miner : le bouton d'action
   garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
@@ -127,10 +130,11 @@ function camera_(now, dt){
   camera.lookAt(camT.x, .4, camT.z);
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule
   if(foret || isInside() && currentPlace().b.type === "mine") lampeSur(camT.x, camT.z);   // la lumière suit, dans les grands lieux
-  const sousLeCiel = !isInside() || currentPlace().b.type === "foret";
+  const sousLeCiel = !isInside() || ["foret", "marais"].includes(currentPlace().b.type);
   garde("météo", () => updateMeteo(dt, sousLeCiel ? currentScene() : null, camT.x, camT.z));   // la pluie, la neige, les éclairs (étape 1.10)
   updateCiel(camT.x, camT.z);                              // le jour et la nuit (étape 1.10) : le ciel, le soleil, les vitres
-  if(foret && currentPlace().b.type === "foret") nuitForet(Math.max(nuitIci(), couvertIci() * .6));   // la forêt s'assombrit aussi sous la pluie
+  if(foret && ["foret", "marais"].includes(currentPlace().b.type)) nuitForet(Math.max(nuitIci(), couvertIci() * .6));   // la forêt et le Marais s'assombrissent aussi sous la pluie
+  lueurLanternes(nuitIci());                               // les fruits des arbres-lanternes s'allument la nuit (étape 1.13)
   if(isInside()) penombre(nuitIci());                      // la pénombre des bâtiments, plus sombre la nuit (demande de Yo)
   if(!isInside()){
     water.position.y = -.2 + Math.sin(now * .0012) * .02;
