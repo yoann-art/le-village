@@ -1247,63 +1247,189 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-poule",
-"name": "Poule",
+"name": "Poule (femelle)",
 "size": "commun",
 "line": "Une poule dodue et ronde, plumes rousses, crête rouge, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-coq",
+"name": "Coq (mâle)",
+"size": "commun",
+"line": "Un coq fier et dodu, plumes rousses et dorées, grande crête rouge et barbillons, longue queue vert sombre en panache, un peu plus grand que la poule, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-poussin",
+"name": "Poussin (petit)",
+"size": "commun",
+"line": "Un poussin tout rond en duvet jaune pâle, petit bec et pattes orange, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-vache",
-"name": "Vache",
+"name": "Vache (femelle)",
 "size": "commun",
 "line": "Une vache trapue et douce, robe blanche à taches brunes, petites cornes, cloche au cou, environ 1,4 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
-"id": "ele-mouton",
-"name": "Mouton",
+"id": "ele-taureau",
+"name": "Taureau (mâle)",
 "size": "commun",
-"line": "Un mouton tout rond, laine blanche bouclée et épaisse, tête et pattes noires, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+"line": "Un taureau trapu et massif mais doux, robe blanche à taches brunes, cou épais, cornes plus grandes et courbées vers l'avant, anneau doré au museau, environ 1,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-veau",
+"name": "Veau (petit)",
+"size": "commun",
+"line": "Un veau tout rond aux longues pattes, robe blanche à taches brunes, grandes oreilles, pas encore de cornes, grands yeux doux, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-mouton",
+"name": "Brebis (femelle)",
+"size": "commun",
+"line": "Une brebis toute ronde, laine blanche bouclée et épaisse, tête et pattes noires, sans cornes, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-belier",
+"name": "Bélier (mâle)",
+"size": "commun",
+"line": "Un bélier tout rond, laine blanche bouclée et épaisse, tête et pattes noires, grandes cornes enroulées en spirale de chaque côté de la tête, un peu plus grand que la brebis, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-agneau",
+"name": "Agneau (petit)",
+"size": "commun",
+"line": "Un agneau tout rond, laine blanche courte et bouclée, tête et pattes noires, longues pattes fines, oreilles tombantes, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-chevre",
-"name": "Chèvre",
+"name": "Chèvre (femelle)",
 "size": "commun",
 "line": "Une chèvre ronde et joyeuse, poil beige et blanc, petites cornes courbées, barbichette, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
-"id": "ele-cochon",
-"name": "Cochon",
+"id": "ele-bouc",
+"name": "Bouc (mâle)",
 "size": "commun",
-"line": "Un cochon rose tout rond, groin dodu, oreilles tombantes, queue en tire-bouchon, un peu de terre sur le groin, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
+"line": "Un bouc trapu, poil beige et blanc plus long, grandes cornes courbées vers l'arrière, longue barbiche, un peu plus grand que la chèvre, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-chevreau",
+"name": "Chevreau (petit)",
+"size": "commun",
+"line": "Un chevreau tout rond et joyeux, poil beige et blanc, pas encore de cornes, longues pattes, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-cochon",
+"name": "Truie (femelle)",
+"size": "commun",
+"line": "Une truie rose toute ronde, groin dodu, oreilles tombantes, queue en tire-bouchon, un peu de terre sur le groin, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-verrat",
+"name": "Verrat (mâle)",
+"size": "commun",
+"line": "Un verrat rose tout rond, plus grand et plus massif que la truie, petites défenses blanches qui dépassent du groin, oreilles dressées, queue en tire-bouchon, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-porcelet",
+"name": "Porcelet (petit)",
+"size": "commun",
+"line": "Un porcelet rose tout petit et rond, groin dodu, oreilles tombantes, queue en tire-bouchon, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-canard",
-"name": "Canard",
+"name": "Canard (mâle)",
 "size": "commun",
-"line": "Un canard de ferme blanc et rond, bec et pattes orange, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+"line": "Un canard de ferme blanc et rond, bec et pattes orange, une petite plume bouclée au bout de la queue, un peu plus grand que la cane, environ 0,45 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-cane",
+"name": "Cane (femelle)",
+"size": "commun",
+"line": "Une cane de ferme blanche et ronde, bec et pattes orange, queue lisse sans plume bouclée, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-caneton",
+"name": "Caneton (petit)",
+"size": "commun",
+"line": "Un caneton tout rond en duvet jaune, petit bec et pattes orange, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-lapin-angora",
-"name": "Lapin angora",
+"name": "Lapin angora (mâle)",
 "size": "commun",
-"line": "Un lapin angora en boule de poils blancs très longs et doux, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
+"line": "Un lapin angora en boule de poils blancs très longs et doux, tête large et ronde, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-lapine-angora",
+"name": "Lapine angora (femelle)",
+"size": "commun",
+"line": "Une lapine angora en boule de poils blancs très longs et doux, tête plus fine que le mâle, petit fanon de poils sous le menton, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-lapereau-angora",
+"name": "Lapereau angora (petit)",
+"size": "commun",
+"line": "Un lapereau angora tout petit, boule de duvet blanc encore court, petites oreilles, grands yeux, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-cheval",
-"name": "Cheval",
+"name": "Étalon (mâle)",
 "size": "peu commun",
-"line": "Un cheval de trait trapu et doux, robe baie, crinière et fanons crème, environ 1,7 P de haut, vue de face, corps entier, pose neutre debout."
+"line": "Un étalon de trait trapu et puissant, cou épais et arqué, robe baie, longue crinière et fanons crème, environ 1,7 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-jument",
+"name": "Jument (femelle)",
+"size": "peu commun",
+"line": "Une jument de trait douce, plus fine que l'étalon, robe baie, crinière crème tressée, fanons crème, environ 1,6 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-poulain",
+"name": "Poulain (petit)",
+"size": "peu commun",
+"line": "Un poulain aux très longues pattes, robe baie claire, petite crinière crème ébouriffée, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-abeilles",
-"name": "Abeilles",
+"name": "Abeille ouvrière",
 "size": "peu commun",
 "line": "Une abeille domestique dodue et ronde, rayée jaune miel et brun, petites ailes transparentes, un petit pot de miel à ses pieds, environ 0,2 P de haut (grossie pour bien la voir), vue de face, corps entier, pose neutre."
 },
 {
+"id": "ele-reine-abeilles",
+"name": "Reine des abeilles (femelle)",
+"size": "peu commun",
+"line": "Une reine des abeilles dodue, plus grande et plus longue que l'ouvrière, long abdomen rayé jaune miel et brun, petites ailes transparentes, une minuscule couronne dorée, environ 0,25 P de haut (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-faux-bourdon",
+"name": "Faux-bourdon (mâle)",
+"size": "peu commun",
+"line": "Un faux-bourdon tout rond, plus trapu que l'ouvrière, très grands yeux qui se touchent sur le haut de la tête, rayé jaune miel et brun, sans dard, environ 0,2 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-larve-abeille",
+"name": "Larve d'abeille (petit)",
+"size": "peu commun",
+"line": "Une larve d'abeille blanche et dodue, enroulée en croissant au fond d'une alvéole de cire dorée, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
 "id": "ele-oie",
-"name": "Oie",
+"name": "Oie (femelle)",
 "size": "peu commun",
 "line": "Une oie blanche et grise au long cou, bec orange, l'air fier, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-jars",
+"name": "Jars (mâle)",
+"size": "peu commun",
+"line": "Un jars blanc et gris, plus grand que l'oie, cou plus long et plus épais, petite bosse orange à la base du bec, poitrail bombé, l'air fier, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-oison",
+"name": "Oison (petit)",
+"size": "peu commun",
+"line": "Un oison tout rond en duvet jaune-gris, petit bec orange, environ 0,2 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -1313,27 +1439,75 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-herisson",
-"name": "Hérisson",
+"name": "Hérisson (mâle)",
 "size": "commun",
 "line": "Un hérisson tout rond, piquants bruns arrondis, petit museau pointu et nez noir, environ 0,25 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-herissonne",
+"name": "Hérissonne (femelle)",
+"size": "commun",
+"line": "Une hérissonne toute ronde, un peu plus petite que le mâle, piquants bruns plus clairs aux pointes crème, museau plus fin, nez noir, environ 0,22 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-choupisson",
+"name": "Choupisson (petit)",
+"size": "commun",
+"line": "Un choupisson, bébé hérisson minuscule et rose, piquants blancs encore tout doux, yeux à peine ouverts, environ 0,1 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-marcassin",
-"name": "Marcassin",
+"name": "Marcassin (petit)",
 "size": "peu commun",
 "line": "Un marcassin rond, pelage brun rayé de clair, petit groin, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-sanglier-elevage",
+"name": "Sanglier (mâle)",
+"size": "peu commun",
+"line": "Un sanglier d'élevage trapu, pelage brun-noir hirsute, défenses blanches recourbées, l'air paisible, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-laie",
+"name": "Laie (femelle)",
+"size": "peu commun",
+"line": "Une laie trapue et douce, pelage brun-gris hirsute, groin rond, sans grandes défenses, un peu plus petite que le sanglier, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-faisan-elevage",
-"name": "Faisan (élevage)",
+"name": "Faisan (mâle)",
 "size": "peu commun",
 "line": "Un faisan dodu, plumage cuivré, tête vert sombre, masque rouge, longue queue rayée, environ 0,6 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-poule-faisane",
+"name": "Poule faisane (femelle)",
+"size": "peu commun",
+"line": "Une poule faisane dodue, plumage brun clair moucheté de sombre, queue plus courte, sans masque rouge ni tête verte, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-faisandeau",
+"name": "Faisandeau (petit)",
+"size": "peu commun",
+"line": "Un faisandeau tout rond en duvet brun et crème rayé, petit bec, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-cerf-elevage",
-"name": "Cerf (élevage)",
+"name": "Cerf (mâle)",
 "size": "rare",
 "line": "Un cerf majestueux mais doux, pelage brun chaud, grands bois ramifiés, environ 1,6 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-biche",
+"name": "Biche (femelle)",
+"size": "rare",
+"line": "Une biche élancée et douce, pelage brun chaud, sans bois, grandes oreilles, grands yeux doux, environ 1,3 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-faon",
+"name": "Faon (petit)",
+"size": "rare",
+"line": "Un faon aux longues pattes fines, pelage fauve tacheté de blanc, grandes oreilles, grands yeux, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -1343,21 +1517,51 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-grenouille-chanteuse",
-"name": "Grenouille chanteuse",
+"name": "Grenouille chanteuse (mâle)",
 "size": "peu commun ✨",
 "line": "Une grenouille chanteuse merveilleuse, verte et ronde, gorge gonflée comme un petit ballon, environ 0,2 P de haut, vue de face, corps entier, pose neutre."
 },
 {
+"id": "ele-grenouille-chanteuse-f",
+"name": "Grenouille chanteuse (femelle)",
+"size": "peu commun ✨",
+"line": "Une grenouille chanteuse merveilleuse, plus grande et plus ronde que le mâle, verte au dos tacheté d'or, gorge pâle sans ballon, environ 0,25 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-tetard-chanteur",
+"name": "Têtard chanteur (petit)",
+"size": "peu commun ✨",
+"line": "Un têtard chanteur merveilleux, rond et dodu, vert sombre aux reflets dorés, longue queue souple, petites pattes arrière qui poussent, environ 0,1 P (grossi pour bien le voir), vue de face, corps entier, pose neutre."
+},
+{
 "id": "ele-escargot-geant",
-"name": "Escargot géant",
+"name": "Escargot géant (adulte)",
 "size": "peu commun ✨",
 "line": "Un escargot géant merveilleux, coquille en spirale beige et brune, corps gris-vert luisant, antennes, environ 0,5 P de haut, vue de face, corps entier, pose neutre."
 },
 {
+"id": "ele-escargot-geant-petit",
+"name": "Petit escargot géant (petit)",
+"size": "peu commun ✨",
+"line": "Un bébé escargot géant merveilleux, coquille en spirale encore fine et translucide beige pâle, corps gris-vert luisant, petites antennes, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre."
+},
+{
 "id": "ele-luciole-des-brumes",
-"name": "Luciole des brumes",
+"name": "Luciole des brumes (mâle)",
 "size": "rare ✨",
 "line": "Une luciole des brumes merveilleuse, petit insecte rond à l'abdomen qui brille d'une lumière bleutée, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-luciole-des-brumes-f",
+"name": "Luciole des brumes (femelle)",
+"size": "rare ✨",
+"line": "Une luciole des brumes merveilleuse, femelle sans ailes au corps allongé en anneaux, posée au sol, l'abdomen qui brille d'une lumière bleutée plus forte que le mâle, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-larve-luciole",
+"name": "Larve de luciole des brumes (petit)",
+"size": "rare ✨",
+"line": "Une larve de luciole des brumes merveilleuse, allongée et segmentée, gris-bleu, de petits points lumineux bleutés le long du corps, environ 0,08 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
 }
 ]
 },
@@ -1367,21 +1571,57 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-tortue",
-"name": "Tortue",
+"name": "Tortue (femelle)",
 "size": "peu commun",
 "line": "Une tortue de mer ronde, carapace verte et brune à motifs, nageoires, environ 0,4 P de haut, vue de face, corps entier, pose neutre."
 },
 {
+"id": "ele-tortue-male",
+"name": "Tortue (mâle)",
+"size": "peu commun",
+"line": "Une tortue de mer ronde, carapace verte et brune à motifs un peu plus plate, longue queue épaisse, nageoires avant à griffes courbées, environ 0,4 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-bebe-tortue",
+"name": "Bébé tortue (petit)",
+"size": "peu commun",
+"line": "Une bébé tortue de mer minuscule, carapace vert sombre, grandes nageoires, grands yeux, environ 0,1 P de haut (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
 "id": "ele-perroquet",
-"name": "Perroquet",
+"name": "Perroquet (mâle)",
 "size": "peu commun",
 "line": "Un perroquet dodu, plumes rouges, bleues et jaunes, gros bec courbé, environ 0,5 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
 },
 {
+"id": "ele-perroquet-f",
+"name": "Perroquet (femelle)",
+"size": "peu commun",
+"line": "Un perroquet femelle dodue, un peu plus petite que le mâle, plumes rouges, bleues et jaunes, bec courbé plus fin, environ 0,45 P de haut, posée, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ele-bebe-perroquet",
+"name": "Bébé perroquet (petit)",
+"size": "peu commun",
+"line": "Un bébé perroquet tout rond en duvet gris, quelques plumes rouges et bleues qui poussent, gros bec courbé, environ 0,2 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
 "id": "ele-bernard-l-ermite-geant",
-"name": "Bernard-l'ermite géant",
+"name": "Bernard-l'ermite géant (mâle)",
 "size": "rare ✨",
 "line": "Un bernard-l'ermite géant merveilleux, grosses pinces orange, coquillage en spirale nacré sur le dos, environ 0,5 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-bernard-l-ermite-geant-f",
+"name": "Bernard-l'ermite géant (femelle)",
+"size": "rare ✨",
+"line": "Un bernard-l'ermite géant merveilleux, femelle un peu plus petite que le mâle, pinces orange plus fines, petits œufs orange sous le ventre, coquillage en spirale nacré sur le dos, environ 0,45 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-petit-bernard-l-ermite",
+"name": "Petit bernard-l'ermite (petit)",
+"size": "rare ✨",
+"line": "Un bébé bernard-l'ermite géant merveilleux, minuscules pinces orange, petit coquillage nacré tout rond sur le dos, environ 0,1 P (grossi pour bien le voir), vue de face, corps entier, pose neutre."
 }
 ]
 },
@@ -1391,21 +1631,57 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-yak",
-"name": "Yak",
+"name": "Yak (mâle)",
 "size": "peu commun",
 "line": "Un yak massif, longue toison brun foncé qui tombe jusqu'au sol, cornes courbées, environ 1,4 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-yak-f",
+"name": "Femelle yak (femelle)",
+"size": "peu commun",
+"line": "Une femelle yak, plus petite et plus fine que le mâle, longue toison brun foncé qui tombe jusqu'au sol, cornes plus fines et plus droites, environ 1,2 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-veau-yak",
+"name": "Veau de yak (petit)",
+"size": "peu commun",
+"line": "Un veau de yak tout rond, toison brune laineuse et frisée, pas encore de cornes, environ 0,6 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-bouquetin",
-"name": "Bouquetin",
+"name": "Bouquetin (mâle)",
 "size": "rare",
 "line": "Un bouquetin trapu, pelage gris-brun, très grandes cornes annelées recourbées, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-etagne",
+"name": "Étagne (femelle)",
+"size": "rare",
+"line": "Une étagne, femelle du bouquetin, plus fine, pelage gris-brun clair, petites cornes fines légèrement courbées, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-cabri",
+"name": "Cabri (petit)",
+"size": "rare",
+"line": "Un cabri, petit du bouquetin, pelage gris-brun clair tout doux, minuscules cornes naissantes, longues pattes, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-mouton-de-givre",
-"name": "Mouton de givre",
+"name": "Brebis de givre (femelle)",
 "size": "rare ✨",
-"line": "Un mouton de givre merveilleux, laine bleu pâle givrée et scintillante, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+"line": "Une brebis de givre merveilleuse, laine bleu pâle givrée et scintillante, sans cornes, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-belier-de-givre",
+"name": "Bélier de givre (mâle)",
+"size": "rare ✨",
+"line": "Un bélier de givre merveilleux, laine bleu pâle givrée et scintillante, grandes cornes de glace enroulées en spirale, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-agneau-de-givre",
+"name": "Agneau de givre (petit)",
+"size": "rare ✨",
+"line": "Un agneau de givre merveilleux, laine bleu très pâle courte et bouclée, quelques flocons qui brillent dedans, longues pattes fines, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -1415,15 +1691,39 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-dromadaire",
-"name": "Dromadaire",
+"name": "Dromadaire (femelle)",
 "size": "peu commun",
 "line": "Un dromadaire doux, pelage sable, une seule bosse, longues pattes, couverture rayée sur le dos, environ 2 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-dromadaire-male",
+"name": "Dromadaire (mâle)",
+"size": "peu commun",
+"line": "Un dromadaire mâle, plus grand et plus massif que la femelle, bosse plus haute, cou épais, pelage sable plus foncé, couverture rayée sur le dos, environ 2,2 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-chamelon",
+"name": "Chamelon (petit)",
+"size": "peu commun",
+"line": "Un chamelon aux très longues pattes, pelage sable clair et frisé, petite bosse, grands yeux aux longs cils, environ 1,2 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-lezard-soleil",
-"name": "Lézard-soleil",
+"name": "Lézard-soleil (mâle)",
 "size": "rare ✨",
 "line": "Un lézard-soleil merveilleux, écailles orange et dorées qui luisent doucement, collerette, environ 0,3 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-lezard-soleil-f",
+"name": "Lézard-soleil (femelle)",
+"size": "rare ✨",
+"line": "Un lézard-soleil merveilleux, femelle sans collerette, écailles dorées plus pâles qui luisent doucement, environ 0,25 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-bebe-lezard-soleil",
+"name": "Bébé lézard-soleil (petit)",
+"size": "rare ✨",
+"line": "Un bébé lézard-soleil merveilleux, tout petit, écailles jaune pâle qui luisent à peine, grosse tête et grands yeux, environ 0,1 P (grossi pour bien le voir), vue de face, corps entier, pose neutre."
 }
 ]
 },
@@ -1433,21 +1733,57 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-mouton-nuage",
-"name": "Mouton-nuage",
+"name": "Brebis-nuage (femelle)",
 "size": "rare ✨",
-"line": "Un mouton-nuage merveilleux, laine de nuage blanc si légère qu'il flotte un peu au-dessus du sol, environ 0,9 P de haut, vue de face, corps entier, pose neutre."
+"line": "Une brebis-nuage merveilleuse, laine de nuage blanc si légère qu'elle flotte un peu au-dessus du sol, sans cornes, environ 0,9 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-belier-nuage",
+"name": "Bélier-nuage (mâle)",
+"size": "rare ✨",
+"line": "Un bélier-nuage merveilleux, laine de nuage blanc si légère qu'il flotte un peu au-dessus du sol, cornes enroulées comme de petits nuages gris argent, environ 1 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-agneau-nuage",
+"name": "Agneau-nuage (petit)",
+"size": "rare ✨",
+"line": "Un agneau-nuage merveilleux, petite boule de nuage blanc avec de fines pattes, qui flotte un peu au-dessus du sol, environ 0,4 P de haut, vue de face, corps entier, pose neutre."
 },
 {
 "id": "ele-poule-celeste",
-"name": "Poule céleste",
+"name": "Poule céleste (femelle)",
 "size": "rare ✨",
 "line": "Une poule céleste merveilleuse, plumes blanches et dorées, petite crête bleu ciel, un œuf doré à ses pieds, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-coq-celeste",
+"name": "Coq céleste (mâle)",
+"size": "rare ✨",
+"line": "Un coq céleste merveilleux, plumes blanches et dorées, grande crête bleu ciel, longue queue en panache de plumes dorées, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-poussin-celeste",
+"name": "Poussin céleste (petit)",
+"size": "rare ✨",
+"line": "Un poussin céleste merveilleux, tout rond en duvet blanc et doré qui brille un peu, minuscule crête bleu ciel, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-griffonneau",
-"name": "Griffonneau",
+"name": "Griffonneau (petit)",
 "size": "rare ✨",
 "line": "Un griffonneau merveilleux, bébé griffon dodu, tête et ailes d'aigle duveteuses blanches et dorées, corps de lionceau, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-griffon",
+"name": "Griffon (mâle)",
+"size": "rare ✨",
+"line": "Un griffon merveilleux, majestueux mais doux, tête et ailes d'aigle blanches et dorées, corps de lion fauve, collerette de grandes plumes autour du cou, environ 2 P de haut, ailes repliées, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-griffonne",
+"name": "Griffonne (femelle)",
+"size": "rare ✨",
+"line": "Une griffonne merveilleuse, plus fine que le griffon, sans collerette de plumes, tête et ailes d'aigle blanches tachetées de doré, corps de lionne fauve, environ 1,8 P de haut, ailes repliées, vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -1457,21 +1793,57 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ele-salamandre-de-feu",
-"name": "Salamandre de feu",
+"name": "Salamandre de feu (mâle)",
 "size": "rare ✨",
 "line": "Une salamandre de feu merveilleuse, écailles rouges et orange qui rougeoient, petites flammes sur le dos, environ 0,3 P de haut, vue de face, corps entier, pose neutre."
 },
 {
+"id": "ele-salamandre-de-feu-f",
+"name": "Salamandre de feu (femelle)",
+"size": "rare ✨",
+"line": "Une salamandre de feu merveilleuse, plus ronde que le mâle, sans petites flammes sur le dos, écailles orange plus douces qui rougeoient, environ 0,3 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-larve-salamandre",
+"name": "Larve de salamandre de feu (petit)",
+"size": "rare ✨",
+"line": "Une larve de salamandre de feu merveilleuse, petite et ronde, branchies en plumeaux rouges comme des braises de chaque côté de la tête, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
 "id": "ele-poule-de-braise",
-"name": "Poule de braise",
+"name": "Poule de braise (femelle)",
 "size": "rare ✨",
 "line": "Une poule de braise merveilleuse, plumes noires aux pointes rougeoyantes, crête comme une flamme, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
+"id": "ele-coq-de-braise",
+"name": "Coq de braise (mâle)",
+"size": "rare ✨",
+"line": "Un coq de braise merveilleux, plumes noires aux pointes rougeoyantes, haute crête comme une flamme, longue queue de plumes qui rougeoient, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-poussin-de-braise",
+"name": "Poussin de braise (petit)",
+"size": "rare ✨",
+"line": "Un poussin de braise merveilleux, tout rond en duvet gris cendre aux pointes rougeoyantes, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
 "id": "ele-phenix-des-cendres",
-"name": "Phénix des cendres",
+"name": "Phénix des cendres (mâle)",
 "size": "rare ✨",
 "line": "Un phénix des cendres merveilleux, oiseau aux plumes grises de cendre et orange de braise, longue queue de feu, environ 0,8 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ele-phenix-des-cendres-f",
+"name": "Phénix des cendres (femelle)",
+"size": "rare ✨",
+"line": "Un phénix des cendres merveilleux, femelle aux plumes grises plus douces et orange pâle, queue de feu plus courte, environ 0,75 P de haut, posée, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ele-bebe-phenix",
+"name": "Bébé phénix (petit)",
+"size": "rare ✨",
+"line": "Un bébé phénix des cendres merveilleux, boule de duvet gris cendre, une petite flamme orange sur la tête, environ 0,2 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
 },
 {
 "id": "ele-dragonneau",
@@ -1482,11 +1854,11 @@ window.PROMPTS_CARNET = [
 ]
 }
 ],
-"lead": "Les animaux à élever du Grand Carnet. Ce sont des créatures (pour Meshy) : vue de face, corps entier, pose neutre (bible).",
+"lead": "Les animaux à élever du Grand Carnet, chacun en mâle, femelle et petit (demande de Yo : ils s'accouplent et ont des petits, qui grandissent ; Grand Carnet, « Accouplement et générations »). L'escargot géant est mâle et femelle à la fois ; le dragonneau, légendaire, ne se reproduit pas. Ce sont des créatures (pour Meshy) : vue de face, corps entier, pose neutre (bible).",
 "steps": [
-"Touche <b>Copier</b>, puis colle dans ChatGPT.",
-"Vérifie l'image : un seul animal, entier, fond blanc, vu de face.",
-"Enregistre-la sous le nom de l'objet (par exemple poule.png) et coche la case."
+"Touche <b>Copier</b>, puis colle dans ChatGPT. Pour une même espèce, fais le mâle, la femelle et le petit dans la même conversation : ChatGPT garde mieux les mêmes couleurs et la même allure.",
+"Vérifie l'image : un seul animal, entier, fond blanc, vu de face. Le mâle et la femelle doivent se distinguer d'un coup d'œil ; le petit est plus rond, avec une grosse tête et de grands yeux.",
+"Enregistre-la sous le nom de l'animal (par exemple poule.png, coq.png, poussin.png) et coche la case."
 ]
 },
 {
