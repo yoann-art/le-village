@@ -207,5 +207,24 @@ button.tile{font:inherit;padding:8px 6px;border:2px solid transparent}
 .fondu{position:fixed;inset:0;z-index:45;background:#000;opacity:0;pointer-events:none;transition:opacity .25s}
 .fondu.on{opacity:1}
 
+/* Le format paysage (demande de Yo, 13 octobre 2026 : « pouvoir passer en format paysage pour jouer et avoir un plus grand
+   écran ») : sur un téléphone tourné, le joystick et les cases rapides côte à côte en bas à droite, les boutons en bas à
+   gauche (sur deux colonnes s'il le faut), les messages en bas au milieu, sous le personnage qui reste au centre ; les
+   panneaux tiennent dans la hauteur */
+@media (orientation: landscape) and (max-height: 540px){
+  .joy{right:calc(16px + env(safe-area-inset-right,0px));bottom:14px;width:118px;height:118px}
+  .barre{right:calc(146px + env(safe-area-inset-right,0px));bottom:16px}
+  .actions{left:calc(14px + env(safe-area-inset-left,0px));bottom:12px;gap:7px;max-height:calc(100% - 100px);flex-wrap:wrap;align-content:flex-start}
+  .actions .act{max-width:40vw;min-height:44px;font-size:16px}
+  .hud-top{left:calc(10px + env(safe-area-inset-left,0px));right:calc(10px + env(safe-area-inset-right,0px))}
+  .goal-pill{max-width:38vw}
+  .place-hint{top:54px;max-width:50vw}
+  .toast{top:auto;bottom:calc(74px + env(safe-area-inset-bottom,0px));max-width:min(50vw,520px);transform:translate(-50%,10px)}
+  .toast.show{transform:translate(-50%,0)}
+  .sheet{max-height:94%;max-width:620px}
+  .sac-grid{grid-template-columns:repeat(6,1fr)}
+  .sac-grid.co{grid-template-columns:repeat(8,1fr)}
+  .slot{font-size:26px}
+}
 @keyframes pop{40%{transform:scale(1.35)}}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}

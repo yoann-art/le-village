@@ -28,19 +28,20 @@ scene.add(sun, sun.target);
 
 /* Distance de la caméra au personnage */
 export let D = 0;
-let tanH = .17;
+let tanH = .17, tanCourt = .17;
 function resize(){
   const w = app.clientWidth, h = app.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   tanH = Math.tan(camera.fov * Math.PI / 360) * camera.aspect;
+  tanCourt = Math.min(tanH, Math.tan(camera.fov * Math.PI / 360));   // le petit côté de l'écran (la largeur, ou la hauteur en paysage)
 }
 window.addEventListener("resize", resize);
 resize();
-/* Distance pour voir environ `width` P de large autour du personnage
-   (sur un écran en largeur, on garde un minimum pour ne pas voir de trop près) */
-export const distanceFor = width => Math.min(34, Math.max(width * 1.75, width / (2 * tanH)));
+/* Distance pour voir environ `width` P autour du personnage, sur le petit côté de l'écran : en paysage (demande de Yo,
+   13 octobre 2026 : « plus large »), le personnage garde la taille qu'il a en portrait, et l'on voit plus loin sur les côtés */
+export const distanceFor = width => Math.min(34, width / (2 * tanCourt));
 /* Demi-largeur vue autour du personnage, en P */
 export const halfViewWidth = () => D * tanH;
 /* Place la caméra à la distance d : le brouillard et la zone des ombres suivent */

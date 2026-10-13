@@ -5,6 +5,7 @@
 node_modules/
 package-lock.json
 capture.png
+capture-paysage.png
 
 # Le suivi de la vérification et du carnet de bugs par Claude (tâche programmée sur le PC de Yo)
 .claude/verif-suivi.txt

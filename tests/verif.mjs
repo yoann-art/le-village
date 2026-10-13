@@ -26,6 +26,36 @@ try {
   erreurs.push(`✗ Le jeu ne se charge pas : ${e.message}`);
 }
 await page.screenshot({path: "capture.png"});
+
+/* Le format paysage (demande de Yo, 13 octobre 2026) : le téléphone tourné, la partie jouée ci-dessus ; le joystick, les cases
+   rapides et les boutons ne se gênent pas, tout tient dans l'écran, le sac s'ouvre et tient dans la hauteur */
+const paysage = await browser.newPage({viewport: {width: 812, height: 375}, isMobile: true, hasTouch: true});
+paysage.on("pageerror", e => erreurs.push(`✗ Erreur du jeu (en paysage) : ${e.message}`));
+try {
+  await paysage.goto("http://localhost:8000/", {waitUntil: "load"});
+  await paysage.waitForFunction(() => /^v\d/.test(document.getElementById("version").textContent), null, {timeout: 30000});
+  await paysage.waitForTimeout(1500);
+  const p = await paysage.evaluate(async () => {
+    const boite = s => { const e = document.querySelector(s); if(!e || e.hidden) return null; const b = e.getBoundingClientRect(); return b.width ? b : null; };
+    const croise = (a, b) => a && b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    const dedans = b => !b || b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight;
+    const joy = boite("#joy"), barre = boite("#barre"), actions = boite("#actions");
+    const soucis = [];
+    if(croise(joy, barre)) soucis.push("le joystick touche les cases rapides");
+    if(croise(joy, actions) || croise(barre, actions)) soucis.push("les boutons touchent le joystick ou les cases rapides");
+    for(const [n, b] of [["le joystick", joy], ["les cases rapides", barre], ["les boutons", actions]]) if(!dedans(b)) soucis.push(`${n} dépasse de l'écran`);
+    document.querySelector("#btn-sac").click();
+    await new Promise(r => setTimeout(r, 500));
+    const sac = boite("#sheet");
+    if(!sac || sac.height > innerHeight) soucis.push("le sac ne tient pas dans la hauteur de l'écran");
+    return soucis;
+  });
+  if(p.length) erreurs.push(`✗ Le format paysage : ${p.join(" ; ")}`);
+  else r.ok.push("✓ Le format paysage : le joystick, les cases rapides et les boutons ne se gênent pas, le sac tient dans l'écran");
+  await paysage.screenshot({path: "capture-paysage.png"});
+} catch(e){
+  erreurs.push(`✗ Le jeu ne se charge pas en paysage : ${e.message}`);
+}
 await browser.close();
 
 console.log(r.ok.join("\n"));
