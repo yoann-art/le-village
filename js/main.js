@@ -12,6 +12,7 @@ import { B } from "./donnees.js";
 import { renderer, camera, scene, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
 import { VENT } from "./monde/formes.js";
 import { water, montrerChamp } from "./monde/ile.js";
+import { reglerRecul } from "./monde/chene.js";
 import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
 import "./coffres.js";
@@ -132,7 +133,7 @@ function tick(now){
     const cible = {beau: .025, nuages: .035, pluie: .065, orage: .12, neige: .03}[meteo()] || .03;
     VENT.force.value += (cible - VENT.force.value) * Math.min(1, dt * .5);
   });
-  if(!isInside()) garde("champ", () => montrerChamp(camera, scene.fog.far + 6));   // seulement ce qu'on voit (l'île agrandie)
+  if(!isInside()) garde("champ", () => { montrerChamp(camera, scene.fog.far + 6); reglerRecul(premiereActive() ? 0 : D); });   // seulement ce qu'on voit (l'île agrandie) ; les arbres du fond en moins détaillé
   garde("dessin", () => renderer.render(currentScene(), camera));
   if(premiereActive()) garde("mains", () => { updateMains(dt, isInside()); dessinerMains(); });   // à la première personne : les mains, par-dessus
   else mainsInactives();

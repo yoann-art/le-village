@@ -173,26 +173,44 @@ const enSaison = () => SAISONS[saison()];
 /* Terrain : dalle d'herbe ou de sable sur un socle de terre ; une place par case de l'île (une case d'eau a sa
    place vide), pour pouvoir creuser et combler (étape 1.9) */
 const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), toon({color:0xffffff}), N*N);
+slabs.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N*N*3), 3);   // toutes les places dès le départ (slabs.count change)
+/* le socle de terre ne se voit qu'au bord de l'eau (ailleurs, les dalles le cachent) : seulement là, pour le téléphone
+   (l'île agrandie : 9 216 cases) ; refaireSocle le repose quand on creuse ou comble */
 const dirt = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.8,1), mat(0xA8774C), N*N);
+function refaireSocle(){
+  let n = 0;
+  for(let i = 0; i < N*N; i++){
+    if(map.type[i] === "water") continue;
+    const x = i % N, z = (i - x) / N;
+    if(![[x+1, z], [x-1, z], [x, z+1], [x, z-1]].some(([a, b]) => !inb(a, b) || map.type[idx(a, b)] === "water")) continue;
+    m4.makeTranslation(centerOf(x), -.64, centerOf(z)); dirt.setMatrixAt(n++, m4);
+  }
+  dirt.count = n; dirt.instanceMatrix.needsUpdate = true;
+}
 const m4 = new THREE.Matrix4(), col = new THREE.Color(), RIEN = new THREE.Matrix4().makeScale(0, 0, 0);
 /* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige des dalles peintes */
 const NEIGE = [new THREE.Color(0xEEF3F6), new THREE.Color(0xF6F9FB)], entamees = new Set();
 let peinteNeige = 0;
 /* entame : une case qu'on a commencé à creuser (de la terre retournée, un peu plus bas) ; sans le dire, elle le reste */
+/* une dalle par case de terre seulement (l'île agrandie : la mer n'a pas de dalle à dessiner) : place[i], sa place dans la
+   série ; une case comblée en reçoit une à la fin */
+const place = new Int32Array(N*N).fill(-1);
+let nDalles = 0;
 function poserCase(i, entame = entamees.has(i)){
   const x = i % N, z = Math.floor(i / N), wx = centerOf(x), wz = centerOf(z), alt = (x+z) % 2;
-  if(map.type[i] === "water"){ slabs.setMatrixAt(i, RIEN); dirt.setMatrixAt(i, RIEN); }
-  else {
-    m4.makeTranslation(wx, entame ? -.2 : -.12, wz); slabs.setMatrixAt(i, m4);
-    m4.makeTranslation(wx, -.64, wz); dirt.setMatrixAt(i, m4);
-  }
+  if(map.type[i] === "water"){ if(place[i] >= 0) slabs.setMatrixAt(place[i], RIEN); return; }
+  if(place[i] < 0){ place[i] = nDalles++; slabs.count = nDalles; }
+  m4.makeTranslation(wx, entame ? -.2 : -.12, wz); slabs.setMatrixAt(place[i], m4);
   col.setHex(entame ? 0x9A6B45 : map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : enSaison().herbe[alt]);
   if(!entame && peinteNeige > 0 && map.type[i] !== "water") col.lerp(NEIGE[alt], peinteNeige * (map.type[i] === "sand" ? .6 : 1));   // le sable, un peu moins
-  slabs.setColorAt(i, col);
+  slabs.setColorAt(place[i], col);
 }
+/* La couleur de la dalle d'une case [r, g, b] (pour la vérification : l'herbe selon la saison, la neige) */
+export const couleurSol = i => place[i] >= 0 ? [...slabs.instanceColor.array.slice(place[i] * 3, place[i] * 3 + 3)] : null;
 for(let i = 0; i < N*N; i++) poserCase(i);
 slabs.instanceColor.needsUpdate = true;
 slabs.receiveShadow = true; dirt.receiveShadow = true;
+refaireSocle();
 scene.add(slabs, dirt);
 const terrainChange = () => { slabs.instanceMatrix.needsUpdate = dirt.instanceMatrix.needsUpdate = slabs.instanceColor.needsUpdate = true; };
 /* Creuser, combler (étape 1.9) : la case devient de l'eau (« water ») ou de la terre (son herbe ou son sable d'origine,
@@ -201,7 +219,7 @@ export function setTerrain(i, t){
   map.type[i] = t; entamees.delete(i);
   if(t === ORIGINE[i]) delete state.terrain[i]; else state.terrain[i] = t;
   if(!state.ile[i]) state.ile[i] = {o: null};
-  poserCase(i); terrainChange();
+  poserCase(i); refaireSocle(); terrainChange();
 }
 export const terreDe = i => ORIGINE[i] === "water" ? "grass" : ORIGINE[i];
 /* Une case qu'on commence à creuser, ou qu'on laisse (entame = false) */
@@ -334,15 +352,18 @@ export const objMesh = i => meshes.get(i);
 /* Pour un téléphone modeste (l'île agrandie, étape 2.1 : trois fois plus de nature) : à chaque image, on ne garde à
    dessiner que ce qui est dans le champ de la caméra, avec une marge pour les ombres qui y tombent, et pas plus loin que
    le brouillard (main.js) ; le reste attend, sans rien coûter */
+/* les petites choses (herbes, fleurs, thym, buissons, rochers, souches) : seulement jusqu'à PRES P (à la première personne,
+   au-delà, elles ne font que quelques points dans la brume) ; les arbres et les lumières, jusqu'au bout du brouillard */
+const PRES = 28, GRANDS = o => o === "tree" || ESSENCES.includes(o) || !!(MEUBLES[o] && MEUBLES[o].dehors);
 const champ = new THREE.Frustum(), mVue = new THREE.Matrix4(), boule = new THREE.Sphere(new THREE.Vector3(), 6);
 export function montrerChamp(camera, loin){
   camera.updateMatrixWorld();
   mVue.copy(camera.matrixWorld).invert().premultiply(camera.projectionMatrix);
   champ.setFromProjectionMatrix(mVue);
-  const cx = camera.position.x, cz = camera.position.z;
-  for(const g of meshes.values()){
+  const cx = camera.position.x, cz = camera.position.z, pres = Math.min(loin, PRES);
+  for(const [i, g] of meshes){
     boule.center.set(g.position.x, 1.5, g.position.z);
-    g.visible = Math.hypot(g.position.x - cx, g.position.z - cz) < loin && champ.intersectsSphere(boule);
+    g.visible = Math.hypot(g.position.x - cx, g.position.z - cz) < (GRANDS(map.obj[i]) ? loin : pres) && champ.intersectsSphere(boule);
   }
 }
 /* Change ce qu'il y a sur une case et le garde dans la partie (plante : heure de plantation) */

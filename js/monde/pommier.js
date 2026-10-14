@@ -9,20 +9,13 @@
    Les pommes se cueillent en automne (recolte.js) : cueillies, elles ne se voient plus jusqu'à leur retour (pommes = false).
    Mêmes petits outils que le chêne (chene.js) : chaque modèle construit une fois et partagé. */
 import { fusionner } from "./formes.js";
-import { aleaDe, segment, tronc, BOULE, GLAND, NEIGE_GEO, feuillageDe, neigeDe, MAT_BOIS, MAT_FEUILLES, MAT_PLAT, mesh, TONS_ESPECES } from "./chene.js";
+import { aleaDe, segment, brancheCourbe, tronc, feuilleGeo, BOULE, GLAND, NEIGE_GEO, feuillageDe, neigeDe, ombreDe, feuillesEtOmbre, MAT_BOIS, MAT_FEUILLES, MAT_PLAT, mesh, TONS_ESPECES } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const Q = new THREE.Quaternion();
 const BOIS = 0xA65C36, BOIS_SOMBRE = 0x86462A, CREUX = 0x4A2818, POMMES = [0xE0342A, 0xD42C24, 0xE8502E], QUEUE = 0x6E4022;
-/* La feuille du pommier : ovale et pointue, le bord à peine ondulé (longue de 1, centrée au milieu) */
-const FEUILLE = (() => {
-  const pts = [], n = 12;
-  for(let k = 0; k <= n; k++){ const t = k / n, e = Math.sin(Math.PI * Math.pow(t, .85)) * .34 * (1 + .05 * Math.cos(t * Math.PI * 9)); pts.push([Math.max(.01, e), t]); }
-  const s = new THREE.Shape();
-  s.moveTo(0, 0); pts.forEach(([w, t]) => s.lineTo(w, t));
-  for(let k = pts.length - 1; k >= 0; k--) s.lineTo(-pts[k][0], pts[k][1]);
-  return new THREE.ShapeGeometry(s).translate(0, -.5, 0);
-})();
+/* La feuille du pommier : ovale et pointue, le bord à peine ondulé, en relief (feuilleGeo) */
+const FEUILLE = feuilleGeo(t => Math.pow(Math.sin(Math.PI * Math.pow(t, .85)), .75) * .4 * (1 + .05 * Math.cos(t * Math.PI * 9)), 5);
 /* Les tons du feuillage selon la saison, trois nuances ; vert-jaune comme sur l'image, qui jaunit en automne */
 const TONS = {
   printemps: [[0xA6D86A, 0x8ECC58, 0xBEE47E, 0x78B84C], [0x9CD262, 0x86C452, 0xB6DE74, 0x72B048], [0xAEDC70, 0x96CE5E, 0xC6E886, 0x7EBC50]],
@@ -33,10 +26,10 @@ TONS_ESPECES.pommier = TONS;
 
 /* ---------- la forme : d'après les images ---------- */
 const FORME = {
-  adulte: {tronc: [.2, .34, 1.3], racines: [6, .72, .14],
-    boules: [[0, 2.72, -.08, .62], [-.86, 2.42, .02, .55], [-.62, 1.86, .46, .48], [.84, 2.34, -.16, .55], [.72, 1.86, .44, .5], [.06, 2.12, .64, .5], [-.12, 2.24, -.66, .5]],
+  adulte: {tronc: [.24, .38, 1.3], racines: [6, .78, .15],
+    boules: [[0, 2.95, -.08, .56], [-.92, 2.6, .02, .5], [-1.0, 1.95, .4, .46], [.95, 2.55, -.16, .5], [1.0, 1.92, .38, .47], [.3, 2.1, .74, .46], [-.15, 2.3, -.78, .48]],
     depart: [[0, 1.22], [-.08, 1.15], [-.1, 1.05], [.08, 1.15], [.1, 1.05], [0, 1.1], [0, 1.15]],
-    creux: [[.55, .3, .3], [.95, -.2, .24]], pommes: 3},
+    creux: [[.55, .3, .3], [.95, -.2, .24]], pommes: 4},
   jeune:  {tronc: [.06, .1, 1.1], racines: [4, .26, .045],
     boules: [[0, 1.52, 0, .42], [-.46, 1.1, .04, .3], [.46, 1.06, -.04, .3]],
     depart: [[0, 1.05], [0, .8], [0, .78]], creux: [], pommes: 0, tuteur: true}
@@ -58,7 +51,7 @@ function boisDe(f, hiver, alea){
   }
   f.boules.forEach(([x, y, z, r], k) => {
     const [dx, dy] = f.depart[k], A = V(dx, dy, 0), B = V(x * .82, y - r * .35, z * .82);
-    M.push({...segment(A, B, rh * .72, rh * .3), c: BOIS});
+    brancheCourbe(M, A, B, rh * .8, rh * .36, BOIS);
     if(hiver) for(let j = 0; j < 3; j++){
       const a = alea() * Math.PI * 2, C = V(B.x + Math.cos(a) * r * .75, B.y + r * (.3 + alea() * .5), B.z + Math.sin(a) * r * .75);
       M.push({...segment(B, C, rh * .2, rh * .07, 5), c: BOIS});
@@ -71,10 +64,12 @@ function boisDe(f, hiver, alea){
   }
   return fusionner(M);
 }
-/* Une pomme : ronde, sa queue ; elle pend au bord de la boule, surtout sur les côtés et le bas */
+/* Une pomme : ronde, sa queue ; elle pend au bord de la boule, surtout sur les côtés et le bas ; le dessous plus sombre et
+   un petit reflet blanc, pour qu'elle brille comme sur l'image de Yo */
 function pomme(M, P, s, c){
-  M.push({geo: GLAND, m: new THREE.Matrix4().compose(P, Q, V(s, s * .92, s)), c});
+  M.push({geo: GLAND, m: new THREE.Matrix4().compose(P, Q, V(s, s * .92, s)), c, ombre: (x, y) => .68 + .36 * Math.min(1, Math.max(0, (y - P.y) / s * .5 + .5))});
   M.push({...segment(P.clone().add(V(0, s * .7, 0)), P.clone().add(V(.02, s * 1.35, 0)), s * .13, s * .1, 4), c: QUEUE});
+  M.push({geo: GLAND, m: new THREE.Matrix4().compose(P.clone().add(V(-.32 * s, .5 * s, .62 * s)), new THREE.Quaternion().setFromEuler(new THREE.Euler(-.7, -.4, 0)), V(s * .26, s * .18, s * .08)), c: 0xFFF2EC});
 }
 function pommesDe(f, alea, n){
   const M = [];
@@ -83,7 +78,7 @@ function pommesDe(f, alea, n){
     for(let j = 0; j < m; j++){
       const a = alea() * Math.PI * 2, yy = -.45 + alea() * .85, rr = Math.sqrt(1 - yy * yy);
       const P = V(x + Math.cos(a) * rr * r * .9, y + yy * r * .8, z + Math.sin(a) * rr * r * .9);
-      pomme(M, P, .11 + alea() * .025, POMMES[(k + j) % 3]);
+      pomme(M, P, .13 + alea() * .03, POMMES[(k + j) % 3]);
     }
   });
   return fusionner(M);
@@ -121,7 +116,9 @@ function geos(stade, saison, variante, neige){
   const f = stade === 2 ? FORME.adulte : FORME.jeune, hiver = saison === "hiver", alea = aleaDe(53 + variante * 89 + stade * 11);
   const r = {
     bois: boisDe(f, hiver, alea),
-    feuillage: hiver ? null : feuillageDe(f, TONS[saison][variante], alea, stade === 2 ? 16 : 12, FEUILLE),
+    feuillage: hiver ? null : feuillageDe(f, TONS[saison][variante], alea, stade === 2 ? 60 : 40, FEUILLE),
+    leger: hiver ? null : feuillageDe(f, TONS[saison][variante], alea, stade === 2 ? 20 : 14, FEUILLE),
+    ombre: hiver ? null : ombreDe(f),
     fleurs: saison === "printemps" ? fleursDe(f, alea, stade === 2 ? 11 : 6) : null,
     pommes: saison === "automne" ? pommesDe(f, alea, f.pommes) : null,
     neige: hiver && neige ? neigeDe(f, alea) : null,
@@ -138,9 +135,9 @@ export function pommierModele(stade, saison, r = 0, neige = false, pommes = true
   if(stade === 0) return pousse(g, saison);
   const G = geos(stade, saison, variante, neige);
   g.add(mesh(G.bois, MAT_BOIS));
-  if(G.feuillage) g.add(mesh(G.feuillage, MAT_FEUILLES));
+  if(G.feuillage) feuillesEtOmbre(g, G.feuillage, G.ombre, MAT_FEUILLES, G.leger);
   if(G.fleurs){ g.add(mesh(G.fleurs, MAT_FEUILLES, false)); g.userData.pommier.fleurs = true; }
-  if(G.pommes && pommes){ g.add(mesh(G.pommes, MAT_FEUILLES)); g.userData.pommier.pommes = true; }
+  if(G.pommes && pommes){ g.add(mesh(G.pommes, MAT_FEUILLES, false)); g.userData.pommier.pommes = true; }
   if(G.neige) g.add(mesh(G.neige, MAT_BOIS, false));
   if(G.pied){ g.add(mesh(G.pied, MAT_PLAT, false)); g.userData.pommier.pied = true; }
   return g;

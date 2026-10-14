@@ -49,24 +49,29 @@ export function part(geo, material, sx, sy, sz, x, y, z){
 export const roof = (hex, w, h, y, x=0, z=0) => { const m = part(G.cone4, hex, w*1.55, h, w*1.55, x, y + h/2, z); m.rotation.y = Math.PI/4; return m; };
 
 /* Fusionner plusieurs formes en une seule (étape 2.1, les arbres : un modèle détaillé reste léger pour le téléphone,
-   un seul objet à dessiner au lieu de dizaines). morceaux : [{geo, m (Matrix4), c (couleur), normale?}] ; chaque
-   morceau garde sa couleur (couleurs aux sommets, vertexColors) ; normale(x, y, z) remplace les normales (le feuillage
-   d'un arbre s'éclaire comme une boule, pas feuille par feuille) */
-const cTmp = new THREE.Color();
+   un seul objet à dessiner au lieu de dizaines). morceaux : [{geo, m (Matrix4), c (couleur), normale?, ombre?}] ; chaque
+   morceau garde sa couleur (couleurs aux sommets, vertexColors) ; normale(x, y, z, n0) remplace les normales (le feuillage
+   d'un arbre s'éclaire comme une boule, pas feuille par feuille ; n0 : la normale d'origine, pour la mêler) ; ombre(x, y, z)
+   assombrit ou éclaire chaque sommet (l'ombre douce peinte, comme sur les images de Yo : le creux d'une boule de feuilles
+   plus sombre, le dessus plus clair) ; une forme peut aussi porter sa propre teinte par sommet (l'attribut « teinte » :
+   la nervure d'une feuille, les sillons d'une écorce) */
+const cTmp = new THREE.Color(), n0 = new THREE.Vector3();
 export function fusionner(morceaux){
   const prets = morceaux.map(p => { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone(); g.applyMatrix4(p.m); return [g, p]; });
   const total = prets.reduce((n, [g]) => n + g.attributes.position.count, 0);
   const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), col = new Float32Array(total * 3);
   let o = 0;
   for(const [g, p] of prets){
-    const P = g.attributes.position, Nn = g.attributes.normal;
+    const P = g.attributes.position, Nn = g.attributes.normal, T = g.attributes.teinte;
     cTmp.set(p.c);
     for(let i = 0; i < P.count; i++, o++){
       const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
       pos[o * 3] = x; pos[o * 3 + 1] = y; pos[o * 3 + 2] = z;
-      const v = p.normale ? p.normale(x, y, z) : null;
-      nor[o * 3] = v ? v.x : Nn.getX(i); nor[o * 3 + 1] = v ? v.y : Nn.getY(i); nor[o * 3 + 2] = v ? v.z : Nn.getZ(i);
-      col[o * 3] = cTmp.r; col[o * 3 + 1] = cTmp.g; col[o * 3 + 2] = cTmp.b;
+      n0.set(Nn.getX(i), Nn.getY(i), Nn.getZ(i));
+      const v = p.normale ? p.normale(x, y, z, n0) : n0;
+      nor[o * 3] = v.x; nor[o * 3 + 1] = v.y; nor[o * 3 + 2] = v.z;
+      const k = (T ? T.getX(i) : 1) * (p.ombre ? p.ombre(x, y, z) : 1);
+      col[o * 3] = cTmp.r * k; col[o * 3 + 1] = cTmp.g * k; col[o * 3 + 2] = cTmp.b * k;
     }
   }
   const r = new THREE.BufferGeometry();

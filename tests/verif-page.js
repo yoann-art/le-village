@@ -29,7 +29,7 @@
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
-import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol } from "../js/monde/ile.js";
 import { feuillesQuiVolent } from "../js/monde/chene.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
@@ -173,7 +173,7 @@ export async function verifier(){
     } finally { forcerHeure(null); }
   });
   await etape("Les saisons : l'herbe change de couleur, l'hémisphère sud inverse les saisons", async () => {
-    const herbe = () => { const i = idx(Math.floor(N / 2), Math.floor(N / 2)); return scene.children.find(o => o.isInstancedMesh && o.count === N * N && o.instanceColor).instanceColor.array.slice(i * 3, i * 3 + 3).join(); };
+    const herbe = () => couleurSol(idx(Math.floor(N / 2), Math.floor(N / 2))).join();
     try {
       forcerSaison("ete"); rafraichirSaison(); const ete = herbe();
       forcerSaison("hiver"); rafraichirSaison(); const hiver = herbe();
@@ -207,7 +207,7 @@ export async function verifier(){
     return `badge « ${$("#meteo").textContent.trim()} » ; sous la pluie : le ciel se couvre, l'anguille sort, les papillons se cachent`;
   });
   await etape("Ce que le temps change : la pluie arrose, l'hiver ralentit les plantations, la neige blanchit l'herbe", async () => {
-    const c = Math.floor(N / 2), herbe = j => scene.children.find(o => o.isInstancedMesh && o.count === N * N && o.instanceColor).instanceColor.array.slice(j * 3, j * 3 + 3);
+    const c = Math.floor(N / 2), herbe = j => couleurSol(j);
     let i = -1;
     for(let r = 3; r < 12 && i < 0; r++) for(let dx = -r; dx <= r && i < 0; dx++){
       const j = idx(c + dx, c + r);
