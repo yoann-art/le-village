@@ -1,7 +1,7 @@
 /* ================= L'île =================
    Carte en cases, terrain, mer, arbres, rochers, herbes hautes et buissons de baies. */
 import { scene } from "./scene.js";
-import { mat, G, part } from "./formes.js";
+import { mat, G, part, toon } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
@@ -130,7 +130,7 @@ const SAISONS = {
 const enSaison = () => SAISONS[saison()];
 /* Terrain : dalle d'herbe ou de sable sur un socle de terre ; une place par case de l'île (une case d'eau a sa
    place vide), pour pouvoir creuser et combler (étape 1.9) */
-const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), new THREE.MeshLambertMaterial({color:0xffffff}), N*N);
+const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), toon({color:0xffffff}), N*N);
 const dirt = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.8,1), mat(0xA8774C), N*N);
 const m4 = new THREE.Matrix4(), col = new THREE.Color(), RIEN = new THREE.Matrix4().makeScale(0, 0, 0);
 /* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige des dalles peintes */

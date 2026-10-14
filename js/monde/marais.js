@@ -18,7 +18,7 @@
    brume ; des arbres morts (chicots) où se pose le corbeau des brumes (CHICOTS).
    Les deux lieux se construisent dans la scène des intérieurs (interieurs.js, buildRoom), comme la forêt ; le sol, les
    planches, les arbres et les roseaux sont dessinés en série, pour un téléphone modeste. */
-import { G, part, mat } from "./formes.js";
+import { G, part, mat, toon } from "./formes.js";
 import { barqueModele } from "./ponton.js";
 import { state, save } from "../sauvegarde.js";
 import { RECOLTE, PRODUITS, PLANTES_MARAIS, PLANTE_RETOUR, enSaisonPlante } from "../donnees.js";
@@ -29,7 +29,7 @@ import { couvertIci } from "./meteo.js";
 const EAU = -.2;
 /* L'eau calcule sa lumière à chaque point (Phong) : la torche s'y reflète, chaude et mouillée (demande de Yo) */
 const EAU_MAT = new THREE.MeshPhongMaterial({color: 0x3A584E, specular: 0x24302A, shininess: 24});
-const BRUME_MAT = new THREE.MeshLambertMaterial({color: 0xE4ECE6, transparent: true, opacity: .18, depthWrite: false});
+const BRUME_MAT = toon({color: 0xE4ECE6, transparent: true, opacity: .18, depthWrite: false});
 function eau(g, w, d){
   const e = new THREE.Mesh(new THREE.PlaneGeometry(w, d), EAU_MAT);
   e.rotation.x = -Math.PI / 2; e.position.y = EAU; e.receiveShadow = true; g.add(e);
@@ -247,7 +247,7 @@ function serie(g, geo, matiere, places, ombre = true){
   if(m.instanceColor) m.instanceColor.needsUpdate = true;
   m.castShadow = ombre; m.receiveShadow = true; g.add(m);
 }
-const blanc = () => new THREE.MeshLambertMaterial({color: 0xffffff});
+const blanc = () => toon({color: 0xffffff});
 /* Les arbres, en série : une instance par arbre et par morceau (tronc, feuillage, fruits…) */
 const posArbre = i => { const r = marais.r[i]; return [mcx(i) + (r - .5) * .3, mcz(i) + (r - .5) * .3]; };
 function matriceArbre(i, local){
@@ -267,9 +267,9 @@ function montrerArbre(i, oui){
 }
 /* Les plantes : leurs feuilles (toujours là) et ce qu'on cueille (fruit : caché hors saison, une fois cueilli, ou le jour
    pour celles de la nuit) */
-const LUEUR_LUNE = new THREE.MeshLambertMaterial({color: 0xE8F4E0, emissive: 0xB8E8C8, emissiveIntensity: .7});
-const FLAMME = new THREE.MeshLambertMaterial({color: 0x9AD8FF, emissive: 0x3A8AF0, emissiveIntensity: 1.1, transparent: true, opacity: .85, depthWrite: false});
-const PETALES = new THREE.MeshLambertMaterial({color: 0xF4E8F4, emissive: 0x4A3A4A, emissiveIntensity: .3, transparent: true, opacity: .72});
+const LUEUR_LUNE = toon({color: 0xE8F4E0, emissive: 0xB8E8C8, emissiveIntensity: .7});
+const FLAMME = toon({color: 0x9AD8FF, emissive: 0x3A8AF0, emissiveIntensity: 1.1, transparent: true, opacity: .85, depthWrite: false});
+const PETALES = toon({color: 0xF4E8F4, emissive: 0x4A3A4A, emissiveIntensity: .3, transparent: true, opacity: .72});
 function modelePlante(k, r){
   const g = new THREE.Group(), fruit = new THREE.Group(), y0 = PRODUITS[k].plante.ou === "eau" ? EAU : 0;
   const a = (grp, geo, c, sx, sy, sz, x, y, z) => { const m = part(geo, c, sx, sy, sz, x, y0 + y, z); grp.add(m); return m; };
@@ -328,7 +328,7 @@ function ecriteau(g, x, z, texte){
   do { k.font = `bold ${taille}px Georgia, serif`; taille -= 2; } while(k.measureText(texte).width > 284 && taille > 16);   // le texte tient dans la planche
   k.fillStyle = "#2A1C10"; k.textAlign = "center"; k.textBaseline = "middle"; k.fillText(texte, 160, 58);
   const panneau = new THREE.Mesh(new THREE.BoxGeometry(1.8, .62, .06), [mat(0x8A5A3C), mat(0x8A5A3C), mat(0x8A5A3C), mat(0x8A5A3C),
-    new THREE.MeshLambertMaterial({map: new THREE.CanvasTexture(c)}), mat(0x8A5A3C)]);
+    toon({map: new THREE.CanvasTexture(c)}), mat(0x8A5A3C)]);
   panneau.position.set(x, 1.3, z + .06); panneau.rotation.x = -.5; panneau.castShadow = true; g.add(panneau);   // penché vers la caméra
 }
 

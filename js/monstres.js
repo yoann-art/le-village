@@ -30,7 +30,7 @@
    moment) ; les poches de gaz (GAZ : elles jaunissent et bouillonnent fort, puis un nuage s'en échappe) ; au fond,
    l'Hydre des brumes : trois têtes, à couper vite (une tête coupée repousse), la carte du Récif la première fois. */
 import { interior } from "./monde/interieurs.js";
-import { G, part } from "./monde/formes.js";
+import { G, part, toon } from "./monde/formes.js";
 import { MONSTRES, PALIER_MONSTRES, PALIER_MONSTRES_MARAIS, GAZ, GIBIER, CARTES, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace } from "./regles.js";
@@ -49,7 +49,7 @@ const leNom = (k, maj) => { const L = MONSTRES[k], s = `${/^[aeiouyhéèêâîô
 
 /* ----- Les modèles : pointus et anguleux, les yeux qui luisent (la tête vers -z) ----- */
 const JAUNE = 0xFFD54A, ROUGE = 0xFF4A3A, ORANGE = 0xFF9A3A;
-function matieres(){ const mats = {}; return {mats, m: hex => mats[hex] || (mats[hex] = new THREE.MeshLambertMaterial({color: hex}))}; }
+function matieres(){ const mats = {}; return {mats, m: hex => mats[hex] || (mats[hex] = toon({color: hex}))}; }
 function pattesDe(corps, m, couleur, h, pos){
   return pos.map(([x, z]) => {
     const piv = new THREE.Group(); piv.position.set(x, h, z);
@@ -120,7 +120,7 @@ const AILE = (() => {
 })();
 function chauveMesh(){
   const g = new THREE.Group(), {mats, m} = matieres(), corps = new THREE.Group(), tete = new THREE.Group();
-  const CORPS = 0x76668A, AILES = new THREE.MeshLambertMaterial({color: 0x9A88B0, side: THREE.DoubleSide});
+  const CORPS = 0x76668A, AILES = toon({color: 0x9A88B0, side: THREE.DoubleSide});
   g.add(corps);
   corps.add(part(G.dode, m(CORPS), .2, .22, .3, 0, 0, .02));
   tete.position.set(0, .04, -.15); corps.add(tete);
@@ -198,7 +198,7 @@ function sangsueMesh(){
 /* Le feu-follet trompeur : une flamme bleue aux pointes vertes, un petit visage rusé ; elle vire au vert (le signe) */
 function feuFolletMesh(){
   const g = new THREE.Group(), corps = new THREE.Group(), tete = new THREE.Group();
-  const flamme = new THREE.MeshLambertMaterial({color: 0x9AD0FF, emissive: 0x3A7AF0, emissiveIntensity: 1, transparent: true, opacity: .9});
+  const flamme = toon({color: 0x9AD0FF, emissive: 0x3A7AF0, emissiveIntensity: 1, transparent: true, opacity: .9});
   g.add(corps); corps.position.y = .95;
   corps.add(part(G.head, flamme, 1.1, 1.15, 1.1, 0, 0, 0));
   corps.add(part(G.cone, flamme, .32, .6, .32, 0, .36, 0));
@@ -557,7 +557,7 @@ function jaillir(e){
 /* Le nuage de brume empoisonnée de l'Hydre (morceau 6), là où le cercle s'est étendu */
 function souffler(e){
   if(!e) return;
-  const mat = new THREE.MeshLambertMaterial({color: 0xC8E05A, emissive: 0x4A6A1A, transparent: true, opacity: .55, depthWrite: false});
+  const mat = toon({color: 0xC8E05A, emissive: 0x4A6A1A, transparent: true, opacity: .55, depthWrite: false});
   e.pics = new THREE.Group(); e.t = 0; e.brume = mat;
   for(let k = 0; k < 5; k++){ const a = k / 5 * 6.28, b = new THREE.Mesh(G.head, mat); b.position.set(Math.cos(a) * e.r * .45, .4, Math.sin(a) * e.r * .45); b.scale.setScalar(e.r * 2.4); b.renderOrder = 4; e.pics.add(b); }
   e.pics.position.set(e.x, 0, e.z); groupe.add(e.pics);
@@ -620,14 +620,14 @@ function gardien(m, L, d, versP, dt, blesser){
    fort ; puis un nuage de gaz s'en échappe (il étourdit : des cœurs en moins). Elles n'éclatent que si le personnage est
    assez près ; le feu-follet trompeur les fait éclater */
 const poches = [];        // {x, z, etat ("bout" | "signe" | "nuage"), t, prochain, mesh, disque, bulles, nuage, touche}
-const BULLE = new THREE.MeshLambertMaterial({color: 0xB8D86A, transparent: true, opacity: .8});
+const BULLE = toon({color: 0xB8D86A, transparent: true, opacity: .8});
 const delai = () => GAZ.intervalle[0] + Math.random() * (GAZ.intervalle[1] - GAZ.intervalle[0]);
 function creerPoche(g){
   const mesh = new THREE.Group();
   const disque = new THREE.Mesh(new THREE.CircleGeometry(.55, 20), new THREE.MeshBasicMaterial({color: 0x8AB83A, transparent: true, opacity: .55, depthWrite: false}));
   disque.rotation.x = -Math.PI / 2; disque.position.y = .016; mesh.add(disque);
   const bulles = [0, 1, 2, 3].map(k => { const b = part(G.head, BULLE, .35, .35, .35, Math.cos(k * 1.6) * .25, .05, Math.sin(k * 1.6) * .25); b.castShadow = false; mesh.add(b); return b; });
-  const nuage = new THREE.Mesh(G.head, new THREE.MeshLambertMaterial({color: 0xC8D86A, emissive: 0x4A5A1A, transparent: true, opacity: 0, depthWrite: false}));
+  const nuage = new THREE.Mesh(G.head, toon({color: 0xC8D86A, emissive: 0x4A5A1A, transparent: true, opacity: 0, depthWrite: false}));
   nuage.position.y = .5; nuage.visible = false; nuage.renderOrder = 4; mesh.add(nuage);
   mesh.position.set(g.x, 0, g.z); groupe.add(mesh);
   const P = {x: g.x, z: g.z, etat: "bout", t: Math.random() * 3, prochain: delai(), mesh, disque, bulles, nuage, touche: false};
@@ -662,7 +662,7 @@ function pochesVivent(dt, blesser){
 }
 /* Le venin du crapaud-poison : il vole en cloche jusqu'où se tenait le personnage, puis une flaque verte, un instant */
 const crachats = [];      // {mesh, x0, z0, x1, z1, t, T, r, degats, flaque}
-const VENIN = new THREE.MeshLambertMaterial({color: 0x9AE04A, emissive: 0x3A8A1A, emissiveIntensity: .8});
+const VENIN = toon({color: 0x9AE04A, emissive: 0x3A8A1A, emissiveIntensity: .8});
 function cracher(m, tx, tz, L){
   const mesh = part(G.head, VENIN, .55, .55, .55, m.x, .35, m.z); mesh.castShadow = false; groupe.add(mesh);
   crachats.push({mesh, x0: m.x, z0: m.z, x1: tx, z1: tz, t: 0, T: Math.max(.25, Math.hypot(tx - m.x, tz - m.z) / L.crachat.v), r: L.crachat.r, degats: L.degats, flaque: null});

@@ -20,7 +20,7 @@
    disparaît dans le brouillard. */
 import { $ } from "./outils.js";
 import { interior } from "./monde/interieurs.js";
-import { G, part } from "./monde/formes.js";
+import { G, part, toon } from "./monde/formes.js";
 import { GIBIER, HEURES, PECHE, OUTILS, MONSTRES, FLECHES, objet } from "./donnees.js";
 import { modeleMonstre, enrager } from "./monstres.js";
 import { state, save } from "./sauvegarde.js";
@@ -222,7 +222,7 @@ const feuilles = [];
 {
   const geo = new THREE.PlaneGeometry(.14, .09);
   for(let n = 0; n < 12; n++){
-    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({color: [0xD8A040, 0xC8642A, 0x8AB84A, 0xE8C060][n % 4], side: THREE.DoubleSide}));
+    const m = new THREE.Mesh(geo, toon({color: [0xD8A040, 0xC8642A, 0x8AB84A, 0xE8C060][n % 4], side: THREE.DoubleSide}));
     groupe.add(m); feuilles.push({m, x: 0, y: 0, z: 0, ph: Math.random() * 6.28, vu: false});
   }
 }
@@ -439,7 +439,7 @@ const CHEMIN = CHEMIN_BLANC.map(([x, z]) => ({x: x - W / 2, z: z - W / 2}));
 let blanc = null;        // {a (la bête), etape, etat ("attend" | "marche" | "part" | "fini"), cadeau: {x, z, mesh}}
 let blancVu = false;     // déjà apparu pendant cette visite de la forêt
 function cadeauMesh(){
-  const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({color: 0xDDE4EC, emissive: 0x7A8AA0, emissiveIntensity: .8});
+  const g = new THREE.Group(), m = toon({color: 0xDDE4EC, emissive: 0x7A8AA0, emissiveIntensity: .8});
   for(const s of [-1, 1]){
     const t = part(G.cyl, m, .05, .5, .05, s * .12, .06, 0); t.rotation.z = Math.PI / 2 - s * .3; g.add(t);
     for(const x of [.12, .26]){ const b = part(G.cyl, m, .035, .18, .035, s * x, .12, .02); b.rotation.z = s * -.4; g.add(b); }

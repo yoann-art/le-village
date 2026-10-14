@@ -13,7 +13,7 @@
    viendront à l'étape 1.8, le gibier au morceau 4.
    Les arbres sont dessinés « en série » (un modèle répété par sorte d'arbre), pour un téléphone modeste ; un arbre
    qu'on coupe devient un modèle à lui, le temps de trembler et de tomber. */
-import { G, part, mat } from "./formes.js";
+import { G, part, mat, toon } from "./formes.js";
 import { state, save } from "../sauvegarde.js";
 import { RECOLTE } from "../donnees.js";
 import { map, idx, inb, setObj } from "./ile.js";
@@ -141,7 +141,7 @@ export function makeForet(){
   /* le sol : mousse sombre, herbe des clairières, sentier de terre, planches du petit pont */
   const sols = [];
   for(let i = 0; i < W * D; i++) if(foret.type[i] !== "eau") sols.push(i);
-  const sol = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), new THREE.MeshLambertMaterial({color: 0xffffff}), sols.length), col = new THREE.Color();
+  const sol = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), toon({color: 0xffffff}), sols.length), col = new THREE.Color();
   const COUL = {mousse: [0x5A9248, 0x62984E], herbe: [0x7DBA5C, 0x85C062], sentier: [0xA88A5E, 0xB09264], pont: [0xB88A5A, 0xA97A4F]};
   sols.forEach((i, k) => { const x = i % W, z = Math.floor(i / W); m4.makeTranslation(cx(x), -.1, cz(z)); sol.setMatrixAt(k, m4); sol.setColorAt(k, col.setHex(COUL[foret.type[i]][(x + z) % 2])); });
   sol.instanceColor.needsUpdate = true; sol.receiveShadow = true; group.add(sol);
@@ -181,7 +181,7 @@ export function makeForet(){
   gc.add(part(G.leaf, 0x2A5E30, 5.5, 4.2, 5.5, 0, 5.2, 0));
   gc.add(part(G.leaf, 0x33703A, 4.2, 3.4, 4.2, 1.2, 6.4, -.6));
   gc.add(part(G.leaf2, 0x3A7A3A, 4, 3.2, 4, -1.3, 6.2, .8));
-  const or = new THREE.MeshLambertMaterial({color: 0xF2C14E, emissive: 0x8A6A10, emissiveIntensity: .6});
+  const or = toon({color: 0xF2C14E, emissive: 0x8A6A10, emissiveIntensity: .6});
   for(const [x, y, z] of [[1.6, 4.6, 1.2], [-1.8, 5.2, -.4], [.3, 7.2, .9], [-.6, 4.2, 1.8]]) gc.add(part(G.head, or, .5, .6, .5, x, y, z));
   gc.position.set(x0, 0, z0); group.add(gc);
   /* la source : des galets tout autour */
@@ -194,7 +194,7 @@ export function makeForet(){
     const x0 = ENTREE_GROTTE.x, z0 = ENTREE_GROTTE.z;
     group.add(part(G.cyl, 0x4A3A2A, 2.6, 2.4, 1.6, x0, 1.2, z0 - 1.1));                       // le tronc, large et bas
     group.add(part(G.box, 0x050404, 1.7, 1.15, .3, x0, .55, z0 - .2));                         // l'ouverture
-    const arche = new THREE.Mesh(new THREE.TorusGeometry(.95, .17, 6, 14, Math.PI), new THREE.MeshLambertMaterial({color: 0x5A4030}));
+    const arche = new THREE.Mesh(new THREE.TorusGeometry(.95, .17, 6, 14, Math.PI), toon({color: 0x5A4030}));
     arche.position.set(x0, .25, z0 - .05); group.add(arche);                                    // les racines en arche
     for(const s of [-1, 1]){
       const rac = part(G.cyl, 0x5A4030, .3, 1.4, .3, x0 + s * 1.55, .35, z0 + .1); rac.rotation.z = s * 1.1; group.add(rac);
@@ -202,7 +202,7 @@ export function makeForet(){
     }
     group.add(part(G.leaf, 0x2E5E34, 4.6, 3.2, 4.2, x0, 3.9, z0 - 1.4));                       // le feuillage, sombre
     group.add(part(G.leaf2, 0x386A3A, 3.4, 2.6, 3.2, x0 + .9, 4.8, z0 - 1.8));
-    const luit = new THREE.MeshLambertMaterial({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
+    const luit = toon({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
     for(const [dx, dz] of [[-1.1, .25], [1.25, .3], [-.75, .45]]){                              // des champignons qui luisent au seuil
       group.add(part(G.cyl, 0xE8E0D0, .05, .14, .05, x0 + dx, .07, z0 + dz));
       group.add(part(G.hair, luit, .55, .5, .55, x0 + dx, .13, z0 + dz));

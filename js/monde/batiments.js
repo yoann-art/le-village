@@ -3,7 +3,7 @@
    Mesures de la bible : un étage fait 2 P, une porte 1,5 P.
    Chaque bâtiment tient dans son carré de cases (3 × 3 ou 4 × 4 P) ;
    sa façade avec la porte est tournée vers le bas de l'écran. */
-import { P, G, part, roof } from "./formes.js";
+import { P, G, part, roof, toon } from "./formes.js";
 import { scene } from "./scene.js";
 import { H, idx } from "./ile.js";
 import { B, ENTREE_MINE } from "../donnees.js";
@@ -17,9 +17,9 @@ const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8
   miel:0xD9A55B, brut:0xA88B62, tuile:0xD9753F, ardoise:0x5E6E86, claire:0xD8D2C4, cuivre:0xC87533, cuir:0x8A5232, fer:0x4A4A50, lame:0xC8CCD2, fumee:0xE4E2DE, toile:0xF2E8D2,
   terre:0xB5653A, eau:0x6FB8D8, vert:0x6A9A4A};
 const FLEURS = [0xE85A5A, 0xF2C14E, 0xF4F0E8, 0x9A7BD8];
-const emberMat = new THREE.MeshLambertMaterial({color:0xFF7A2E, emissive:0xFF5A00, emissiveIntensity:.7});
+const emberMat = toon({color:0xFF7A2E, emissive:0xFF5A00, emissiveIntensity:.7});
 /* Les lanternes des bâtiments et de la mine : une seule matière, qui brille plus fort la nuit (ciel.js) */
-const LANTERNE = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
+const LANTERNE = toon({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
 lanterne(null, 0, 0, LANTERNE);
 
 /* La façade est à 0,2 P du bord du carré de cases ; la place de la porte

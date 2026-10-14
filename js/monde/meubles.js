@@ -2,21 +2,21 @@
    Les modèles 3D des meubles, en formes simples (phase 1), et leur place au sol.
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
   red:0xA9322A, cream:0xE8C48A, stone:0xAEB0B3, stone2:0x8E9195, soot:0x2A2522, clay:0xC8643C, leaf:0x57B25C, yellow:0xF2C14E};
 /* Ce qui brille : les flammes et la lumière des lanternes (les flammes vacillent : lumieres.js) */
-export const fireMat = new THREE.MeshLambertMaterial({color:0xFF8A3D, emissive:0xFF5A00, emissiveIntensity:.9});
-const glowMat = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
+export const fireMat = toon({color:0xFF8A3D, emissive:0xFF5A00, emissiveIntensity:.9});
+const glowMat = toon({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
 /* Le verre des lanternes qui s'allument seules à la nuit tombée (lumieres.js règle leur éclat), et les lucioles du bocal */
-export const nuitMat = new THREE.MeshLambertMaterial({color:0xFFEFC8, emissive:0xFFC060, emissiveIntensity:.1});
-export const lucioleMat = new THREE.MeshLambertMaterial({color:0xE8FF9A, emissive:0xC8F060, emissiveIntensity:.9});
+export const nuitMat = toon({color:0xFFEFC8, emissive:0xFFC060, emissiveIntensity:.1});
+export const lucioleMat = toon({color:0xE8FF9A, emissive:0xC8F060, emissiveIntensity:.9});
 const CUIVRE = 0xC8743C;
 /* Le verre de la vitrine : on voit au travers */
-const verreMat = new THREE.MeshLambertMaterial({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
+const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,

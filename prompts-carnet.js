@@ -1,6 +1,6 @@
 /* Les prompts du Grand Carnet (ChatGPT, ou Gemini) (doc Claude « Le Grand Carnet de Hearthwild »), pour la page prompts.html :
    un onglet par famille. Chaque prompt = la phrase de style de la bible (objet, ou créature : vue de face), puis
-   une ligne propre à l'objet. Fichier fait par Claude à la demande de Yo, le 7 octobre 2026. */
+   une ligne propre à l'objet. Fichier fait par Claude à la demande de Yo, le 7 octobre 2026. Onglet « Décor de l'île » ajouté le 14 octobre 2026 (étape 2.1). */
 window.PROMPTS_CARNET = [
 {
 "key": "arbres",
@@ -343,6 +343,115 @@ window.PROMPTS_CARNET = [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul arbre, entier, fond blanc, vu de trois quarts.",
 "Enregistre-la sous le nom de l'objet (par exemple chene.png) et coche la case."
+]
+},
+{
+"key": "decorIle",
+"label": "Décor de l'île",
+"style": "objet",
+"lead": "Le décor autour de la Scierie (étape 2.1, la tranche parfaite) : ce qu'on voit partout sur l'île et qui n'avait pas encore son prompt. Le chêne est dans l'onglet Arbres : une seule image suffit, les couleurs des quatre saisons sont faites dans le jeu.",
+"steps": [
+"Touche <b>Copier</b>, puis colle dans ChatGPT.",
+"Vérifie l'image : un seul objet (ou un petit coin de décor), entier, fond blanc, vu de trois quarts.",
+"Enregistre-la sous le nom de l'objet (par exemple souche.png ou galets-plage.png) et coche la case."
+],
+"families": [
+{
+"name": "Après la coupe, et ce qui pousse",
+"note": "La souche reste après la coupe d'un arbre (la pelle l'enlève) ; le jeune chêne, c'est un gland planté qui grandit.",
+"items": [
+{
+"id": "ile-souche",
+"name": "Souche de chêne",
+"size": "commun",
+"line": "Une souche de chêne coupée net, environ 0,6 P de large et 0,4 P de haut, écorce épaisse brun miel, cernes clairs sur le dessus, un peu de mousse verte au pied."
+},
+{
+"id": "ile-jeune-chene",
+"name": "Jeune chêne",
+"size": "commun",
+"line": "Un jeune chêne d'environ 1 P de haut, tronc fin brun miel, petit feuillage vert tendre en trois boules rondes."
+}
+]
+},
+{
+"name": "Au sol, sur l'herbe",
+"note": "Ce qu'on ramasse, cueille ou mine sur l'île. Rond et doux, style jouet.",
+"items": [
+{
+"id": "ile-rocher",
+"name": "Rocher de l'île",
+"size": "commun",
+"line": "Un rocher gris arrondi posé dans l'herbe, environ 1 P de large, quelques facettes douces, un peu de mousse verte sur le dessus."
+},
+{
+"id": "ile-herbes",
+"name": "Herbes hautes",
+"size": "commun",
+"line": "Une touffe d'herbes hautes vert tendre, environ 0,6 P de haut, brins souples et arrondis qui retombent un peu vers l'extérieur."
+},
+{
+"id": "ile-buisson",
+"name": "Buisson de baies",
+"size": "commun",
+"line": "Un buisson de baies tout rond, environ 1 P de haut, feuillage vert en petites boules serrées, baies bleu nuit bien rondes."
+},
+{
+"id": "ile-buisson-vide",
+"name": "Buisson de baies, cueilli",
+"size": "commun",
+"line": "Un buisson tout rond, environ 1 P de haut, feuillage vert en petites boules serrées, sans aucune baie."
+},
+{
+"id": "ile-thym",
+"name": "Touffe de thym",
+"size": "commun",
+"line": "Une touffe basse de thym, environ 0,3 P de haut, petites feuilles vert-gris serrées et minuscules fleurs mauves."
+},
+{
+"id": "ile-branche",
+"name": "Branche de chêne au sol",
+"size": "commun",
+"line": "Une branche de chêne tombée au sol, environ 0,6 P de long, écorce brun miel, deux petites feuilles vertes au bout."
+},
+{
+"id": "ile-caillou",
+"name": "Petit caillou",
+"size": "commun",
+"line": "Un petit caillou gris arrondi, environ 0,2 P, posé dans un peu d'herbe."
+}
+]
+},
+{
+"name": "Le bord de l'eau",
+"note": "Pour l'eau et le rivage (étape 2.1, morceau 4) : de petits coins de décor, comme des dioramas.",
+"items": [
+{
+"id": "ile-galets-plage",
+"name": "Galets de plage",
+"size": "commun",
+"line": "Un petit groupe de trois galets lisses et arrondis, gris clair et beige, environ 0,4 P en tout, posés sur un peu de sable doré."
+},
+{
+"id": "ile-galets-etang",
+"name": "Galets de l'étang",
+"size": "commun",
+"line": "Un petit groupe de galets arrondis gris-vert, luisants d'eau, avec trois brins de jonc, environ 0,5 P en tout."
+},
+{
+"id": "ile-rivage",
+"name": "Le rivage de la mer",
+"size": "commun",
+"line": "Un petit coin de rivage en diorama : sable doré qui descend doucement, eau turquoise claire avec une frange d'écume blanche arrondie, deux galets."
+},
+{
+"id": "ile-bord-etang",
+"name": "Le bord de l'étang",
+"size": "commun",
+"line": "Un petit coin de bord d'étang en diorama : herbe vert tendre, eau douce bleu-vert calme et claire, trois roseaux, une feuille de nénuphar."
+}
+]
+}
 ]
 },
 {

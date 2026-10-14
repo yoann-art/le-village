@@ -9,7 +9,7 @@
    par les fenêtres ; la nuit, il fait plus sombre (penombre, à chaque image) ; les lumières posées éclairent autour
    d'elles (lumieresDedans : seules les plus proches, réglées par lumieres.js). Les murs sont découpés en petits carreaux,
    pour que la lumière d'une torche s'y voie. */
-import { P, G, part } from "./formes.js";
+import { P, G, part, toon } from "./formes.js";
 import { roomSide } from "../regles.js";
 import { makeMeuble } from "./meubles.js";
 import { COULEURS } from "../donnees.js";
@@ -49,13 +49,13 @@ const MUR = 2 * P, EP = .2, D_FORET = 36;                    // hauteur et épai
 /* Les murs, découpés en petits carreaux (la lumière d'un téléphone se calcule aux coins) : le fond, les côtés */
 const MUR_X = new THREE.BoxGeometry(1, 1, 1, 24, 6, 1), MUR_Z = new THREE.BoxGeometry(1, 1, 1, 1, 6, 24);
 /* Les fenêtres : claires le jour, bleu nuit la nuit */
-const FENETRE = new THREE.MeshLambertMaterial({color: 0xCFE4F4, emissive: 0xBFDDF8, emissiveIntensity: .8});
+const FENETRE = toon({color: 0xCFE4F4, emissive: 0xBFDDF8, emissiveIntensity: .8});
 /* Les lumières des meubles (lumieres.js) : quatre, données aux plus proches du personnage */
 export const lumieresDedans = Array.from({length: 4}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 const SILL = 0x654028, MAT = 0xA9322A, GOLD = 0xE2B24D;
 
 /* Sol : un carreau par case (jusqu'à 12 × 12 P) */
-const floor = new THREE.InstancedMesh(new THREE.BoxGeometry(P, .2, P), new THREE.MeshLambertMaterial({color:0xffffff}), 144);
+const floor = new THREE.InstancedMesh(new THREE.BoxGeometry(P, .2, P), toon({color:0xffffff}), 144);
 floor.receiveShadow = true;
 /* Ses couleurs existent dès le départ : sinon, entré d'abord dans la mine ou la forêt (sol vide), les pièces
    avaient ensuite un sol sans couleur, noir sur le téléphone, même en la changeant (bug de Yo, v1.8.2) */

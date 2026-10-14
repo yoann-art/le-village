@@ -8,6 +8,7 @@
    (nuitForet, dans interieurs.js) ; rien ne change dans les maisons, la mine ni la grotte. */
 import { scene, sun, hemi } from "./scene.js";
 import { couvertIci, eclairIci } from "./meteo.js";
+import { toon } from "./formes.js";
 
 /* Les moments clés (heure : 0 à 24) ; ciel = fond et brume ; haut et bas = la lumière qui vient du ciel et du sol ;
    force : la lumière ambiante ; astre : la couleur et la force du soleil (ou de la lune) */
@@ -32,7 +33,7 @@ export function forcerHeure(h){ forcee = h; }
 export const heure = () => { if(forcee !== null) return forcee; const d = new Date(); return d.getHours() + d.getMinutes() / 60; };
 
 /* Les vitres et les lanternes : elles s'allument la nuit */
-export const VITRE = new THREE.MeshLambertMaterial({color: 0x9DB4D8, emissive: 0xFFC46A, emissiveIntensity: 0});
+export const VITRE = toon({color: 0x9DB4D8, emissive: 0xFFC46A, emissiveIntensity: 0});
 const lampes = [];        // {halo (un rond de lumière chaude), mat (la matière qui brille), base (son éclat le jour)}
 /* Le halo d'une lanterne, la nuit : un rond de lumière chaude et doux (une lumière qui éclaire vraiment faisait une tache
    blanche sur l'eau, et coûte cher à un téléphone) */

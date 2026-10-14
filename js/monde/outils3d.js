@@ -2,7 +2,7 @@
    Le modèle de l'outil tenu en main, en formes simples (phase 1), un par famille d'outils,
    et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, enMainDehors } from "../donnees.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
@@ -29,10 +29,10 @@ const BUILD = {
   },
   filet(g, o){
     g.add(part(G.cyl, C.wood, .04, .7, .04, 0, .28, 0));                              // manche
-    const cercle = new THREE.Mesh(new THREE.TorusGeometry(.13 + (o.plusLoin || 0) * .04, .015, 6, 16), new THREE.MeshLambertMaterial({color: o.tete || C.dark}));
+    const cercle = new THREE.Mesh(new THREE.TorusGeometry(.13 + (o.plusLoin || 0) * .04, .015, 6, 16), toon({color: o.tete || C.dark}));
     cercle.position.set(0, .7, 0); cercle.rotation.y = Math.PI/2; g.add(cercle);       // le cercle
     const poche = part(G.cone, 0xF4EFE6, .26, .22, .26, 0, .7, .1);                   // la poche du filet
-    poche.rotation.x = -Math.PI/2; poche.material = new THREE.MeshLambertMaterial({color: 0xF4EFE6, transparent: true, opacity: .7}); g.add(poche);
+    poche.rotation.x = -Math.PI/2; poche.material = toon({color: 0xF4EFE6, transparent: true, opacity: .7}); g.add(poche);
   },
   arrosoir(g, o){
     g.add(part(G.cyl, o.tete || C.wood, .28, .26, .28, 0, .02, .1));                 // le seau (bois, cuivre, bronze), tenu par son anse
@@ -49,7 +49,7 @@ const BUILD = {
   },
   bocal(g, o){                                                                       // un bocal de verre, son couvercle de bois
     const v = part(G.cyl, 0xB8DCEE, .26, .3, .26, 0, .05, .08);
-    v.material = new THREE.MeshLambertMaterial({color: 0xB8DCEE, emissive: 0x4A7A9A, emissiveIntensity: .25, transparent: true, opacity: .8}); g.add(v);
+    v.material = toon({color: 0xB8DCEE, emissive: 0x4A7A9A, emissiveIntensity: .25, transparent: true, opacity: .8}); g.add(v);
     g.add(part(G.cyl, C.dark, .2, .05, .2, 0, .22, .08));
     if(o.tete) for(const y of [-.06, .14]) g.add(part(G.cyl, o.tete, .28, .03, .28, 0, y, .08));   // cerclé de cuivre ou de bronze
   },
@@ -58,7 +58,7 @@ const BUILD = {
     g.add(part(G.cyl, C.dark, .09, .14, .09, 0, .44, 0));
   },
   arc(g){                                                                            // l'arc en if, tenu debout, et sa corde
-    const bois = new THREE.Mesh(new THREE.TorusGeometry(.34, .025, 6, 18, Math.PI * .8), new THREE.MeshLambertMaterial({color: 0xC8743C}));
+    const bois = new THREE.Mesh(new THREE.TorusGeometry(.34, .025, 6, 18, Math.PI * .8), toon({color: 0xC8743C}));
     bois.rotation.z = Math.PI * .6; bois.rotation.y = Math.PI/2; bois.position.set(0, .3, -.2); g.add(bois);
     g.add(part(G.cyl, C.cream, .008, .64, .008, 0, .3, .02));                           // la corde
     g.add(part(G.cyl, C.dark, .05, .1, .05, 0, .3, -.13));                              // la poignée

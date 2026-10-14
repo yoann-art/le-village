@@ -7,7 +7,7 @@
    premiers qui ne sont plus tout à fait réels ») : le cyprès des marais (roux en automne, ses racines qui sortent de
    l'eau), l'aulne (ses petits cônes noirs en hiver), le saule des brumes (feuilles argentées, toujours voilé de brume :
    on y recueille l'eau de brume, au bocal) et l'arbre-lanterne (ses fruits s'allument la nuit : LUEUR_LANTERNE). */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { saison } from "../donnees.js";
 export { saison };
 
@@ -25,10 +25,10 @@ export const fruitsDeSaison = sp => sp === "houx" ? ["automne", "hiver"].include
 export const cueilletteDe = sp => !fruitsDeSaison(sp) ? null : sp === "houx" ? "baiesHoux" : sp === "sureau" ? (saison() === "automne" ? "baiesSureau" : "fleursSureau")
   : sp === "sauleBrumes" ? "eauBrume" : sp === "arbreLanterne" ? "fruitLanterne" : null;
 /* Les fruits de l'arbre-lanterne s'allument la nuit (carnet) : n, 0 le jour, 1 la nuit (main.js, à chaque image) */
-export const LUEUR_LANTERNE = new THREE.MeshLambertMaterial({color: 0xF8E08A, emissive: 0xF0A030, emissiveIntensity: .2});
+export const LUEUR_LANTERNE = toon({color: 0xF8E08A, emissive: 0xF0A030, emissiveIntensity: .2});
 export function lueurLanternes(n){ LUEUR_LANTERNE.emissiveIntensity = .2 + n * 1.1; }
 /* Le voile de brume du saule des brumes : il ne fait pas d'ombre (arbreModele, marais.js) */
-export const VOILE = new THREE.MeshLambertMaterial({color: 0xE8F0EC, transparent: true, opacity: .22, depthWrite: false});
+export const VOILE = toon({color: 0xE8F0EC, transparent: true, opacity: .22, depthWrite: false});
 
 /* Les morceaux de chaque essence : [forme, couleur, échelle, position] ; couleurs selon la saison */
 export function essences(){

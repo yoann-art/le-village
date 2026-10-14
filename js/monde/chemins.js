@@ -8,6 +8,7 @@ import { scene } from "./scene.js";
 import { state } from "../sauvegarde.js";
 import { N, centerOf, map } from "./ile.js";
 import { occ } from "./batiments.js";
+import { toon } from "./formes.js";
 
 /* Les dessins, à la main sur un petit carré (64 × 64) */
 function dessin(f){
@@ -59,7 +60,7 @@ const DESSINS = {
 const GEO = new THREE.PlaneGeometry(1, 1); GEO.rotateX(-Math.PI / 2);
 const series = {};
 for(const [s, f] of Object.entries(DESSINS)){
-  const m = new THREE.InstancedMesh(GEO, new THREE.MeshLambertMaterial({map: dessin(f)}), N * N);
+  const m = new THREE.InstancedMesh(GEO, toon({map: dessin(f)}), N * N);
   m.count = 0; m.receiveShadow = true;
   scene.add(m); series[s] = m;
 }

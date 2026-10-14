@@ -19,7 +19,7 @@
    (gaz : elles bouillonnent et éclatent, monstres.js), des nappes de brume, des lianes qui pendent, des champignons
    bleutés (la Mycène des feux-follets du carnet) ; une brume (interior.fog, réglée selon la caméra par main.js) qui
    cache ce qui est loin. Au dernier palier, le repaire de l'Hydre des brumes, au milieu d'une grande mare. */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { rockMesh } from "./rochers.js";
 
 export const W = 30, D = 32;
@@ -141,7 +141,7 @@ function objetMesh(i, o){
   } else {
     m = rockMesh(o === "rockOr" ? "rock" : o, plan.rnd[i]);
     if(o === "rockOr") [[.28, .32, .16], [-.2, .42, .22], [.04, .5, -.22], [-.28, .2, -.12]].forEach(([x, y, z]) =>
-      m.add(part(G.dode, new THREE.MeshLambertMaterial({color: OR, emissive: 0x6B4A00, emissiveIntensity: .6}), .22, .16, .22, x, y, z)));
+      m.add(part(G.dode, toon({color: OR, emissive: 0x6B4A00, emissiveIntensity: .6}), .22, .16, .22, x, y, z)));
     m.rotation.y = i * 2.4;
   }
   m.position.set(gcx(i), 0, gcz(i));
@@ -163,9 +163,9 @@ export function eclaire(x, z, torche, t){
 /* La torche posée au sol (torche.js, demande de Yo : pour tirer à l'arc, à deux mains) : un bâton planté, sa flamme,
    et sa propre lumière ; x = null l'enlève */
 const lueurSol = new THREE.PointLight(0xFFB060, 0, 7.5, 1.3);
-const FEU = new THREE.MeshLambertMaterial({color: 0xFF8A3D, emissive: 0xFF5A00, emissiveIntensity: .9});
+const FEU = toon({color: 0xFF8A3D, emissive: 0xFF5A00, emissiveIntensity: .9});
 let torcheSol = null, flammeSol = null;
-const VERRE_SOL = new THREE.MeshLambertMaterial({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1});
+const VERRE_SOL = toon({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1});
 export function torcheAuSol(x, z, t = 0, lanterne = false){
   if(x === null){ if(torcheSol && group) group.remove(torcheSol); torcheSol = null; lueurSol.intensity = 0; return; }
   if(torcheSol && torcheSol.userData.lanterne !== !!lanterne){ group.remove(torcheSol); torcheSol = null; }
@@ -196,7 +196,7 @@ export function makeGrotte(palier, zone){
   /* le sol de terre sombre */
   const cases = [];
   for(let i = 0; i < W * D; i++) if(sol[i]) cases.push(i);
-  const fond = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), new THREE.MeshLambertMaterial({color: 0xffffff}), cases.length), col = new THREE.Color();
+  const fond = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), toon({color: 0xffffff}), cases.length), col = new THREE.Color();
   const dansAntre = (x, z) => plan.antre && x >= plan.antre.x0 && x <= plan.antre.x1 && z >= plan.antre.z0 && z <= plan.antre.z1;
   cases.forEach((i, k) => { m4.makeTranslation(gcx(i), -.1, gcz(i)); fond.setMatrixAt(k, m4);
     const pair = (i + Math.floor(i / W)) % 2;
@@ -211,7 +211,7 @@ export function makeGrotte(palier, zone){
     for(let c = -1; c <= 1 && !pres; c++) for(let a = -1; a <= 1; a++) if(estSol(x + a, z + c)){ pres = true; break; }
     if(pres) murs.push([x, z]);
   }
-  const paroi = new THREE.InstancedMesh(G.dode, new THREE.MeshLambertMaterial({color: 0xffffff}), murs.length);
+  const paroi = new THREE.InstancedMesh(G.dode, toon({color: 0xffffff}), murs.length);
   murs.forEach(([x, z], k) => {
     const tunnel = plan.porte && z > D - 4 && (x === W / 2 - 2 || x === W / 2 + 1);   // les parois du tunnel d'entrée restent basses : on voit la sortie
     const r = plan.rnd[z * W + x], devant = estSol(x, z - 1) || tunnel, h = devant ? .5 : 1.8 + r * 1.1;
@@ -232,7 +232,7 @@ export function makeGrotte(palier, zone){
     const boue = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .02, 1), new THREE.MeshPhongMaterial({color: 0x2A2A1C, specular: 0x3A4A2A, shininess: 40}), mares.length);
     mares.forEach((i, k) => { m4.makeTranslation(gcx(i), .012, gcz(i)); boue.setMatrixAt(k, m4); });
     boue.receiveShadow = true; group.add(boue);
-    const voile = new THREE.MeshLambertMaterial({color: 0xB8C8B8, transparent: true, opacity: .14, depthWrite: false});
+    const voile = toon({color: 0xB8C8B8, transparent: true, opacity: .14, depthWrite: false});
     for(let n = 0, essai = 0; n < 16 && essai < 200; essai++){
       const i = Math.floor(plan.rnd[essai] * W * D);
       if(!sol[i]) continue;
@@ -251,8 +251,8 @@ export function makeGrotte(palier, zone){
     }
   }
   /* les champignons lumineux (au Marais : bleutés, la Mycène des feux-follets du carnet) */
-  const luit = marais ? new THREE.MeshLambertMaterial({color: 0x9AD8F8, emissive: 0x3A8AD8, emissiveIntensity: .9})
-    : new THREE.MeshLambertMaterial({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
+  const luit = marais ? toon({color: 0x9AD8F8, emissive: 0x3A8AD8, emissiveIntensity: .9})
+    : toon({color: 0x9AF0B0, emissive: 0x3AC870, emissiveIntensity: .9});
   for(const i of plan.lueurs){
     const r = plan.rnd[i], x = gcx(i) + (r - .5) * .5, z = gcz(i) + (r - .5) * .5;
     group.add(part(G.cyl, 0xE8E0D0, .05, .14, .05, x, .07, z));

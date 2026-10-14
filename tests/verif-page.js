@@ -253,6 +253,14 @@ export async function verifier(){
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
   });
+  await etape("L'ombrage jouet (étape 2.1) : tous les modèles de l'île en aplats, comme la Scierie d'essai", async () => {
+    const sans = [], m = o => [].concat(o.material).filter(Boolean);
+    let aplats = 0;
+    scene.traverse(o => { if(!o.isMesh) return; if(m(o).some(x => x.type === "MeshLambertMaterial")) sans.push(o.name || o.geometry.type); if(m(o).some(x => x.isMeshToonMaterial)) aplats++; });
+    if(sans.length) throw new Error(`${sans.length} modèles sans l'ombrage jouet (${sans.slice(0, 5).join(", ")})`);
+    if(aplats < 50) throw new Error(`seulement ${aplats} modèles en aplats`);
+    return `${aplats} modèles en aplats, aucun avec l'ancien ombrage`;
+  });
   if(scierie) await etape("Un seul bâtiment de chaque sorte : pas de deuxième Scierie", async () => {
     $("#btn-build").click(); await wait(300);
     const bouton = $("#sheet [data-pick='scierie']");

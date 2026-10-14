@@ -13,7 +13,7 @@
    state.mine = {v: 2, jour, rocks: {case: sorte}} ; une case = 1 P, comptée dans le plan ci-dessous.
    Morceau 4 : le Cœur de la mine dort dans le pilier de la géode (une lueur faible) ; il bat quand on a trouvé toutes
    les pierres des trois salles (coeurEveille), et se dégage à la pioche en bronze, une seule fois (recolte.js). */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { state, save } from "../sauvegarde.js";
 import { MINE, GALERIES } from "../donnees.js";
 import { doorTile, sizeOf, coeurEveille } from "../regles.js";
@@ -121,7 +121,7 @@ function poserRoche(){
   roche = new THREE.Group(); group.add(roche);
   const tiles = [];
   for(let z = 0; z < D; z++) for(let x = 0; x < W; x++) if(floorAt(x, z)) tiles.push([x, z]);
-  const floor = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), new THREE.MeshLambertMaterial({color:0xffffff}), tiles.length);
+  const floor = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .2, 1), toon({color:0xffffff}), tiles.length);
   const m4 = new THREE.Matrix4(), col = new THREE.Color();
   const SOLS = {1: [0x7E6550, 0x866B54], 2: [0x6E6A68, 0x76716E], 3: [0x6A6070, 0x726878]};   // la salle de l'étain est grise, la géode violacée
   tiles.forEach(([x, z], k) => { m4.makeTranslation(cx(x), -.1, cz(z)); floor.setMatrixAt(k, m4); floor.setColorAt(k, col.setHex(SOLS[salleDe(x, z)][(x + z) % 2])); });
@@ -172,7 +172,7 @@ export function makeMine(){
     for(const x of [-1.85, 1.85]) h(part(G.box, 0x6B4A2F, .2, 2, .2, x, 1, z));
     if(z < 6) h(part(G.box, 0x6B4A2F, 3.9, .2, .22, 0, 2, z));   // pas de poutre au-dessus de l'entrée : elle cacherait le personnage
   }
-  const glow = new THREE.MeshLambertMaterial({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.9});
+  const glow = toon({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.9});
   const lanterne = (p, x, z) => { p.add(part(G.box, 0x4A3826, .08, .5, .08, x, 1.25, z)); const l = part(G.box, glow, .22, .26, .22, x, .95, z); l.castShadow = false; p.add(l); };
   for(const [x, z] of [[-6.9, -2.5], [6.9, -2.5], [-6.9, 1.5], [6.9, 1.5], [-3.5, -6.2], [3.5, -6.2], [-1.6, 4.6], [1.6, 4.6]]) lanterne(s1, x, z);
   for(const x of [-.35, .35]) h(part(G.box, 0x6F7884, .06, .05, 6.2, x, .03, 4.3));      // les rails, et le wagonnet
@@ -185,7 +185,7 @@ export function makeMine(){
   h(part(G.box, 0x8A5A3B, 2, .03, .6, 0, .015, 7.2));                                   // la sortie : des planches au bout du tunnel
   /* La salle de l'étain et la géode : leurs lanternes ; dans la géode, des cristaux qui luisent sur les parois */
   for(const [x, z] of [[cx(2), cz(19)], [cx(13), cz(24)], [cx(4), cz(26)], [cx(10), cz(17)]]) lanterne(group, x, z);
-  const cristal = new THREE.MeshLambertMaterial({color:0xB48CE8, emissive:0x7A4AC8, emissiveIntensity:.8});
+  const cristal = toon({color:0xB48CE8, emissive:0x7A4AC8, emissiveIntensity:.8});
   for(const [x, z] of [[2, 3], [13, 3], [1, 7], [14, 8], [3, 10], [12, 10], [7, 1]]){             // au pied des parois
     const ax = cx(x) + Math.sign(cx(7.5) - cx(x)) * .55, az = cz(z) + Math.sign(cz(6.5) - cz(z)) * .55, r = (x * 7 + z) % 5 / 10 - .2;
     for(const [dx, s] of [[0, 1], [.22, .7], [-.2, .6]]){ const c = part(G.cone4, cristal, .22 * s, .7 * s, .22 * s, ax + dx, .35 * s, az); c.rotation.z = r + dx; c.castShadow = false; g(c); }
@@ -263,7 +263,7 @@ export function majCoeur(){
   const c = pierreMesh("coeurMine", {endormi: !eveil});
   c.scale.setScalar(2.4); c.position.set(x, .68, z + .15);
   coeur.add(c);
-  const eclat = eveil ? new THREE.MeshLambertMaterial({color: 0xD8384A, emissive: 0xA01A20, emissiveIntensity: .7}) : 0x6A4048;
+  const eclat = eveil ? toon({color: 0xD8384A, emissive: 0xA01A20, emissiveIntensity: .7}) : 0x6A4048;
   for(const [dx, dz, s, r] of [[-.6, -.1, .9, -.45], [.6, -.05, .75, .5], [-.4, .45, .55, -.25], [.42, .5, .5, .3], [0, -.45, .7, 0]]){
     const e = part(G.cone4, eclat, .18 * s, .5 * s, .18 * s, x + dx, .62 + .22 * s, z + dz); e.rotation.z = r; e.castShadow = false; coeur.add(e);
   }

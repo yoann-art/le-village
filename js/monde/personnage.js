@@ -1,6 +1,6 @@
 /* ================= Personnage =================
    Le modèle du personnage, sa marche et les obstacles. */
-import { P, G, part } from "./formes.js";
+import { P, G, part, toon } from "./formes.js";
 import { scene } from "./scene.js";
 import { map, idx, inb, tileOf } from "./ile.js";
 import { occ } from "./batiments.js";
@@ -45,8 +45,8 @@ const torche = new THREE.Group();
 torche.position.set(.27, .4, .1);
 torche.add(part(G.head, 0xF2C9A0, .38, .38, .38, 0, 0, 0));
 torche.add(part(G.cyl, 0x7A4E2A, .05, .42, .05, 0, .16, .04));
-const flamme = part(G.head, new THREE.MeshLambertMaterial({color: 0xFFB347, emissive: 0xFF8A1E, emissiveIntensity: 1}), .5, .8, .5, 0, .42, .04);
-const coeur = part(G.head, new THREE.MeshLambertMaterial({color: 0xFFF2B0, emissive: 0xFFE070, emissiveIntensity: 1}), .25, .45, .25, 0, .4, .04);
+const flamme = part(G.head, toon({color: 0xFFB347, emissive: 0xFF8A1E, emissiveIntensity: 1}), .5, .8, .5, 0, .42, .04);
+const coeur = part(G.head, toon({color: 0xFFF2B0, emissive: 0xFFE070, emissiveIntensity: 1}), .25, .45, .25, 0, .4, .04);
 flamme.castShadow = coeur.castShadow = false;
 torche.add(flamme, coeur);
 torche.visible = false;
@@ -57,7 +57,7 @@ lanterneG.position.set(.27, .4, .1);
 lanterneG.add(part(G.head, 0xF2C9A0, .38, .38, .38, 0, 0, 0));
 lanterneG.add(part(G.cyl, 0xC8743C, .025, .16, .025, 0, -.08, .04));                      // l'anse
 lanterneG.add(part(G.cone4, 0xC8743C, .2, .08, .2, 0, -.16, .04));                         // le chapeau
-const verreL = part(G.box, new THREE.MeshLambertMaterial({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1}), .14, .17, .14, 0, -.28, .04);
+const verreL = part(G.box, toon({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1}), .14, .17, .14, 0, -.28, .04);
 verreL.castShadow = false; lanterneG.add(verreL);
 lanterneG.add(part(G.box, 0xC8743C, .17, .03, .17, 0, -.38, .04));                        // le fond
 lanterneG.visible = false;

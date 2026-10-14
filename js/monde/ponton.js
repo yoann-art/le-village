@@ -6,7 +6,7 @@
    state.ponton = {x, z, n} : sa colonne, sa première case sur l'eau, sa longueur (gardé, pour qu'il ne bouge plus).
    La barque (étape 1.13, morceau 2) s'amarre à droite du bout du ponton, contre la borne (amarre) ; son modèle :
    barqueModele (barque.js la pose, ou la fait suivre le personnage quand il rame). */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { scene } from "./scene.js";
 import { state, save } from "../sauvegarde.js";
 import { map, idx, inb, N, centerOf, tileOf, setObj } from "./ile.js";
@@ -97,7 +97,7 @@ if(P){
   const bout = z0 + P.n - .2;                          // une borne d'amarrage au bout, et une lanterne
   g.add(part(G.cyl, 0x6B4A2F, .16, .5, .16, x0 + .38, .2, bout));
   g.add(part(G.cyl, 0x4A3826, .06, .9, .06, x0 - .38, .45, bout));
-  const glow = new THREE.MeshLambertMaterial({color: 0xFFE3A3, emissive: 0xFFB347, emissiveIntensity: .7});
+  const glow = toon({color: 0xFFE3A3, emissive: 0xFFB347, emissiveIntensity: .7});
   const l = part(G.box, glow, .18, .22, .18, x0 - .38, .95, bout); l.castShadow = false; g.add(l);
   lanternes.push({x: x0 - .38, y: .95, z: bout});
   lanterne(x0 - .38, .95, bout, glow);                 // la nuit, elle éclaire le bout du ponton (ciel.js)
@@ -108,15 +108,15 @@ if(P){
    de proue. En chantier, seulement sa carcasse : la quille et ses couples, en bois clair. Elle regarde vers +z ; posée
    à y = 0,02, son fond (une planche ovale) reste juste au-dessus de la mer (y = −0,2) : l'eau ne la remplit pas. */
 export const amarre = P ? {x: centerOf(P.x) + 1.02, z: centerOf(P.z + P.n - 1) - .15} : null;
-const COQUE = new THREE.MeshLambertMaterial({color: 0xA06A3E, side: THREE.DoubleSide});
+const COQUE = toon({color: 0xA06A3E, side: THREE.DoubleSide});
 const COUPLE = new THREE.TorusGeometry(.5, .05, 6, 12, Math.PI);
-const AILE = new THREE.MeshLambertMaterial({color: 0xDDF2F4, transparent: true, opacity: .8});
+const AILE = toon({color: 0xDDF2F4, transparent: true, opacity: .8});
 export function barqueModele(chantier){
   const g = new THREE.Group();
   if(chantier){
     g.add(part(G.box, 0xC89A68, .1, .08, 1.9, 0, -.34, 0));                           // la quille
     for(const z of [-.7, -.35, 0, .35, .7]){                                             // les couples
-      const e = 1 - Math.abs(z) * .5, c = new THREE.Mesh(COUPLE, new THREE.MeshLambertMaterial({color: 0xC89A68}));
+      const e = 1 - Math.abs(z) * .5, c = new THREE.Mesh(COUPLE, toon({color: 0xC89A68}));
       c.rotation.z = Math.PI; c.scale.set(.82 * e, .8 * e, 1); c.position.set(0, .04, z); c.castShadow = true; g.add(c);
     }
     g.add(part(G.box, 0xC89A68, .06, .06, 1.9, .3, .02, 0));                            // une première planche du bord

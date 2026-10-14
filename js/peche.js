@@ -20,7 +20,7 @@
    est pâle et flotte au ras de l'eau ; le poisson-brume ne vient que par brouillard. */
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
-import { G, part } from "./monde/formes.js";
+import { G, part, toon } from "./monde/formes.js";
 import { POISSONS, HEURES, PECHE, OUTILS, SAC, lieuxDe, saisonDu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, placesSac } from "./regles.js";
@@ -112,13 +112,13 @@ export function poissonMesh(k, cm){
     return g;
   }
   const lx = p.forme === "long" ? 1.6 : 1.25, ly = lx * ({long: .25, fin: .4, rond: .72}[p.forme] || .52), demi = .24 * lx;
-  const m = p.rarete === "legendaire" || p.brille || p.lanterne ? new THREE.MeshLambertMaterial({color: p.couleur, emissive: p.brille ? 0x5A6A7A : p.lanterne ? 0x5A4A10 : 0x6B4A00})
-    : p.brume ? new THREE.MeshLambertMaterial({color: p.couleur, emissive: 0x4A5A5A, transparent: true, opacity: .6}) : p.couleur;   // le poisson-brume, translucide
+  const m = p.rarete === "legendaire" || p.brille || p.lanterne ? toon({color: p.couleur, emissive: p.brille ? 0x5A6A7A : p.lanterne ? 0x5A4A10 : 0x6B4A00})
+    : p.brume ? toon({color: p.couleur, emissive: 0x4A5A5A, transparent: true, opacity: .6}) : p.couleur;   // le poisson-brume, translucide
   g.add(part(G.head, m, lx, ly, .55, 0, 0, 0));                                       // le corps
   const queue = part(G.cone, m, .9 * ly, .26, .14, demi + .1, 0, 0); queue.rotation.z = Math.PI/2; g.add(queue);
   const dos = part(G.cone, m, .3, .14, .06, -.02, .24 * ly * .9, 0); g.add(dos);      // la nageoire du dos
   for(const z of [-.12, .12]) g.add(part(G.eye, 0x1C2230, 1.3, 1.3, 1.3, -demi * .62, .24 * ly * .25, z));
-  if(p.lanterne){ const lum = new THREE.MeshLambertMaterial({color: 0xF8D860, emissive: 0xF0B020, emissiveIntensity: 1});   // ses taches lumineuses
+  if(p.lanterne){ const lum = toon({color: 0xF8D860, emissive: 0xF0B020, emissiveIntensity: 1});   // ses taches lumineuses
     for(const x of [-.25, 0, .25]) for(const z of [-.14, .14]) g.add(part(G.head, lum, .2, .16, .12, x * lx, .02, z)); }
   g.scale.setScalar(.65 + Math.min(1.4, cm / 100) * .55);
   return g;

@@ -16,7 +16,7 @@
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { foret, foretObj, arbreEn, fcx, fcz, W as WF } from "./monde/foret.js";
-import { G, part } from "./monde/formes.js";
+import { G, part, toon } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, porte } from "./regles.js";
@@ -50,7 +50,7 @@ const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} 
   return maj ? s[0].toUpperCase() + s.slice(1) : s; };
 
 /* ----- Les modèles, en formes simples, à la taille d'un jouet ----- */
-const mat = (c, o) => new THREE.MeshLambertMaterial(Object.assign({color: c}, o || {}));
+const mat = (c, o) => toon(Object.assign({color: c}, o || {}));
 function modele(k){
   const p = INSECTES[k], g = new THREE.Group(), c = p.couleur, d = p.c2 !== undefined ? p.c2 : 0x2A2A2A, ailes = [];
   /* une aile, sur un pivot qui la fait battre ; tache : une tache de couleur au milieu (les papillons) */

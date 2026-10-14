@@ -4,13 +4,13 @@
    Étape 1.11, morceau 2 : les roches des salles de la mine (charbon, étain, granit, quartz, améthyste, argent, marbre,
    grenat, géode), chacune reconnaissable de loin : sa couleur, ses éclats ou ses cristaux.
    Morceau 4 : une pierre seule, petite, posée dans une vitrine (pierreMesh), et le Cœur de la mine, qui bat. */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 
 const CUIVRE = 0xD9822B;
 const ECLATS = [[.3,.3,.18],[-.22,.4,.25],[.05,.52,-.2],[-.3,.22,-.15],[.18,.18,.34]];
 const POINTES = [[0, .55, 0, 0, 1], [.24, .42, .12, .5, .75], [-.2, .44, -.1, -.45, .7], [.06, .4, -.26, .2, .6]];
 const glow = {};
-const brille = (c, e, f = .55) => glow[c] || (glow[c] = new THREE.MeshLambertMaterial({color: c, emissive: e, emissiveIntensity: f}));
+const brille = (c, e, f = .55) => glow[c] || (glow[c] = toon({color: c, emissive: e, emissiveIntensity: f}));
 /* sorte → {base (la roche), eclats (des éclats de cette couleur), pointes (des cristaux), bloc (taillé), boule} */
 const SORTES = {
   rockCuivre:   {eclats: CUIVRE},
@@ -51,7 +51,7 @@ const SEULE = {charbon: ["morceaux", 0x2E2E33], cuivre: ["pepite", CUIVRE], etai
   oeilTigre: ["cabochon", 0xB8782A], geode: ["geode", 0x8A7A6A], coeurMine: ["coeur"]};
 /* Le Cœur de la mine bat : deux battements rapprochés, puis un repos (endormi : une lueur faible, immobile) */
 function coeurMesh(g, endormi){
-  const m = new THREE.MeshLambertMaterial({color: endormi ? 0x8A4A4A : 0xE8403A, emissive: 0xFF4A1A, emissiveIntensity: endormi ? .1 : .6});
+  const m = toon({color: endormi ? 0x8A4A4A : 0xE8403A, emissive: 0xFF4A1A, emissiveIntensity: endormi ? .1 : .6});
   const l = part(G.head, m, .45, .45, .45, -.075, .2, 0), d = part(G.head, m, .45, .45, .45, .075, .2, 0);
   const pointe = part(G.cone, m, .32, .22, .2, 0, .1, 0); pointe.rotation.z = Math.PI;
   const h = new THREE.Group(); h.add(l, d, pointe);

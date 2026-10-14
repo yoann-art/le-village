@@ -6,8 +6,18 @@
    Une case du sol mesure 1 P de côté. */
 export const P = 1;
 
+/* L'ombrage « jouet » de la bible, le même pour tous les modèles (étape 2.1, morceau 1 ; comme la Scierie d'essai,
+   essais/scierie-essai.html) : la lumière directe en trois aplats (MeshToonMaterial et un dégradé de trois marches)
+   au lieu d'un dégradé continu. Toute matière du décor passe par toon() ; seules l'eau, la vase et les peaux
+   luisantes gardent leur reflet (Phong) */
+export const DEGRADE = (() => {
+  const t = new THREE.DataTexture(new Uint8Array([105, 172, 255]), 3, 1, THREE.LuminanceFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+  return t;
+})();
+export const toon = (o = {}) => new THREE.MeshToonMaterial({gradientMap: DEGRADE, ...o});
 const MAT = {};
-export const mat = hex => MAT[hex] || (MAT[hex] = new THREE.MeshLambertMaterial({color:hex}));
+export const mat = hex => MAT[hex] || (MAT[hex] = toon({color: hex}));
 export const G = {
   box: new THREE.BoxGeometry(1,1,1),
   cyl: new THREE.CylinderGeometry(.5,.5,1,10),

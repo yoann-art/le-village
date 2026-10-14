@@ -15,7 +15,7 @@
    - Leur lumière suit celle du lieu (le ciel et le soleil dehors, la pénombre dedans) ; la torche et la lanterne les
      éclairent d'une lueur chaude.
    - À la pêche, le fil part du bout de la canne qu'on voit à l'écran (boutFPS, pour peche.js). */
-import { G, part } from "./formes.js";
+import { G, part, toon } from "./formes.js";
 import { makeOutil } from "./outils3d.js";
 import { OUTILS } from "../donnees.js";
 import { renderer, camera, hemi as hemiIle, sun } from "./scene.js";
@@ -47,9 +47,9 @@ function bras(cote){
 const D = bras(1), Gc = bras(-1);
 
 /* La torche et la lanterne de la main gauche (comme vues de dessus : personnage.js) */
-const FLAMME = new THREE.MeshLambertMaterial({color: 0xFFB347, emissive: 0xFF8A1E, emissiveIntensity: 1});
-const COEUR = new THREE.MeshLambertMaterial({color: 0xFFF2B0, emissive: 0xFFE070, emissiveIntensity: 1});
-const VERRE = new THREE.MeshLambertMaterial({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1});
+const FLAMME = toon({color: 0xFFB347, emissive: 0xFF8A1E, emissiveIntensity: 1});
+const COEUR = toon({color: 0xFFF2B0, emissive: 0xFFE070, emissiveIntensity: 1});
+const VERRE = toon({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1});
 function torcheModele(){
   const g = new THREE.Group();
   g.add(part(G.cyl, 0x7A4E2A, .06, .5, .06, 0, .2, .04));
