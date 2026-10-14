@@ -821,7 +821,7 @@ export async function verifier(){
     const face = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(1, .016); return $("#btn-act").dataset.action; };
     state.sac = state.sac.filter(it => !OUTILS[it.k] || OUTILS[it.k].famille !== "hache");
     state.barre = state.barre.map(it => it && OUTILS[it.k] && OUTILS[it.k].famille === "hache" ? null : it);
-    place(2); sacAdd("hachePierre", 1); enMain("hachePierre");
+    place(4); sacAdd("hachePierre", 1); enMain("hachePierre");   // de la place pour le bois de frêne et sa graine (croix rouge de la v2.1.5 : sac plein)
     setObj(i, "frene");
     if(!face().includes("hache en cuivre")) throw new Error(`avec une hache en pierre, devant le frêne, le bouton dit « ${face()} »`);
     sacAdd("hacheCuivre", 1);
@@ -832,7 +832,7 @@ export async function verifier(){
     if(!face().includes("Couper le frêne")) throw new Error(`avec une hache en cuivre, le bouton dit « ${face()} »`);
     const avant = owned("boisFrene");
     for(let k = 0; k < RECOLTE.frene.coups; k++){ face(); $("#btn-act").click(); frames(25); }
-    if(map.obj[i] !== "souche") throw new Error(`à la place du frêne : ${map.obj[i]} au lieu de sa souche`);   // sa souche reste (étape 2.1)
+    if(map.obj[i] !== "souche") throw new Error(`à la place du frêne : ${map.obj[i]} au lieu de sa souche (sac : ${state.sac.length} emplacements pris ; dernier message : « ${($("#toast") || {}).textContent || ""} »)`);   // sa souche reste (étape 2.1)
     if(owned("boisFrene") <= avant) throw new Error("pas de bois de frêne");
     setObj(i, "chene");
     if(!face().includes("hache en bronze")) throw new Error(`avec une hache en cuivre, devant le chêne séculaire, le bouton dit « ${face()} »`);
