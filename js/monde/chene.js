@@ -27,7 +27,7 @@ export function aleaDe(graine){                                   // un tirage f
 export function brancheCourbe(M, A, B, rA, rB, c){
   const P = A.clone().lerp(B, .5).add(V(0, .12 + A.distanceTo(B) * .08, 0)), rP = (rA + rB) / 2;
   M.push({...segment(A, P, rA, rP), c}, {...segment(P, B, rP, rB), c});
-  M.push({geo: GLAND, m: new THREE.Matrix4().compose(P, new THREE.Quaternion(), V(rP, rP, rP)), c});
+  M.push({geo: BOSSE, m: new THREE.Matrix4().compose(P, new THREE.Quaternion(), V(rP, rP, rP)), c});
 }
 export function segment(A, B, rA, rB, cotes = 7){
   const d = B.clone().sub(A), L = d.length();
@@ -35,15 +35,22 @@ export function segment(A, B, rA, rB, cotes = 7){
   const m = new THREE.Matrix4().compose(A.clone().add(B).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(HAUT, d.normalize()), V(1, 1, 1));
   return {geo, m};
 }
-/* Le tronc : un cylindre qui s'évase au pied, creusé de sillons qui tournent un peu */
-export function tronc(rHaut, rBas, h, sillons = 7, creux = .07){
-  const g = new THREE.CylinderGeometry(rHaut, rBas, h, 14, 8);
+/* Le tronc : un cylindre qui s'évase au pied, creusé de sillons qui tournent un peu ; ecailles (le nombre de colonnes) :
+   une écorce en plaques qui se chevauchent, comme celle du pin sylvestre (image de Yo), le bord de chaque plaque plus sombre */
+export function tronc(rHaut, rBas, h, sillons = 7, creux = .07, ecailles = 0, evase = .55){
+  const g = new THREE.CylinderGeometry(rHaut, rBas, h, ecailles ? 24 : 14, ecailles ? Math.max(8, Math.round(h * 5)) : 8);
   const p = g.attributes.position, teinte = new Float32Array(p.count);
   for(let i = 0; i < p.count; i++){
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i), t = (y + h / 2) / h, a = Math.atan2(z, x);
-    const sil = Math.sin(a * sillons + t * 2.4), k = (1 + creux * sil) * (1 + .55 * Math.pow(1 - t, 3));
+    const sil = Math.sin(a * sillons + t * 2.4);
+    let k = (1 + creux * sil) * (1 + evase * Math.pow(1 - t, 3)), plaque = 1;
+    if(ecailles){
+      const u = (a / (Math.PI * 2) + .5) * ecailles, v = t * h * 3.2 + (Math.floor(u) % 2) * .5, fu = u - Math.floor(u), fv = v - Math.floor(v);
+      const bord = Math.min(1, Math.min(fu, 1 - fu) * 5) * Math.min(1, fv * 5);   // 0 au bord d'une plaque, 1 au milieu
+      plaque = .7 + .3 * bord; k *= 1 + .035 * bord;
+    }
     p.setXYZ(i, x * k, y + h / 2, z * k);
-    teinte[i] = (.78 + .22 * (sil + 1) / 2) * (.84 + .16 * Math.min(1, t * 3));   // les sillons plus sombres, le pied aussi
+    teinte[i] = (.78 + .22 * (sil + 1) / 2) * (.84 + .16 * Math.min(1, t * 3)) * plaque;   // les sillons plus sombres, le pied aussi
   }
   g.setAttribute("teinte", new THREE.BufferAttribute(teinte, 1));
   g.computeVertexNormals();
@@ -71,6 +78,10 @@ export function feuilleGeo(largeur, rangs = 8, pli = .38){
 const FEUILLE = feuilleGeo(t => Math.pow(Math.sin(Math.PI * Math.pow(t, .85)), .7) * .42 * (.74 + .26 * Math.cos(t * Math.PI * 7)), 7);
 export const BOULE = new THREE.IcosahedronGeometry(1, 1);
 export const GLAND = new THREE.SphereGeometry(1, 8, 6);
+/* Pour le téléphone (étape 2.1) : des formes plus simples là où on ne les voit presque pas (les boules qui ne font que de
+   l'ombre ; les bosses du bois) */
+export const BOULE_BAS = new THREE.IcosahedronGeometry(1, 0);
+export const BOSSE = new THREE.SphereGeometry(1, 6, 4);
 const CUPULE = new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2);
 export const NEIGE_GEO = new THREE.SphereGeometry(1, 8, 5);
 
@@ -130,22 +141,22 @@ function boisDe(f, hiver, alea){
    images de Yo : des boules pleines) ; la lumière l'éclaire comme une boule (normales qui partent du centre, un peu mêlées
    à celles de chaque feuille) ; l'ombre douce est peinte : le creux de la boule et son dessous plus sombres, le bout des
    feuilles et le dessus plus clairs, les boules du bas un peu à l'ombre de celles du haut */
-export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE){
+export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE, taille = .6, exposant = 1.6){
   const M = [], ys = f.boules.map(b => b[1]), yBas = Math.min(...ys), yHaut = Math.max(...ys);
-  for(const [x, y, z, r] of f.boules){
+  for(const [x, y, z, r, fy = 1] of f.boules){                // fy : une boule aplatie (les plateaux du pin sylvestre)
     const C = V(x, y, z), haut = yHaut > yBas ? (y - yBas) / (yHaut - yBas) : 1;
-    const radiale = (px, py, pz, n0) => { const v = V(px - x, py - y, pz - z).normalize(); return n0 ? v.multiplyScalar(.7).add(n0.clone().multiplyScalar(.3)).normalize() : v; };
+    const radiale = (px, py, pz, n0) => { const v = V(px - x, (py - y) / fy, pz - z).normalize(); return n0 ? v.multiplyScalar(.7).add(n0.clone().multiplyScalar(.3)).normalize() : v; };
     const ombre = (px, py, pz) => {
-      const d = Math.hypot(px - x, (py - y) * 1.15, pz - z) / r, dessus = (py - y) / r;
+      const d = Math.hypot(px - x, (py - y) * 1.15 / fy, pz - z) / r, dessus = (py - y) / (r * fy);
       return Math.min(1.2, Math.max(.42, .52 + .42 * Math.min(1, Math.max(0, (d - .5) / .55)) + .3 * dessus)) * (.86 + .14 * haut);
     };
-    M.push({geo: BOULE, m: new THREE.Matrix4().compose(C, new THREE.Quaternion(), V(r * .84, r * .74, r * .84)), c: new THREE.Color(tons[0]).multiplyScalar(.84).getHex(), normale: radiale, ombre});
-    const n = Math.max(8, Math.round(nbFeuilles * (r / .6) ** 1.6));
+    M.push({geo: BOULE, m: new THREE.Matrix4().compose(C, new THREE.Quaternion(), V(r * .84, r * .74 * fy, r * .84)), c: new THREE.Color(tons[0]).multiplyScalar(.84).getHex(), normale: radiale, ombre});
+    const n = Math.max(8, Math.round(nbFeuilles * (r / .6) ** exposant));   // exposant : les petites boules gardent assez de feuilles (pin)
     for(let k = 0; k < n; k++){
       /* des points répartis sur la boule (spirale de Fibonacci), surtout sur le dessus et les côtés */
       const t = (k + .5) / n, yy = 1 - t * 1.88, rr = Math.sqrt(Math.max(0, 1 - yy * yy)), a = k * 2.39996 + alea() * .4;
       const nrm = V(Math.cos(a) * rr, yy, Math.sin(a) * rr).normalize();
-      const P = C.clone().add(V(nrm.x * r * .92, nrm.y * r * .82, nrm.z * r * .92));
+      const P = C.clone().add(V(nrm.x * r * .92, nrm.y * r * .82 * fy, nrm.z * r * .92));
       /* la feuille pointe vers le bas, couchée sur la boule comme une écaille */
       let tip = V(0, -1, 0).sub(nrm.clone().multiplyScalar(-nrm.y));
       if(tip.lengthSq() < .05) tip = V(Math.cos(a + 1.3), 0, Math.sin(a + 1.3));
@@ -154,7 +165,7 @@ export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE){
       /* la pointe se soulève un peu de la boule, comme une écaille */
       /* en bas de la boule, elles se soulèvent plus et retombent en jupe (comme sur les images) */
       const lev = .08 + alea() * .12 + .34 * Math.max(0, .25 - yy), Y = tip.clone().multiplyScalar(Math.cos(lev)).add(nrm.clone().multiplyScalar(Math.sin(lev))), Z = new THREE.Vector3().crossVectors(X, Y);
-      const s = r * (.6 + alea() * .2);
+      const s = r * (taille + alea() * taille / 3);
       const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(s * .82), Y.multiplyScalar(s), Z.multiplyScalar(s)).setPosition(P);
       const t3 = alea();                                    // surtout le ton principal et le clair, un peu de sombre, rarement l'autre
       M.push({geo: feuille, m, c: tons[t3 < .45 ? 0 : t3 < .75 ? 2 : t3 < .92 ? 1 : 3], normale: radiale, ombre});
@@ -215,12 +226,12 @@ export const MAT_PLAT = toon({vertexColors: true, side: THREE.DoubleSide});
    des feuilles ; ces boules ne se dessinent pas, elles ne font que de l'ombre (et assombrissent le dessous des boules) */
 export const MAT_OMBRE = new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false});
 export function ombreDe(f){
-  return fusionner(f.boules.map(([x, y, z, r]) => ({geo: BOULE, m: new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion(), V(r * .8, r * .66, r * .8)), c: 0})));
+  return fusionner(f.boules.map(([x, y, z, r, fy = 1]) => ({geo: BOULE_BAS, m: new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion(), V(r * .8, r * .66 * fy, r * .8)), c: 0})));
 }
 /* Le feuillage de près, et de loin (au-delà de LOIN P de la caméra : à la première personne, les arbres du fond), avec trois
    fois moins de feuilles : le téléphone dessine beaucoup moins, l'oeil ne voit pas la différence dans la brume */
 /* La distance se compte depuis le personnage (vu de dessus, la caméra est loin au-dessus de lui : recul, main.js) */
-const LOIN = 30, pCam = new THREE.Vector3(), pArbre = new THREE.Vector3();
+const LOIN = 24, pCam = new THREE.Vector3(), pArbre = new THREE.Vector3();
 let recul = 0;
 export const reglerRecul = d => { recul = d; };
 function choisirDetail(camera){
@@ -247,7 +258,7 @@ function geos(stade, saison, variante, neige){
   const f = stade === 2 ? FORME.adulte : FORME.jeune, hiver = saison === "hiver", alea = aleaDe(17 + variante * 101 + stade * 7);
   const r = {
     bois: boisDe(f, hiver, alea),
-    feuillage: hiver ? null : feuillageDe(f, tonsFeuilles(saison, variante), alea, stade === 2 ? 64 : 44),
+    feuillage: hiver ? null : feuillageDe(f, tonsFeuilles(saison, variante), alea, stade === 2 ? 60 : 42),
     leger: hiver ? null : feuillageDe(f, tonsFeuilles(saison, variante), alea, stade === 2 ? 20 : 14),
     ombre: hiver ? null : ombreDe(f),
     seches: hiver ? sechesDe(f, alea) : null,

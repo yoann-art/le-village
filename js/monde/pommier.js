@@ -9,7 +9,7 @@
    Les pommes se cueillent en automne (recolte.js) : cueillies, elles ne se voient plus jusqu'à leur retour (pommes = false).
    Mêmes petits outils que le chêne (chene.js) : chaque modèle construit une fois et partagé. */
 import { fusionner } from "./formes.js";
-import { aleaDe, segment, brancheCourbe, tronc, feuilleGeo, BOULE, GLAND, NEIGE_GEO, feuillageDe, neigeDe, ombreDe, feuillesEtOmbre, MAT_BOIS, MAT_FEUILLES, MAT_PLAT, mesh, TONS_ESPECES } from "./chene.js";
+import { aleaDe, segment, brancheCourbe, tronc, feuilleGeo, BOULE, GLAND, BOSSE, NEIGE_GEO, feuillageDe, neigeDe, ombreDe, feuillesEtOmbre, MAT_BOIS, MAT_FEUILLES, MAT_PLAT, mesh, TONS_ESPECES } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const Q = new THREE.Quaternion();
@@ -66,10 +66,11 @@ function boisDe(f, hiver, alea){
 }
 /* Une pomme : ronde, sa queue ; elle pend au bord de la boule, surtout sur les côtés et le bas ; le dessous plus sombre et
    un petit reflet blanc, pour qu'elle brille comme sur l'image de Yo */
+const POMME_GEO = new THREE.SphereGeometry(1, 7, 5);
 function pomme(M, P, s, c){
-  M.push({geo: GLAND, m: new THREE.Matrix4().compose(P, Q, V(s, s * .92, s)), c, ombre: (x, y) => .68 + .36 * Math.min(1, Math.max(0, (y - P.y) / s * .5 + .5))});
+  M.push({geo: POMME_GEO, m: new THREE.Matrix4().compose(P, Q, V(s, s * .92, s)), c, ombre: (x, y) => .68 + .36 * Math.min(1, Math.max(0, (y - P.y) / s * .5 + .5))});
   M.push({...segment(P.clone().add(V(0, s * .7, 0)), P.clone().add(V(.02, s * 1.35, 0)), s * .13, s * .1, 4), c: QUEUE});
-  M.push({geo: GLAND, m: new THREE.Matrix4().compose(P.clone().add(V(-.32 * s, .5 * s, .62 * s)), new THREE.Quaternion().setFromEuler(new THREE.Euler(-.7, -.4, 0)), V(s * .26, s * .18, s * .08)), c: 0xFFF2EC});
+  M.push({geo: BOSSE, m: new THREE.Matrix4().compose(P.clone().add(V(-.32 * s, .5 * s, .62 * s)), new THREE.Quaternion().setFromEuler(new THREE.Euler(-.7, -.4, 0)), V(s * .26, s * .18, s * .08)), c: 0xFFF2EC});
 }
 function pommesDe(f, alea, n){
   const M = [];

@@ -31,6 +31,7 @@ import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol } from "../js/monde/ile.js";
 import { feuillesQuiVolent } from "../js/monde/chene.js";
+import { pinModele } from "../js/monde/pin.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
 import { enBarque, auLarge, updateBarque, accosterBarque, barquePrete } from "../js/barque.js";
@@ -420,6 +421,45 @@ export async function verifier(){
       state.sac = state.sac.filter(it => !["pomme", "boisPommier", "grainePommier"].includes(it.k));   // le sac reste léger pour la suite
     }
     return `${sauvages} pommiers sauvages ; fleurs au printemps, pommes en automne (3 cueillies), nu en hiver ; son bois, sa souche ; le jeune pommier à son tuteur`;
+  });
+  await etape("Le pin sylvestre (étape 2.1) : près des plages ; toujours vert, de la neige sur ses plateaux quand il neige, des aiguilles et des pommes de pin au pied en automne ; son bois, sa souche ; le jeune pin", async () => {
+    let pins = 0, presDuSable = 0;
+    for(let i = 0; i < N * N; i++) if(map.obj[i] === "pin"){
+      pins++;
+      const x = i % N, z = Math.floor(i / N);
+      for(let dz = -3; dz <= 3 && presDuSable < pins; dz++) for(let dx = -3; dx <= 3; dx++) if(map.type[idx(x + dx, z + dz)] === "sand"){ presDuSable++; break; }
+    }
+    if(pins < 10 || presDuSable < pins) throw new Error(`${pins} pins sauvages, dont ${presDuSable} près d'une plage`);
+    const libre = j => !map.obj[j] && map.type[j] === "grass" && !state.sol[j] && !occ.has(j) && !state.chemins[j];
+    let p = null;
+    for(let z = 20; z < N - 20 && !p; z++) for(let x = 20; x < N - 20; x++)
+      if([[0, 0], [0, 1], [-1, 0], [1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1], [1, 1]].every(([dx, dz]) => libre(idx(x + dx, z + dz)))){ p = [x, z]; break; }
+    if(!p) throw new Error("pas de place pour un pin");
+    const i = idx(...p), vu = {}, u = () => objMesh(i).children[0].userData;
+    setObj(i, "pin");
+    try {
+      for(const s of ["printemps", "ete", "automne", "hiver"]){ forcerSaison(s); rafraichirSaison(); vu[s] = u().pin; }
+      if(["printemps", "ete", "automne", "hiver"].some(s => !vu[s].feuillage) || !vu.automne.pied || vu.ete.pied) throw new Error(`le pin au fil des saisons : ${JSON.stringify(vu)}`);
+      if(!pinModele(2, "hiver", 0, true).userData.pin.neige) throw new Error("pas de neige sur les plateaux du pin");
+      forcerSaison(null); rafraichirSaison();
+      /* la hache le coupe : son bois, sa souche */
+      sacAdd("hachePierre", 1); enMain("hachePierre");
+      placePlayer(centerOf(p[0]), centerOf(p[1] + 1) + .1, 0, -1); frames(1, .016);
+      if($("#btn-act").textContent !== "🌲 Pin sylvestre") throw new Error(`devant le pin : « ${$("#btn-act").textContent} »`);
+      const bp = owned("boisPin");
+      for(let k = 0; k < RECOLTE.pin.coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
+      if(owned("boisPin") <= bp) throw new Error("pas de bois de pin");
+      if(map.obj[i] !== "souche" || u().souche !== "pin") throw new Error(`à la place du pin : ${map.obj[i]}`);
+      frames(1, .016);
+      if($("#btn-act").textContent !== "🪵 Souche de pin sylvestre") throw new Error(`devant la souche : « ${$("#btn-act").textContent} »`);
+      /* le jeune pin */
+      setObj(i, "pin", Date.now() - GRAINES.grainePin.pousse * 750);
+      if(!u().pin || u().pin.stade !== 1) throw new Error("pas de jeune pin");
+    } finally {
+      setObj(i, null); forcerSaison(null); rafraichirSaison(); hold(null);
+      state.sac = state.sac.filter(it => !["boisPin", "grainePin", "resine"].includes(it.k));   // le sac reste léger pour la suite
+    }
+    return `${pins} pins sauvages, tous près d'une plage ; toujours vert, de la neige sur ses plateaux, son pied d'automne ; son bois, sa souche ; le jeune pin`;
   });
   await etape("L'usure : un outil s'use à chaque coup, sa jauge baisse, puis il se casse et disparaît", async () => {
     const k = "hachePierre";

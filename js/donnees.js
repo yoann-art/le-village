@@ -215,6 +215,9 @@ export const GRAINES = {
      le bouleau sur l'île) ; sa graine, le pépin (commun : pousse en 2 h, comme les autres arbres communs) */
   grainePommier:{nom:"Pépin de pomme", pluriel:"pépins de pomme", emoji:"🌰", plante:"pommier", pousse:7200, sachet:0xE0342A,
     usage:"Prends-le en main, puis « Planter » devant une case d'herbe libre : un pommier y poussera (jamais collé à un autre arbre). Ses pommes se cueillent en automne."},
+  /* Le pin sylvestre de l'île (étape 2.1, morceau 2c) ; sa graine (commun : pousse en 2 h) */
+  grainePin:{nom:"Graine de pin", pluriel:"graines de pin", emoji:"🌰", plante:"pin", pousse:7200, sachet:0x467E30,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un pin sylvestre y poussera (jamais collé à un autre arbre). Toujours vert."},
   graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
   graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
@@ -259,6 +262,9 @@ export const RECOLTE = {
      mains libres, en automne, on cueille 3 pommes, qui reviennent en 1 jour ; la hache le coupe (son bois, rare ; sa graine
      3 fois sur 4, commun) ; il laisse sa souche. Chiffres choisis par Claude */
   pommier:{nom:"le pommier", outil:"hache", coups:3, res:"boisPommier", parCoup:1, graine:"grainePommier", chance:.75, n:3, retour:86400},
+  /* Le pin sylvestre de l'île (étape 2.1, morceau 2c ; Grand Carnet : « Bois, résine pour les torches », toujours vert) : son
+     bois jaune paille, sa graine 3 fois sur 4, et de la résine une fois sur deux (bonus) ; il laisse sa souche. Choisi par Claude */
+  pin:    {nom:"le pin sylvestre", outil:"hache", coups:3, res:"boisPin", parCoup:1, graine:"grainePin", chance:.75, bonus:{k:"resine", chance:.5}},
   /* Les rochers de l'île ne reviennent jamais (décidé par Yo) : ensuite, la pierre se trouve à la mine */
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:1, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:1, prendre:"rocherCuivre"},
@@ -702,6 +708,11 @@ export const PRODUITS = {
   /* Le pommier de l'île (étape 2.1, morceau 2c ; Grand Carnet : « Pommes ; bois rare si on l'abat ») ; prix choisis par Claude */
   pomme:      {nom:"Pomme", pluriel:"pommes", emoji:"🍎", prix:1, une:true, aide:"Les pommes se cueillent en automne, sur les pommiers de l'île (mains libres).",
     usage:"Une pomme du verger de l'île : elle se vend au comptoir du Marché ; plus tard, en tarte au fourneau de la Taverne."},
+  /* Le pin sylvestre de l'île (étape 2.1, morceau 2c ; Grand Carnet) ; prix choisis par Claude */
+  boisPin:    {nom:"Bois de pin", pluriel:"bois de pin", emoji:"🪵", bois:0xE8D08A, prix:1, aide:"Le bois de pin se coupe sur les pins sylvestres de l'île, près des plages.",
+    usage:"Jaune paille (carnet). Il se coupe à la hache sur les pins sylvestres, près des plages."},
+  resine:     {nom:"Résine", pluriel:"résine", emoji:"🍯", prix:2, une:true, aide:"La résine coule des pins sylvestres qu'on abat (une fois sur deux).",
+    usage:"La résine dorée du pin sylvestre : pour les torches (Grand Carnet) ; plus tard, des torches qui brûlent plus longtemps. Elle se vend au comptoir."},
   boisPommier:{nom:"Bois de pommier", pluriel:"bois de pommier", emoji:"🪵", bois:0xC8826A, prix:2, aide:"Le bois de pommier se coupe sur les pommiers de l'île (on perd ses pommes).",
     usage:"Brun rosé. Un bois rare (carnet) : abattre un pommier coûte ses pommes. Il se coupe à la hache."},
   /* Le Marais brumeux (étape 1.13, morceau 4 ; Grand Carnet) : ses bois, l'eau de brume et les fruits-lanternes */

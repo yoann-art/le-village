@@ -215,7 +215,7 @@ const info = label => ({label, run: () => toast(label)});
    ses mots (Planter, Poser, Creuser, Combler, Accrocher) */
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const sansArticle = s => cap(s.replace(/^(le |la |les |l')/, ""));
-const EMOJI_ARBRE = {if: "🌲", cypres: "🌲", houx: "🌿", sureau: "🌿", arbreLanterne: "🏮", pommier: "🍎"};
+const EMOJI_ARBRE = {if: "🌲", cypres: "🌲", houx: "🌿", sureau: "🌿", arbreLanterne: "🏮", pommier: "🍎", pin: "🌲"};
 const EMOJI_FLEUR = {tulipe: "🌷", rose: "🌹", tournesol: "🌻", coquelicot: "🌺"};
 const PRECIEUX = new Set(["rockQuartz", "rockAmethyste", "rockGrenat", "rockGeode"]);
 function nomCible(t){
@@ -496,7 +496,7 @@ function remplir(){
 }
 
 /* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
-const FIN = {tree: "🌳 L'arbre est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
+const FIN = {tree: "🌳 L'arbre est tombé", pommier: "🍎 Le pommier est tombé", pin: "🌲 Le pin est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
   rockAmethyste: "💜 Le rocher s'ouvre sur une améthyste", rockGrenat: "❤️ Le rocher s'ouvre sur un grenat", rockGeode: "🥚 Une géode se détache"};
 const IL_FAUT = {hache: "🪓 Il te faut une hache : fabrique-la à l'établi de la Scierie", pioche: "⛏️ Il te faut une pioche : fabrique-la à l'établi de la Scierie"};
 const PIOCHE = {2: "une pioche en cuivre", 3: "une pioche en bronze"};
@@ -592,8 +592,12 @@ function tombe(){
   else w.set(i, null);
   /* sa graine : toujours pour l'arbre de l'île ; selon sa rareté pour ceux de la forêt (carnet : chance) */
   const graine = R.graine && (R.chance === undefined || Math.random() < R.chance);
-  const ou = graine ? giveSeed(R.graine) : ""; save();
-  toast(`${FIN[o] || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : o === "tree" ? "🌳 Le chêne est tombé" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : ""].filter(Boolean).join(", ")}`, 3600);
+  const ou = graine ? giveSeed(R.graine) : "";
+  /* un bonus, parfois (la résine du pin sylvestre, étape 2.1) */
+  const bonus = R.bonus && Math.random() < R.bonus.chance && addOwned(R.bonus.k, 1).reste === 0;
+  if(bonus) syncBarre();
+  save();
+  toast(`${FIN[o] || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : o === "tree" ? "🌳 Le chêne est tombé" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : "", bonus ? `+1 ${nomDe(R.bonus.k, 1)}` : ""].filter(Boolean).join(", ")}`, 3600);
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */
