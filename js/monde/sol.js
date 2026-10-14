@@ -38,9 +38,10 @@ function remove(i){
 const NEAR = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
 function spot(k){
   const d = SOL[k], doors = new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return idx(x, z); }));
-  const ok = [];
+  const ok = [], c = (N - 1) / 2, pres = premierJour();   // le premier jour, autour du village (l'île agrandie, étape 2.1)
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z);
+    if(pres && Math.hypot(x - c, z - c) > 24) continue;
     if(!d.sols.includes(map.type[i]) || map.obj[i] || occ.has(i) || doors.has(i) || state.sol[i]) continue;
     if(d.pres && !NEAR.some(([dx, dz]) => inb(x + dx, z + dz) && map.obj[idx(x + dx, z + dz)] === d.pres)) continue;
     ok.push(i);

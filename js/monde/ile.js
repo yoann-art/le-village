@@ -12,58 +12,93 @@ import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
 import { cheneModele, soucheModele } from "./chene.js";
 
-/* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026) */
-export const N = 56, H = N / 2;
+/* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
+   2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
+   une vingtaine de secondes pour la traverser). La case (x, z) de l'île 56 × 56 est la case (x + 20, z + 20) de celle-ci,
+   au même endroit du monde (centerOf) : le village n'a pas bougé (sauvegarde.js fait passer les parties d'avant) */
+export const N = 96, H = N / 2;
 export const idx = (x,z) => z * N + x;
 export const inb = (x,z) => x >= 0 && z >= 0 && x < N && z < N;
 export const tileOf = w => Math.floor(w + H);
 export const centerOf = t => t - H + .5;
 function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+/* La nature de l'île, tirée de sa graine (state.seed) : la côte, les plages, l'étang et deux mares, les petits bois de
+   chênes, les arbres seuls, les rochers. (Ne rien changer à l'ordre des tirages : cela redistribuerait toute la nature
+   des parties commencées ; pour faire de la place, on retire après coup, comme la place du village.) */
 function genMap(seed){
-  const rnd = mulberry32(seed), G = 5, g1 = [], g2 = [];
-  for(let i = 0; i < (G+1)*(G+1); i++){ g1.push(rnd()); g2.push(rnd()); }
-  const sm = t => t*t*(3-2*t);
-  function noise(g, x, z){
+  const rnd = mulberry32(seed), sm = t => t*t*(3-2*t);
+  const grille = G => { const g = []; for(let i = 0; i < (G+1)*(G+1); i++) g.push(rnd()); return {G, g}; };
+  function noise({G, g}, x, z){                      // un relief doux, de 0 à 1 (G : le nombre de bosses d'un bord à l'autre)
     const fx = x/(N-1)*G, fz = z/(N-1)*G;
     const ix = Math.min(G-1, Math.floor(fx)), iz = Math.min(G-1, Math.floor(fz));
     const tx = sm(fx-ix), tz = sm(fz-iz), w = G+1;
     const a = g[iz*w+ix], b = g[iz*w+ix+1], c = g[(iz+1)*w+ix], d = g[(iz+1)*w+ix+1];
     return (a*(1-tx) + b*tx)*(1-tz) + (c*(1-tx) + d*tx)*tz;
   }
+  const cote = grille(6), detail = grille(16), bois = grille(13);
   const type = new Array(N*N), obj = new Array(N*N).fill(null), c = (N-1)/2;
+  /* deux mares d'eau douce, loin de la place du village (choisies par Claude : l'île agrandie n'avait que son étang) */
+  const mares = [0, 1].map(k => { const a = rnd() * 6.28 + k * Math.PI, d = 21 + rnd() * 5; return {x: c + Math.cos(a) * d, z: c + Math.sin(a) * d, r: 2.2 + rnd() * .8}; });
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const d = Math.hypot((x-c)/(N/2), (z-c)/(N/2));
-    const h = 1 - d*1.2 + (noise(g1,x,z) - .5)*.6;
-    let t = h < .1 ? "water" : h < .24 ? "sand" : "grass";
+    const bord = .76 + (noise(cote, x, z) - .5) * .26 + (noise(detail, x, z) - .5) * .07;   // où la terre finit
+    let t = d > bord ? "water" : d > bord - .07 ? "sand" : "grass";
     if(Math.hypot(x-c, z-c) < 4) t = "grass";
-    if(Math.hypot(x-(c+8), z-(c-7)) < 2.3 && t === "grass") t = "water";
+    if(Math.hypot(x-(c+8), z-(c-7)) < 2.3 && t === "grass") t = "water";                  // l'étang
+    for(const m of mares) if(Math.hypot(x - m.x, z - m.z) < m.r * (.85 + noise(detail, x, z) * .3) && t === "grass") t = "water";
     type[idx(x,z)] = t;
   }
   /* Un arbre ne pousse pas collé à un autre : son feuillage fait 2 P de large */
   const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && obj[idx(x+dx, z+dz)] === "tree");
-  /* (Ne pas changer le 5 ci-dessous : cela redistribuerait tous les arbres de l'île.
-     Pour faire de la place, on retire des arbres après coup, voir la place du village.) */
+  /* Moins de chênes qu'avant (demande de Yo, 14 octobre 2026), regroupés en petits bois, avec des prés libres entre eux
+     pour bâtir et planter ; quelques arbres seuls ; des rochers dans les prés et sur les plages */
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x,z);
     if(Math.hypot(x-c, z-c) < 5) continue;
     const r = rnd();
     if(type[i] === "grass"){
-      if((noise(g2,x,z) > .6 && r < .5) || r < .035){ if(!treeNear(x,z)) obj[i] = "tree"; }
-      else if(r < .06) obj[i] = "rock";
-    } else if(type[i] === "sand" && r < .03) obj[i] = "rock";
+      if((noise(bois, x, z) > .7 && r < .5) || r < .006){ if(!treeNear(x,z)) obj[i] = "tree"; }
+      else if(r < .026) obj[i] = "rock";
+    } else if(type[i] === "sand" && r < .02) obj[i] = "rock";
   }
   /* La place du village : ni arbre ni rocher à moins de 9 cases du centre */
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++) if(Math.hypot(x-c, z-c) < 9) obj[idx(x,z)] = null;
   return {type, obj};
 }
 export const map = genMap(state.seed);
+/* Le village du joueur (ses bâtiments et leur porte, l'entrée de la mine, ses chemins, ce qu'il a planté ou posé) : la
+   nature ne le recouvre jamais. Sur la grande île, ce qui était au bord de l'ancienne côte reste sur la terre ferme
+   (sauvegarde.js : agrandirIle) ; rien de sauvage n'y pousse */
+const garde = new Set();
+{
+  const ajoute = (x, z) => { if(inb(x, z)) garde.add(idx(x, z)); };
+  for(const b of state.buildings){
+    if(b.type === "foret") continue;                // l'orée est sur l'eau, au bout du pont
+    const s = sizeOf(b.type);
+    for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) ajoute(b.x + dx, b.z + dz);
+    const [px, pz] = doorTile(b.type, b.x, b.z, b.rot); ajoute(px, pz);
+    if(b.type === "mine") for(let dx = -1; dx <= 3; dx++) for(const dz of [s, s + 1]) ajoute(b.x + dx, b.z + dz);   // deux rangées devant
+  }
+  for(const i of Object.keys(state.chemins)) garde.add(+i);
+  for(const [i, c] of Object.entries(state.ile)) if(c.o) garde.add(+i);
+  for(const i of garde){ map.obj[i] = null; if(map.type[i] === "water" && state.terrain[i] === undefined) map.type[i] = "grass"; }
+}
 /* Terraformer (étape 1.9) : l'île telle que la nature l'a faite (ORIGINE), puis les cases que le joueur a creusées
    ou comblées (state.terrain = {case: "water" | "grass"}), appliquées avant tout le reste */
 export const ORIGINE = map.type.slice();
 for(const [i, t] of Object.entries(state.terrain)) map.type[+i] = t;
-/* L'eau d'une case (étape 1.6, la pêche) : l'étang, au nord-est de la place du village, ou la mer ; l'eau qu'on a
-   creusée est de l'eau douce, comme l'étang (ses poissons, ses libellules, ses hérons y viennent) */
-export const lieuEau = i => { const c = (N-1)/2; return ORIGINE[i] !== "water" || Math.hypot(i % N - (c+8), Math.floor(i / N) - (c-7)) < 3.3 ? "etang" : "mer"; };
+/* L'eau d'une case (étape 1.6, la pêche) : la mer, l'eau qui touche le bord de la carte ; sinon de l'eau douce (l'étang,
+   les mares, l'eau qu'on a creusée : leurs poissons, leurs libellules, leurs hérons y viennent) */
+const MER = new Uint8Array(N*N);
+{
+  const file = [];
+  for(let k = 0; k < N; k++) for(const [x, z] of [[k, 0], [k, N-1], [0, k], [N-1, k]]){ const i = idx(x, z); if(ORIGINE[i] === "water" && !MER[i]){ MER[i] = 1; file.push(i); } }
+  while(file.length){
+    const i = file.pop(), x = i % N, z = (i - x) / N;
+    for(const [a, b] of [[x+1, z], [x-1, z], [x, z+1], [x, z-1]]){ const j = idx(a, b); if(inb(a, b) && !MER[j] && ORIGINE[j] === "water"){ MER[j] = 1; file.push(j); } }
+  }
+}
+export const lieuEau = i => MER[i] ? "mer" : "etang";
 /* De l'eau qu'on peut combler : l'eau douce (l'étang, l'eau creusée), jamais la mer */
 export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
 /* Herbes hautes et buissons de baies (étape 1.5) : posés après coup, avec leur propre tirage, pour ne pas
@@ -73,9 +108,9 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
   state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z), r = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .065) map.obj[i] = "herbe";               // une trentaine de touffes et une dizaine de buissons
-    else if(r < .085) map.obj[i] = "buisson";
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || garde.has(i) || Math.hypot(x-c, z-c) < 9) continue;
+    if(r < .045) map.obj[i] = "herbe";               // de quoi cueillir partout, sans encombrer (moins denses depuis l'île agrandie)
+    else if(r < .06) map.obj[i] = "buisson";
   }
 }
 /* Le thym (étape 1.6, Grand Carnet : « Thym et sauge », herbes aromatiques des prés de l'île) : des touffes
@@ -86,8 +121,8 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
   const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1, F = state.pontForet, entreeF = F ? idx(F.x, F.z + 1) : -1;
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z), r = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || i === entreeF || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .04) map.obj[i] = "thym";
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || garde.has(i) || i === entree || i === entreeF || Math.hypot(x-c, z-c) < 9) continue;
+    if(r < .028) map.obj[i] = "thym";
   }
 }
 /* Les fleurs des prés (étape 1.9, morceau 4 ; Grand Carnet : « Les fleurs de tous les jours, et les grandes classiques
@@ -101,8 +136,8 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
   const sortes = Object.keys(FLEURS).flatMap(k => Array(FLEURS[k].rarete === "commun" ? 3 : 1).fill(k));
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z), r = rnd(), r2 = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || i === entree || i === entreeF || state.chemins[i] || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .08) map.obj[i] = sortes[Math.floor(r2 * sortes.length)];
+    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || garde.has(i) || i === entree || i === entreeF || state.chemins[i] || Math.hypot(x-c, z-c) < 9) continue;
+    if(r < .055) map.obj[i] = sortes[Math.floor(r2 * sortes.length)];
   }
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
@@ -286,6 +321,20 @@ function refreshObj(i){
   if(map.obj[i]) buildObj(i);
 }
 export const objMesh = i => meshes.get(i);
+/* Pour un téléphone modeste (l'île agrandie, étape 2.1 : trois fois plus de nature) : à chaque image, on ne garde à
+   dessiner que ce qui est dans le champ de la caméra, avec une marge pour les ombres qui y tombent, et pas plus loin que
+   le brouillard (main.js) ; le reste attend, sans rien coûter */
+const champ = new THREE.Frustum(), mVue = new THREE.Matrix4(), boule = new THREE.Sphere(new THREE.Vector3(), 6);
+export function montrerChamp(camera, loin){
+  camera.updateMatrixWorld();
+  mVue.copy(camera.matrixWorld).invert().premultiply(camera.projectionMatrix);
+  champ.setFromProjectionMatrix(mVue);
+  const cx = camera.position.x, cz = camera.position.z;
+  for(const g of meshes.values()){
+    boule.center.set(g.position.x, 1.5, g.position.z);
+    g.visible = Math.hypot(g.position.x - cx, g.position.z - cz) < loin && champ.intersectsSphere(boule);
+  }
+}
 /* Change ce qu'il y a sur une case et le garde dans la partie (plante : heure de plantation) */
 export function setObj(i, o, plante){
   map.obj[i] = o;

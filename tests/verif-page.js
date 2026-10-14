@@ -27,9 +27,9 @@
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
-import { state } from "../js/sauvegarde.js";
+import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
-import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp } from "../js/monde/ile.js";
 import { feuillesQuiVolent } from "../js/monde/chene.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
@@ -253,6 +253,31 @@ export async function verifier(){
     $("#btn-place").click();
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
+  });
+  await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
+    if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
+    let terre = 0, arbres = 0;
+    for(let i = 0; i < N * N; i++){ if(map.type[i] !== "water") terre++; if(map.obj[i] === "tree") arbres++; }
+    if(terre < 3200) throw new Error(`seulement ${terre} cases de terre`);
+    if(arbres < 60 || arbres > 170) throw new Error(`${arbres} chênes sur l'île`);
+    const P = state.ponton, F = state.pontForet;
+    if(!P || !F) throw new Error("pas de ponton ou pas de pont vers la forêt");
+    if(lieuEau(idx(P.x, P.z + P.n - 1)) !== "mer" || lieuEau(idx(F.x, F.z)) !== "mer") throw new Error("le ponton ou le pont n'avance pas dans la mer");
+    /* une partie de la petite île (56 × 56) : la Scierie, le chemin, le gland planté et le coffre restent au même endroit du
+       monde (20 cases plus loin sur la carte) ; ce qu'on avait coupé dans la nature est oublié ; le ponton, le pont et l'orée se reposent */
+    const v = agrandirIle({ile: {[29*56+27]: {o: "tree", plante: 1}, [10*56+10]: {o: null}, [30*56+30]: {o: "coffre", id: 3}}, terrain: {}, chemins: {[31*56+28]: "terre"},
+      coffres: [{id: 3, i: 30*56+30, items: []}], buildings: [{type: "scierie", x: 27, z: 29}, {type: "foret", x: 30, z: 4}],
+      ponton: {x: 28, z: 49, n: 4}, pontForet: {x: 31, z: 9, n: 3}, sol: {5: "branche"}});
+    const garde = v.ileN === 96 && v.ile[idx(47, 49)] && v.ile[idx(47, 49)].plante && v.ile[idx(50, 50)] && !v.ile[idx(30, 30)] && Object.keys(v.ile).length === 2
+      && v.chemins[idx(48, 51)] === "terre" && v.coffres[0].i === idx(50, 50) && v.buildings.length === 1 && v.buildings[0].x === 47 && v.buildings[0].z === 49
+      && !v.ponton && !v.pontForet && !Object.keys(v.sol).length;
+    if(!garde) throw new Error(`une partie d'avant passe mal sur la grande île : ${JSON.stringify(v).slice(0, 300)}`);
+    /* pour le téléphone : ce que la caméra ne voit pas n'est pas dessiné */
+    montrerChamp(camera, scene.fog.far + 6);
+    let vus = 0, caches = 0;
+    for(let i = 0; i < N * N; i++){ const m = objMesh(i); if(m) m.visible ? vus++ : caches++; }
+    if(!vus || caches < vus) throw new Error(`${vus} modèles dessinés, ${caches} cachés`);
+    return `${terre} cases de terre, ${arbres} chênes ; le ponton et le pont dans la mer ; une partie d'avant gardée ; ${vus} modèles dessinés sur ${vus + caches}`;
   });
   await etape("L'ombrage jouet (étape 2.1) : tous les modèles de l'île en aplats, comme la Scierie d'essai", async () => {
     const sans = [], m = o => [].concat(o.material).filter(Boolean);

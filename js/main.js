@@ -9,9 +9,9 @@ import "./pleinecran.js";                                 // le plein écran (de
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
 import { B } from "./donnees.js";
-import { renderer, camera, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
+import { renderer, camera, scene, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
 import { VENT } from "./monde/formes.js";
-import { water } from "./monde/ile.js";
+import { water, montrerChamp } from "./monde/ile.js";
 import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
 import "./coffres.js";
@@ -132,6 +132,7 @@ function tick(now){
     const cible = {beau: .025, nuages: .035, pluie: .065, orage: .12, neige: .03}[meteo()] || .03;
     VENT.force.value += (cible - VENT.force.value) * Math.min(1, dt * .5);
   });
+  if(!isInside()) garde("champ", () => montrerChamp(camera, scene.fog.far + 6));   // seulement ce qu'on voit (l'île agrandie)
   garde("dessin", () => renderer.render(currentScene(), camera));
   if(premiereActive()) garde("mains", () => { updateMains(dt, isInside()); dessinerMains(); });   // à la première personne : les mains, par-dessus
   else mainsInactives();

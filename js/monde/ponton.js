@@ -9,20 +9,21 @@
 import { G, part, toon } from "./formes.js";
 import { scene } from "./scene.js";
 import { state, save } from "../sauvegarde.js";
-import { map, idx, inb, N, centerOf, tileOf, setObj } from "./ile.js";
+import { map, idx, inb, N, centerOf, tileOf, setObj, lieuEau } from "./ile.js";
 import { occ } from "./batiments.js";
 import { lanterne } from "./ciel.js";
 
 const LONG = 4;
 const eau = (x, z) => inb(x, z) && map.type[idx(x, z)] === "water";
+const mer = (x, z) => eau(x, z) && lieuEau(idx(x, z)) === "mer";   // la mer, pas l'étang ni une mare (l'île agrandie, étape 2.1)
 /* La première colonne, en partant du milieu, où la terre finit sur une mer bien dégagée */
 function choisir(){
   const c = Math.floor(N / 2);
   for(let d = 0; d <= 14; d++) for(const x of d ? [c + d, c - d] : [c]){
     let z = c + 9;
-    while(z < N - 1 && !eau(x, z)) z++;
+    while(z < N - 1 && !mer(x, z)) z++;
     const entree = idx(x, z - 1);
-    if(!eau(x, z) || map.type[entree] === "water" || occ.has(entree) || map.obj[entree] === "coffre") continue;   // jamais sur un bâtiment ni un coffre
+    if(!mer(x, z) || map.type[entree] === "water" || occ.has(entree) || map.obj[entree] === "coffre") continue;   // jamais sur un bâtiment ni un coffre
     let ok = true;
     for(let k = 0; k < LONG && ok; k++){
       if(!eau(x, z + k)) ok = false;
@@ -58,9 +59,9 @@ function choisirPont(){
   const c = Math.floor(N / 2);
   for(let d = 3; d <= 22; d++) for(const x of [c + d, c - d]){
     let z = c - 9;
-    while(z > 0 && !eau(x, z)) z--;
+    while(z > 0 && !mer(x, z)) z--;
     const entree = idx(x, z + 1), fin = z - LONG_PONT + 1, b0 = fin - 3;   // b0 : le haut des 3 × 3 cases de l'orée
-    if(!eau(x, z) || map.type[entree] === "water" || occ.has(entree) || map.obj[entree] === "coffre" || b0 < 0) continue;
+    if(!mer(x, z) || map.type[entree] === "water" || occ.has(entree) || map.obj[entree] === "coffre" || b0 < 0) continue;
     let ok = true;
     for(let k = 0; k < LONG_PONT && ok; k++){ if(!eau(x, z - k)) ok = false; if(k && (!eau(x - 1, z - k) || !eau(x + 1, z - k))) ok = false; }
     for(let dz = 0; dz < 3 && ok; dz++) for(let dx = -1; dx <= 1; dx++) if(!eau(x + dx, b0 + dz) || occ.has(idx(x + dx, b0 + dz))) ok = false;

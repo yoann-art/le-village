@@ -2,13 +2,36 @@
    La partie est gardée dans le navigateur du téléphone.
    Format 4 (1er octobre 2026, décidé avec Yo) : une île plus grande et une partie qui commence sans rien ;
    les parties plus anciennes repartent de zéro (le jeu le dit une fois). */
-import { OUTILS, POSABLES, SAC, reglerHemisphere } from "./donnees.js";
+import { OUTILS, POSABLES, MEUBLES, SAC, reglerHemisphere } from "./donnees.js";
 const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
     buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
-    entreeMine:"eboulee"};                                   // l'entrée de la mine à déblayer puis construire (étape 1.11)
+    entreeMine:"eboulee",                                    // l'entrée de la mine à déblayer puis construire (étape 1.11)
+    ileN: ILE};                                              // la taille de l'île (étape 2.1 : la grande île)
+}
+/* L'île agrandie (étape 2.1, 14 octobre 2026 ; Yo : « une île plus ou moins équivalente à celle d'Animal Crossing »,
+   et pour sa partie : « La garder ») : la case (x, z) de l'île de `ancien` cases de côté devient la case (x + d, z + d)
+   de la grande île, au même endroit du monde. On garde le village : les bâtiments, les chemins, ce qu'on a planté ou
+   posé (rochers rapportés, coffres, lumières), l'eau creusée ou comblée. La nature autour est nouvelle : ce qu'on avait
+   coupé, cueilli ou miné dans la nature est oublié, le bois et les cailloux au sol reviennent avec le jour suivant. Le
+   ponton, le pont de la forêt et son orée se reposent au bord de la nouvelle côte (ponton.js, foret.js) */
+export const ILE = 96;
+export function agrandirIle(s, ancien = 56){
+  const d = (ILE - ancien) / 2, cle = i => (Math.floor(+i / ancien) + d) * ILE + (+i % ancien) + d;
+  const decale = o => { const r = {}; for(const [i, v] of Object.entries(o || {})) r[cle(i)] = v; return r; };
+  const pose = o => o === "coffre" || Object.values(POSABLES).some(p => p.pose === o) || !!(MEUBLES[o] && MEUBLES[o].dehors);
+  const ile = {};
+  for(const [i, c] of Object.entries(s.ile || {})) if(c.plante || pose(c.o) || (s.terrain && s.terrain[i] !== undefined)) ile[cle(i)] = c;
+  s.ile = ile; s.terrain = decale(s.terrain); s.chemins = decale(s.chemins);
+  if(s.sol){ s.sol = {}; s.solJour = "avant"; }
+  for(const co of s.coffres || []) if(co.i !== undefined) co.i = cle(co.i);
+  s.buildings = (s.buildings || []).filter(b => b.type !== "foret");
+  for(const b of s.buildings){ b.x += d; b.z += d; }
+  delete s.ponton; delete s.pontForet;
+  s.ileN = ILE;
+  return s;
 }
 function read(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
 export function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
@@ -24,6 +47,11 @@ export let state, migrationMsg = null;
       migrationMsg = "Nouvelle île, plus grande : ta partie repart de zéro. Ramasse les morceaux de bois et les cailloux, cueille des herbes hautes, puis bâtis ta Scierie.";
       try{ localStorage.removeItem(OLD_KEY); }catch(_){}
     }
+    save();
+  }
+  if(state.ileN !== ILE){                                    // une partie commencée sur la petite île (56 × 56)
+    agrandirIle(state, state.ileN || 56);
+    migrationMsg = "🏝️ Ton île s'est agrandie ! Ton village est resté à sa place ; tout autour, une nature nouvelle à explorer. Le ponton et le pont de la Forêt profonde sont au bord de la nouvelle côte.";
     save();
   }
   /* Le carnet de collection (étape 1.6) : les parties commencées avant n'en ont pas encore */
