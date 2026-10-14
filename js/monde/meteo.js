@@ -74,7 +74,15 @@ const pluie = new THREE.LineSegments(gp, new THREE.LineBasicMaterial({color: 0xD
 const gn = new THREE.BufferGeometry(), pn = new Float32Array(NN * 3), phase = new Float32Array(NN);
 for(let k = 0; k < NN; k++){ pn.set([alea(-L/2, L/2), alea(0, HAUT), alea(-L/2, L/2)], k * 3); phase[k] = Math.random() * 6.28; }
 gn.setAttribute("position", new THREE.BufferAttribute(pn, 3));
-const neige = new THREE.Points(gn, new THREE.PointsMaterial({color: 0xFFFFFF, size: .22, transparent: true, opacity: .95, depthWrite: false}));
+/* un flocon rond et doux (sinon, vu de près à la première personne, chaque flocon était un carré blanc) */
+const FLOCON = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 32;
+  const x = c.getContext("2d"), g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+  g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.55, "rgba(255,255,255,.9)"); g.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+  return new THREE.CanvasTexture(c);
+})();
+const neige = new THREE.Points(gn, new THREE.PointsMaterial({color: 0xFFFFFF, size: .22, map: FLOCON, transparent: true, opacity: .95, depthWrite: false}));
 const groupe = new THREE.Group();
 groupe.add(pluie, neige);
 for(const o of [pluie, neige]){ o.frustumCulled = false; o.renderOrder = 2; }

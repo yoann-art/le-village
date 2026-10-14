@@ -10,6 +10,7 @@ import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
 import { B } from "./donnees.js";
 import { renderer, camera, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
+import { VENT } from "./monde/formes.js";
 import { water } from "./monde/ile.js";
 import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
@@ -34,7 +35,7 @@ import { updateVoyage, voyageEnCours } from "./voyage.js";
 import { updateMarais } from "./monde/marais.js";
 import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
-import { updateMeteo, couvertIci } from "./monde/meteo.js";
+import { updateMeteo, couvertIci, meteo } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
 import { vuePremiere, activerVue, tangageVue, horizon, premiereActive } from "./vue.js";
 import { updateMains, dessinerMains, mainsInactives } from "./monde/mains.js";
@@ -126,6 +127,11 @@ function tick(now){
   garde("torche", () => updateTorche(dt));                  // dans la grotte : la torche éclaire et s'use
   garde("combat", () => updateCombat(dt, wrap.hidden && !isBusy()));   // dans la grotte : les cœurs, les coups, les monstres
   garde("chemins", () => updateChemins(!isInside() && wrap.hidden && !isBusy() && !placing && !decorating()));   // sur l'île : tracer les chemins en marchant
+  garde("vent", () => {                                    // le vent dans les feuilles (étape 2.1) : plus fort sous la pluie et l'orage
+    VENT.temps.value += dt;
+    const cible = {beau: .025, nuages: .035, pluie: .065, orage: .12, neige: .03}[meteo()] || .03;
+    VENT.force.value += (cible - VENT.force.value) * Math.min(1, dt * .5);
+  });
   garde("dessin", () => renderer.render(currentScene(), camera));
   if(premiereActive()) garde("mains", () => { updateMains(dt, isInside()); dessinerMains(); });   // à la première personne : les mains, par-dessus
   else mainsInactives();

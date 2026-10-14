@@ -10,6 +10,7 @@ import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
+import { cheneModele, soucheModele } from "./chene.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026) */
 export const N = 56, H = N / 2;
@@ -224,33 +225,20 @@ export function couleurDe(i){
   return f.couleurs[h % f.couleurs.length];
 }
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
-const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
+/* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
+const neigeBranches = () => neigeAuSol() > .3;
+const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "tree" || map.obj[i] === "souche" ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
   const o = map.obj[i], r = ((i*9301 + 49297) % 233280) / 233280;
   const g = new THREE.Group();
   looks.set(i, lookOf(i));
-  if(o === "tree"){
-    const st = stageOf(i);
-    const S = enSaison(), s = saison();
-    if(st === 0){                                    // une pousse
-      g.add(part(G.trunk, 0x8A5A3B, .6,.5,.6, 0,.14,0));
-      g.add(part(G.leaf2, S.pousse, .9,.9,.9, 0,.42,0));
-    } else {
-      /* le feuillage de sa saison ; en automne, chaque arbre a sa couleur (orange, roux ou doré) */
-      const [bas, haut] = S.arbre, k = s === "automne" ? Math.floor(r * 3) : r < .5 ? 0 : 1;
-      g.add(part(G.trunk, 0x8A5A3B, 2.2,2.4,2.2, 0,.66,0));
-      g.add(part(G.leaf, bas[k], 2,2,2, 0,1.95,0));
-      g.add(part(G.leaf2, Array.isArray(haut) ? haut[k] : haut, 2,2,2, .1,2.75,.05));
-      if(s === "printemps" && r < .45)               // au printemps, certains arbres sont en fleurs
-        [[.45, 2.2, .5], [-.5, 2.35, .35], [.1, 3.0, .45], [.55, 2.75, -.1], [-.3, 2.9, -.3]].forEach(([x, y, z], j) =>
-          g.add(part(G.head, j % 2 ? 0xFFF0F4 : 0xF4B8C8, .32, .32, .32, x, y, z)));
-      if(s === "hiver")                              // l'hiver, du givre sur le haut du feuillage
-        [[0, 3.15, .05, .9], [.5, 2.55, .3, .55], [-.45, 2.6, .2, .5]].forEach(([x, y, z, e]) =>
-          g.add(part(G.leaf2, 0xF2F6F8, e * 1.6, e, e * 1.6, x, y, z)));
-      g.scale.setScalar((.9 + r*.25) * (st === 1 ? .5 : 1));   // jeune plant : moitié de la taille
-    }
+  if(o === "tree"){                                 // le chêne de l'île (étape 2.1 : chene.js, d'après l'image de Yo)
+    g.add(cheneModele(stageOf(i), saison(), r, neigeBranches()));
+    g.scale.setScalar(.9 + r * .25);
+  } else if(o === "souche"){                        // ce qui reste d'un arbre coupé (étape 2.1) : la pelle l'enlève
+    g.add(soucheModele(neigeBranches()));
   } else if(o === "herbe"){                         // des brins hauts et souples ; ras une fois cueillis
     const h = stageOf(i) < 2 ? .45 : herbeLeft(i) > 0 ? .25 : 1;
     const H = enSaison().hautes;
@@ -328,7 +316,12 @@ setInterval(() => {
   for(let i = 0; i < N*N; i++) if(map.type[i] !== "water") poserCase(i);
   slabs.instanceColor.needsUpdate = true;
 }, 250);
+let neigeVue = neigeBranches();
 setInterval(() => {
   if(saison() !== peinte){ rafraichirSaison(); return; }
+  if(neigeBranches() !== neigeVue){                    // il se met à neiger, ou la neige fond : les branches et les souches suivent
+    neigeVue = neigeBranches();
+    for(let i = 0; i < N*N; i++) if(map.obj[i] === "tree" || map.obj[i] === "souche") refreshObj(i);
+  }
   for(const i of Object.keys(state.ile)) if(map.obj[+i] && looks.get(+i) !== lookOf(+i)) refreshObj(+i);
 }, 10000);

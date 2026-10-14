@@ -29,7 +29,8 @@
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
-import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh } from "../js/monde/ile.js";
+import { feuillesQuiVolent } from "../js/monde/chene.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
 import { enBarque, auLarge, updateBarque, accosterBarque, barquePrete } from "../js/barque.js";
@@ -48,7 +49,7 @@ import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee, updateTorche } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
-import { forcerSaison, saisonDu, reglerHemisphere } from "../js/donnees.js";
+import { forcerSaison, saisonDu, reglerHemisphere, saison } from "../js/donnees.js";
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable, regard, tenirTorche } from "../js/monde/personnage.js";
@@ -313,12 +314,44 @@ export async function verifier(){
     if(owned("bois") !== bois || state.main) throw new Error("sans hache en main, toucher le chêne a fait quelque chose");
     enMain("hachePierre"); frames(1, .016);
     if($("#btn-act").textContent !== "🌳 Chêne") throw new Error(`la hache en main, le bouton dit « ${$("#btn-act").textContent} »`);
-    for(let k = 0; k < 3; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
-    if(map.obj[idx(...t)]) throw new Error("l'arbre est toujours là");
+    let vol = 0;
+    for(let k = 0; k < 3; k++){ frames(1, .016); $("#btn-act").click(); vol = Math.max(vol, feuillesQuiVolent()); frames(25); }
+    if(saison() !== "hiver" && !vol) throw new Error("aucune feuille ne tombe du chêne qu'on coupe");
+    if(map.obj[idx(...t)] !== "souche") throw new Error(`à la place du chêne : ${map.obj[idx(...t)]} au lieu d'une souche`);
     const n = owned("bois") - bois;
     if(n <= 0) throw new Error("pas de bois gagné");
     if(n > 6) throw new Error(`${n} bois pour 3 coups : un coup ne donne plus qu'un bois (avec le bonus de la Scierie, 2 au plus)`);
-    return `« 🌳 Chêne » sur le bouton ; sans hache, rien ; +${n} bois en 3 coups`;
+    /* la souche reste (étape 2.1) : la pelle la déterre, un bois en plus, la case est libre */
+    sacAdd("pelleBois", 1); enMain("pelleBois"); frames(1, .016);
+    if($("#btn-act").textContent !== "🪵 Souche de chêne" || !$("#btn-act").dataset.action.includes("Déterrer la souche")) throw new Error(`devant la souche, la pelle en main, le bouton dit « ${$("#btn-act").textContent} » (${$("#btn-act").dataset.action})`);
+    const b2 = owned("bois");
+    $("#btn-act").click();
+    if(map.obj[idx(...t)] || owned("bois") !== b2 + 1) throw new Error("la pelle n'a pas déterré la souche");
+    hold(null); state.barre = state.barre.map(it => it && it.k === "pelleBois" ? null : it); state.sac = state.sac.filter(it => it.k !== "pelleBois");   // la pelle de l'essai repart (sinon le sac est plein plus loin)
+    return `« 🌳 Chêne » sur le bouton ; sans hache, rien ; +${n} bois en 3 coups${vol ? `, ${vol} feuilles qui tombent` : ""} ; la souche reste, la pelle la déterre (+1 bois)`;
+  });
+  await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
+    const t = arbreLibre();
+    if(!t) throw new Error("aucun chêne");
+    const i = idx(...t), vu = {};
+    try {
+      for(const s of ["printemps", "ete", "automne", "hiver"]){
+        forcerSaison(s); rafraichirSaison();
+        const u = objMesh(i) && objMesh(i).children[0].userData.chene;
+        if(!u || u.stade !== 2) throw new Error(`pas de chêne adulte en ${s}`);
+        vu[s] = u;
+      }
+    } finally { forcerSaison(null); rafraichirSaison(); }
+    if(!vu.printemps.feuillage || !vu.ete.feuillage || vu.ete.pied) throw new Error("le chêne n'a pas son feuillage au printemps ou en été");
+    if(!vu.automne.feuillage || !vu.automne.pied) throw new Error("en automne, pas de feuilles ni de glands au pied");
+    if(vu.hiver.feuillage) throw new Error("en hiver, le chêne garde son feuillage");
+    /* le jeune chêne : une graine plantée depuis les trois quarts de sa pousse */
+    const j = idx(t[0], t[1] + 1);
+    setObj(j, "tree", Date.now() - GRAINES.graineArbre.pousse * 750);
+    const jeune = objMesh(j) && objMesh(j).children[0].userData.chene;
+    setObj(j, null);
+    if(!jeune || jeune.stade !== 1) throw new Error("pas de jeune chêne");
+    return "feuillu au printemps et en été, feuilles et glands au pied en automne, nu en hiver ; le jeune chêne";
   });
   await etape("L'usure : un outil s'use à chaque coup, sa jauge baisse, puis il se casse et disparaît", async () => {
     const k = "hachePierre";
@@ -731,7 +764,7 @@ export async function verifier(){
     if(!face().includes("Couper le frêne")) throw new Error(`avec une hache en cuivre, le bouton dit « ${face()} »`);
     const avant = owned("boisFrene");
     for(let k = 0; k < RECOLTE.frene.coups; k++){ face(); $("#btn-act").click(); frames(25); }
-    if(map.obj[i]) throw new Error("le frêne est toujours là");
+    if(map.obj[i] !== "souche") throw new Error(`à la place du frêne : ${map.obj[i]} au lieu de sa souche`);   // sa souche reste (étape 2.1)
     if(owned("boisFrene") <= avant) throw new Error("pas de bois de frêne");
     setObj(i, "chene");
     if(!face().includes("hache en bronze")) throw new Error(`avec une hache en cuivre, devant le chêne séculaire, le bouton dit « ${face()} »`);

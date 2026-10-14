@@ -33,7 +33,7 @@
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse,
-  PRODUITS, enSaisonPlante, quandPlante, CHEMINS } from "./donnees.js";
+  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh, lieuEau } from "./monde/ile.js";
@@ -42,13 +42,14 @@ import { occ, placeMesh, colPorte } from "./monde/batiments.js";
 import { solAt, pickUp } from "./monde/sol.js";
 import { player, frontTile, devant } from "./monde/personnage.js";
 import { compteGestes, gesteAction } from "./monde/mains.js";
+import { lacherFeuilles, updateFeuilles, tonsFeuilles } from "./monde/chene.js";
 import { mineTile, mineRock, mineRockMesh, setMineRock, galerieEn, coupsRestants, creuser, coeurEn, majCoeur } from "./monde/mine.js";
 import { eauLibre, entrees } from "./monde/ponton.js";
 import { foret, foretObj, foretMesh, setForetObj, ftile, W as W_FORET, foretFruitsLeft, cueillirForet } from "./monde/foret.js";
 import { grotteObj, grotteMesh, setGrotteObj, gtile, W as W_GROTTE, palierEnCours } from "./monde/grotte.js";
 import { marais, maraisObj, maraisMesh, setMaraisObj, mtile, W as W_MARAIS, maraisCueilliLeft, cueillirMarais, plante, planteDispo } from "./monde/marais.js";
 import { nuitIci } from "./monde/ciel.js";
-import { currentPlace } from "./lieux.js";
+import { currentPlace, currentScene } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
 import { hold, barreAuto, syncBarre, renderBarre, tenu, outilPour, prendreAction } from "./barre.js";
 import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
@@ -219,6 +220,7 @@ const EMOJI_FLEUR = {tulipe: "🌷", rose: "🌹", tournesol: "🌻", coquelicot
 const PRECIEUX = new Set(["rockQuartz", "rockAmethyste", "rockGrenat", "rockGeode"]);
 function nomCible(t){
   if(t.sol) return `${SOL[t.sol].emoji} ${SOL[t.sol].nom}`;
+  if(t.pelle === "souche" || t.o === "souche") return nomSouche(t.i);
   if(t.pelle === "deterrer") return nomCible({w: ILE, i: t.i, o: map.obj[t.i]});
   if(t.pelle === "enlever") return `🟫 Chemin de ${CHEMINS[state.chemins[t.i]].nom}`;
   if(t.pelle) return null;
@@ -243,6 +245,8 @@ function nomCible(t){
   if(RECOLTE[t.o]) return `${t.o === "rockOr" ? "✨" : PRECIEUX.has(t.o) ? "💎" : "🪨"} ${sansArticle(RECOLTE[t.o].nom)}`;
   return null;
 }
+/* La souche (étape 2.1) : « Souche de chêne », du nom de l'arbre coupé */
+function nomSouche(i){ const de = (state.ile[i] || {}).de || "tree"; return `🪵 Souche de ${RECOLTE[de] ? RECOLTE[de].nom.replace(/^(le |la |l')/, "") : "chêne"}`; }
 function actionNommee(t){
   const a = actionOf(t), n = a && nomCible(t);
   return n ? {...a, nom: n} : a;
@@ -250,6 +254,7 @@ function actionNommee(t){
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.pelle) return actionTerrain(t);
+  if(t.o === "souche") return {label: "🪏 Il te faut une pelle pour déterrer la souche", run: rien};   // au joueur de prendre la pelle
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
   if(t.facade) return facadeAction(t);
   if(MEUBLES[t.o] && MEUBLES[t.o].dehors) return lumiereAction(t);
@@ -344,6 +349,7 @@ function showCase(t){
 }
 export function updateRecolte(dt, active){
   if(anim) animate(dt);
+  updateFeuilles(dt);                                  // les feuilles qui tombent des arbres coupés (étape 2.1)
   const milieu = !currentPlace() ? "ile" : inForet() ? "foret" : inMarais() ? "marais" : null;   // les poissons, les insectes, les oiseaux, le gibier : dehors, dans la forêt, au Marais
   updatePeche(dt, active, milieu);
   updateInsectes(dt, active, milieu);
@@ -507,6 +513,8 @@ function couper(t){
   if(R.auBout && h >= R.coups && !sacOk(R.res, R.auBout)) return;     // une pierre précieuse : seulement au dernier coup
   const n = R.res && !R.auBout ? gain(R.parCoup, R.res) : 0;         // une ressource par coup, quel que soit l'outil (demande de Yo)
   if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); trouve(R.res, n); } renderHUD(); }   // l'or va dans la bourse
+  const arbre = R.outil === "hache" && !t.o.startsWith("rock");   // un arbre : quelques feuilles tombent à chaque coup (étape 2.1)
+  if(arbre && saison() !== "hiver") lacherFeuilles(currentScene(), t.w.cx(t.x), t.w.cx(t.z), h < R.coups ? 3 : 14, tonsFeuilles(saison(), t.i % 3), 1.6, 3.2, h < R.coups ? .8 : 1.2);
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {
     hits.delete(hk(t));
@@ -579,7 +587,9 @@ function animate(dt){
 function tombe(){
   const {w, i, o, R, n} = anim;
   anim = null;
-  w.set(i, null);
+  /* sur l'île, un arbre coupé laisse sa souche (étape 2.1 ; décidé avec Yo : elle reste, la pelle l'enlève) */
+  if(w === ILE && (o === "tree" || ESSENCES.includes(o))){ w.set(i, "souche"); setEtat(i, {de: o}); }
+  else w.set(i, null);
   /* sa graine : toujours pour l'arbre de l'île ; selon sa rareté pour ceux de la forêt (carnet : chance) */
   const graine = R.graine && (R.chance === undefined || Math.random() < R.chance);
   const ou = graine ? giveSeed(R.graine) : ""; save();

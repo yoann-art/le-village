@@ -23,7 +23,7 @@ import { occ } from "./monde/batiments.js";
 import { solAt } from "./monde/sol.js";
 import { passageCases, entrees } from "./monde/ponton.js";
 import { player, frontTile, pencheMain } from "./monde/personnage.js";
-import { toast } from "./interface.js";
+import { toast, renderHUD } from "./interface.js";
 import { user } from "./usure.js";
 
 const pelleTenue = () => !!(state.main && OUTILS[state.main] && OUTILS[state.main].famille === "pelle");
@@ -33,6 +33,7 @@ export function cibleTerrain(){
   const [x, z] = frontTile(.8);
   if(!inb(x, z)) return null;
   const i = idx(x, z);
+  if(map.obj[i] === "souche") return {i, x, z, pelle: "souche"};   // la souche d'un arbre coupé (étape 2.1)
   if(state.chemins[i] && !occ.has(i)) return {i, x, z, pelle: "enlever"};
   if(FLEURS[map.obj[i]]) return {i, x, z, pelle: "deterrer"};
   if(map.type[i] === "water") return passageCases.has(i) ? null : {i, x, z, pelle: "combler"};
@@ -66,7 +67,7 @@ export function terrainProbleme(t){
   return memo.r;
 }
 function probleme(t){
-  if(t.pelle === "enlever" || t.pelle === "deterrer") return null;
+  if(t.pelle === "enlever" || t.pelle === "deterrer" || t.pelle === "souche") return null;
   if(t.pelle === "combler") return comblable(t.i) ? null : "🌊 La mer ne se comble pas : l'île garde sa forme";
   const i = t.i;
   if(map.type[i] !== "grass") return "🏖️ Le sable s'écroule : on ne creuse que dans l'herbe";
@@ -80,6 +81,7 @@ function probleme(t){
 /* ----- Le bouton d'action (recolte.js) ----- */
 const coups = new Map();        // la case qu'on est en train de creuser → coups de pelle déjà donnés
 export function actionTerrain(t){
+  if(t.pelle === "souche") return {label: "🪏 Déterrer la souche", run: () => deterrerSouche(t)};
   if(t.pelle === "deterrer") return {label: `🪏 Déterrer : ${FLEURS[map.obj[t.i]].nom.toLowerCase()}`, run: () => deterrer(t)};
   if(t.pelle === "enlever") return {label: `🪏 Enlever le chemin de ${CHEMINS[state.chemins[t.i]].nom}`, run: () => enlever(t)};
   if(t.pelle === "combler") return {label: "🪏 Combler", run: () => combler(t)};
@@ -107,6 +109,16 @@ function combler(t){
 }
 
 /* Déterrer une fleur (morceau 4) : elle quitte sa case, et sa graine revient dans le sac, pour la replanter ailleurs */
+/* La souche d'un arbre coupé (étape 2.1 ; décidé avec Yo, comme dans Animal Crossing) : la pelle la déterre, un peu de
+   bois en plus, et la case est libre */
+function deterrerSouche(t){
+  if(map.obj[t.i] !== "souche") return;
+  if(sacPlace("bois") < 1){ toast("🎒 Ton sac est plein : fais de la place pour le bois de la souche", 2600); return; }
+  geste();
+  setObj(t.i, null); sacAdd("bois", 1); syncBarre(); renderHUD();
+  memo.cle = ""; save();
+  toast("🪏 La souche est déterrée : +1 bois. La case est libre", 2400);
+}
 function deterrer(t){
   const k = graineDeFleur(map.obj[t.i]);
   if(sacPlace(k) < 1){ toast("🎒 Ton sac est plein : fais de la place pour la graine", 2600); return; }
