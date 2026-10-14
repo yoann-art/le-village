@@ -11,19 +11,19 @@ import { G, part, toon } from "./formes.js";
 import { saison } from "../donnees.js";
 export { saison };
 
-export const ESSENCES = ["charme", "frene", "sureau", "if", "houx", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne"];
+export const ESSENCES = ["charme", "frene", "sureau", "if", "houx", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne", "pommier"];   // le pommier de l'île : son modèle à lui (pommier.js)
 /* Les vrais arbres : jamais collés l'un à l'autre (le houx et le sureau sont des arbustes) */
-export const ARBRES = new Set(["tree", "charme", "frene", "if", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne"]);
+export const ARBRES = new Set(["tree", "charme", "frene", "if", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne", "pommier"]);
 export const estArbre = o => ARBRES.has(o) || ESSENCES.includes(o);
 /* Les morceaux du modèle qui sont des fruits ou des fleurs (cachés une fois cueillis, ou hors saison) ; le saule des
    brumes n'en a pas (son eau de brume se recueille, rien ne se voit), mais il se cueille comme eux */
-export const FRUITS = {houx: [1, 2], sureau: [2], sauleBrumes: [], arbreLanterne: [3, 4, 5, 6]};
+export const FRUITS = {houx: [1, 2], sureau: [2], sauleBrumes: [], arbreLanterne: [3, 4, 5, 6], pommier: []};
 /* Le houx a ses baies en automne et en hiver (carnet : « baies en hiver ») ; le sureau ses fleurs au printemps et
    en été, ses baies noires en automne (carnet), rien en hiver ; le saule des brumes et l'arbre-lanterne, toute l'année */
-export const fruitsDeSaison = sp => sp === "houx" ? ["automne", "hiver"].includes(saison()) : sp === "sureau" ? saison() !== "hiver" : sp === "sauleBrumes" || sp === "arbreLanterne";
+export const fruitsDeSaison = sp => sp === "houx" ? ["automne", "hiver"].includes(saison()) : sp === "sureau" ? saison() !== "hiver" : sp === "pommier" ? saison() === "automne" : sp === "sauleBrumes" || sp === "arbreLanterne";
 /* Ce qu'on y cueille en ce moment (une clé de PRODUITS), ou null */
 export const cueilletteDe = sp => !fruitsDeSaison(sp) ? null : sp === "houx" ? "baiesHoux" : sp === "sureau" ? (saison() === "automne" ? "baiesSureau" : "fleursSureau")
-  : sp === "sauleBrumes" ? "eauBrume" : sp === "arbreLanterne" ? "fruitLanterne" : null;
+  : sp === "sauleBrumes" ? "eauBrume" : sp === "arbreLanterne" ? "fruitLanterne" : sp === "pommier" ? "pomme" : null;
 /* Les fruits de l'arbre-lanterne s'allument la nuit (carnet) : n, 0 le jour, 1 la nuit (main.js, à chaque image) */
 export const LUEUR_LANTERNE = toon({color: 0xF8E08A, emissive: 0xF0A030, emissiveIntensity: .2});
 export function lueurLanternes(n){ LUEUR_LANTERNE.emissiveIntensity = .2 + n * 1.1; }

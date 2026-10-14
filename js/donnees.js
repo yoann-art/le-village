@@ -211,6 +211,10 @@ export const GRAINES = {
      basique » ; Grand Carnet : bois brun miel, glands) ; sa graine, le gland */
   graineArbre:{nom:"Gland", pluriel:"glands", emoji:"🌰", plante:"tree", pousse:7200,
     usage:"Le gland du chêne de l'île : prends-le en main, puis touche « Planter » devant une case d'herbe libre. Un chêne y poussera."},
+  /* Le pommier de l'île (étape 2.1, morceau 2c ; décidé avec Yo, 14 octobre 2026 : le chêne, le pommier, le pin sylvestre et
+     le bouleau sur l'île) ; sa graine, le pépin (commun : pousse en 2 h, comme les autres arbres communs) */
+  grainePommier:{nom:"Pépin de pomme", pluriel:"pépins de pomme", emoji:"🌰", plante:"pommier", pousse:7200, sachet:0xE0342A,
+    usage:"Prends-le en main, puis « Planter » devant une case d'herbe libre : un pommier y poussera (jamais collé à un autre arbre). Ses pommes se cueillent en automne."},
   graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
   graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
@@ -251,6 +255,10 @@ export const GRAINES = {
    reviennent « retour » secondes après l'arrosage (décidé par Yo). Les bonus des bâtiments s'ajoutent. */
 export const RECOLTE = {
   tree:   {nom:"le chêne", outil:"hache", coups:3, res:"bois", parCoup:1, graine:"graineArbre"},   // le chêne de l'île
+  /* Le pommier de l'île (étape 2.1, morceau 2c ; Grand Carnet : « Pommes ; bois rare si on l'abat », fruits en automne) :
+     mains libres, en automne, on cueille 3 pommes, qui reviennent en 1 jour ; la hache le coupe (son bois, rare ; sa graine
+     3 fois sur 4, commun) ; il laisse sa souche. Chiffres choisis par Claude */
+  pommier:{nom:"le pommier", outil:"hache", coups:3, res:"boisPommier", parCoup:1, graine:"grainePommier", chance:.75, n:3, retour:86400},
   /* Les rochers de l'île ne reviennent jamais (décidé par Yo) : ensuite, la pierre se trouve à la mine */
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:1, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:1, prendre:"rocherCuivre"},
@@ -691,6 +699,11 @@ export const PRODUITS = {
     usage:"Des fleurs pour les potions (carnet). Elles se cueillent au printemps et en été."},
   baiesSureau:{nom:"Baies de sureau", pluriel:"baies de sureau", emoji:"🫐", prix:1, aide:"Les baies de sureau se cueillent en automne, sur les sureaux de la Forêt profonde.",
     usage:"Des baies noires pour les potions (carnet). Elles se cueillent en automne."},
+  /* Le pommier de l'île (étape 2.1, morceau 2c ; Grand Carnet : « Pommes ; bois rare si on l'abat ») ; prix choisis par Claude */
+  pomme:      {nom:"Pomme", pluriel:"pommes", emoji:"🍎", prix:1, une:true, aide:"Les pommes se cueillent en automne, sur les pommiers de l'île (mains libres).",
+    usage:"Une pomme du verger de l'île : elle se vend au comptoir du Marché ; plus tard, en tarte au fourneau de la Taverne."},
+  boisPommier:{nom:"Bois de pommier", pluriel:"bois de pommier", emoji:"🪵", bois:0xC8826A, prix:2, aide:"Le bois de pommier se coupe sur les pommiers de l'île (on perd ses pommes).",
+    usage:"Brun rosé. Un bois rare (carnet) : abattre un pommier coûte ses pommes. Il se coupe à la hache."},
   /* Le Marais brumeux (étape 1.13, morceau 4 ; Grand Carnet) : ses bois, l'eau de brume et les fruits-lanternes */
   boisCypres:{nom:"Bois de cyprès", pluriel:"bois de cyprès", emoji:"🪵", bois:0xB4643A, prix:1, aide:"Le bois de cyprès se coupe sur les cyprès des marais, au Marais brumeux.",
     usage:"Roux. Un bois qui résiste à l'eau (carnet). Il se coupe sur les cyprès des marais, au Marais brumeux."},

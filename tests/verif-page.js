@@ -378,6 +378,49 @@ export async function verifier(){
     if(!jeune || jeune.stade !== 1) throw new Error("pas de jeune chêne");
     return "feuillu au printemps et en été, feuilles et glands au pied en automne, nu en hiver ; le jeune chêne";
   });
+  await etape("Le pommier (étape 2.1) : des pommiers sauvages ; ses fleurs au printemps, ses pommes en automne (on les cueille), nu en hiver ; son bois et sa souche ; le jeune pommier à son tuteur", async () => {
+    let sauvages = 0;
+    for(let i = 0; i < N * N; i++) if(map.obj[i] === "pommier") sauvages++;
+    if(sauvages < 3 || sauvages > 12) throw new Error(`${sauvages} pommiers sauvages sur l'île`);
+    /* un pommier d'essai, sur une case d'herbe libre, rien autour */
+    const libre = j => !map.obj[j] && map.type[j] === "grass" && !state.sol[j] && !occ.has(j) && !state.chemins[j];
+    let p = null;
+    for(let z = 20; z < N - 20 && !p; z++) for(let x = 20; x < N - 20; x++)
+      if([[0, 0], [0, 1], [-1, 0], [1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1], [1, 1]].every(([dx, dz]) => libre(idx(x + dx, z + dz)))){ p = [x, z]; break; }
+    if(!p) throw new Error("pas de place pour un pommier");
+    const i = idx(...p), vu = {}, u = () => objMesh(i).children[0].userData;
+    setObj(i, "pommier");
+    try {
+      for(const s of ["printemps", "ete", "automne", "hiver"]){ forcerSaison(s); rafraichirSaison(); vu[s] = u().pommier; }
+      if(!vu.printemps.fleurs || vu.ete.fleurs || vu.ete.pommes || !vu.automne.pommes || !vu.automne.pied || vu.hiver.feuillage)
+        throw new Error(`le pommier au fil des saisons : ${JSON.stringify(vu)}`);
+      /* en automne, mains libres : « 🍎 Pommier », on cueille 3 pommes, qui ne se voient plus */
+      forcerSaison("automne"); rafraichirSaison(); hold(null);
+      placePlayer(centerOf(p[0]), centerOf(p[1] + 1) + .1, 0, -1); frames(1, .016);
+      if($("#btn-act").textContent !== "🍎 Pommier" || !$("#btn-act").dataset.action.includes("Cueillir"))
+        throw new Error(`devant le pommier : « ${$("#btn-act").textContent} » (${$("#btn-act").dataset.action})`);
+      const pommes = owned("pomme");
+      $("#btn-act").click();
+      if(owned("pomme") !== pommes + 3) throw new Error(`${owned("pomme") - pommes} pommes cueillies au lieu de 3`);
+      if(u().pommier.pommes) throw new Error("les pommes cueillies se voient encore");
+      /* la hache le coupe : son bois, sa souche */
+      sacAdd("hachePierre", 1); enMain("hachePierre");
+      const bp = owned("boisPommier");
+      for(let k = 0; k < RECOLTE.pommier.coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
+      if(owned("boisPommier") <= bp) throw new Error("pas de bois de pommier");
+      if(map.obj[i] !== "souche" || u().souche !== "pommier") throw new Error(`à la place du pommier : ${map.obj[i]}`);
+      frames(1, .016);
+      if($("#btn-act").textContent !== "🪵 Souche de pommier") throw new Error(`devant la souche : « ${$("#btn-act").textContent} »`);
+      /* le jeune pommier, tenu à son tuteur */
+      setObj(i, "pommier", Date.now() - GRAINES.grainePommier.pousse * 750);
+      const jeune = u().pommier;
+      if(!jeune || jeune.stade !== 1 || !jeune.tuteur) throw new Error("pas de jeune pommier à son tuteur");
+    } finally {
+      setObj(i, null); forcerSaison(null); rafraichirSaison(); hold(null);
+      state.sac = state.sac.filter(it => !["pomme", "boisPommier", "grainePommier"].includes(it.k));   // le sac reste léger pour la suite
+    }
+    return `${sauvages} pommiers sauvages ; fleurs au printemps, pommes en automne (3 cueillies), nu en hiver ; son bois, sa souche ; le jeune pommier à son tuteur`;
+  });
   await etape("L'usure : un outil s'use à chaque coup, sa jauge baisse, puis il se casse et disparaît", async () => {
     const k = "hachePierre";
     if(!(state.usure[k] > 0)) throw new Error("la hache ne s'est pas usée en coupant l'arbre");

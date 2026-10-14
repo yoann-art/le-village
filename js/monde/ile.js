@@ -11,6 +11,7 @@ import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
 import { cheneModele, soucheModele } from "./chene.js";
+import { pommierModele, souchePommier } from "./pommier.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
    2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
@@ -49,7 +50,11 @@ function genMap(seed){
     type[idx(x,z)] = t;
   }
   /* Un arbre ne pousse pas collé à un autre : son feuillage fait 2 P de large */
-  const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && obj[idx(x+dx, z+dz)] === "tree");
+  const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && ["tree", "pommier"].includes(obj[idx(x+dx, z+dz)]));
+  /* Les essences de l'île (étape 2.1, morceau 2c ; décidé avec Yo le 14 octobre 2026 : le chêne, le pommier, le pin
+     sylvestre, le bouleau) : un arbre seul dans un pré est parfois un pommier sauvage (un tirage à lui, selon la case, pour
+     ne rien déplacer) ; les petits bois sont des chênes */
+  const hache = i => (Math.imul(i + 7919, 2654435761) >>> 0) % 1000 / 1000;
   /* Moins de chênes qu'avant (demande de Yo, 14 octobre 2026), regroupés en petits bois, avec des prés libres entre eux
      pour bâtir et planter ; quelques arbres seuls ; des rochers dans les prés et sur les plages */
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
@@ -57,7 +62,8 @@ function genMap(seed){
     if(Math.hypot(x-c, z-c) < 5) continue;
     const r = rnd();
     if(type[i] === "grass"){
-      if((noise(bois, x, z) > .7 && r < .5) || r < .006){ if(!treeNear(x,z)) obj[i] = "tree"; }
+      const enBois = noise(bois, x, z) > .7;
+      if((enBois && r < .5) || r < .006){ if(!treeNear(x,z)) obj[i] = !enBois && hache(i) < .3 ? "pommier" : "tree"; }
       else if(r < .026) obj[i] = "rock";
     } else if(type[i] === "sand" && r < .02) obj[i] = "rock";
   }
@@ -262,7 +268,8 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const lookOf = i => map.obj[i] + stageOf(i) + (map.obj[i] === "tree" || map.obj[i] === "souche" ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
+const ENNEIGE = new Set(["tree", "souche", "pommier"]);
+const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
@@ -273,7 +280,10 @@ function buildObj(i){
     g.add(cheneModele(stageOf(i), saison(), r, neigeBranches()));
     g.scale.setScalar(.9 + r * .25);
   } else if(o === "souche"){                        // ce qui reste d'un arbre coupé (étape 2.1) : la pelle l'enlève
-    g.add(soucheModele(neigeBranches()));
+    g.add((state.ile[i] || {}).de === "pommier" ? souchePommier(neigeBranches(), saison() === "automne") : soucheModele(neigeBranches()));
+  } else if(o === "pommier"){                       // le pommier de l'île (étape 2.1, morceau 2c : pommier.js, d'après les images de Yo)
+    g.add(pommierModele(stageOf(i), saison(), r, neigeBranches(), fruitsDeSaison(o) && !fruitsLeft(i)));
+    g.scale.setScalar(.92 + r * .2);
   } else if(o === "herbe"){                         // des brins hauts et souples ; ras une fois cueillis
     const h = stageOf(i) < 2 ? .45 : herbeLeft(i) > 0 ? .25 : 1;
     const H = enSaison().hautes;
@@ -349,7 +359,7 @@ export function setEtat(i, patch){
 }
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
 /* Une nouvelle saison (ou l'hémisphère choisi) : l'herbe et tout ce qui change de couleur sont repeints */
-const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || ESSENCES.includes(o);
+const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || o === "souche" || ESSENCES.includes(o);
 let peinte = saison();
 export function rafraichirSaison(){
   peinte = saison();
@@ -370,7 +380,7 @@ setInterval(() => {
   if(saison() !== peinte){ rafraichirSaison(); return; }
   if(neigeBranches() !== neigeVue){                    // il se met à neiger, ou la neige fond : les branches et les souches suivent
     neigeVue = neigeBranches();
-    for(let i = 0; i < N*N; i++) if(map.obj[i] === "tree" || map.obj[i] === "souche") refreshObj(i);
+    for(let i = 0; i < N*N; i++) if(ENNEIGE.has(map.obj[i])) refreshObj(i);
   }
   for(const i of Object.keys(state.ile)) if(map.obj[+i] && looks.get(+i) !== lookOf(+i)) refreshObj(+i);
 }, 10000);

@@ -10,30 +10,32 @@
    - en automne seulement, des feuilles mortes et des glands au pied ;
    - la souche reste après la coupe (la pelle l'enlève : terraformer.js).
    Pour un téléphone modeste : chaque modèle est construit une seule fois (le bois d'un côté, le feuillage de l'autre,
-   fusionner dans formes.js) et partagé par tous les chênes de l'île ; le feuillage ondule au vent (feuillageMat). */
+   fusionner dans formes.js) et partagé par tous les chênes de l'île ; le feuillage ondule au vent (feuillageMat).
+   Les petits outils d'ici (le tronc, les branches, le feuillage en écailles, la neige, les matières) servent aussi aux
+   autres arbres de l'île (pommier.js, étape 2.1, morceau 2c). */
 import { toon, fusionner, feuillageMat } from "./formes.js";
 
 /* ---------- petits outils ---------- */
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const HAUT = V(0, 1, 0);
-function aleaDe(graine){                                   // un tirage fixe : le même chêne à chaque fois
+export function aleaDe(graine){                                   // un tirage fixe : le même chêne à chaque fois
   let s = graine >>> 0;
   return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 /* Une branche (ou une racine) de A à B, épaisse de rA en A et rB en B */
-function segment(A, B, rA, rB, cotes = 7){
+export function segment(A, B, rA, rB, cotes = 7){
   const d = B.clone().sub(A), L = d.length();
   const geo = new THREE.CylinderGeometry(rB, rA, L, cotes, 1);
   const m = new THREE.Matrix4().compose(A.clone().add(B).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(HAUT, d.normalize()), V(1, 1, 1));
   return {geo, m};
 }
 /* Le tronc : un cylindre qui s'évase au pied, creusé de sillons qui tournent un peu */
-function tronc(rHaut, rBas, h, sillons = 7){
+export function tronc(rHaut, rBas, h, sillons = 7, creux = .07){
   const g = new THREE.CylinderGeometry(rHaut, rBas, h, 14, 8);
   const p = g.attributes.position;
   for(let i = 0; i < p.count; i++){
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i), t = (y + h / 2) / h, a = Math.atan2(z, x);
-    const k = (1 + .07 * Math.sin(a * sillons + t * 2.4)) * (1 + .55 * Math.pow(1 - t, 3));
+    const k = (1 + creux * Math.sin(a * sillons + t * 2.4)) * (1 + .55 * Math.pow(1 - t, 3));
     p.setXYZ(i, x * k, y + h / 2, z * k);
   }
   g.computeVertexNormals();
@@ -53,10 +55,10 @@ const FEUILLE = (() => {
   for(let k = pts.length - 1; k >= 0; k--) s.lineTo(-pts[k][0], pts[k][1]);
   return new THREE.ShapeGeometry(s).translate(0, -.5, 0);
 })();
-const BOULE = new THREE.IcosahedronGeometry(1, 1);
-const GLAND = new THREE.SphereGeometry(1, 8, 6);
+export const BOULE = new THREE.IcosahedronGeometry(1, 1);
+export const GLAND = new THREE.SphereGeometry(1, 8, 6);
 const CUPULE = new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2);
-const NEIGE_GEO = new THREE.SphereGeometry(1, 8, 5);
+export const NEIGE_GEO = new THREE.SphereGeometry(1, 8, 5);
 
 /* ---------- les couleurs ---------- */
 const BOIS = 0xA8683A, BOIS_SOMBRE = 0x8A5430, NOEUD = 0x6E4226, MOUSSE = 0x7FA83A;
@@ -67,7 +69,12 @@ const TONS = {
   automne:   [[0xF08A2C, 0xD9552E, 0xF7B238, 0xC8442A], [0xE8702C, 0xC9472A, 0xF0942E, 0xF2B03A], [0xF4A632, 0xE07A2A, 0xF8C44A, 0xD9552E]]
 };
 const SECHES = [0x9C6B3C, 0x8A5A30, 0xB07A44];               // les feuilles sèches de l'hiver
-export const tonsFeuilles = (saison, variante = 0) => saison === "hiver" ? SECHES : TONS[saison][variante % 3];
+/* Les tons des autres arbres de l'île (pommier.js les inscrit ici) ; espece : la clé de l'arbre (map.obj) */
+export const TONS_ESPECES = {};
+export const tonsFeuilles = (saison, variante = 0, espece) => {
+  const T = TONS_ESPECES[espece] || TONS;
+  return saison === "hiver" ? (T === TONS ? SECHES : T.automne[variante % 3]) : T[saison][variante % 3];
+};
 
 /* ---------- la forme : d'après les images ---------- */
 /* Les boules de feuillage du chêne adulte [x, y, z, rayon] (en P ; le chêne fait environ 3,4 P) */
@@ -106,7 +113,7 @@ function boisDe(f, hiver, alea){
 }
 /* Le feuillage : chaque boule, une forme ronde sombre couverte de feuilles de plusieurs tons ; la lumière l'éclaire comme une
    boule (normales qui partent du centre de la boule) */
-function feuillageDe(f, tons, alea, nbFeuilles = 11){
+export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE){
   const M = [];
   for(const [x, y, z, r] of f.boules){
     const C = V(x, y, z), radiale = (px, py, pz) => V(px - x, py - y, pz - z).normalize();
@@ -127,7 +134,7 @@ function feuillageDe(f, tons, alea, nbFeuilles = 11){
       const s = r * (.72 + alea() * .24);
       const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(s * .82), Y.multiplyScalar(s), Z.multiplyScalar(s)).setPosition(P);
       const t3 = alea();                                    // surtout le ton principal et le clair, un peu de sombre, rarement l'autre
-      M.push({geo: FEUILLE, m, c: tons[t3 < .45 ? 0 : t3 < .75 ? 2 : t3 < .92 ? 1 : 3], normale: radiale});
+      M.push({geo: feuille, m, c: tons[t3 < .45 ? 0 : t3 < .75 ? 2 : t3 < .92 ? 1 : 3], normale: radiale});
     }
   }
   return fusionner(M);
@@ -145,7 +152,7 @@ function sechesDe(f, alea){
   return fusionner(M);
 }
 /* Un peu de neige sur le dessus des branches et des racines */
-function neigeDe(f, alea){
+export function neigeDe(f, alea){
   const M = [];
   f.boules.forEach(([x, y, z, r], k) => {
     const [dx, dy] = f.depart[k];
@@ -178,9 +185,9 @@ function piedAutomne(tons, alea, rayon){
 }
 
 /* ---------- les matières, partagées ---------- */
-const MAT_BOIS = toon({vertexColors: true});
-const MAT_FEUILLES = feuillageMat();
-const MAT_PLAT = toon({vertexColors: true, side: THREE.DoubleSide});
+export const MAT_BOIS = toon({vertexColors: true});
+export const MAT_FEUILLES = feuillageMat();
+export const MAT_PLAT = toon({vertexColors: true, side: THREE.DoubleSide});
 
 /* ---------- les modèles ---------- */
 const CACHE = new Map();
@@ -198,7 +205,7 @@ function geos(stade, saison, variante, neige){
   CACHE.set(cle, r);
   return r;
 }
-const mesh = (geo, m, ombre = true) => { const o = new THREE.Mesh(geo, m); o.castShadow = ombre; o.receiveShadow = true; return o; };
+export const mesh = (geo, m, ombre = true) => { const o = new THREE.Mesh(geo, m); o.castShadow = ombre; o.receiveShadow = true; return o; };
 /* Le chêne : stade 0 (une pousse), 1 (jeune chêne), 2 (adulte) ; r : son tirage (nuance, taille) ; neige : il neige */
 export function cheneModele(stade, saison, r = 0, neige = false){
   const g = new THREE.Group(), variante = Math.floor(r * 3) % 3;
