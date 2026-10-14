@@ -11,15 +11,17 @@ import { couvertIci, eclairIci } from "./meteo.js";
 import { toon } from "./formes.js";
 
 /* Les moments clés (heure : 0 à 24) ; ciel = fond et brume ; haut et bas = la lumière qui vient du ciel et du sol ;
-   force : la lumière ambiante ; astre : la couleur et la force du soleil (ou de la lune) */
+   force : la lumière ambiante ; astre : la couleur et la force du soleil (ou de la lune). La journée adoucie avec
+   l'ombrage jouet (demande de Yo, v2.1.2 : « la lumière générale est trop forte pour les yeux… une lumière légèrement plus
+   douce ») : le soleil et le ciel un peu moins forts de l'aube au soir, la nuit inchangée */
 const MOMENTS = [
   {h: 0,    ciel: 0x26355E, haut: 0x6A80C0, bas: 0x2A3A58, force: .62, astre: 0xA8BEFF, fort: .28},   // la nuit, bleutée
   {h: 5,    ciel: 0x26355E, haut: 0x6A80C0, bas: 0x2A3A58, force: .62, astre: 0xA8BEFF, fort: .28},
-  {h: 6.5,  ciel: 0xF4BEB4, haut: 0xFFC2BE, bas: 0x8A7480, force: .58, astre: 0xFF9C90, fort: .55},   // l'aube, rosée
-  {h: 8.5,  ciel: 0xA9E3EC, haut: 0xFFFFFF, bas: 0x7A9A6A, force: .62, astre: 0xFFF3DC, fort: .82},   // le jour
-  {h: 13,   ciel: 0xB4E4EA, haut: 0xFFF6E4, bas: 0x86A06A, force: .64, astre: 0xFFE6B0, fort: .92},   // midi, doré
-  {h: 17,   ciel: 0xA9E3EC, haut: 0xFFFFFF, bas: 0x7A9A6A, force: .62, astre: 0xFFF3DC, fort: .82},
-  {h: 19,   ciel: 0xF6B47E, haut: 0xFFB27A, bas: 0x8A6448, force: .56, astre: 0xFF7E3A, fort: .72},   // le soir, orangé
+  {h: 6.5,  ciel: 0xF4BEB4, haut: 0xFFC2BE, bas: 0x8A7480, force: .54, astre: 0xFF9C90, fort: .48},   // l'aube, rosée
+  {h: 8.5,  ciel: 0xA4DCE6, haut: 0xF4F4F0, bas: 0x7A9A6A, force: .54, astre: 0xFFF0D8, fort: .62},   // le jour
+  {h: 13,   ciel: 0xAEDDE4, haut: 0xF4EEDE, bas: 0x86A06A, force: .55, astre: 0xFFE4B0, fort: .68},   // midi, doré
+  {h: 17,   ciel: 0xA4DCE6, haut: 0xF4F4F0, bas: 0x7A9A6A, force: .54, astre: 0xFFF0D8, fort: .62},
+  {h: 19,   ciel: 0xF6B47E, haut: 0xFFB27A, bas: 0x8A6448, force: .52, astre: 0xFF7E3A, fort: .6},    // le soir, orangé
   {h: 20.5, ciel: 0x6A5E96, haut: 0x9A8EC8, bas: 0x3A3A5C, force: .58, astre: 0xC88AB0, fort: .32},   // le crépuscule
   {h: 22,   ciel: 0x26355E, haut: 0x6A80C0, bas: 0x2A3A58, force: .62, astre: 0xA8BEFF, fort: .28},
   {h: 24,   ciel: 0x26355E, haut: 0x6A80C0, bas: 0x2A3A58, force: .62, astre: 0xA8BEFF, fort: .28}
