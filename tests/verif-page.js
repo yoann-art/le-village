@@ -391,6 +391,25 @@ export async function verifier(){
     if(plage !== undefined && modele(plage).herbe) throw new Error("une pierre des champs sur le sable a de l'herbe au pied");
     return `« 🪨 Pierre des champs » sur le bouton ; sa mousse, l'herbe de son pied (${u.saison})${plage !== undefined ? ", pas d'herbe sur le sable" : ""}`;
   });
+  await etape("Les herbes hautes (image de Yo) : une touffe de longs brins courbés, de la saison ; cueillies, elles sont rases", async () => {
+    hold(null);
+    let t = null;
+    for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
+      const i = idx(x, z), s = idx(x, z + 1);
+      if(map.obj[i] === "herbe" && growth(i) >= 1 && !(state.ile[i] && state.ile[i].coupe) && !map.obj[s] && map.type[s] === "grass" && !state.sol[s] && !occ.has(s)){ t = [x, z]; break; }
+    }
+    if(!t) throw new Error("aucune touffe d'herbes hautes accessible");
+    const i = idx(...t), modele = () => { let u = null; objMesh(i) && objMesh(i).traverse(o => { if(o.userData.herbes) u = o.userData.herbes; }); return u; };
+    const u = modele();
+    if(!u || u.etat !== "haute" || u.saison !== saison()) throw new Error(`la touffe : ${JSON.stringify(u)}`);
+    const fibres = owned("fibre");
+    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
+    $("#btn-act").click(); frames(2);
+    if(owned("fibre") <= fibres) throw new Error("cueillir les herbes hautes n'a pas donné de fibres");
+    const v = modele();
+    if(!v || v.etat !== "rase") throw new Error(`cueillies, la touffe n'est pas rase (${JSON.stringify(v)})`);
+    return `une touffe de la saison (${u.saison}), cueillie : +${owned("fibre") - fibres} fibres, puis rase`;
+  });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();
     if(!t) throw new Error("aucun chêne");

@@ -15,6 +15,7 @@ import { pommierModele, souchePommier } from "./pommier.js";
 import { pinModele, souchePin } from "./pin.js";
 import { bouleauModele, soucheBouleau } from "./bouleau.js";
 import { pierreChamps } from "./pierre.js";
+import { herbesModele } from "./herbes.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
    2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
@@ -317,13 +318,8 @@ function buildObj(i){
   } else if(o === "pommier"){                       // le pommier de l'île (étape 2.1, morceau 2c : pommier.js, d'après les images de Yo)
     g.add(pommierModele(stageOf(i), saison(), r, neigeBranches(), fruitsDeSaison(o) && !fruitsLeft(i)));
     g.scale.setScalar(.92 + r * .2);
-  } else if(o === "herbe"){                         // des brins hauts et souples ; ras une fois cueillis
-    const h = stageOf(i) < 2 ? .45 : herbeLeft(i) > 0 ? .25 : 1;
-    const H = enSaison().hautes;
-    [[0,0,H[0]],[.14,.08,H[1]],[-.13,.1,H[2]],[.06,-.14,H[0]],[-.08,-.1,H[1]]].forEach(([x, z, c], k) => {
-      const b = part(G.cone, c, .16, .6 * h * (1 + (k % 2) * .25), .16, x, .3 * h * (1 + (k % 2) * .25), z);
-      b.rotation.set(z * 1.2, 0, -x * 1.2); g.add(b);
-    });
+  } else if(o === "herbe"){                         // les herbes hautes (étape 2.1, morceau 3 : herbes.js, d'après l'image de Yo) ; rases une fois cueillies
+    g.add(herbesModele(saison(), stageOf(i) < 2 ? "jeune" : herbeLeft(i) > 0 ? "rase" : "haute", r));
   } else if(o === "buisson"){                       // une touffe ronde, avec ses baies si elle est pleine
     const st = stageOf(i);
     const [b1, b2] = enSaison().buisson;
