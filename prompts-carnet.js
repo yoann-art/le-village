@@ -9,31 +9,13 @@ window.PROMPTS_CARNET = [
 "families": [
 {
 "name": "L'île du village",
-"note": "Le bois de tous les jours et le verger. Tous gardent le style jouet : 3 à 4 P de haut, tronc épais, feuillage en boules.",
+"note": "Les quatre arbres de l'île (choisis avec Yo, 14 et 15 octobre 2026). Tous gardent le style jouet : 3 à 4 P de haut, tronc épais, feuillage en boules.",
 "items": [
 {
 "id": "arb-chene",
 "name": "Chêne",
 "size": "commun",
 "line": "Un chêne en automne, 3 à 4 P de haut, tronc épais brun miel, feuillage roux en grosses boules, quelques glands au pied."
-},
-{
-"id": "arb-hetre",
-"name": "Hêtre",
-"size": "commun",
-"line": "Un hêtre en automne, 3 à 4 P de haut, tronc épais lisse gris clair, feuillage cuivré en grosses boules, quelques faînes au pied."
-},
-{
-"id": "arb-hetre-jeune",
-"name": "Jeune hêtre",
-"size": "commun",
-"line": "Un jeune hêtre d'environ 1 P de haut, tronc fin lisse gris clair, petit feuillage cuivré en trois boules rondes."
-},
-{
-"id": "arb-hetre-souche",
-"name": "Souche de hêtre",
-"size": "commun",
-"line": "Une souche de hêtre coupée net, environ 0,6 P de large et 0,4 P de haut, écorce lisse gris clair, cernes rose pâle sur le dessus, un peu de mousse verte au pied."
 },
 {
 "id": "arb-bouleau",
@@ -72,78 +54,6 @@ window.PROMPTS_CARNET = [
 "line": "Une souche de pin sylvestre coupée net, environ 0,6 P de large et 0,4 P de haut, écorce orangée en écailles, cernes jaune paille sur le dessus, une goutte de résine dorée sur la coupe."
 },
 {
-"id": "arb-saule-pleureur",
-"name": "Saule pleureur",
-"size": "peu commun",
-"line": "Un saule pleureur au printemps, 3 à 4 P de haut, tronc épais et noueux, longues branches souples qui retombent en rideau vert tendre, chatons duveteux."
-},
-{
-"id": "arb-saule-pleureur-jeune",
-"name": "Jeune saule pleureur",
-"size": "peu commun",
-"line": "Un jeune saule pleureur d'environ 1 P de haut, tronc fin et noueux, quelques branches souples vert tendre qui retombent déjà."
-},
-{
-"id": "arb-saule-pleureur-souche",
-"name": "Souche de saule pleureur",
-"size": "peu commun",
-"line": "Une souche de saule pleureur coupée net, environ 0,6 P de large et 0,4 P de haut, écorce noueuse brun gris, cernes blond doré sur le dessus, quelques jeunes rameaux qui repoussent sur le côté."
-},
-{
-"id": "arb-erable",
-"name": "Érable",
-"size": "peu commun",
-"line": "Un érable en automne, 3 à 4 P de haut, tronc épais crème, feuillage rouge flamboyant en grosses boules, un petit seau de bois accroché au tronc pour la sève."
-},
-{
-"id": "arb-erable-jeune",
-"name": "Jeune érable",
-"size": "peu commun",
-"line": "Un jeune érable d'environ 1 P de haut, tronc fin crème, petit feuillage rouge flamboyant en trois boules rondes."
-},
-{
-"id": "arb-erable-souche",
-"name": "Souche d'érable",
-"size": "peu commun",
-"line": "Une souche d'érable coupée net, environ 0,6 P de large et 0,4 P de haut, écorce crème, cernes crème sur le dessus, une goutte de sève ambrée sur la coupe."
-},
-{
-"id": "arb-tilleul",
-"name": "Tilleul",
-"size": "peu commun",
-"line": "Un tilleul en été, 3 à 4 P de haut, tronc épais ivoire, feuillage vert tendre en grosses boules parsemé de petites fleurs jaune pâle."
-},
-{
-"id": "arb-tilleul-jeune",
-"name": "Jeune tilleul",
-"size": "peu commun",
-"line": "Un jeune tilleul d'environ 1 P de haut, tronc fin ivoire, petit feuillage vert tendre en trois boules rondes, quelques fleurs jaune pâle."
-},
-{
-"id": "arb-tilleul-souche",
-"name": "Souche de tilleul",
-"size": "peu commun",
-"line": "Une souche de tilleul coupée net, environ 0,6 P de large et 0,4 P de haut, écorce ivoire, cernes blanc ivoire sur le dessus, un peu de mousse verte au pied."
-},
-{
-"id": "arb-sapin",
-"name": "Sapin",
-"size": "commun",
-"line": "Un sapin, toujours vert, 3 à 4 P de haut, tronc épais beige clair, feuillage vert sombre en étages arrondis, forme de cône doux."
-},
-{
-"id": "arb-sapin-jeune",
-"name": "Jeune sapin",
-"size": "commun",
-"line": "Un jeune sapin d'environ 1 P de haut, tronc fin beige clair, petit feuillage vert sombre en trois étages arrondis, forme de petit cône doux."
-},
-{
-"id": "arb-sapin-souche",
-"name": "Souche de sapin",
-"size": "commun",
-"line": "Une souche de sapin coupée net, environ 0,6 P de large et 0,4 P de haut, écorce beige grisé, cernes beige clair sur le dessus, quelques aiguilles vertes tombées au pied."
-},
-{
 "id": "arb-pommier",
 "name": "Pommier",
 "size": "commun",
@@ -160,102 +70,12 @@ window.PROMPTS_CARNET = [
 "name": "Souche de pommier",
 "size": "commun",
 "line": "Une souche de pommier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce brun rosé un peu noueuse, cernes brun rosé sur le dessus, une pomme rouge tombée au pied."
-},
-{
-"id": "arb-poirier",
-"name": "Poirier",
-"size": "commun",
-"line": "Un poirier à la fin de l'été, 3 à 4 P de haut, tronc épais rose tendre, feuillage vert en grosses boules, poires jaunes dodues qui pendent."
-},
-{
-"id": "arb-poirier-jeune",
-"name": "Jeune poirier",
-"size": "commun",
-"line": "Un jeune poirier d'environ 1 P de haut, tronc fin rose tendre attaché à un petit tuteur de bois par un lien, petit feuillage vert en trois boules rondes."
-},
-{
-"id": "arb-poirier-souche",
-"name": "Souche de poirier",
-"size": "commun",
-"line": "Une souche de poirier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce rose tendre, cernes rose tendre sur le dessus, une poire jaune tombée au pied."
-},
-{
-"id": "arb-cerisier",
-"name": "Cerisier",
-"size": "peu commun",
-"line": "Un cerisier au printemps, 3 à 4 P de haut, tronc épais rouge cuivré, feuillage en nuage de fleurs roses en grosses boules, quelques pétales qui tombent."
-},
-{
-"id": "arb-cerisier-jeune",
-"name": "Jeune cerisier",
-"size": "peu commun",
-"line": "Un jeune cerisier d'environ 1 P de haut, tronc fin rouge cuivré, petit nuage de fleurs roses en trois boules rondes."
-},
-{
-"id": "arb-cerisier-souche",
-"name": "Souche de cerisier",
-"size": "peu commun",
-"line": "Une souche de cerisier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce rouge cuivré brillante rayée de fines lignes horizontales, cernes rouge cuivré sur le dessus, quelques pétales roses au pied."
-},
-{
-"id": "arb-prunier",
-"name": "Prunier",
-"size": "peu commun",
-"line": "Un prunier à la fin de l'été, 3 à 4 P de haut, tronc épais violacé, feuillage vert en grosses boules plein de prunes violettes."
-},
-{
-"id": "arb-prunier-jeune",
-"name": "Jeune prunier",
-"size": "peu commun",
-"line": "Un jeune prunier d'environ 1 P de haut, tronc fin violacé, petit feuillage vert en trois boules rondes."
-},
-{
-"id": "arb-prunier-souche",
-"name": "Souche de prunier",
-"size": "peu commun",
-"line": "Une souche de prunier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce violacée, cernes violets sur le dessus, une prune violette tombée au pied."
-},
-{
-"id": "arb-noyer",
-"name": "Noyer",
-"size": "peu commun",
-"line": "Un noyer en automne, 3 à 4 P de haut, tronc épais brun chocolat, feuillage vert doré en grosses boules, noix vertes et brunes dans les branches."
-},
-{
-"id": "arb-noyer-jeune",
-"name": "Jeune noyer",
-"size": "peu commun",
-"line": "Un jeune noyer d'environ 1 P de haut, tronc fin brun chocolat, petit feuillage vert doré en trois boules rondes."
-},
-{
-"id": "arb-noyer-souche",
-"name": "Souche de noyer",
-"size": "peu commun",
-"line": "Une souche de noyer coupée net, environ 0,6 P de large et 0,4 P de haut, écorce brun chocolat crevassée, cernes brun chocolat sur le dessus, une noix au pied."
-},
-{
-"id": "arb-chataignier",
-"name": "Châtaignier",
-"size": "peu commun",
-"line": "Un châtaignier en automne, 3 à 4 P de haut, tronc épais brun doré et torsadé, feuillage jaune en grosses boules, bogues vertes piquantes et châtaignes brillantes au pied."
-},
-{
-"id": "arb-chataignier-jeune",
-"name": "Jeune châtaignier",
-"size": "peu commun",
-"line": "Un jeune châtaignier d'environ 1 P de haut, tronc fin brun doré un peu torsadé, petit feuillage jaune en trois boules rondes."
-},
-{
-"id": "arb-chataignier-souche",
-"name": "Souche de châtaignier",
-"size": "peu commun",
-"line": "Une souche de châtaignier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce brun doré torsadée, cernes brun doré sur le dessus, une bogue verte piquante au pied."
 }
 ]
 },
 {
 "name": "La Forêt profonde",
-"note": "Les vieux bois : plus sombres, plus hauts.",
+"note": "Les vieux bois : plus sombres, plus hauts. Dans les clairières, des fruitiers sauvages (cerisier, poirier, châtaignier) dont on rapporte les graines pour son verger.",
 "items": [
 {
 "id": "arb-chene-seculaire",
@@ -366,6 +186,60 @@ window.PROMPTS_CARNET = [
 "line": "Une souche de sureau coupée net, environ 0,5 P de large et 0,3 P de haut, écorce grisâtre et liégeuse, cœur tendre blanc sur le dessus, quelques jeunes pousses sur le côté."
 },
 {
+"id": "arb-cerisier",
+"name": "Cerisier",
+"size": "peu commun",
+"line": "Un cerisier au printemps, 3 à 4 P de haut, tronc épais rouge cuivré, feuillage en nuage de fleurs roses en grosses boules, quelques pétales qui tombent."
+},
+{
+"id": "arb-cerisier-jeune",
+"name": "Jeune cerisier",
+"size": "peu commun",
+"line": "Un jeune cerisier d'environ 1 P de haut, tronc fin rouge cuivré, petit nuage de fleurs roses en trois boules rondes."
+},
+{
+"id": "arb-cerisier-souche",
+"name": "Souche de cerisier",
+"size": "peu commun",
+"line": "Une souche de cerisier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce rouge cuivré brillante rayée de fines lignes horizontales, cernes rouge cuivré sur le dessus, quelques pétales roses au pied."
+},
+{
+"id": "arb-poirier",
+"name": "Poirier",
+"size": "commun",
+"line": "Un poirier à la fin de l'été, 3 à 4 P de haut, tronc épais rose tendre, feuillage vert en grosses boules, poires jaunes dodues qui pendent."
+},
+{
+"id": "arb-poirier-jeune",
+"name": "Jeune poirier",
+"size": "commun",
+"line": "Un jeune poirier d'environ 1 P de haut, tronc fin rose tendre attaché à un petit tuteur de bois par un lien, petit feuillage vert en trois boules rondes."
+},
+{
+"id": "arb-poirier-souche",
+"name": "Souche de poirier",
+"size": "commun",
+"line": "Une souche de poirier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce rose tendre, cernes rose tendre sur le dessus, une poire jaune tombée au pied."
+},
+{
+"id": "arb-chataignier",
+"name": "Châtaignier",
+"size": "peu commun",
+"line": "Un châtaignier en automne, 3 à 4 P de haut, tronc épais brun doré et torsadé, feuillage jaune en grosses boules, bogues vertes piquantes et châtaignes brillantes au pied."
+},
+{
+"id": "arb-chataignier-jeune",
+"name": "Jeune châtaignier",
+"size": "peu commun",
+"line": "Un jeune châtaignier d'environ 1 P de haut, tronc fin brun doré un peu torsadé, petit feuillage jaune en trois boules rondes."
+},
+{
+"id": "arb-chataignier-souche",
+"name": "Souche de châtaignier",
+"size": "peu commun",
+"line": "Une souche de châtaignier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce brun doré torsadée, cernes brun doré sur le dessus, une bogue verte piquante au pied."
+},
+{
 "id": "arb-grand-chene-millenaire",
 "name": "Grand Chêne millénaire",
 "size": "légendaire",
@@ -472,24 +346,6 @@ window.PROMPTS_CARNET = [
 "name": "Souche de cocotier",
 "size": "commun",
 "line": "Une souche de cocotier coupée net, environ 0,5 P de large et 0,4 P de haut, tronc fait d'anneaux brun clair, cœur fibreux sur le dessus, une noix de coco au pied."
-},
-{
-"id": "arb-palmier",
-"name": "Palmier",
-"size": "commun",
-"line": "Un palmier, toujours vert, 3 P de haut, tronc épais et trapu fait d'écailles, éventail de grandes palmes vertes."
-},
-{
-"id": "arb-palmier-jeune",
-"name": "Jeune palmier",
-"size": "commun",
-"line": "Un jeune palmier d'environ 0,8 P de haut, petit tronc trapu fait d'écailles, petit éventail de palmes vertes."
-},
-{
-"id": "arb-palmier-souche",
-"name": "Souche de palmier",
-"size": "commun",
-"line": "Une souche de palmier coupée net, environ 0,6 P de large et 0,4 P de haut, tronc trapu fait d'écailles brunes, cœur fibreux sur le dessus."
 },
 {
 "id": "arb-paletuvier",
@@ -624,22 +480,22 @@ window.PROMPTS_CARNET = [
 "line": "Une souche de pin cembro coupée net, environ 0,6 P de large et 0,4 P de haut, écorce gris brun, cernes blonds parsemés de petits nœuds bruns sur le dessus, un cône violet au pied."
 },
 {
-"id": "arb-bouleau-nain",
-"name": "Bouleau nain",
+"id": "arb-hetre",
+"name": "Hêtre",
 "size": "commun",
-"line": "Un bouleau nain de montagne, 1 P de haut, tronc blanc tordu qui rampe sur un rocher, petites feuilles rondes vert vif."
+"line": "Un hêtre en automne, 3 à 4 P de haut, tronc épais lisse gris clair, feuillage cuivré en grosses boules, quelques faînes au pied."
 },
 {
-"id": "arb-bouleau-nain-jeune",
-"name": "Jeune bouleau nain",
+"id": "arb-hetre-jeune",
+"name": "Jeune hêtre",
 "size": "commun",
-"line": "Un tout jeune bouleau nain d'environ 0,4 P de haut, tige blanche tordue qui rampe sur une petite pierre, quelques feuilles rondes vert vif."
+"line": "Un jeune hêtre d'environ 1 P de haut, tronc fin lisse gris clair, petit feuillage cuivré en trois boules rondes."
 },
 {
-"id": "arb-bouleau-nain-souche",
-"name": "Souche de bouleau nain",
+"id": "arb-hetre-souche",
+"name": "Souche de hêtre",
 "size": "commun",
-"line": "Une petite souche de bouleau nain coupée net, environ 0,3 P de large et 0,2 P de haut, écorce blanche tordue, posée contre une petite pierre."
+"line": "Une souche de hêtre coupée net, environ 0,6 P de large et 0,4 P de haut, écorce lisse gris clair, cernes rose pâle sur le dessus, un peu de mousse verte au pied."
 },
 {
 "id": "arb-givrier",
@@ -864,9 +720,159 @@ window.PROMPTS_CARNET = [
 "line": "Un arbre-phénix légendaire, 4 P de haut, tronc épais doré et rouge, feuillage de flammes orange et or qui renaissent, une longue plume de feu posée dans les branches."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 : ces 8 essences arriveront plus tard, avec une fête ou une mise à jour (le sapin pour la fête d'hiver, le prunier et le noyer pour « Les vergers »…). Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "arb-sapin",
+"name": "Sapin",
+"size": "commun",
+"line": "Un sapin, toujours vert, 3 à 4 P de haut, tronc épais beige clair, feuillage vert sombre en étages arrondis, forme de cône doux."
+},
+{
+"id": "arb-sapin-jeune",
+"name": "Jeune sapin",
+"size": "commun",
+"line": "Un jeune sapin d'environ 1 P de haut, tronc fin beige clair, petit feuillage vert sombre en trois étages arrondis, forme de petit cône doux."
+},
+{
+"id": "arb-sapin-souche",
+"name": "Souche de sapin",
+"size": "commun",
+"line": "Une souche de sapin coupée net, environ 0,6 P de large et 0,4 P de haut, écorce beige grisé, cernes beige clair sur le dessus, quelques aiguilles vertes tombées au pied."
+},
+{
+"id": "arb-erable",
+"name": "Érable",
+"size": "peu commun",
+"line": "Un érable en automne, 3 à 4 P de haut, tronc épais crème, feuillage rouge flamboyant en grosses boules, un petit seau de bois accroché au tronc pour la sève."
+},
+{
+"id": "arb-erable-jeune",
+"name": "Jeune érable",
+"size": "peu commun",
+"line": "Un jeune érable d'environ 1 P de haut, tronc fin crème, petit feuillage rouge flamboyant en trois boules rondes."
+},
+{
+"id": "arb-erable-souche",
+"name": "Souche d'érable",
+"size": "peu commun",
+"line": "Une souche d'érable coupée net, environ 0,6 P de large et 0,4 P de haut, écorce crème, cernes crème sur le dessus, une goutte de sève ambrée sur la coupe."
+},
+{
+"id": "arb-tilleul",
+"name": "Tilleul",
+"size": "peu commun",
+"line": "Un tilleul en été, 3 à 4 P de haut, tronc épais ivoire, feuillage vert tendre en grosses boules parsemé de petites fleurs jaune pâle."
+},
+{
+"id": "arb-tilleul-jeune",
+"name": "Jeune tilleul",
+"size": "peu commun",
+"line": "Un jeune tilleul d'environ 1 P de haut, tronc fin ivoire, petit feuillage vert tendre en trois boules rondes, quelques fleurs jaune pâle."
+},
+{
+"id": "arb-tilleul-souche",
+"name": "Souche de tilleul",
+"size": "peu commun",
+"line": "Une souche de tilleul coupée net, environ 0,6 P de large et 0,4 P de haut, écorce ivoire, cernes blanc ivoire sur le dessus, un peu de mousse verte au pied."
+},
+{
+"id": "arb-prunier",
+"name": "Prunier",
+"size": "peu commun",
+"line": "Un prunier à la fin de l'été, 3 à 4 P de haut, tronc épais violacé, feuillage vert en grosses boules plein de prunes violettes."
+},
+{
+"id": "arb-prunier-jeune",
+"name": "Jeune prunier",
+"size": "peu commun",
+"line": "Un jeune prunier d'environ 1 P de haut, tronc fin violacé, petit feuillage vert en trois boules rondes."
+},
+{
+"id": "arb-prunier-souche",
+"name": "Souche de prunier",
+"size": "peu commun",
+"line": "Une souche de prunier coupée net, environ 0,6 P de large et 0,4 P de haut, écorce violacée, cernes violets sur le dessus, une prune violette tombée au pied."
+},
+{
+"id": "arb-noyer",
+"name": "Noyer",
+"size": "peu commun",
+"line": "Un noyer en automne, 3 à 4 P de haut, tronc épais brun chocolat, feuillage vert doré en grosses boules, noix vertes et brunes dans les branches."
+},
+{
+"id": "arb-noyer-jeune",
+"name": "Jeune noyer",
+"size": "peu commun",
+"line": "Un jeune noyer d'environ 1 P de haut, tronc fin brun chocolat, petit feuillage vert doré en trois boules rondes."
+},
+{
+"id": "arb-noyer-souche",
+"name": "Souche de noyer",
+"size": "peu commun",
+"line": "Une souche de noyer coupée net, environ 0,6 P de large et 0,4 P de haut, écorce brun chocolat crevassée, cernes brun chocolat sur le dessus, une noix au pied."
+},
+{
+"id": "arb-saule-pleureur",
+"name": "Saule pleureur",
+"size": "peu commun",
+"line": "Un saule pleureur au printemps, 3 à 4 P de haut, tronc épais et noueux, longues branches souples qui retombent en rideau vert tendre, chatons duveteux."
+},
+{
+"id": "arb-saule-pleureur-jeune",
+"name": "Jeune saule pleureur",
+"size": "peu commun",
+"line": "Un jeune saule pleureur d'environ 1 P de haut, tronc fin et noueux, quelques branches souples vert tendre qui retombent déjà."
+},
+{
+"id": "arb-saule-pleureur-souche",
+"name": "Souche de saule pleureur",
+"size": "peu commun",
+"line": "Une souche de saule pleureur coupée net, environ 0,6 P de large et 0,4 P de haut, écorce noueuse brun gris, cernes blond doré sur le dessus, quelques jeunes rameaux qui repoussent sur le côté."
+},
+{
+"id": "arb-palmier",
+"name": "Palmier",
+"size": "commun",
+"line": "Un palmier, toujours vert, 3 P de haut, tronc épais et trapu fait d'écailles, éventail de grandes palmes vertes."
+},
+{
+"id": "arb-palmier-jeune",
+"name": "Jeune palmier",
+"size": "commun",
+"line": "Un jeune palmier d'environ 0,8 P de haut, petit tronc trapu fait d'écailles, petit éventail de palmes vertes."
+},
+{
+"id": "arb-palmier-souche",
+"name": "Souche de palmier",
+"size": "commun",
+"line": "Une souche de palmier coupée net, environ 0,6 P de large et 0,4 P de haut, tronc trapu fait d'écailles brunes, cœur fibreux sur le dessus."
+},
+{
+"id": "arb-bouleau-nain",
+"name": "Bouleau nain",
+"size": "commun",
+"line": "Un bouleau nain de montagne, 1 P de haut, tronc blanc tordu qui rampe sur un rocher, petites feuilles rondes vert vif."
+},
+{
+"id": "arb-bouleau-nain-jeune",
+"name": "Jeune bouleau nain",
+"size": "commun",
+"line": "Un tout jeune bouleau nain d'environ 0,4 P de haut, tige blanche tordue qui rampe sur une petite pierre, quelques feuilles rondes vert vif."
+},
+{
+"id": "arb-bouleau-nain-souche",
+"name": "Souche de bouleau nain",
+"size": "commun",
+"line": "Une petite souche de bouleau nain coupée net, environ 0,3 P de large et 0,2 P de haut, écorce blanche tordue, posée contre une petite pierre."
+}
+]
 }
 ],
-"lead": "Les arbres du Grand Carnet, de l'île au Volcan. Pour chaque arbre : l'adulte, puis son jeune arbre et sa souche (sauf les deux légendaires, qui ne se coupent pas). Le jeune chêne et la souche de chêne sont dans l'onglet Décor de l'île.",
+"lead": "Les arbres du Grand Carnet, de l'île au Volcan : 39 au lancement, rangés par lieu, et 8 en réserve à la fin (décidé avec Yo le 15 octobre 2026). Pour chaque arbre : l'adulte, puis son jeune arbre et sa souche (sauf les deux légendaires, qui ne se coupent pas). Le jeune chêne et la souche de chêne sont dans l'onglet Décor de l'île.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT : d'abord l'arbre adulte.",
 "Dans la même conversation, colle ensuite son jeune arbre, puis sa souche : les trois images se ressembleront.",
