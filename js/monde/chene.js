@@ -23,6 +23,13 @@ export function aleaDe(graine){                                   // un tirage f
   return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 /* Une branche (ou une racine) de A à B, épaisse de rA en A et rB en B */
+/* Une racine en patte (images de Yo, le pin et le bouleau) : des bosses rondes de plus en plus petites, qui se fondent dans le
+   pied ; a : sa direction, rb : le rayon du pied, l : sa longueur, er : son épaisseur, c : sa couleur, bout : celle du bout */
+export function patte(M, a, rb, l, er, c, bout, geo = BOSSE){
+  const d = V(Math.cos(a), 0, Math.sin(a));
+  [[.15, 1.3, 1.25], [.42, 1.05, .9], [.68, .85, .7], [.92, .62, .5]].forEach(([t, e, hy], j) =>
+    M.push({geo, m: new THREE.Matrix4().compose(d.clone().multiplyScalar(rb * .55 + (l - rb * .55) * t).add(V(0, er * hy * .55, 0)), new THREE.Quaternion().setFromUnitVectors(V(1, 0, 0), d), V(er * e * 1.5, er * e * hy, er * e)), c: j === 3 ? bout : c}));
+}
 /* Une grosse branche courbe, comme sur les images : deux morceaux qui plient vers le haut, un noeud rond à la pliure */
 export function brancheCourbe(M, A, B, rA, rB, c){
   const P = A.clone().lerp(B, .5).add(V(0, .12 + A.distanceTo(B) * .08, 0)), rP = (rA + rB) / 2;
@@ -37,7 +44,7 @@ export function segment(A, B, rA, rB, cotes = 7){
 }
 /* Le tronc : un cylindre qui s'évase au pied, creusé de sillons qui tournent un peu ; ecailles (le nombre de colonnes) :
    une écorce en plaques qui se chevauchent, comme celle du pin sylvestre (image de Yo), le bord de chaque plaque plus sombre */
-export function tronc(rHaut, rBas, h, sillons = 7, creux = .07, ecailles = 0, evase = .55){
+export function tronc(rHaut, rBas, h, sillons = 7, creux = .07, ecailles = 0, evase = .55, ondule = 0){   // ondule : le tronc fait un S (le bouleau)
   const g = new THREE.CylinderGeometry(rHaut, rBas, h, ecailles ? 24 : 14, ecailles ? Math.max(8, Math.round(h * 5)) : 8);
   const p = g.attributes.position, teinte = new Float32Array(p.count);
   for(let i = 0; i < p.count; i++){
@@ -49,7 +56,7 @@ export function tronc(rHaut, rBas, h, sillons = 7, creux = .07, ecailles = 0, ev
       const bord = Math.min(1, Math.min(fu, 1 - fu) * 5) * Math.min(1, fv * 5);   // 0 au bord d'une plaque, 1 au milieu
       plaque = .7 + .3 * bord; k *= 1 + .035 * bord;
     }
-    p.setXYZ(i, x * k, y + h / 2, z * k);
+    p.setXYZ(i, x * k + ondule * Math.sin(t * Math.PI * 1.3), y + h / 2, z * k);
     teinte[i] = (.78 + .22 * (sil + 1) / 2) * (.84 + .16 * Math.min(1, t * 3)) * plaque;   // les sillons plus sombres, le pied aussi
   }
   g.setAttribute("teinte", new THREE.BufferAttribute(teinte, 1));
@@ -63,7 +70,7 @@ export function tronc(rHaut, rBas, h, sillons = 7, creux = .07, ecailles = 0, ev
 export function feuilleGeo(largeur, rangs = 8, pli = .38){
   const pos = [], te = [], ind = [];
   for(let k = 0; k <= rangs; k++){
-    const t = k / rangs, w = Math.max(.012, largeur(t)), clair = .8 + .26 * t;
+    const t = k / rangs, w = Math.max(.012, largeur(t)), clair = .72 + .4 * t;   // la queue à l'ombre, la pointe dans la lumière : chaque feuille se détache
     pos.push(-w, t - .5, w * pli, 0, t - .5, 0, w, t - .5, w * pli);
     te.push(clair, clair * .82, clair);
   }
@@ -141,7 +148,7 @@ function boisDe(f, hiver, alea){
    images de Yo : des boules pleines) ; la lumière l'éclaire comme une boule (normales qui partent du centre, un peu mêlées
    à celles de chaque feuille) ; l'ombre douce est peinte : le creux de la boule et son dessous plus sombres, le bout des
    feuilles et le dessus plus clairs, les boules du bas un peu à l'ombre de celles du haut */
-export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE, taille = .6, exposant = 1.6){
+export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE, taille = .6, exposant = 1.6, fond = null){
   const M = [], ys = f.boules.map(b => b[1]), yBas = Math.min(...ys), yHaut = Math.max(...ys);
   for(const [x, y, z, r, fy = 1] of f.boules){                // fy : une boule aplatie (les plateaux du pin sylvestre)
     const C = V(x, y, z), haut = yHaut > yBas ? (y - yBas) / (yHaut - yBas) : 1;
@@ -150,7 +157,7 @@ export function feuillageDe(f, tons, alea, nbFeuilles = 11, feuille = FEUILLE, t
       const d = Math.hypot(px - x, (py - y) * 1.15 / fy, pz - z) / r, dessus = (py - y) / (r * fy);
       return Math.min(1.2, Math.max(.42, .52 + .42 * Math.min(1, Math.max(0, (d - .5) / .55)) + .3 * dessus)) * (.86 + .14 * haut);
     };
-    M.push({geo: BOULE, m: new THREE.Matrix4().compose(C, new THREE.Quaternion(), V(r * .84, r * .74 * fy, r * .84)), c: new THREE.Color(tons[0]).multiplyScalar(.84).getHex(), normale: radiale, ombre});
+    M.push({geo: BOULE, m: new THREE.Matrix4().compose(C, new THREE.Quaternion(), V(r * .84, r * .74 * fy, r * .84)), c: fond !== null ? fond : new THREE.Color(tons[0]).multiplyScalar(.84).getHex(), normale: radiale, ombre});   // fond : la couleur du creux (le bouleau : orangé sombre)
     const n = Math.max(8, Math.round(nbFeuilles * (r / .6) ** exposant));   // exposant : les petites boules gardent assez de feuilles (pin)
     for(let k = 0; k < n; k++){
       /* des points répartis sur la boule (spirale de Fibonacci), surtout sur le dessus et les côtés */

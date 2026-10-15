@@ -49,7 +49,7 @@ const FLEURS_VENTE = Object.keys(FLEURS);
 const MONSTRES_VENTE = ["croc", "fourrureGrise", "defense", "cuirEpais", "aileMembraneuse", "coeurDeBois", "glandePoison", "ventouse", "flammeBleue", "ecailleGrise", "tourbe", "racineAncienne", "ecailleHydre"];
 const MINE_VENTE = ["charbon", "etain", "granit", "quartz", "amethyste", "argent", "marbre", "grenat", "geode", "quartzRose", "citrine", "oeilTigre", "bronze", "verre"];   // pas le Cœur de la mine
 const FORET_VENTE = ["boisCharme", "boisFrene", "boisIf", "boisChene", "baiesHoux", "fleursSureau", "baiesSureau"];
-const VERGER_VENTE = ["pomme", "boisPommier", "boisPin", "resine"];   // les arbres de l'île (étape 2.1, morceau 2c)
+const VERGER_VENTE = ["pomme", "boisPommier", "boisPin", "resine", "boisBouleau", "ecorceBouleau"];   // les arbres de l'île (étape 2.1, morceau 2c)
 const MARAIS_VENTE = ["boisCypres", "boisAulne", "eauBrume", "fruitLanterne", ...PLANTES_MARAIS];   // étape 1.13, morceau 4
 const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...Object.keys(OISEAUX), "poissonGrille"];
 /* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : seul le sac suivant se fabrique, et pas s'il est déjà en cours */

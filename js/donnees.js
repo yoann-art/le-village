@@ -218,6 +218,9 @@ export const GRAINES = {
   /* Le pin sylvestre de l'île (étape 2.1, morceau 2c) ; sa graine (commun : pousse en 2 h) */
   grainePin:{nom:"Graine de pin", pluriel:"graines de pin", emoji:"🌰", plante:"pin", pousse:7200, sachet:0x467E30,
     usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un pin sylvestre y poussera (jamais collé à un autre arbre). Toujours vert."},
+  /* Le bouleau de l'île (étape 2.1, morceau 2c) ; sa graine (commun : pousse en 2 h) */
+  graineBouleau:{nom:"Graine de bouleau", pluriel:"graines de bouleau", emoji:"🌰", plante:"bouleau", pousse:7200, sachet:0xF2B21E,
+    usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un bouleau y poussera (jamais collé à un autre arbre). Ses feuilles deviennent d'or en automne."},
   graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
   graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
@@ -265,6 +268,9 @@ export const RECOLTE = {
   /* Le pin sylvestre de l'île (étape 2.1, morceau 2c ; Grand Carnet : « Bois, résine pour les torches », toujours vert) : son
      bois jaune paille, sa graine 3 fois sur 4, et de la résine une fois sur deux (bonus) ; il laisse sa souche. Choisi par Claude */
   pin:    {nom:"le pin sylvestre", outil:"hache", coups:3, res:"boisPin", parCoup:1, graine:"grainePin", chance:.75, bonus:{k:"resine", chance:.5}},
+  /* Le bouleau de l'île (étape 2.1, morceau 2c ; Grand Carnet : « Bois, écorce blanche pour les parchemins ») : son bois blanc
+     nacré, sa graine 3 fois sur 4, et son écorce une fois sur deux (bonus) ; il laisse sa souche. Choisi par Claude */
+  bouleau:{nom:"le bouleau", outil:"hache", coups:3, res:"boisBouleau", parCoup:1, graine:"graineBouleau", chance:.75, bonus:{k:"ecorceBouleau", chance:.5}},
   /* Les rochers de l'île ne reviennent jamais (décidé par Yo) : ensuite, la pierre se trouve à la mine */
   rock:   {nom:"le rocher", outil:"pioche", coups:3, res:"pierre", parCoup:1, prendre:"rocher"},
   rockCuivre:{nom:"le rocher à veines de cuivre", outil:"pioche", coups:3, res:"cuivre", parCoup:1, prendre:"rocherCuivre"},
@@ -713,6 +719,11 @@ export const PRODUITS = {
     usage:"Jaune paille (carnet). Il se coupe à la hache sur les pins sylvestres, près des plages."},
   resine:     {nom:"Résine", pluriel:"résine", emoji:"🍯", prix:2, une:true, aide:"La résine coule des pins sylvestres qu'on abat (une fois sur deux).",
     usage:"La résine dorée du pin sylvestre : pour les torches (Grand Carnet) ; plus tard, des torches qui brûlent plus longtemps. Elle se vend au comptoir."},
+  /* Le bouleau de l'île (étape 2.1, morceau 2c ; Grand Carnet) ; prix choisis par Claude */
+  boisBouleau:{nom:"Bois de bouleau", pluriel:"bois de bouleau", emoji:"🪵", bois:0xF0E8DA, prix:1, aide:"Le bois de bouleau se coupe sur les bouleaux de l'île, au bord de l'étang et des mares.",
+    usage:"Blanc nacré (carnet). Il se coupe à la hache sur les bouleaux, au bord de l'eau douce."},
+  ecorceBouleau:{nom:"Écorce de bouleau", pluriel:"écorces de bouleau", emoji:"📜", prix:2, une:true, aide:"L'écorce se détache des bouleaux qu'on abat (une fois sur deux).",
+    usage:"L'écorce blanche du bouleau : pour les parchemins (Grand Carnet), plus tard. Elle se vend au comptoir."},
   boisPommier:{nom:"Bois de pommier", pluriel:"bois de pommier", emoji:"🪵", bois:0xC8826A, prix:2, aide:"Le bois de pommier se coupe sur les pommiers de l'île (on perd ses pommes).",
     usage:"Brun rosé. Un bois rare (carnet) : abattre un pommier coûte ses pommes. Il se coupe à la hache."},
   /* Le Marais brumeux (étape 1.13, morceau 4 ; Grand Carnet) : ses bois, l'eau de brume et les fruits-lanternes */

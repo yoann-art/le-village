@@ -9,7 +9,7 @@
    des pommes de pin au pied. Il pousse près des plages (ile.js).
    Mêmes petits outils que le chêne et le pommier (chene.js), au plus près des images (règle de Yo, 14 octobre 2026). */
 import { fusionner } from "./formes.js";
-import { aleaDe, segment, brancheCourbe, tronc, feuilleGeo, GLAND, BOSSE, NEIGE_GEO, feuillageDe, ombreDe, feuillesEtOmbre, MAT_BOIS, MAT_FEUILLES, MAT_PLAT, mesh, TONS_ESPECES } from "./chene.js";
+import { aleaDe, segment, brancheCourbe, patte, tronc, feuilleGeo, GLAND, BOSSE, NEIGE_GEO, feuillageDe, ombreDe, feuillesEtOmbre, MAT_BOIS, MAT_FEUILLES, MAT_PLAT, mesh, TONS_ESPECES } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const Q = new THREE.Quaternion();
@@ -36,19 +36,13 @@ const FORME = {
   jeune:  {tronc: [.06, .12, 1.7], racines: [4, .32, .07], moignon: .55,
     boules: [[0, 1.78, 0, .36, 1.3], [-.36, 1.38, .05, .38, .72], [.38, 1.34, -.05, .38, .72], [-.44, .96, .1, .38, .66], [.46, .92, -.05, .36, .66]]}
 };
-/* Une racine en patte (images de Yo) : des bosses rondes de plus en plus petites, qui se fondent dans le pied */
-function patte(M, a, rb, l, er, c, geo = BOSSE){
-  const d = V(Math.cos(a), 0, Math.sin(a));
-  [[.15, 1.3, 1.25], [.42, 1.05, .9], [.68, .85, .7], [.92, .62, .5]].forEach(([t, e, hy], j) =>
-    M.push({geo, m: new THREE.Matrix4().compose(d.clone().multiplyScalar(rb * .55 + (l - rb * .55) * t).add(V(0, er * hy * .55, 0)), new THREE.Quaternion().setFromUnitVectors(V(1, 0, 0), d), V(er * e * 1.5, er * e * hy, er * e)), c: j === 3 ? BOIS_SOMBRE : c}));
-}
 /* Le bois : le tronc en plaques, ses racines en pattes, ses branches à l'horizontale qui se divisent sous chaque plateau */
 function boisDe(f, alea){
   const [rh, rb, h] = f.tronc, M = [];
   M.push({geo: tronc(rh, rb, h, 6, .04, 8), m: new THREE.Matrix4(), c: BOIS});
   M.push({geo: BOSSE, m: new THREE.Matrix4().compose(V(0, rb * .45, 0), Q, V(rb * 1.25, rb * .75, rb * 1.25)), c: BOIS});   // le pied, large
   const [nr, lr, er] = f.racines;
-  for(let k = 0; k < nr; k++) patte(M, k / nr * Math.PI * 2 + alea() * .4, rb, lr * (.85 + alea() * .3), er, k % 2 ? BOIS : BOIS_SOMBRE);
+  for(let k = 0; k < nr; k++) patte(M, k / nr * Math.PI * 2 + alea() * .4, rb, lr * (.85 + alea() * .3), er, k % 2 ? BOIS : BOIS_SOMBRE, BOIS_SOMBRE);
   for(const [x, y, z, r, fy] of f.boules){
     const ya = y - (f === FORME.adulte ? .6 : .25), rt = rh + (rb - rh) * Math.max(0, 1 - ya / h);
     if(Math.hypot(x, z) < .15){ M.push({...segment(V(0, h - .05, 0), V(x, y - r * fy * .3, z), rh * .8, rh * .5), c: BOIS}); continue; }   // la cime
@@ -153,7 +147,7 @@ export function souchePin(neige = false, automne = false){
     [.29, .23, .17, .11, .05].forEach((rr, k) => M.push({geo: new THREE.TorusGeometry(rr, .01, 4, 26), m: new THREE.Matrix4().compose(V(0, .402, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), V(1, 1, 1)), c: k % 2 ? 0xD9A35E : 0xE4B46C}));
     for(const a of [.4, 2.3, 4.2])                           // les fentes du dessus
       M.push({geo: new THREE.BoxGeometry(.3, .012, .014), m: new THREE.Matrix4().compose(V(Math.cos(a) * .17, .405, -Math.sin(a) * .17), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, a, 0)), V(1, 1, 1)), c: 0xB07A40});
-    for(let k = 0; k < 6; k++) patte(M, k / 6 * Math.PI * 2 + .2 + alea() * .3, .4, .82, .13, k % 2 ? BOIS : BOIS_SOMBRE, GLAND);
+    for(let k = 0; k < 6; k++) patte(M, k / 6 * Math.PI * 2 + .2 + alea() * .3, .4, .82, .13, k % 2 ? BOIS : BOIS_SOMBRE, BOIS_SOMBRE, GLAND);
     /* le noeud sur le côté : un anneau de bois et son coeur */
     const N = V(-.33, .2, .26), q = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), V(-.78, 0, .62).normalize());
     M.push({geo: new THREE.TorusGeometry(.065, .028, 6, 14), m: new THREE.Matrix4().compose(N, q, V(1, 1, 1)), c: 0xB4602C});

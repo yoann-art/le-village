@@ -13,6 +13,7 @@ import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
 import { cheneModele, soucheModele } from "./chene.js";
 import { pommierModele, souchePommier } from "./pommier.js";
 import { pinModele, souchePin } from "./pin.js";
+import { bouleauModele, soucheBouleau } from "./bouleau.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
    2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
@@ -51,7 +52,9 @@ function genMap(seed){
     type[idx(x,z)] = t;
   }
   /* Un arbre ne pousse pas collé à un autre : son feuillage fait 2 P de large */
-  const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && ["tree", "pommier", "pin"].includes(obj[idx(x+dx, z+dz)]));
+  const treeNear = (x,z) => [[-1,0],[-1,-1],[0,-1],[1,-1]].some(([dx,dz]) => inb(x+dx, z+dz) && ["tree", "pommier", "pin", "bouleau"].includes(obj[idx(x+dx, z+dz)]));
+  /* le bouleau aime l'eau douce : un arbre à moins de 5 cases de l'étang ou d'une mare est un bouleau */
+  const eauDoucePres = (x, z) => Math.hypot(x - (c+8), z - (c-7)) < 2.3 + 5 || mares.some(m => Math.hypot(x - m.x, z - m.z) < m.r + 5);
   /* le pin sylvestre aime le sable : un arbre à moins de 3 cases d'une plage est un pin */
   const sablePres = (x, z) => { for(let dz = -3; dz <= 3; dz++) for(let dx = -3; dx <= 3; dx++) if(inb(x+dx, z+dz) && type[idx(x+dx, z+dz)] === "sand") return true; return false; };
   /* Les essences de l'île (étape 2.1, morceau 2c ; décidé avec Yo le 14 octobre 2026 : le chêne, le pommier, le pin
@@ -66,7 +69,7 @@ function genMap(seed){
     const r = rnd();
     if(type[i] === "grass"){
       const enBois = noise(bois, x, z) > .7;
-      if((enBois && r < .5) || r < .006){ if(!treeNear(x,z)) obj[i] = !enBois && hache(i) < .3 ? "pommier" : sablePres(x, z) ? "pin" : "tree"; }
+      if((enBois && r < .5) || r < .006){ if(!treeNear(x,z)) obj[i] = !enBois && hache(i) < .3 ? "pommier" : sablePres(x, z) ? "pin" : eauDoucePres(x, z) ? "bouleau" : "tree"; }
       else if(r < .026) obj[i] = "rock";
     } else if(type[i] === "sand" && r < .02) obj[i] = "rock";
   }
@@ -289,7 +292,7 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const ENNEIGE = new Set(["tree", "souche", "pommier", "pin"]);
+const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
@@ -302,7 +305,11 @@ function buildObj(i){
     g.scale.setScalar(.9 + r * .25);
   } else if(o === "souche"){                        // ce qui reste d'un arbre coupé (étape 2.1) : la pelle l'enlève
     const de = (state.ile[i] || {}).de;
-    g.add(de === "pommier" ? souchePommier(neigeBranches(), saison() === "automne") : de === "pin" ? souchePin(neigeBranches(), saison() === "automne") : soucheModele(neigeBranches()));
+    g.add(de === "pommier" ? souchePommier(neigeBranches(), saison() === "automne") : de === "pin" ? souchePin(neigeBranches(), saison() === "automne")
+      : de === "bouleau" ? soucheBouleau(neigeBranches()) : soucheModele(neigeBranches()));
+  } else if(o === "bouleau"){                       // le bouleau de l'île (étape 2.1, morceau 2c : bouleau.js, d'après les images de Yo)
+    g.add(bouleauModele(stageOf(i), saison(), r, neigeBranches()));
+    g.scale.setScalar(.92 + r * .2);
   } else if(o === "pin"){                           // le pin sylvestre de l'île (étape 2.1, morceau 2c : pin.js, d'après les images de Yo)
     g.add(pinModele(stageOf(i), saison(), r, neigeBranches()));
     g.scale.setScalar(.92 + r * .2);

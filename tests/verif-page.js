@@ -461,6 +461,38 @@ export async function verifier(){
     }
     return `${pins} pins sauvages, tous près d'une plage ; toujours vert, de la neige sur ses plateaux, son pied d'automne ; son bois, sa souche ; le jeune pin`;
   });
+  await etape("Le bouleau (étape 2.1) : au bord de l'eau douce ; feuilles d'or en automne (et au pied), nu en hiver ; son bois, son écorce, sa souche ; le jeune bouleau", async () => {
+    let bouleaux = 0;
+    for(let i = 0; i < N * N; i++) if(map.obj[i] === "bouleau") bouleaux++;
+    if(bouleaux < 5) throw new Error(`${bouleaux} bouleaux sauvages`);
+    const libre = j => !map.obj[j] && map.type[j] === "grass" && !state.sol[j] && !occ.has(j) && !state.chemins[j];
+    let p = null;
+    for(let z = 20; z < N - 20 && !p; z++) for(let x = 20; x < N - 20; x++)
+      if([[0, 0], [0, 1], [-1, 0], [1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1], [1, 1]].every(([dx, dz]) => libre(idx(x + dx, z + dz)))){ p = [x, z]; break; }
+    if(!p) throw new Error("pas de place pour un bouleau");
+    const i = idx(...p), vu = {}, u = () => objMesh(i).children[0].userData;
+    setObj(i, "bouleau");
+    try {
+      for(const s of ["printemps", "ete", "automne", "hiver"]){ forcerSaison(s); rafraichirSaison(); vu[s] = u().bouleau; }
+      if(!vu.printemps.feuillage || !vu.ete.feuillage || !vu.automne.feuillage || !vu.automne.pied || vu.ete.pied || vu.hiver.feuillage) throw new Error(`le bouleau au fil des saisons : ${JSON.stringify(vu)}`);
+      forcerSaison(null); rafraichirSaison();
+      sacAdd("hachePierre", 1); enMain("hachePierre");
+      placePlayer(centerOf(p[0]), centerOf(p[1] + 1) + .1, 0, -1); frames(1, .016);
+      if($("#btn-act").textContent !== "🌳 Bouleau") throw new Error(`devant le bouleau : « ${$("#btn-act").textContent} »`);
+      const bb = owned("boisBouleau");
+      for(let k = 0; k < RECOLTE.bouleau.coups; k++){ frames(1, .016); $("#btn-act").click(); frames(25); }
+      if(owned("boisBouleau") <= bb) throw new Error("pas de bois de bouleau");
+      if(map.obj[i] !== "souche" || u().souche !== "bouleau") throw new Error(`à la place du bouleau : ${map.obj[i]}`);
+      frames(1, .016);
+      if($("#btn-act").textContent !== "🪵 Souche de bouleau") throw new Error(`devant la souche : « ${$("#btn-act").textContent} »`);
+      setObj(i, "bouleau", Date.now() - GRAINES.graineBouleau.pousse * 750);
+      if(!u().bouleau || u().bouleau.stade !== 1) throw new Error("pas de jeune bouleau");
+    } finally {
+      setObj(i, null); forcerSaison(null); rafraichirSaison(); hold(null);
+      state.sac = state.sac.filter(it => !["boisBouleau", "graineBouleau", "ecorceBouleau"].includes(it.k));   // le sac reste léger pour la suite
+    }
+    return `${bouleaux} bouleaux sauvages ; feuillu du printemps à l'automne (feuilles au pied), nu en hiver ; son bois, sa souche ; le jeune bouleau`;
+  });
   await etape("L'usure : un outil s'use à chaque coup, sa jauge baisse, puis il se casse et disparaît", async () => {
     const k = "hachePierre";
     if(!(state.usure[k] > 0)) throw new Error("la hache ne s'est pas usée en coupant l'arbre");

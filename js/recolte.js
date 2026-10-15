@@ -215,7 +215,7 @@ const info = label => ({label, run: () => toast(label)});
    ses mots (Planter, Poser, Creuser, Combler, Accrocher) */
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const sansArticle = s => cap(s.replace(/^(le |la |les |l')/, ""));
-const EMOJI_ARBRE = {if: "🌲", cypres: "🌲", houx: "🌿", sureau: "🌿", arbreLanterne: "🏮", pommier: "🍎", pin: "🌲"};
+const EMOJI_ARBRE = {if: "🌲", cypres: "🌲", houx: "🌿", sureau: "🌿", arbreLanterne: "🏮", pommier: "🍎", pin: "🌲", bouleau: "🌳"};
 const EMOJI_FLEUR = {tulipe: "🌷", rose: "🌹", tournesol: "🌻", coquelicot: "🌺"};
 const PRECIEUX = new Set(["rockQuartz", "rockAmethyste", "rockGrenat", "rockGeode"]);
 function nomCible(t){
@@ -496,7 +496,7 @@ function remplir(){
 }
 
 /* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
-const FIN = {tree: "🌳 L'arbre est tombé", pommier: "🍎 Le pommier est tombé", pin: "🌲 Le pin est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
+const FIN = {tree: "🌳 L'arbre est tombé", pommier: "🍎 Le pommier est tombé", pin: "🌲 Le pin est tombé", bouleau: "🌳 Le bouleau est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
   rockAmethyste: "💜 Le rocher s'ouvre sur une améthyste", rockGrenat: "❤️ Le rocher s'ouvre sur un grenat", rockGeode: "🥚 Une géode se détache"};
 const IL_FAUT = {hache: "🪓 Il te faut une hache : fabrique-la à l'établi de la Scierie", pioche: "⛏️ Il te faut une pioche : fabrique-la à l'établi de la Scierie"};
 const PIOCHE = {2: "une pioche en cuivre", 3: "une pioche en bronze"};

@@ -11,9 +11,9 @@ import { G, part, toon } from "./formes.js";
 import { saison } from "../donnees.js";
 export { saison };
 
-export const ESSENCES = ["charme", "frene", "sureau", "if", "houx", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne", "pommier", "pin"];   // le pommier et le pin de l'île : leur modèle à eux (pommier.js, pin.js)
+export const ESSENCES = ["charme", "frene", "sureau", "if", "houx", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne", "pommier", "pin", "bouleau"];   // les arbres de l'île : leur modèle à eux (pommier.js, pin.js, bouleau.js)
 /* Les vrais arbres : jamais collés l'un à l'autre (le houx et le sureau sont des arbustes) */
-export const ARBRES = new Set(["tree", "charme", "frene", "if", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne", "pommier", "pin"]);
+export const ARBRES = new Set(["tree", "charme", "frene", "if", "chene", "cypres", "aulne", "sauleBrumes", "arbreLanterne", "pommier", "pin", "bouleau"]);
 export const estArbre = o => ARBRES.has(o) || ESSENCES.includes(o);
 /* Les morceaux du modèle qui sont des fruits ou des fleurs (cachés une fois cueillis, ou hors saison) ; le saule des
    brumes n'en a pas (son eau de brume se recueille, rien ne se voit), mais il se cueille comme eux */
