@@ -91,19 +91,20 @@ const DEGRADE_FEUILLES = (() => {
   t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
   return t;
 })();
-export function feuillageMat(o = {}){
+/* seuil : à partir de quelle hauteur ça bouge (le haut d'un arbre) ; gain : combien (les brins d'herbe, bas, bougent fort) */
+export function feuillageMat(o = {}, seuil = .9, gain = 1){
   const m = toon({vertexColors: true, side: THREE.DoubleSide, gradientMap: DEGRADE_FEUILLES, ...o});
   m.onBeforeCompile = sh => {
     sh.uniforms.ventTemps = VENT.temps; sh.uniforms.ventForce = VENT.force;
     sh.vertexShader = "uniform float ventTemps;\nuniform float ventForce;\n" + sh.vertexShader.replace("#include <begin_vertex>",
       `#include <begin_vertex>
-      float hVent = max(0.0, position.y - 0.9);
+      float hVent = max(0.0, position.y - ${seuil.toFixed(2)}) * ${gain.toFixed(2)};
       vec4 piedVent = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);
       float phVent = piedVent.x * 0.37 + piedVent.z * 0.29;
       transformed.x += sin(ventTemps * 1.6 + phVent + position.y * 0.8) * ventForce * hVent;
       transformed.z += cos(ventTemps * 1.25 + phVent * 1.3 + position.x) * ventForce * 0.6 * hVent;
       transformed.y += sin(ventTemps * 2.3 + phVent + position.z * 2.0) * ventForce * 0.25 * hVent;`);
   };
-  m.customProgramCacheKey = () => "feuillage-vent";
+  m.customProgramCacheKey = () => `feuillage-vent-${seuil}-${gain}`;
   return m;
 }

@@ -14,6 +14,7 @@ import { cheneModele, soucheModele } from "./chene.js";
 import { pommierModele, souchePommier } from "./pommier.js";
 import { pinModele, souchePin } from "./pin.js";
 import { bouleauModele, soucheBouleau } from "./bouleau.js";
+import { pierreChamps } from "./pierre.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
    2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
@@ -292,7 +293,7 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau"]);
+const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
@@ -351,7 +352,10 @@ function buildObj(i){
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre");
     c.scale.setScalar(.75); g.add(c);
-  } else g.add(rockMesh(o, r));                      // un rocher, à veines de cuivre ou non
+  } else if(o === "rock"){                          // la pierre des champs (étape 2.1, morceau 3 : pierre.js, d'après l'image de Yo)
+    g.add(pierreChamps(saison(), r, neigeBranches(), map.type[i] === "sand"));
+    g.scale.setScalar(.85 + r * .3);
+  } else g.add(rockMesh(o, r));                      // un rocher rapporté de la mine, à veines de cuivre ou non
   g.rotation.y = o === "coffre" || MEUBLES[o] ? 0 : r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   scene.add(g); meshes.set(i, g);
@@ -394,7 +398,7 @@ export function setEtat(i, patch){
 }
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
 /* Une nouvelle saison (ou l'hémisphère choisi) : l'herbe et tout ce qui change de couleur sont repeints */
-const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || o === "souche" || ESSENCES.includes(o);
+const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || o === "souche" || o === "rock" || ESSENCES.includes(o);
 let peinte = saison();
 export function rafraichirSaison(){
   peinte = saison();

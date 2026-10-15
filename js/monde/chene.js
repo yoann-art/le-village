@@ -247,6 +247,19 @@ function choisirDetail(camera){
   const loin = pCam.distanceTo(pArbre) - recul > LOIN;
   L[0].object.visible = !loin; L[1].object.visible = loin;
 }
+/* De près et de loin, pour les petites choses du décor (la pierre des champs) : au-delà de dist P du personnage, le modèle
+   léger */
+export function presLoin(objPres, objLoin, dist){
+  const lod = new THREE.LOD();
+  lod.addLevel(objPres, 0); lod.addLevel(objLoin, dist);
+  lod.update = function(camera){
+    const L = this.levels;
+    pCam.setFromMatrixPosition(camera.matrixWorld); pArbre.setFromMatrixPosition(this.matrixWorld);
+    const loin = pCam.distanceTo(pArbre) - recul > dist;
+    L[0].object.visible = !loin; L[1].object.visible = loin;
+  };
+  return lod;
+}
 export function feuillesEtOmbre(g, geoFeuilles, geoOmbre, mat, geoLeger){
   if(geoLeger){
     const lod = new THREE.LOD();
