@@ -915,7 +915,7 @@ window.PROMPTS_CARNET = [
 "items": [
 {
 "id": "ile-rocher",
-"name": "Rocher de l'île",
+"name": "Pierre des champs",
 "size": "commun",
 "line": "Un rocher gris arrondi posé dans l'herbe, environ 1 P de large, quelques facettes douces, un peu de mousse verte sur le dessus."
 },

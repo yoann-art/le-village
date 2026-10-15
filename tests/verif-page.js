@@ -356,6 +356,18 @@ export async function verifier(){
     hold(null); state.barre = state.barre.map(it => it && it.k === "pelleBois" ? null : it); state.sac = state.sac.filter(it => it.k !== "pelleBois");   // la pelle de l'essai repart (sinon le sac est plein plus loin)
     return `« 🌳 Chêne » sur le bouton ; sans hache, rien ; +${n} bois en 3 coups${vol ? `, ${vol} feuilles qui tombent` : ""} ; la souche reste, la pelle la déterre (+1 bois)`;
   });
+  await etape("Le rocher de l'île s'appelle la pierre des champs (nom choisi par Yo)", async () => {
+    hold(null);
+    let t = null;
+    for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
+      const i = idx(x, z), s = idx(x, z + 1);
+      if(map.obj[i] === "rock" && !map.obj[s] && map.type[s] === "grass" && !state.sol[s] && !occ.has(s)){ t = [x, z]; break; }
+    }
+    if(!t) throw new Error("aucun rocher accessible sur l'île");
+    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
+    if($("#btn-act").textContent !== "🪨 Pierre des champs") throw new Error(`devant le rocher de l'île, le bouton dit « ${$("#btn-act").textContent} »`);
+    return "« 🪨 Pierre des champs » sur le bouton";
+  });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();
     if(!t) throw new Error("aucun chêne");

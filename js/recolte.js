@@ -242,6 +242,7 @@ function nomCible(t){
   if(t.o === "thym") return jeune ? "🌱 Jeune thym" : "🌿 Thym";
   if(t.o === "buisson") return jeune ? "🌱 Jeune buisson" : "🫐 Buisson de baies";
   if(t.o === "tree" || ESSENCES.includes(t.o)){ const n = sansArticle(RECOLTE[t.o].nom); return jeune ? `🌱 Jeune ${n.toLowerCase()}` : `${EMOJI_ARBRE[t.o] || "🌳"} ${n}`; }
+  if(t.o === "rock" && t.w === ILE) return "🪨 Pierre des champs";     // le rocher de l'île (nom choisi par Yo, 15 octobre 2026)
   if(RECOLTE[t.o]) return `${t.o === "rockOr" ? "✨" : PRECIEUX.has(t.o) ? "💎" : "🪨"} ${sansArticle(RECOLTE[t.o].nom)}`;
   return null;
 }
@@ -597,7 +598,7 @@ function tombe(){
   const bonus = R.bonus && Math.random() < R.bonus.chance && addOwned(R.bonus.k, 1).reste === 0;
   if(bonus) syncBarre();
   save();
-  toast(`${FIN[o] || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : o === "tree" ? "🌳 Le chêne est tombé" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : "", bonus ? `+1 ${nomDe(R.bonus.k, 1)}` : ""].filter(Boolean).join(", ")}`, 3600);
+  toast(`${(w === ILE && o === "rock" ? "🪨 La pierre des champs s'est brisée" : FIN[o]) || (o.startsWith("rock") ? "🪨 La roche s'est brisée" : o === "tree" ? "🌳 Le chêne est tombé" : "🌳 L'arbre est tombé")} : ${[n ? `+${n} ${nomDe(R.res, n)}` : "", graine ? `+1 ${nomDe(R.graine, 1)} ${ou}` : "", R.graine && !graine ? "pas de graine cette fois" : "", bonus ? `+1 ${nomDe(R.bonus.k, 1)}` : ""].filter(Boolean).join(", ")}`, 3600);
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */
