@@ -356,7 +356,7 @@ export async function verifier(){
     hold(null); state.barre = state.barre.map(it => it && it.k === "pelleBois" ? null : it); state.sac = state.sac.filter(it => it.k !== "pelleBois");   // la pelle de l'essai repart (sinon le sac est plein plus loin)
     return `« 🌳 Chêne » sur le bouton ; sans hache, rien ; +${n} bois en 3 coups${vol ? `, ${vol} feuilles qui tombent` : ""} ; la souche reste, la pelle la déterre (+1 bois)`;
   });
-  await etape("Le rocher de l'île s'appelle la pierre des champs (nom choisi par Yo)", async () => {
+  await etape("La pierre des champs (le rocher de l'île, nom et image de Yo) : son nom sur le bouton ; sa mousse et l'herbe de son pied, qui suit la saison ; sur le sable, pas d'herbe", async () => {
     hold(null);
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
@@ -366,7 +366,13 @@ export async function verifier(){
     if(!t) throw new Error("aucun rocher accessible sur l'île");
     placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
     if($("#btn-act").textContent !== "🪨 Pierre des champs") throw new Error(`devant le rocher de l'île, le bouton dit « ${$("#btn-act").textContent} »`);
-    return "« 🪨 Pierre des champs » sur le bouton";
+    const modele = i => { let u = null; objMesh(i) && objMesh(i).traverse(o => { if(o.userData.pierreChamps) u = o.userData.pierreChamps; }); return u; };
+    const u = modele(idx(...t));
+    if(!u) throw new Error("le rocher de l'île n'a pas le modèle de la pierre des champs");
+    if(!u.herbe || u.saison !== saison()) throw new Error(`la pierre des champs : herbe ${u.herbe}, saison ${u.saison} au lieu de ${saison()}`);
+    const plage = Array.from({length: N * N}, (_, i) => i).find(i => map.obj[i] === "rock" && map.type[i] === "sand");
+    if(plage !== undefined && modele(plage).herbe) throw new Error("une pierre des champs sur le sable a de l'herbe au pied");
+    return `« 🪨 Pierre des champs » sur le bouton ; sa mousse, l'herbe de son pied (${u.saison})${plage !== undefined ? ", pas d'herbe sur le sable" : ""}`;
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();

@@ -10,20 +10,20 @@
      sur le sable, pas d'herbe ;
    - l'hiver, quand il neige : de la neige sur les plaques du dessus.
    Pour le téléphone : un modèle par (saison, nuance, neige, sable), partagé ; au-delà de LOIN P du personnage, un
-   modèle léger (moins de mousse et d'herbe). */
+   modèle léger (moins de mousse et d'herbe). Environ 4 700 triangles de près, 1 600 de loin. */
 import { toon, fusionner, feuillageMat } from "./formes.js";
 import { aleaDe, mesh, presLoin, MAT_BOIS, MAT_PLAT } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const LOIN = 14;
+const LOIN = 8;
 
 /* ---------- les couleurs (d'après l'image) ---------- */
-const ROCHE = [0x8F8B89, 0x88858A, 0x948E88, 0x84807F];     // gris chaud, gris un peu mauve, d'une plaque à l'autre
-const JOINT = 0xD4CCC2;                                     // les joints, clairs
+const ROCHE = [0x8E8B8B, 0x87858D, 0x928E8A, 0x838189];     // gris chaud, gris un peu mauve, d'une plaque à l'autre
+const JOINT = 0xE2DBD2;                                     // les joints, clairs
 const MOUSSE = [0x8CB82A, 0x74A020, 0xA4CC3A, 0x5E8A1C];
 const HERBE = {
   printemps: [0x86CC50, 0x70BA44, 0x9CD860],
-  ete:       [0x86B82C, 0x6E9E22, 0x9ECA3A],
+  ete:       [0x96C436, 0x80AE2C, 0xAED44A],
   automne:   [0xC2A84C, 0xAA9040, 0xD0B85A],
   hiver:     [0xA8B89E, 0x98AA90, 0xB4C2AA]
 };
@@ -32,9 +32,9 @@ const NEIGE = 0xF4F8FA;
 /* ---------- la forme de la roche ---------- */
 /* les plans : des directions réparties sur le dessus et les côtés, chacun à la distance d'un ovale (large de 1 P environ,
    haut de 0,7 P), un peu au hasard ; le côté de la mousse (arrière gauche) un peu plus bombé */
-const A = .58, B = .4, C = .55, Y0 = .17;
+const A = .55, B = .54, C = .5, Y0 = .18;
 function plans(alea){
-  const P = [], n = 24;
+  const P = [], n = 38;
   for(let k = 0; k < n; k++){
     const t = (k + .5) / n, y = 1 - t * 1.22, rr = Math.sqrt(Math.max(0, 1 - y * y)), a = k * 2.39996 + (alea() - .5) * .5;
     const d = V(rr * Math.cos(a), y, rr * Math.sin(a)).normalize();
@@ -82,7 +82,7 @@ function plaque({n, poly}, couleur, ombre){
   for(const p of poly){
     const d = p.distanceTo(c), s = Math.max(.45, 1 - .055 / Math.max(d, 1e-3));
     const q = c.clone().lerp(p, s).addScaledVector(n, .005), o = p.clone().addScaledVector(n, -.03);
-    pos.push(q.x, q.y, q.z, o.x, o.y, o.z); te.push(1, 1.08);
+    pos.push(q.x, q.y, q.z, o.x, o.y, o.z); te.push(1, 1.14);
   }
   const m = poly.length;
   for(let i = 0; i < m; i++){
@@ -117,9 +117,9 @@ function remplir(poly, n, couleur){                           // un polygone ple
 /* ---------- la mousse ---------- */
 /* une rosette : une petite feuille ronde à cinq lobes, bombée au milieu (le coeur à l'ombre, le bord clair) */
 const ROSETTE = (() => {
-  const seg = 15, pos = [0, .14, 0], te = [.82], ind = [];
+  const seg = 10, pos = [0, .14, 0], te = [.82], ind = [];
   for(let i = 0; i < seg; i++){
-    const a = i / seg * Math.PI * 2, r = .5 * (.62 + .38 * Math.pow(Math.abs(Math.cos(a * 2.5)), .6));
+    const a = i / seg * Math.PI * 2, r = .5 * (.8 + .2 * Math.pow(Math.abs(Math.cos(a * 2.5)), .5));
     pos.push(Math.cos(a) * r, 0, Math.sin(a) * r); te.push(1.12);
   }
   for(let i = 0; i < seg; i++) ind.push(0, 1 + (i + 1) % seg, 1 + i);
@@ -132,7 +132,7 @@ const ROSETTE = (() => {
 /* les coussins de mousse [direction depuis le centre, rayon en P, épaisseur] : le gros coussin sur le dessus (arrière
    gauche), qui déborde sur le devant ; une bande sur le dessus ; des touffes sur les côtés. Chaque coussin : une bosse
    sombre (le creux de la mousse), couverte de rosettes serrées qui se chevauchent */
-const COUSSINS = [[[-.38, .86, -.3], .38, .09], [[-.6, .58, .3], .16, .05], [[.12, .95, -.2], .17, .045], [[.62, .68, .02], .11, .035],
+const COUSSINS = [[[-.5, .8, .08], .36, .09], [[-.72, .42, .5], .15, .05], [[.22, .9, -.32], .12, .04], [[.62, .68, .02], .08, .03],
   [[.08, .42, .9], .075, .022], [[.42, .2, .86], .06, .018], [[-.8, .26, .5], .065, .02], [[.86, .22, .3], .07, .022], [[-.22, .55, .8], .055, .018]];
 /* un point du coussin : à la distance rho de son milieu, dans la direction a (sur le plan qui touche la roche), ramené sur la
    roche puis soulevé de l'épaisseur du coussin (plus épais au milieu) : le coussin épouse la pierre */
@@ -150,7 +150,7 @@ function mousseDe(P, alea, leger){
     const S0 = surface(P, V(...dir).normalize()), n0 = S0.n;
     const u = (Math.abs(n0.y) < .9 ? V(0, 1, 0) : V(1, 0, 0)).cross(n0).normalize(), v = n0.clone().cross(u);
     /* le dessous du coussin, sombre : une peau en anneaux qui épouse la roche */
-    const anneaux = 4, secteurs = 14, pos = [], ind = [];
+    const anneaux = 3, secteurs = 10, pos = [], ind = [];
     const c = surCoussin(P, S0, u, v, R, H, 0, 0).p; pos.push(c.x, c.y, c.z);
     for(let r = 1; r <= anneaux; r++) for(let k = 0; k < secteurs; k++){
       const q = surCoussin(P, S0, u, v, R, H * .85, R * r / anneaux * .98, k / secteurs * Math.PI * 2).p; pos.push(q.x, q.y, q.z);
@@ -162,9 +162,9 @@ function mousseDe(P, alea, leger){
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(ind); geo.computeVertexNormals();
-    M.push({geo, m: new THREE.Matrix4(), c: 0x6A9422, ombre: () => .8});
+    M.push({geo, m: new THREE.Matrix4(), c: 0x739E26, ombre: () => .8});
     /* les rosettes : réparties sur le coussin (spirale), qui se chevauchent ; de près, beaucoup ; de loin, moins */
-    const s0 = Math.min(.075, .04 + R * .09), n = Math.round(Math.max(6, (R / s0) ** 2 * 4.2) * (leger ? .25 : 1));
+    const s0 = Math.min(.095, .045 + R * .14), n = Math.round(Math.max(6, (R / s0) ** 2 * 5.5) * (leger ? .25 : 1));
     for(let k = 0; k < n; k++){
       const rho = R * Math.sqrt((k + .5) / n) * .97, a = k * 2.39996 + alea() * .5;
       const {p, n: nrm, e} = surCoussin(P, S0, u, v, R, H, rho, a);
@@ -186,11 +186,11 @@ function mousseDe(P, alea, leger){
 /* ---------- l'herbe du pied ---------- */
 /* un brin : une bande large au bout rond, pliée en son milieu, courbée vers l'extérieur ; la base à l'ombre */
 const BRIN = (() => {
-  const rangs = 4, pos = [], te = [], ind = [];
+  const rangs = 3, pos = [], te = [], ind = [];
   for(let k = 0; k <= rangs; k++){
-    const t = k / rangs, w = Math.max(.04, .3 * Math.sqrt(Math.max(0, 1 - Math.pow(t, 2.5))) * (.85 + .15 * Math.min(1, t * 4)));
-    const z = .22 * t * t, clair = .7 + .45 * t;
-    pos.push(-w, t, z + w * .55, 0, t, z, w, t, z + w * .55);
+    const t = k / rangs, w = Math.max(.03, .13 * Math.pow(Math.max(0, 1 - Math.pow(t, 2.2)), .5) * (.75 + .25 * Math.min(1, t * 3)));
+    const z = .42 * t * t, clair = .7 + .45 * t;
+    pos.push(-w, t, z + w * .6, 0, t, z, w, t, z + w * .6);
     te.push(clair, clair * .9, clair);
   }
   for(let k = 0; k < rangs; k++){ const a = k * 3; ind.push(a, a + 1, a + 3, a + 1, a + 4, a + 3, a + 1, a + 2, a + 4, a + 2, a + 5, a + 4); }
@@ -200,21 +200,29 @@ const BRIN = (() => {
   g.setIndex(ind); g.computeVertexNormals();
   return g;
 })();
+/* l'herbe en touffes (comme sur l'image) : autour du pied, des touffes de brins larges qui s'ouvrent en éventail, les
+   brins du milieu droits, ceux du bord penchés vers l'extérieur ; deux rangs de touffes, contre la pierre et devant */
 function herbeDe(P, tons, alea, leger){
-  const M = [], n = leger ? 50 : 160;
-  for(let k = 0; k < n; k++){
-    const a = k / n * Math.PI * 2 + (alea() - .5) * .12;
+  const M = [], touffes = leger ? 12 : 18;
+  for(let t = 0; t < touffes; t++){
+    const a = t / touffes * Math.PI * 2 + (alea() - .5) * .2;
     const bord = surface(P, V(Math.cos(a), -.02, Math.sin(a)).normalize()).p;
-    const rb = Math.hypot(bord.x, bord.z) * (k % 2 ? .92 + alea() * .1 : 1.02 + alea() * .14);   // deux rangs : contre la pierre, et devant
-    const racine = V(Math.cos(a) * rb, -.02, Math.sin(a) * rb);
-    const h = (k % 2 ? .15 : .1) + alea() * .07, dehors = V(Math.cos(a), 0, Math.sin(a));
-    /* il monte en penchant vers l'extérieur ; Z : le côté vers lequel il se courbe */
-    const pente = (k % 2 ? .05 : .2) + alea() * .22, tourne = (alea() - .5) * .9;
-    const Y = V(0, 1, 0).multiplyScalar(Math.cos(pente)).addScaledVector(dehors.clone().applyAxisAngle(V(0, 1, 0), tourne), Math.sin(pente)).normalize();
-    const X = V(0, 1, 0).cross(dehors).applyAxisAngle(V(0, 1, 0), tourne).normalize(), Z = X.clone().cross(Y);
-    const s = h * (.9 + alea() * .2);
-    const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(s * (.85 + alea() * .4)), Y.multiplyScalar(s), Z.multiplyScalar(s)).setPosition(racine);
-    M.push({geo: BRIN, m, c: tons[k % 3 === 0 ? 1 : alea() < .55 ? 0 : 2]});
+    const rb = Math.hypot(bord.x, bord.z) * (t % 2 ? .96 + alea() * .06 : 1.06 + alea() * .1);
+    const racine = V(Math.cos(a) * rb, -.02, Math.sin(a) * rb), dehors = V(Math.cos(a), 0, Math.sin(a));
+    const nb = leger ? 4 : 7 + Math.floor(alea() * 3), grand = (t % 2 ? 1.1 : .85) * (.9 + alea() * .25);
+    for(let k = 0; k < nb; k++){
+      /* chaque brin part du coeur de la touffe dans sa direction (b), plus ou moins penché */
+      const b = k / nb * Math.PI * 2 + alea() * .6, vers = V(Math.cos(b), 0, Math.sin(b));
+      const auMilieu = k < 3, pente = auMilieu ? .05 + alea() * .15 : .2 + alea() * .35;
+      const Y = V(0, 1, 0).multiplyScalar(Math.cos(pente)).addScaledVector(vers, Math.sin(pente)).normalize();
+      const X = V(0, 1, 0).cross(vers).normalize(), Z = X.clone().cross(Y);
+      const h = (auMilieu ? .3 : .22 + alea() * .07) * grand;
+      /* contre la pierre, pas de brin qui rentre dedans : ceux qui partent vers elle restent droits et courts */
+      const versPierre = vers.dot(dehors) < -.3, s = versPierre ? h * .75 : h;
+      const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(s * (.95 + alea() * .3)), (versPierre ? V(0, 1, 0) : Y).multiplyScalar(s), Z.multiplyScalar(s))
+        .setPosition(racine.clone().addScaledVector(vers, .015));
+      M.push({geo: BRIN, m, c: tons[auMilieu ? 2 : alea() < .6 ? 0 : 1]});
+    }
   }
   return fusionner(M);
 }
@@ -223,9 +231,9 @@ function herbeDe(P, tons, alea, leger){
 function neigeDe(faces){
   const M = [];
   for(const {n, poly} of faces){
-    if(n.y < .55) continue;
+    if(n.y < .8) continue;
     const c = poly.reduce((s, p) => s.add(p), V(0, 0, 0)).multiplyScalar(1 / poly.length);
-    M.push(remplir(poly.map(p => c.clone().lerp(p, .9).addScaledVector(n, .03)), n, NEIGE));
+    M.push(plaque({n, poly: poly.map(p => c.clone().lerp(p, .9).addScaledVector(n, .018))}, NEIGE, () => .9));   // un coussin de neige, bombé
   }
   return M.length ? fusionner(M) : null;
 }
