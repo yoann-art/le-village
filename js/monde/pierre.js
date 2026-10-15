@@ -1,26 +1,28 @@
 /* ================= La pierre des champs =================
-   Le rocher de l'île (étape 2.1, morceau 3 ; son nom et son image : Yo, 15 octobre 2026), au plus près de l'image :
-   une grosse pierre grise arrondie, faite de plaques aux bords adoucis (des joints clairs entre elles), un coussin de
-   mousse sur le dessus, quelques touffes sur les côtés, et une jupe d'herbe tout autour du pied.
-   - la roche : l'intersection de quelques dizaines de plans (un polyèdre arrondi, un peu bossu du côté de la mousse) ;
-     chaque face est une plaque un peu bombée, au bord biseauté ; dessous, la même roche un peu plus petite, claire,
-     fait les joints ;
-   - la mousse : des rosettes de petites feuilles rondes, serrées en coussins, couchées sur la roche ;
-   - l'herbe du pied : des brins larges aux bouts ronds, penchés vers l'extérieur ; ils suivent la saison et le vent ;
-     sur le sable, pas d'herbe ;
-   - l'hiver, quand il neige : de la neige sur les plaques du dessus.
-   Pour le téléphone : un modèle par (saison, nuance, neige, sable), partagé ; au-delà de LOIN P du personnage, un
-   modèle léger (moins de mousse et d'herbe). Environ 4 700 triangles de près, 1 600 de loin. */
+   Le rocher de l'île (étape 2.1, morceau 3 ; son nom et son image : Yo, 15 octobre 2026 ; « pousse plus loin, au maximum »),
+   au plus près de l'image :
+   - la roche : l'intersection de 17 plans (une pierre irrégulière, plus large que haute) ; chaque grande face est fendue en
+     cellules (des graines au hasard, chacune garde la part de la face la plus proche d'elle : `cellules`), chaque cellule
+     une plaque un peu bombée au bord biseauté clair, la teinte un peu marbrée ; dessous, la même roche un peu plus petite,
+     claire, fait les joints ;
+   - la mousse : des coussins qui épousent la pierre, faits de mottes rondes serrées, chacune couverte de feuilles rondes à
+     cinq lobes, couchées comme des écailles ; le gros coussin sur le dessus, qui déborde d'un côté, et de petites touffes ;
+   - l'herbe du pied : des touffes de brins qui s'ouvrent en éventail et se courbent vers l'extérieur ; elles suivent la
+     saison et le vent ; sur le sable, pas d'herbe ;
+   - l'hiver, quand il neige : un coussin de neige sur les plaques du dessus.
+   Pour le téléphone : un modèle par (saison, nuance, neige, sable), partagé ; au-delà de LOIN P du personnage, un modèle
+   léger (les grandes faces sans cellules, les mottes sans feuilles, moins d'herbe). Environ 8 200 triangles de près,
+   1 700 de loin. */
 import { toon, fusionner, feuillageMat } from "./formes.js";
 import { aleaDe, mesh, presLoin, MAT_BOIS, MAT_PLAT } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const LOIN = 8;
+const LOIN = 6;
 
 /* ---------- les couleurs (d'après l'image) ---------- */
-const ROCHE = [0x8E8B8B, 0x87858D, 0x928E8A, 0x838189];     // gris chaud, gris un peu mauve, d'une plaque à l'autre
+const ROCHE = [0x98938E, 0x8F8C92, 0x9D968E, 0x8A878E];     // gris chaud, gris un peu mauve, d'une plaque à l'autre
 const JOINT = 0xE2DBD2;                                     // les joints, clairs
-const MOUSSE = [0x8CB82A, 0x74A020, 0xA4CC3A, 0x5E8A1C];
+const MOUSSE = [0x90B02C, 0x7A9A24, 0xA4C23A, 0x627E20];
 const HERBE = {
   printemps: [0x86CC50, 0x70BA44, 0x9CD860],
   ete:       [0x96C436, 0x80AE2C, 0xAED44A],
@@ -32,13 +34,13 @@ const NEIGE = 0xF4F8FA;
 /* ---------- la forme de la roche ---------- */
 /* les plans : des directions réparties sur le dessus et les côtés, chacun à la distance d'un ovale (large de 1 P environ,
    haut de 0,7 P), un peu au hasard ; le côté de la mousse (arrière gauche) un peu plus bombé */
-const A = .55, B = .54, C = .5, Y0 = .18;
+const A = .57, B = .47, C = .52, Y0 = .17;
 function plans(alea){
-  const P = [], n = 38;
+  const P = [], n = 17;
   for(let k = 0; k < n; k++){
     const t = (k + .5) / n, y = 1 - t * 1.22, rr = Math.sqrt(Math.max(0, 1 - y * y)), a = k * 2.39996 + (alea() - .5) * .5;
     const d = V(rr * Math.cos(a), y, rr * Math.sin(a)).normalize();
-    let h = Math.sqrt((A * d.x) ** 2 + (B * d.y) ** 2 + (C * d.z) ** 2) * (.93 + alea() * .08);
+    let h = Math.sqrt((A * d.x) ** 2 + (B * d.y) ** 2 + (C * d.z) ** 2) * (.87 + alea() * .13);
     if(d.x < .2 && d.z < .2 && d.y > .25) h *= 1.03;
     P.push({n: d, h});
   }
@@ -74,15 +76,15 @@ function surface(P, d){
 
 /* une plaque : un éventail bombé au milieu, puis un biseau qui descend vers son bord (les plaques voisines y font un
    joint) ; teinte : le biseau un peu plus clair (les bords usés de l'image) */
-function plaque({n, poly}, couleur, ombre){
+function plaque({n, poly}, couleur, ombre, biseau = .055, bombe = .016, alea = null){
   const c = poly.reduce((s, p) => s.add(p), V(0, 0, 0)).multiplyScalar(1 / poly.length);
   const pos = [], te = [], ind = [];
-  const haut = c.clone().addScaledVector(n, .016);
-  pos.push(haut.x, haut.y, haut.z); te.push(1.03);
+  const haut = c.clone().addScaledVector(n, bombe), tache = () => alea ? .95 + alea() * .1 : 1;   // la pierre un peu marbrée
+  pos.push(haut.x, haut.y, haut.z); te.push(1.03 * tache());
   for(const p of poly){
-    const d = p.distanceTo(c), s = Math.max(.45, 1 - .055 / Math.max(d, 1e-3));
-    const q = c.clone().lerp(p, s).addScaledVector(n, .005), o = p.clone().addScaledVector(n, -.03);
-    pos.push(q.x, q.y, q.z, o.x, o.y, o.z); te.push(1, 1.14);
+    const d = p.distanceTo(c), s = Math.max(.45, 1 - biseau / Math.max(d, 1e-3));
+    const q = c.clone().lerp(p, s).addScaledVector(n, bombe * .3), o = p.clone().addScaledVector(n, -.03);
+    pos.push(q.x, q.y, q.z, o.x, o.y, o.z); te.push(tache(), 1.2);
   }
   const m = poly.length;
   for(let i = 0; i < m; i++){
@@ -102,6 +104,38 @@ function plaque({n, poly}, couleur, ombre){
   }
   return {geo: g, m: new THREE.Matrix4(), c: couleur, ombre};
 }
+/* une grande face partagée en cellules (comme les pierres de l'image, fendues en plaques) : quelques graines au hasard
+   dans la face, chacune garde la part de la face qui est plus près d'elle que des autres */
+function aire(poly){
+  let a = 0;
+  for(let i = 1; i < poly.length - 1; i++) a += poly[i].clone().sub(poly[0]).cross(poly[i + 1].clone().sub(poly[0])).length() / 2;
+  return a;
+}
+function pointDans(poly, alea){
+  const tris = [];
+  let tot = 0;
+  for(let i = 1; i < poly.length - 1; i++){ const a = poly[i].clone().sub(poly[0]).cross(poly[i + 1].clone().sub(poly[0])).length() / 2; tot += a; tris.push([i, tot]); }
+  const r = alea() * tot, [i] = tris.find(([, t]) => t >= r) || tris[tris.length - 1];
+  let u = alea(), v = alea();
+  if(u + v > 1){ u = 1 - u; v = 1 - v; }
+  return poly[0].clone().addScaledVector(poly[i].clone().sub(poly[0]), u).addScaledVector(poly[i + 1].clone().sub(poly[0]), v);
+}
+function cellules({n, poly}, alea){
+  const A2 = aire(poly), nb = Math.max(1, Math.min(7, Math.round(A2 / .034)));
+  if(nb === 1) return [poly];
+  const graines = [];
+  for(let k = 0; k < nb; k++){
+    /* des graines pas trop serrées : on en essaie quelques-unes, on garde la plus loin des autres */
+    let best = null, bd = -1;
+    for(let e = 0; e < 6; e++){ const g = pointDans(poly, alea), d = Math.min(...graines.map(o => o.distanceTo(g)), 9); if(d > bd){ bd = d; best = g; } }
+    graines.push(best);
+  }
+  return graines.map((g, i) => {
+    let c = poly;
+    graines.forEach((o, j) => { if(j !== i && c.length >= 3){ const nb2 = o.clone().sub(g).normalize(); c = couper(c, {n: nb2, h: nb2.dot(g.clone().add(o).multiplyScalar(.5))}); } });
+    return c;
+  }).filter(c => c.length >= 3);
+}
 function remplir(poly, n, couleur){                           // un polygone plein, à plat (les joints, la neige)
   const pos = [], ind = [];
   for(const p of poly) pos.push(p.x, p.y, p.z);
@@ -117,10 +151,10 @@ function remplir(poly, n, couleur){                           // un polygone ple
 /* ---------- la mousse ---------- */
 /* une rosette : une petite feuille ronde à cinq lobes, bombée au milieu (le coeur à l'ombre, le bord clair) */
 const ROSETTE = (() => {
-  const seg = 10, pos = [0, .14, 0], te = [.82], ind = [];
+  const seg = 15, pos = [0, .16, 0], te = [.96], ind = [];
   for(let i = 0; i < seg; i++){
-    const a = i / seg * Math.PI * 2, r = .5 * (.8 + .2 * Math.pow(Math.abs(Math.cos(a * 2.5)), .5));
-    pos.push(Math.cos(a) * r, 0, Math.sin(a) * r); te.push(1.12);
+    const a = i / seg * Math.PI * 2, r = .5 * (.62 + .38 * Math.pow(Math.abs(Math.cos(a * 2.5)), .6));   // cinq lobes ronds
+    pos.push(Math.cos(a) * r, 0, Math.sin(a) * r); te.push(1.1);
   }
   for(let i = 0; i < seg; i++) ind.push(0, 1 + (i + 1) % seg, 1 + i);
   const g = new THREE.BufferGeometry();
@@ -129,10 +163,11 @@ const ROSETTE = (() => {
   g.setIndex(ind); g.computeVertexNormals();
   return g;
 })();
+const MOTTE = new THREE.SphereGeometry(1, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2);   // une demi-boule
 /* les coussins de mousse [direction depuis le centre, rayon en P, épaisseur] : le gros coussin sur le dessus (arrière
    gauche), qui déborde sur le devant ; une bande sur le dessus ; des touffes sur les côtés. Chaque coussin : une bosse
-   sombre (le creux de la mousse), couverte de rosettes serrées qui se chevauchent */
-const COUSSINS = [[[-.5, .8, .08], .36, .09], [[-.72, .42, .5], .15, .05], [[.22, .9, -.32], .12, .04], [[.62, .68, .02], .08, .03],
+   sombre (le creux de la mousse), des mottes rondes serrées, chacune couverte de feuilles rondes comme des écailles */
+const COUSSINS = [[[-.5, .8, .08], .37, .13], [[-.72, .42, .5], .16, .07], [[.22, .9, -.32], .13, .055], [[.62, .68, .02], .085, .04],
   [[.08, .42, .9], .075, .022], [[.42, .2, .86], .06, .018], [[-.8, .26, .5], .065, .02], [[.86, .22, .3], .07, .022], [[-.22, .55, .8], .055, .018]];
 /* un point du coussin : à la distance rho de son milieu, dans la direction a (sur le plan qui touche la roche), ramené sur la
    roche puis soulevé de l'épaisseur du coussin (plus épais au milieu) : le coussin épouse la pierre */
@@ -140,7 +175,8 @@ function surCoussin(P, S0, u, v, R, H, rho, a){
   const cible = S0.p.clone().addScaledVector(u, Math.cos(a) * rho).addScaledVector(v, Math.sin(a) * rho);
   const S = surface(P, cible.clone().normalize());
   const dir = S.n.clone().add(S.p.clone().normalize()).normalize();
-  const e = H * Math.pow(Math.max(0, 1 - (rho / R) ** 2), .6);
+  const bosses = .78 + .22 * Math.sin(rho / R * 7 + a * 3) * Math.cos(a * 2 + rho / R * 4);   // des bosses : un coussin moelleux
+  const e = H * Math.pow(Math.max(0, 1 - (rho / R) ** 2), .55) * bosses;
   return {p: S.p.clone().addScaledVector(dir, e + .004), n: dir, e};
 }
 function mousseDe(P, alea, leger){
@@ -162,22 +198,32 @@ function mousseDe(P, alea, leger){
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(ind); geo.computeVertexNormals();
-    M.push({geo, m: new THREE.Matrix4(), c: 0x739E26, ombre: () => .8});
-    /* les rosettes : réparties sur le coussin (spirale), qui se chevauchent ; de près, beaucoup ; de loin, moins */
-    const s0 = Math.min(.095, .045 + R * .14), n = Math.round(Math.max(6, (R / s0) ** 2 * 5.5) * (leger ? .25 : 1));
-    for(let k = 0; k < n; k++){
-      const rho = R * Math.sqrt((k + .5) / n) * .97, a = k * 2.39996 + alea() * .5;
+    M.push({geo, m: new THREE.Matrix4(), c: 0x6A9420, ombre: () => .8});   // les creux de la mousse, sombres
+    /* les mottes : le coussin est fait de petites bosses rondes serrées (comme sur l'image), claires dessus, sombres au pied */
+    const rd = Math.max(.062, R * .3), nd = Math.max(1, Math.round((R / rd) ** 2 * 1.3 * (leger ? .6 : 1)));
+    for(let k = 0; k < nd; k++){
+      const rho = nd === 1 ? 0 : R * Math.sqrt((k + .5) / nd) * .82, a = k * 2.39996 + alea() * .7;
       const {p, n: nrm, e} = surCoussin(P, S0, u, v, R, H, rho, a);
-      /* la rosette couchée sur le coussin, un peu de travers (au bord, elle se penche vers l'extérieur) */
-      const bord = V(Math.cos(a), 0, Math.sin(a)), dehors = u.clone().multiplyScalar(bord.x).addScaledVector(v, bord.z);
-      const Y = nrm.clone().addScaledVector(dehors, .5 * rho / R).add(V(alea() - .5, alea() - .5, alea() - .5).multiplyScalar(.6)).normalize();
-      const X = (Math.abs(Y.x) < .9 ? V(1, 0, 0) : V(0, 0, 1)).cross(Y).normalize().applyAxisAngle(Y, alea() * 6.28);
-      const Z = X.clone().cross(Y), s = s0 * (.8 + alea() * .4);
-      const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(s), Y.multiplyScalar(s), Z.multiplyScalar(s)).setPosition(p);
-      const ton = alea(), dessus = H > 0 ? Math.min(1, e / H) : 1;
-      M.push({geo: ROSETTE, m, c: MOUSSE[ton < .5 ? 0 : ton < .8 ? 2 : 1],
-        normale: (x, y, z, nn) => nrm.clone().multiplyScalar(.55).add(nn.clone().multiplyScalar(.45)).normalize(),
-        ombre: () => .8 + .32 * dessus});
+      const r = rd * (.75 + alea() * .4), q = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), nrm);
+      const C = p.clone().addScaledVector(nrm, -r * .35 - e * .4);
+      M.push({geo: MOTTE, m: new THREE.Matrix4().compose(C, q, V(r, r * .8, r)), c: leger ? MOUSSE[k % 3 ? 0 : 1] : MOUSSE[3],
+        normale: (x, y, z) => V(x, y, z).sub(C).normalize(),
+        ombre: (x, y, z) => .7 + .34 * Math.max(0, Math.min(1, V(x, y, z).sub(C).dot(nrm) / (r * .8)))});
+      /* la motte couverte de feuilles rondes, couchées comme des écailles (le dessus clair, le pied à l'ombre) */
+      const nf = leger ? 0 : Math.max(4, Math.round(7.5 * (r / .1) ** 1.3));
+      for(let f = 0; f < nf; f++){
+        const t = (f + .5) / nf, yy = 1 - t * 1.05, rr = Math.sqrt(Math.max(0, 1 - yy * yy)), b = f * 2.39996 + alea() * .5;
+        const loc = V(Math.cos(b) * rr * r, yy * r * .8, Math.sin(b) * rr * r).applyQuaternion(q);
+        const nl = V(Math.cos(b) * rr, yy / .8, Math.sin(b) * rr).normalize().applyQuaternion(q);
+        const Y = nl.clone().add(V(alea() - .5, alea() - .5, alea() - .5).multiplyScalar(.22)).normalize();
+        const X = (Math.abs(Y.x) < .9 ? V(1, 0, 0) : V(0, 0, 1)).cross(Y).normalize().applyAxisAngle(Y, alea() * 6.28), Z = X.clone().cross(Y);
+        const sf = r * (.95 + alea() * .3);
+        const mf = new THREE.Matrix4().makeBasis(X.multiplyScalar(sf), Y.multiplyScalar(sf), Z.multiplyScalar(sf)).setPosition(C.clone().add(loc).addScaledVector(nl, .004));
+        const ton = alea();
+        M.push({geo: ROSETTE, m: mf, c: MOUSSE[ton < .5 ? 0 : ton < .8 ? 2 : 1],
+          normale: (x, y, z, nn) => nl.clone().multiplyScalar(.5).add(nn.clone().multiplyScalar(.5)).normalize(),
+          ombre: () => .76 + .34 * yy});
+      }
     }
   });
   return fusionner(M);
@@ -188,7 +234,7 @@ function mousseDe(P, alea, leger){
 const BRIN = (() => {
   const rangs = 3, pos = [], te = [], ind = [];
   for(let k = 0; k <= rangs; k++){
-    const t = k / rangs, w = Math.max(.03, .13 * Math.pow(Math.max(0, 1 - Math.pow(t, 2.2)), .5) * (.75 + .25 * Math.min(1, t * 3)));
+    const t = k / rangs, w = Math.max(.06, .18 * Math.pow(Math.max(0, 1 - Math.pow(t, 2.6)), .5) * (.75 + .25 * Math.min(1, t * 3)));
     const z = .42 * t * t, clair = .7 + .45 * t;
     pos.push(-w, t, z + w * .6, 0, t, z, w, t, z + w * .6);
     te.push(clair, clair * .9, clair);
@@ -209,14 +255,14 @@ function herbeDe(P, tons, alea, leger){
     const bord = surface(P, V(Math.cos(a), -.02, Math.sin(a)).normalize()).p;
     const rb = Math.hypot(bord.x, bord.z) * (t % 2 ? .96 + alea() * .06 : 1.06 + alea() * .1);
     const racine = V(Math.cos(a) * rb, -.02, Math.sin(a) * rb), dehors = V(Math.cos(a), 0, Math.sin(a));
-    const nb = leger ? 4 : 7 + Math.floor(alea() * 3), grand = (t % 2 ? 1.1 : .85) * (.9 + alea() * .25);
+    const nb = leger ? 4 : 9 + Math.floor(alea() * 3), grand = (t % 2 ? 1.1 : .85) * (.9 + alea() * .25);
     for(let k = 0; k < nb; k++){
       /* chaque brin part du coeur de la touffe dans sa direction (b), plus ou moins penché */
       const b = k / nb * Math.PI * 2 + alea() * .6, vers = V(Math.cos(b), 0, Math.sin(b));
-      const auMilieu = k < 3, pente = auMilieu ? .05 + alea() * .15 : .2 + alea() * .35;
+      const auMilieu = k < 3, pente = auMilieu ? .05 + alea() * .12 : .18 + alea() * .28;
       const Y = V(0, 1, 0).multiplyScalar(Math.cos(pente)).addScaledVector(vers, Math.sin(pente)).normalize();
       const X = V(0, 1, 0).cross(vers).normalize(), Z = X.clone().cross(Y);
-      const h = (auMilieu ? .3 : .22 + alea() * .07) * grand;
+      const h = (auMilieu ? .27 : .2 + alea() * .06) * grand;
       /* contre la pierre, pas de brin qui rentre dedans : ceux qui partent vers elle restent droits et courts */
       const versPierre = vers.dot(dehors) < -.3, s = versPierre ? h * .75 : h;
       const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(s * (.95 + alea() * .3)), (versPierre ? V(0, 1, 0) : Y).multiplyScalar(s), Z.multiplyScalar(s))
@@ -249,13 +295,22 @@ function geos(saison, variante, neige, sable){
   const alea = aleaDe(907 + variante * 131), P = plans(alea), faces = polygones(P), joints = polygones(P, .034);
   const yb = -.02, yt = Y0 + B;
   const ombre = (x, y) => .8 + .2 * Math.min(1, Math.max(0, (y + Y0 - yb) / (yt - yb)));
-  const roche = [];
-  faces.forEach((f, k) => roche.push(plaque(f, ROCHE[(k * 7 + variante) % ROCHE.length], ombre)));
-  joints.forEach(f => roche.push({...remplir(f.poly, f.n, JOINT), ombre}));
+  /* de près : chaque face fendue en cellules ; de loin : une plaque par face */
+  const roche = [], simple = [], aleaC = aleaDe(311 + variante * 29);
+  faces.forEach((f, k) => {
+    const ton = ROCHE[(k * 7 + variante) % ROCHE.length];
+    simple.push(plaque(f, ton, ombre));
+    for(const c of cellules(f, aleaC)){
+      const b = Math.min(.022, .22 * Math.sqrt(aire(c)));
+      roche.push(plaque({n: f.n, poly: c}, new THREE.Color(ton).multiplyScalar(.95 + aleaC() * .1).getHex(), ombre, b, .012, aleaC));
+    }
+  });
+  for(const f of joints){ const j = {...remplir(f.poly, f.n, JOINT), ombre}; roche.push(j); simple.push(j); }
   const neigeM = neige ? neigeDe(faces) : null;
   const alea2 = aleaDe(53 + variante * 17), alea3 = aleaDe(53 + variante * 17);
   const r = {
     roche: fusionner(roche),
+    rocheLeger: fusionner(simple),
     neige: neigeM,
     mousse: mousseDe(P, alea2, false),
     mousseLeger: mousseDe(P, alea3, true),
@@ -268,10 +323,8 @@ function geos(saison, variante, neige, sable){
 /* La pierre des champs : saison, r (son tirage : nuance), neige (il neige assez), sable (posée sur la plage) */
 export function pierreChamps(saison, r = 0, neige = false, sable = false){
   const variante = Math.floor(r * 3) % 3, G = geos(saison, variante, neige, sable), g = new THREE.Group();
-  const roche = mesh(G.roche, MAT_BOIS);
-  roche.position.y = Y0;
-  g.add(roche);
   const pres = new THREE.Group(), loin = new THREE.Group();
+  for(const [geo, grp] of [[G.roche, pres], [G.rocheLeger, loin]]){ const m = mesh(geo, MAT_BOIS); m.position.y = Y0; grp.add(m); }
   for(const [geo, grp] of [[G.mousse, pres], [G.mousseLeger, loin]]){ const m = mesh(geo, MAT_PLAT, false); m.position.y = Y0; grp.add(m); }
   if(G.herbe){ pres.add(mesh(G.herbe, MAT_HERBE, false)); loin.add(mesh(G.herbeLeger, MAT_HERBE, false)); }
   if(G.neige){ const m = mesh(G.neige, MAT_BOIS, false); m.position.y = Y0; g.add(m); }
