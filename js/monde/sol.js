@@ -11,19 +11,17 @@ import { map, idx, inb, N, centerOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state, save } from "../sauvegarde.js";
 import { doorTile } from "../regles.js";
-import { SOL, SOL_RETOUR, SOL_JOUR } from "../donnees.js";
+import { SOL, SOL_RETOUR, SOL_JOUR, saison } from "../donnees.js";
+import { caillouModele } from "./pierre.js";
 
 const meshes = new Map();
 function build(i){
-  const k = state.sol[i], r = Math.random(), g = new THREE.Group();
+  const k = state.sol[i], r = ((i * 9301 + 49297) % 233280) / 233280, g = new THREE.Group();   // r : selon la case (le même modèle quand on le refait)
   if(k === "branche"){
     const b = part(G.cyl, 0x8A5A3B, .1, .62, .1, 0, .06, 0); b.rotation.z = Math.PI/2; g.add(b);   // le morceau de bois couché
     const t = part(G.cyl, 0x8A5A3B, .06, .24, .06, .12, .1, .08); t.rotation.set(Math.PI/2, 0, .7); g.add(t);   // une petite branche
     g.add(part(G.leaf2, 0x57B25C, .3, .3, .3, -.24, .1, -.02));                       // une feuille
-  } else {
-    g.add(part(G.dode, 0x9EA3A8, .44, .3, .42, 0, .1, 0));
-    g.add(part(G.dode, 0x8F959B, .26, .2, .26, .22, .07, .14));
-  }
+  } else g.add(caillouModele(saison(), r, map.type[i] === "sand"));   // le petit caillou (étape 2.1 : pierre.js, d'après l'image de Yo)
   g.rotation.y = r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   scene.add(g); meshes.set(i, g);
@@ -58,8 +56,15 @@ function spawn(k, max = SOL[k].max){
   state.sol[i] = k; build(i);
 }
 
+/* Une nouvelle saison : l'herbe autour des petits cailloux change de couleur */
+let saisonVue = saison();
+function rafraichir(){
+  saisonVue = saison();
+  for(const i of Object.keys(state.sol)){ const g = meshes.get(+i); if(g){ scene.remove(g); meshes.delete(+i); } build(+i); }
+}
 /* Ce qui est revenu depuis la dernière fois (aussi jeu fermé) ; un objet recouvert par un bâtiment disparaît */
 function update(){
+  if(saison() !== saisonVue) rafraichir();
   for(const i of Object.keys(state.sol)) if(occ.has(+i) || map.obj[+i]) remove(+i);
   if(!premierJour()){                                 // après le premier jour : une fois par jour, 3 à 6 de chaque
     if(state.solJour === today()) return;
@@ -98,3 +103,4 @@ if(!state.sol){
 }
 setInterval(update, 30000);
 export const updateSol = update;                      // pour la vérification automatique
+export const solMesh = i => meshes.get(i);           // le modèle d'un objet au sol (pour la vérification)

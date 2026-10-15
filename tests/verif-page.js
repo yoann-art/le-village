@@ -71,7 +71,7 @@ import { hold, mettreEnCase, jauge, dansCase } from "../js/barre.js";
 import { torcheSol, lanterneAllumee } from "../js/torche.js";
 import { updateLumieres, lumieresActives } from "../js/lumieres.js";
 import { penombreIci } from "../js/monde/interieurs.js";
-import { pickUp, updateSol } from "../js/monde/sol.js";
+import { pickUp, updateSol, solMesh } from "../js/monde/sol.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 /* Demande de Yo (v1.13.2) : un outil ne sert que tenu en main, pris dans une case rapide : la vérification le met dans la
@@ -134,6 +134,16 @@ export async function verifier(){
     const bois = Object.values(state.sol).filter(v => v === "branche").length;
     if(bois !== 24) throw new Error(`${bois} morceaux de bois au sol au lieu de 24`);
     return `${Object.keys(state.sol).length} objets au sol (dont 24 morceaux de bois), la mine est posée`;
+  });
+  await etape("Le petit caillou (image de Yo) : une pierre à facettes, l'herbe et ses pousses autour ; sur le sable, sans herbe", async () => {
+    const cailloux = Object.keys(state.sol).filter(i => state.sol[i] === "caillou").map(Number);
+    if(!cailloux.length) throw new Error("aucun petit caillou au sol");
+    const vus = cailloux.map(i => { let u = null; solMesh(i) && solMesh(i).traverse(o => { if(o.userData.caillou) u = o.userData.caillou; }); return [i, u]; });
+    const sans = vus.filter(([, u]) => !u);
+    if(sans.length) throw new Error(`${sans.length} petits cailloux sans leur modèle`);
+    const faux = vus.filter(([i, u]) => u.herbe !== (map.type[i] !== "sand"));
+    if(faux.length) throw new Error("un petit caillou a de l'herbe sur le sable, ou pas d'herbe sur l'herbe");
+    return `${vus.length} petits cailloux, leur herbe de saison (${vus[0][1].saison})`;
   });
   await etape("Ramasser au sol", async () => {
     const i = +Object.keys(state.sol)[0];

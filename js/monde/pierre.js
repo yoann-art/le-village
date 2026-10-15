@@ -14,7 +14,7 @@
    léger (les grandes faces sans cellules, les mottes sans feuilles, moins d'herbe). Environ 8 200 triangles de près,
    1 700 de loin. */
 import { toon, fusionner, feuillageMat } from "./formes.js";
-import { aleaDe, mesh, presLoin, MAT_BOIS, MAT_PLAT } from "./chene.js";
+import { aleaDe, mesh, presLoin, feuilleGeo, MAT_BOIS, MAT_PLAT } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const LOIN = 6;
@@ -35,16 +35,18 @@ const NEIGE = 0xF4F8FA;
 /* les plans : des directions réparties sur le dessus et les côtés, chacun à la distance d'un ovale (large de 1 P environ,
    haut de 0,7 P), un peu au hasard ; le côté de la mousse (arrière gauche) un peu plus bombé */
 const A = .57, B = .47, C = .52, Y0 = .17;
-function plans(alea){
-  const P = [], n = 17;
+const PIERRE = {A, B, C, Y0, n: 17, bosse: true};
+const CAILLOU = {A: .58, B: .44, C: .55, Y0: .12, n: 20, bosse: false};   // le petit caillou (son image : Yo), à l'échelle de la pierre, réduit ensuite
+function plans(alea, f = PIERRE){
+  const P = [], n = f.n;
   for(let k = 0; k < n; k++){
     const t = (k + .5) / n, y = 1 - t * 1.22, rr = Math.sqrt(Math.max(0, 1 - y * y)), a = k * 2.39996 + (alea() - .5) * .5;
     const d = V(rr * Math.cos(a), y, rr * Math.sin(a)).normalize();
-    let h = Math.sqrt((A * d.x) ** 2 + (B * d.y) ** 2 + (C * d.z) ** 2) * (.87 + alea() * .13);
-    if(d.x < .2 && d.z < .2 && d.y > .25) h *= 1.03;
+    let h = Math.sqrt((f.A * d.x) ** 2 + (f.B * d.y) ** 2 + (f.C * d.z) ** 2) * (.87 + alea() * .13);
+    if(f.bosse && d.x < .2 && d.z < .2 && d.y > .25) h *= 1.03;
     P.push({n: d, h});
   }
-  P.push({n: V(0, -1, 0), h: Y0 + .02});                     // le dessous, plat (dans la terre)
+  P.push({n: V(0, -1, 0), h: f.Y0 + .02});                   // le dessous, plat (dans la terre)
   return P;
 }
 /* le polygone d'un plan : un grand carré sur ce plan, coupé par tous les autres */
@@ -120,8 +122,8 @@ function pointDans(poly, alea){
   if(u + v > 1){ u = 1 - u; v = 1 - v; }
   return poly[0].clone().addScaledVector(poly[i].clone().sub(poly[0]), u).addScaledVector(poly[i + 1].clone().sub(poly[0]), v);
 }
-function cellules({n, poly}, alea){
-  const A2 = aire(poly), nb = Math.max(1, Math.min(7, Math.round(A2 / .034)));
+function cellules({n, poly}, alea, parCellule = .034){
+  const A2 = aire(poly), nb = Math.max(1, Math.min(7, Math.round(A2 / parCellule)));
   if(nb === 1) return [poly];
   const graines = [];
   for(let k = 0; k < nb; k++){
@@ -232,9 +234,10 @@ function mousseDe(P, alea, leger){
 /* ---------- l'herbe du pied ---------- */
 /* un brin : une bande large au bout rond, pliée en son milieu, courbée vers l'extérieur ; la base à l'ombre */
 const BRIN = (() => {
-  const rangs = 3, pos = [], te = [], ind = [];
+  /* des rangs serrés vers le bout, qui se referme en demi-cercle : un bout rond (comme sur les images) */
+  const T = [0, .42, .76, .92, 1], rangs = T.length - 1, pos = [], te = [], ind = [];
   for(let k = 0; k <= rangs; k++){
-    const t = k / rangs, w = Math.max(.06, .18 * Math.pow(Math.max(0, 1 - Math.pow(t, 2.6)), .5) * (.75 + .25 * Math.min(1, t * 3)));
+    const t = T[k], large = .155 * (.75 + .25 * Math.min(1, t * 3)), w = t > .76 ? large * Math.sqrt(Math.max(0, 1 - ((t - .76) / .24) ** 2)) : large;
     const z = .42 * t * t, clair = .7 + .45 * t;
     pos.push(-w, t, z + w * .6, 0, t, z, w, t, z + w * .6);
     te.push(clair, clair * .9, clair);
@@ -248,18 +251,18 @@ const BRIN = (() => {
 })();
 /* l'herbe en touffes (comme sur l'image) : autour du pied, des touffes de brins larges qui s'ouvrent en éventail, les
    brins du milieu droits, ceux du bord penchés vers l'extérieur ; deux rangs de touffes, contre la pierre et devant */
-function herbeDe(P, tons, alea, leger){
-  const M = [], touffes = leger ? 12 : 18;
+function herbeDe(P, tons, alea, leger, o = {}){
+  const M = [], touffes = o.touffes ? (leger ? Math.ceil(o.touffes * .6) : o.touffes) : leger ? 12 : 18, brins = o.brins || 9, taille = o.grand || 1;
   for(let t = 0; t < touffes; t++){
-    const a = t / touffes * Math.PI * 2 + (alea() - .5) * .2;
+    const a = (o.angles ? o.angles[t % o.angles.length] : t / touffes * Math.PI * 2) + (alea() - .5) * .2;
     const bord = surface(P, V(Math.cos(a), -.02, Math.sin(a)).normalize()).p;
     const rb = Math.hypot(bord.x, bord.z) * (t % 2 ? .96 + alea() * .06 : 1.06 + alea() * .1);
     const racine = V(Math.cos(a) * rb, -.02, Math.sin(a) * rb), dehors = V(Math.cos(a), 0, Math.sin(a));
-    const nb = leger ? 4 : 9 + Math.floor(alea() * 3), grand = (t % 2 ? 1.1 : .85) * (.9 + alea() * .25);
+    const nb = leger ? 4 : brins + Math.floor(alea() * 3), grand = taille * (t % 2 ? 1.1 : .85) * (.9 + alea() * .25);
     for(let k = 0; k < nb; k++){
       /* chaque brin part du coeur de la touffe dans sa direction (b), plus ou moins penché */
       const b = k / nb * Math.PI * 2 + alea() * .6, vers = V(Math.cos(b), 0, Math.sin(b));
-      const auMilieu = k < 3, pente = auMilieu ? .05 + alea() * .12 : .18 + alea() * .28;
+      const auMilieu = k < 3, pente = (auMilieu ? .05 + alea() * .12 : .18 + alea() * .28) * (o.droit || 1);
       const Y = V(0, 1, 0).multiplyScalar(Math.cos(pente)).addScaledVector(vers, Math.sin(pente)).normalize();
       const X = V(0, 1, 0).cross(vers).normalize(), Z = X.clone().cross(Y);
       const h = (auMilieu ? .27 : .2 + alea() * .06) * grand;
@@ -270,7 +273,7 @@ function herbeDe(P, tons, alea, leger){
       M.push({geo: BRIN, m, c: tons[auMilieu ? 2 : alea() < .6 ? 0 : 1]});
     }
   }
-  return fusionner(M);
+  return fusionner(M.concat(o.avec || []));                 // avec : d'autres morceaux (les pousses du petit caillou)
 }
 
 /* ---------- la neige ---------- */
@@ -330,5 +333,69 @@ export function pierreChamps(saison, r = 0, neige = false, sable = false){
   if(G.neige){ const m = mesh(G.neige, MAT_BOIS, false); m.position.y = Y0; g.add(m); }
   g.add(presLoin(pres, loin, LOIN));
   g.userData.pierreChamps = {saison, herbe: !!G.herbe, neige: !!G.neige};
+  return g;
+}
+
+/* ---------- le petit caillou (au sol, il se ramasse à la main ; son image : Yo, 15 octobre 2026) ----------
+   Une pierre ronde à facettes, fendue en cellules, gris chaud avec des taches plus sombres ; autour, quelques touffes
+   d'herbe et deux pousses aux feuilles rondes ; sur le sable, la pierre seule. Construit à l'échelle de la pierre des
+   champs, puis réduit (ECHELLE_CAILLOU) : environ 0,4 P de large. */
+const ECHELLE_CAILLOU = .36;
+const FEUILLE_RONDE = feuilleGeo(t => .5 * Math.pow(Math.sin(Math.PI * Math.pow(t, .75)), .8), 5, .3);
+/* une pousse : quatre feuilles rondes qui s'ouvrent autour du coeur, une cinquième au milieu, dressée */
+function pousse(M, racine, tons, alea){
+  for(let k = 0; k < 5; k++){
+    const milieu = k === 4, b = k * 1.57 + alea() * .4, vers = V(Math.cos(b), 0, Math.sin(b));
+    const pente = milieu ? .3 : .75 + alea() * .3, l = milieu ? .26 : .32 + alea() * .06;
+    const Y = V(0, 1, 0).multiplyScalar(Math.cos(pente)).addScaledVector(vers, Math.sin(pente)).normalize();
+    const X = V(0, 1, 0).cross(vers).normalize(), Z = X.clone().cross(Y);
+    const m = new THREE.Matrix4().makeBasis(X.multiplyScalar(l * .95), Y.clone().multiplyScalar(l), Z.multiplyScalar(l))
+      .setPosition(racine.clone().addScaledVector(Y, l * .5 + .02).setY(racine.y + Y.y * l * .5 + .03));
+    M.push({geo: FEUILLE_RONDE, m, c: new THREE.Color(tons[k % 2 ? 0 : 1]).multiplyScalar(.92).getHex()});
+  }
+}
+const CACHE_CAILLOU = new Map();
+function geosCaillou(saison, variante, sable){
+  const cle = [saison, variante, sable ? 1 : 0].join(":");
+  if(CACHE_CAILLOU.has(cle)) return CACHE_CAILLOU.get(cle);
+  const alea = aleaDe(4021 + variante * 97), P = plans(alea, CAILLOU), faces = polygones(P), joints = polygones(P, .034);
+  const yb = -.02, yt = CAILLOU.Y0 + CAILLOU.B;
+  const ombre = (x, y) => .8 + .2 * Math.min(1, Math.max(0, (y + CAILLOU.Y0 - yb) / (yt - yb)));
+  const roche = [], simple = [], aleaC = aleaDe(613 + variante * 31);
+  faces.forEach((f, k) => {
+    const ton = [0xA69E96, 0x9C968F, 0xACA398][(k * 5 + variante) % 3];
+    simple.push(plaque(f, ton, ombre));
+    for(const c of cellules(f, aleaC, .11)){
+      /* des taches plus sombres, comme sur l'image */
+      const t = aleaC() < .45 ? .72 + aleaC() * .08 : .97 + aleaC() * .1;
+      roche.push(plaque({n: f.n, poly: c}, new THREE.Color(ton).multiplyScalar(t).getHex(), ombre, Math.min(.022, .22 * Math.sqrt(aire(c))), .014, aleaC));
+    }
+  });
+  for(const f of joints){ const j = {...remplir(f.poly, f.n, JOINT), ombre}; roche.push(j); simple.push(j); }
+  /* l'herbe : des touffes autour (la plus grande derrière, à gauche), et deux pousses devant */
+  const tons = HERBE[saison], o = {touffes: 7, brins: 8, grand: 2.05, droit: .7, angles: [-2.3, -1.7, -.9, .1, .8, 1.5, 2.6]};
+  let herbe = null, herbeLeger = null;
+  if(!sable){
+    const M = [], aleaP = aleaDe(77 + variante);
+    for(const a of [2.15, .95]){
+      const bord = surface(P, V(Math.cos(a), -.02, Math.sin(a)).normalize()).p;
+      pousse(M, V(Math.cos(a), 0, Math.sin(a)).multiplyScalar(Math.hypot(bord.x, bord.z) * 1.12).setY(-.02), [tons[0], tons[1], tons[2]], aleaP);
+    }
+    herbe = herbeDe(P, tons, aleaDe(91 + variante), false, {...o, avec: M});
+    herbeLeger = herbeDe(P, tons, aleaDe(91 + variante), true, o);
+  }
+  const r = {roche: fusionner(roche), rocheLeger: fusionner(simple), herbe, herbeLeger};
+  CACHE_CAILLOU.set(cle, r);
+  return r;
+}
+/* Le petit caillou : saison, r (son tirage : nuance), sable (sur la plage : sans herbe) */
+export function caillouModele(saison, r = 0, sable = false){
+  const variante = Math.floor(r * 3) % 3, G = geosCaillou(saison, variante, sable), g = new THREE.Group();
+  const pres = new THREE.Group(), loin = new THREE.Group();
+  for(const [geo, grp] of [[G.roche, pres], [G.rocheLeger, loin]]){ const m = mesh(geo, MAT_BOIS); m.position.y = CAILLOU.Y0; grp.add(m); }
+  if(G.herbe){ pres.add(mesh(G.herbe, MAT_HERBE, false)); loin.add(mesh(G.herbeLeger, MAT_HERBE, false)); }
+  g.add(presLoin(pres, loin, LOIN));
+  g.scale.setScalar(ECHELLE_CAILLOU);
+  g.userData.caillou = {saison, herbe: !!G.herbe};
   return g;
 }
