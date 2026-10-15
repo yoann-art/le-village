@@ -1,6 +1,6 @@
 /* Les prompts du Grand Carnet (ChatGPT, ou Gemini) (doc Claude « Le Grand Carnet de Hearthwild »), pour la page prompts.html :
    un onglet par famille. Chaque prompt = la phrase de style de la bible (objet, ou créature : vue de face), puis
-   une ligne propre à l'objet. Fichier fait par Claude à la demande de Yo, le 7 octobre 2026. Onglet « Décor de l'île » ajouté le 14 octobre 2026 (étape 2.1), puis le jeune arbre et la souche de chaque arbre de l'onglet Arbres (demande de Yo, même jour). */
+   une ligne propre à l'objet. Fichier fait par Claude à la demande de Yo, le 7 octobre 2026. Onglet « Décor de l'île » ajouté le 14 octobre 2026 (étape 2.1 ; le 15 octobre, ce qui manquait de l'île : l'entrée de la mine, le pont et l'orée, la barque, les chemins, les lumières du dehors), puis le jeune arbre et la souche de chaque arbre de l'onglet Arbres (demande de Yo, même jour). */
 window.PROMPTS_CARNET = [
 {
 "key": "arbres",
@@ -878,7 +878,7 @@ window.PROMPTS_CARNET = [
 "key": "decorIle",
 "label": "Décor de l'île",
 "style": "objet",
-"lead": "Le décor autour de la Scierie (étape 2.1, la tranche parfaite) : ce qu'on voit partout sur l'île et qui n'avait pas encore son prompt. Le chêne est dans l'onglet Arbres : une seule image suffit, les couleurs des quatre saisons sont faites dans le jeu.",
+"lead": "Tout ce qui est sur l'île et n'avait pas encore son prompt (décidé avec Yo le 15 octobre 2026 : toute l'île d'abord). Ailleurs : les quatre arbres de l'île dans l'onglet Arbres, les 14 fleurs des prés dans Fleurs, les insectes, les oiseaux et les poissons de l'île dans leurs onglets, les 7 bâtiments et le ponton dans la page des bâtiments, le coffre et la lanterne sur pied dans la page des meubles, le feu de camp, le lampadaire et la lanterne murale dans Décoration.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul objet (ou un petit coin de décor), entier, fond blanc, vu de trois quarts.",
@@ -978,6 +978,120 @@ window.PROMPTS_CARNET = [
 "name": "Le bord de l'étang",
 "size": "commun",
 "line": "Un petit coin de bord d'étang en diorama : herbe vert tendre, eau douce bleu-vert calme et claire, trois roseaux, une feuille de nénuphar."
+}
+]
+},
+{
+"name": "Les constructions et les passages",
+"note": "Ce qui est posé sur l'île dès le départ ou se construit en chemin (le ponton et les 7 bâtiments sont dans la page des bâtiments).",
+"items": [
+{
+"id": "ile-mine-eboulee",
+"name": "L'entrée de la mine, éboulée",
+"size": "moyenne",
+"line": "L'entrée d'une mine encore éboulée : une petite colline de roche grise arrondie, environ 3 P de large et 2 P de haut, son ouverture sombre bouchée par un éboulement de rochers ronds et un étai de bois cassé, quelques planches tombées devant."
+},
+{
+"id": "ile-mine-ouverte",
+"name": "L'entrée de la mine, ouverte",
+"size": "moyenne",
+"line": "L'entrée d'une mine : une petite colline de roche grise arrondie, environ 3 P de large et 2 P de haut, une ouverture sombre étayée de poutres de bois couleur miel, des rails qui en sortent, une lanterne accrochée à côté."
+},
+{
+"id": "ile-pont-foret",
+"name": "Le pont de la Forêt profonde",
+"size": "moyenne",
+"line": "Un petit pont de bois couleur miel, 3 P de long et 1 P de large, planches et rambardes arrondies, posé sur des pilotis au-dessus de l'eau."
+},
+{
+"id": "ile-oree",
+"name": "L'orée de la Forêt profonde",
+"size": "moyenne",
+"line": "L'orée d'une forêt : une arche de bois couleur miel couverte de mousse, environ 3 P de large, entre deux grands arbres sombres, sur un carré de terre moussue."
+},
+{
+"id": "ile-barque",
+"name": "La barque « la Libellule »",
+"size": "petite",
+"line": "Une petite barque ronde en bois couleur miel, environ 2 P de long, un banc, deux rames, une libellule sculptée en figure de proue."
+}
+]
+},
+{
+"name": "Les chemins",
+"note": "On les trace en marchant, une case à la fois : un carré de chemin, vu un peu de dessus.",
+"items": [
+{
+"id": "ile-chemin-terre",
+"name": "Chemin de terre",
+"size": "1 P",
+"line": "Un carré de chemin de terre battue brun clair, 1 P de côté, vu un peu de dessus, quelques mottes et petits cailloux."
+},
+{
+"id": "ile-chemin-gravier",
+"name": "Chemin de gravier",
+"size": "1 P",
+"line": "Un carré de chemin de gravier, 1 P de côté, vu un peu de dessus, petits cailloux gris et beiges bien serrés."
+},
+{
+"id": "ile-chemin-paves",
+"name": "Chemin de pavés",
+"size": "1 P",
+"line": "Un carré de chemin pavé, 1 P de côté, vu un peu de dessus, quatre gros pavés de pierre grise arrondis, un peu d'herbe entre les joints."
+},
+{
+"id": "ile-chemin-planches",
+"name": "Chemin de planches",
+"size": "1 P",
+"line": "Un carré de chemin de planches, 1 P de côté, vu un peu de dessus, trois planches de bois couleur miel côte à côte, quelques clous."
+},
+{
+"id": "ile-chemin-granit",
+"name": "Dallage de granit",
+"size": "1 P",
+"line": "Un carré de dallage de granit, 1 P de côté, vu un peu de dessus, une dalle grise mouchetée de noir et de blanc aux bords arrondis."
+},
+{
+"id": "ile-chemin-marbre",
+"name": "Dallage de marbre",
+"size": "1 P",
+"line": "Un carré de dallage de marbre, 1 P de côté, vu un peu de dessus, une dalle blanche veinée de gris clair aux bords arrondis."
+}
+]
+},
+{
+"name": "Les lumières du dehors",
+"note": "Celles qui manquaient ailleurs (le feu de camp, le lampadaire et la lanterne murale sont dans l'onglet Décoration, la lanterne sur pied dans la page des meubles).",
+"items": [
+{
+"id": "ile-torchere",
+"name": "Torchère sur pied",
+"size": "petite",
+"line": "Une torchère sur pied en bois couleur miel, environ 1,2 P de haut, une coupe de fer en haut qui tient une torche allumée d'une flamme orange."
+},
+{
+"id": "ile-torchere-murale",
+"name": "Torchère murale",
+"size": "petite",
+"line": "Une torchère murale en cuivre, environ 0,6 P de haut, un support recourbé qui tient une torche allumée, et sa plaque à fixer au mur."
+},
+{
+"id": "ile-chandelle",
+"name": "Chandelle",
+"size": "petite",
+"line": "Une chandelle de suif crème, environ 0,3 P de haut, dans un petit bougeoir de terre cuite, flamme allumée."
+},
+{
+"id": "ile-brasero",
+"name": "Brasero",
+"size": "petite",
+"line": "Un brasero en cuivre sur trois pieds, environ 0,8 P de haut, une large coupe pleine de braises et de flammes."
+},
+{
+"id": "ile-lanterne-main",
+"name": "Lanterne à main",
+"size": "petite",
+"line": "Une lanterne à main en cuivre et verre, environ 0,4 P de haut, une anse en haut, une chandelle allumée à l'intérieur."
 }
 ]
 }
