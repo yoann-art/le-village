@@ -145,6 +145,13 @@ export async function verifier(){
     if(faux.length) throw new Error("un petit caillou a de l'herbe sur le sable, ou pas d'herbe sur l'herbe");
     return `${vus.length} petits cailloux, leur herbe de saison (${vus[0][1].saison})`;
   });
+  await etape("La branche de chêne au sol (image de Yo) : son écorce, ses deux feuilles de la saison", async () => {
+    const i = +Object.keys(state.sol).find(k => state.sol[k] === "branche");
+    let u = null; solMesh(i) && solMesh(i).traverse(o => { if(o.userData.branche) u = o.userData.branche; });
+    if(!u) throw new Error("la branche au sol n'a pas son modèle");
+    if(u.saison !== saison()) throw new Error(`ses feuilles sont de la saison ${u.saison} au lieu de ${saison()}`);
+    return `ses feuilles de la saison (${u.saison})`;
+  });
   await etape("Ramasser au sol", async () => {
     const i = +Object.keys(state.sol)[0];
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); frames(3);

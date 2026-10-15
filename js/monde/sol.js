@@ -6,22 +6,19 @@
    (décidé avec Yo, 12 octobre 2026). On marche dessus.
    state.sol = {case: "branche" | "caillou"} ; state.solT = l'heure du dernier retour (le premier jour). */
 import { scene } from "./scene.js";
-import { G, part } from "./formes.js";
 import { map, idx, inb, N, centerOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state, save } from "../sauvegarde.js";
 import { doorTile } from "../regles.js";
 import { SOL, SOL_RETOUR, SOL_JOUR, saison } from "../donnees.js";
 import { caillouModele } from "./pierre.js";
+import { brancheModele } from "./branche.js";
 
 const meshes = new Map();
 function build(i){
   const k = state.sol[i], r = ((i * 9301 + 49297) % 233280) / 233280, g = new THREE.Group();   // r : selon la case (le même modèle quand on le refait)
-  if(k === "branche"){
-    const b = part(G.cyl, 0x8A5A3B, .1, .62, .1, 0, .06, 0); b.rotation.z = Math.PI/2; g.add(b);   // le morceau de bois couché
-    const t = part(G.cyl, 0x8A5A3B, .06, .24, .06, .12, .1, .08); t.rotation.set(Math.PI/2, 0, .7); g.add(t);   // une petite branche
-    g.add(part(G.leaf2, 0x57B25C, .3, .3, .3, -.24, .1, -.02));                       // une feuille
-  } else g.add(caillouModele(saison(), r, map.type[i] === "sand"));   // le petit caillou (étape 2.1 : pierre.js, d'après l'image de Yo)
+  if(k === "branche") g.add(brancheModele(saison(), r));   // la branche de chêne (étape 2.1 : branche.js, d'après l'image de Yo)
+  else g.add(caillouModele(saison(), r, map.type[i] === "sand"));   // le petit caillou (étape 2.1 : pierre.js, d'après l'image de Yo)
   g.rotation.y = r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   scene.add(g); meshes.set(i, g);
