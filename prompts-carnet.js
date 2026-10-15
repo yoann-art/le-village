@@ -614,8 +614,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les Îles célestes",
-"note": "Les arbres n'obéissent plus vraiment au sol.",
+"name": "Les Îles célestes (grande mise à jour)",
+"note": "Les arbres n'obéissent plus vraiment au sol. Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "arb-arbre-nuage",
@@ -674,8 +674,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Le Volcan",
-"note": "Les derniers arbres du monde, nés du feu.",
+"name": "Le Volcan (grande mise à jour)",
+"note": "Les derniers arbres du monde, nés du feu. Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "arb-arbre-de-braise",
@@ -872,7 +872,7 @@ window.PROMPTS_CARNET = [
 ]
 }
 ],
-"lead": "Les arbres du Grand Carnet, de l'île au Volcan : 39 au lancement, rangés par lieu, et 8 en réserve à la fin (décidé avec Yo le 15 octobre 2026). Pour chaque arbre : l'adulte, puis son jeune arbre et sa souche (sauf les deux légendaires, qui ne se coupent pas). Le jeune chêne et la souche de chêne sont dans l'onglet Décor de l'île.",
+"lead": "Les arbres du Grand Carnet, de l'île au Volcan : 33 au lancement, rangés par lieu, 6 avec les grandes mises à jour des Îles célestes et du Volcan, et 8 en réserve à la fin (décidé avec Yo le 15 octobre 2026). Pour chaque arbre : l'adulte, puis son jeune arbre et sa souche (sauf les deux légendaires, qui ne se coupent pas). Le jeune chêne et la souche de chêne sont dans l'onglet Décor de l'île.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT : d'abord l'arbre adulte.",
 "Dans la même conversation, colle ensuite son jeune arbre, puis sa souche : les trois images se ressembleront.",
@@ -1177,12 +1177,6 @@ window.PROMPTS_CARNET = [
 "name": "Fraisier",
 "size": "peu commun",
 "line": "Un fraisier dans un petit carré de terre, feuilles dentelées, petites fleurs blanches, fraises rouges bien rondes."
-},
-{
-"id": "pot-citrouille",
-"name": "Citrouille",
-"size": "peu commun",
-"line": "Une grosse citrouille orange côtelée sur un petit carré de terre, tige courbée, larges feuilles et vrilles."
 }
 ]
 },
@@ -1207,18 +1201,6 @@ window.PROMPTS_CARNET = [
 "name": "Myrtillier",
 "size": "commun",
 "line": "Un petit buisson de myrtilles dans un petit carré de terre, petites feuilles vertes, myrtilles bleu nuit bien rondes."
-},
-{
-"id": "pot-framboisier",
-"name": "Framboisier",
-"size": "peu commun",
-"line": "Un framboisier dans un petit carré de terre, tiges dressées, feuilles dentelées, framboises rouges."
-},
-{
-"id": "pot-fraise-des-bois",
-"name": "Fraise des bois",
-"size": "peu commun",
-"line": "Un plant de fraises des bois sur un petit carré de mousse, petites feuilles, minuscules fraises rouge vif."
 },
 {
 "id": "pot-garance",
@@ -1269,12 +1251,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "pot-patate-douce",
-"name": "Patate douce",
-"size": "commun",
-"line": "Un plant de patates douces dans un petit carré de terre, feuilles en cœur, deux patates douces roses qui dépassent."
-},
-{
 "id": "pot-canne-a-sucre",
 "name": "Canne à sucre",
 "size": "commun",
@@ -1291,12 +1267,6 @@ window.PROMPTS_CARNET = [
 "name": "Piment",
 "size": "peu commun",
 "line": "Un plant de piments dans un petit carré de terre, feuilles vertes, piments rouges et orange luisants."
-},
-{
-"id": "pot-melon",
-"name": "Melon",
-"size": "peu commun",
-"line": "Un melon rond vert clair veiné posé sur un petit carré de terre, tige et larges feuilles."
 },
 {
 "id": "pot-vanille",
@@ -1341,18 +1311,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "pot-pois-chiche",
-"name": "Pois chiche",
-"size": "commun",
-"line": "Un plant de pois chiches dans un petit carré de terre sableuse, feuilles fines, petites gousses gonflées, pois beiges."
-},
-{
-"id": "pot-sesame",
-"name": "Sésame",
-"size": "commun",
-"line": "Un plant de sésame dans un petit carré de terre sableuse, tige droite, fleurs blanches en cloche, capsules de graines."
-},
-{
 "id": "pot-coton",
 "name": "Coton",
 "size": "peu commun",
@@ -1379,8 +1337,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les champs des Îles célestes",
-"note": "",
+"name": "Les champs des Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "pot-ble-celeste",
@@ -1403,8 +1361,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les terres chaudes du Volcan",
-"note": "",
+"name": "Les terres chaudes du Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "pot-piment-de-braise",
@@ -1419,9 +1377,57 @@ window.PROMPTS_CARNET = [
 "line": "Un plant de tubercules de lave merveilleux dans un petit carré de roche noire, tubercules fendillés qui rougeoient de l'intérieur."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "pot-citrouille",
+"name": "Citrouille",
+"size": "peu commun",
+"line": "Une grosse citrouille orange côtelée sur un petit carré de terre, tige courbée, larges feuilles et vrilles."
+},
+{
+"id": "pot-framboisier",
+"name": "Framboisier",
+"size": "peu commun",
+"line": "Un framboisier dans un petit carré de terre, tiges dressées, feuilles dentelées, framboises rouges."
+},
+{
+"id": "pot-fraise-des-bois",
+"name": "Fraise des bois",
+"size": "peu commun",
+"line": "Un plant de fraises des bois sur un petit carré de mousse, petites feuilles, minuscules fraises rouge vif."
+},
+{
+"id": "pot-patate-douce",
+"name": "Patate douce",
+"size": "commun",
+"line": "Un plant de patates douces dans un petit carré de terre, feuilles en cœur, deux patates douces roses qui dépassent."
+},
+{
+"id": "pot-melon",
+"name": "Melon",
+"size": "peu commun",
+"line": "Un melon rond vert clair veiné posé sur un petit carré de terre, tige et larges feuilles."
+},
+{
+"id": "pot-pois-chiche",
+"name": "Pois chiche",
+"size": "commun",
+"line": "Un plant de pois chiches dans un petit carré de terre sableuse, feuilles fines, petites gousses gonflées, pois beiges."
+},
+{
+"id": "pot-sesame",
+"name": "Sésame",
+"size": "commun",
+"line": "Un plant de sésame dans un petit carré de terre sableuse, tige droite, fleurs blanches en cloche, capsules de graines."
+}
+]
 }
 ],
-"lead": "Les plantes du potager du Grand Carnet.",
+"lead": "Les plantes du potager du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule plante, entière, fond blanc, vue de trois quarts.",
@@ -1534,12 +1540,6 @@ window.PROMPTS_CARNET = [
 "line": "Une touffe d'anémones des bois sur une petite motte de mousse, petites fleurs blanches étoilées."
 },
 {
-"id": "fle-jacinthe-des-bois",
-"name": "Jacinthe des bois",
-"size": "peu commun",
-"line": "Une touffe de jacinthes des bois sur une petite motte de mousse, clochettes bleues en grappes penchées."
-},
-{
 "id": "fle-digitale",
 "name": "Digitale",
 "size": "peu commun",
@@ -1618,12 +1618,6 @@ window.PROMPTS_CARNET = [
 "line": "Une fleur oiseau de paradis sur une petite motte de terre, fleur orange et bleue en forme de tête d'oiseau, longues feuilles."
 },
 {
-"id": "fle-orchidee",
-"name": "Orchidée",
-"size": "rare",
-"line": "Une orchidée sur une petite motte de mousse, tige courbée, fleurs violettes, blanches et roses."
-},
-{
 "id": "fle-fleur-coquillage",
 "name": "Fleur-coquillage",
 "size": "rare ✨",
@@ -1658,12 +1652,6 @@ window.PROMPTS_CARNET = [
 "name": "Edelweiss",
 "size": "rare",
 "line": "Une touffe d'edelweiss sur un petit rocher, fleurs étoilées blanc argenté et duveteuses."
-},
-{
-"id": "fle-fleur-de-givre",
-"name": "Fleur de givre",
-"size": "rare ✨",
-"line": "Une fleur de givre merveilleuse sur une petite motte de glace, fleur de cristal transparente qui scintille."
 }
 ]
 },
@@ -1698,8 +1686,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les jardins des Îles célestes",
-"note": "",
+"name": "Les jardins des Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "fle-campanule-des-vents",
@@ -1714,12 +1702,6 @@ window.PROMPTS_CARNET = [
 "line": "Une fleur-étoile merveilleuse sur une petite motte de nuage, fleur en forme d'étoile or pâle qui brille."
 },
 {
-"id": "fle-rose-celeste",
-"name": "Rose céleste",
-"size": "rare ✨",
-"line": "Une rose céleste merveilleuse sur une petite motte de nuage, rose dorée dont les pétales flottent vers le haut."
-},
-{
 "id": "fle-fleur-de-l-aube",
 "name": "Fleur de l'aube",
 "size": "légendaire 👑",
@@ -1728,8 +1710,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les cendres du Volcan",
-"note": "",
+"name": "Les cendres du Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "fle-fleur-de-cendre",
@@ -1744,9 +1726,39 @@ window.PROMPTS_CARNET = [
 "line": "Un lys de braise merveilleux sur une petite motte de roche noire, fleurs rouge incandescent qui éclairent."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "fle-jacinthe-des-bois",
+"name": "Jacinthe des bois",
+"size": "peu commun",
+"line": "Une touffe de jacinthes des bois sur une petite motte de mousse, clochettes bleues en grappes penchées."
+},
+{
+"id": "fle-orchidee",
+"name": "Orchidée",
+"size": "rare",
+"line": "Une orchidée sur une petite motte de mousse, tige courbée, fleurs violettes, blanches et roses."
+},
+{
+"id": "fle-fleur-de-givre",
+"name": "Fleur de givre",
+"size": "rare ✨",
+"line": "Une fleur de givre merveilleuse sur une petite motte de glace, fleur de cristal transparente qui scintille."
+},
+{
+"id": "fle-rose-celeste",
+"name": "Rose céleste",
+"size": "rare ✨",
+"line": "Une rose céleste merveilleuse sur une petite motte de nuage, rose dorée dont les pétales flottent vers le haut."
+}
+]
 }
 ],
-"lead": "Les fleurs du Grand Carnet.",
+"lead": "Les fleurs du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule touffe de fleurs, entière, fond blanc, vue de trois quarts.",
@@ -1767,12 +1779,6 @@ window.PROMPTS_CARNET = [
 "name": "Rosé des prés",
 "size": "commun",
 "line": "Deux rosés des prés sur une petite motte d'herbe, chapeau blanc bombé, lames roses dessous."
-},
-{
-"id": "cha-coprin-chevelu",
-"name": "Coprin chevelu",
-"size": "commun",
-"line": "Deux coprins chevelus sur une petite motte d'herbe, chapeaux blancs allongés et ébouriffés comme des plumeaux."
 },
 {
 "id": "cha-vesse-de-loup",
@@ -1803,12 +1809,6 @@ window.PROMPTS_CARNET = [
 "name": "Girolle",
 "size": "peu commun",
 "line": "Trois girolles sur une petite motte de mousse, orange abricot, en forme d'entonnoir aux bords ondulés."
-},
-{
-"id": "cha-trompette-de-la-mort",
-"name": "Trompette-de-la-mort",
-"size": "peu commun",
-"line": "Trois trompettes-de-la-mort sur une petite motte de mousse, noires et grises, en forme de cornet."
 },
 {
 "id": "cha-pleurote",
@@ -1869,12 +1869,6 @@ window.PROMPTS_CARNET = [
 "name": "Oreille-de-Judas",
 "size": "peu commun",
 "line": "Des oreilles-de-Judas sur un petit morceau de bois mort, champignons bruns et translucides en forme d'oreille."
-},
-{
-"id": "cha-clavaire",
-"name": "Clavaire",
-"size": "peu commun",
-"line": "Une clavaire sur une petite motte de mousse, champignon rose en branches comme du corail."
 }
 ]
 },
@@ -1889,12 +1883,6 @@ window.PROMPTS_CARNET = [
 "line": "Deux lactaires délicieux sur une petite motte d'aiguilles de pin, chapeaux orange en creux à cercles concentriques."
 },
 {
-"id": "cha-hygrophore-de-mars",
-"name": "Hygrophore de mars",
-"size": "peu commun",
-"line": "Deux hygrophores de mars sur une petite motte de neige fondante, chapeaux gris épais."
-},
-{
 "id": "cha-champignon-de-glace",
 "name": "Champignon de glace",
 "size": "rare ✨",
@@ -1907,12 +1895,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "cha-truffe-du-desert",
-"name": "Truffe du désert",
-"size": "rare",
-"line": "Deux truffes du désert sur un petit tas de sable, tubercules ronds beiges à moitié dégagés."
-},
-{
 "id": "cha-champignon-d-ambre",
 "name": "Champignon d'ambre",
 "size": "rare ✨",
@@ -1924,12 +1906,6 @@ window.PROMPTS_CARNET = [
 "name": "Les grottes",
 "note": "",
 "items": [
-{
-"id": "cha-champignon-lanterne",
-"name": "Champignon-lanterne",
-"size": "peu commun ✨",
-"line": "Une grappe de champignons-lanternes merveilleux sur un petit bloc de roche, chapeaux bleus lumineux."
-},
 {
 "id": "cha-pied-de-spectre",
 "name": "Pied-de-spectre",
@@ -1951,15 +1927,9 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les Îles célestes",
-"note": "",
+"name": "Les Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
-{
-"id": "cha-champignon-nuage",
-"name": "Champignon-nuage",
-"size": "peu commun ✨",
-"line": "Un champignon-nuage merveilleux sur une petite motte de nuage, chapeau de coton blanc qui flotte au-dessus du pied."
-},
 {
 "id": "cha-chapeau-etoile",
 "name": "Chapeau-étoile",
@@ -1969,15 +1939,9 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Le Volcan",
-"note": "",
+"name": "Le Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
-{
-"id": "cha-morille-des-cendres",
-"name": "Morille des cendres",
-"size": "rare",
-"line": "Deux morilles des cendres sur une petite motte de cendres, chapeaux noirs alvéolés."
-},
 {
 "id": "cha-champignon-de-braise",
 "name": "Champignon de braise",
@@ -1985,9 +1949,63 @@ window.PROMPTS_CARNET = [
 "line": "Un champignon de braise merveilleux sur un petit bloc de roche noire, chapeau rougeoyant comme une braise."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "cha-coprin-chevelu",
+"name": "Coprin chevelu",
+"size": "commun",
+"line": "Deux coprins chevelus sur une petite motte d'herbe, chapeaux blancs allongés et ébouriffés comme des plumeaux."
+},
+{
+"id": "cha-trompette-de-la-mort",
+"name": "Trompette-de-la-mort",
+"size": "peu commun",
+"line": "Trois trompettes-de-la-mort sur une petite motte de mousse, noires et grises, en forme de cornet."
+},
+{
+"id": "cha-clavaire",
+"name": "Clavaire",
+"size": "peu commun",
+"line": "Une clavaire sur une petite motte de mousse, champignon rose en branches comme du corail."
+},
+{
+"id": "cha-hygrophore-de-mars",
+"name": "Hygrophore de mars",
+"size": "peu commun",
+"line": "Deux hygrophores de mars sur une petite motte de neige fondante, chapeaux gris épais."
+},
+{
+"id": "cha-truffe-du-desert",
+"name": "Truffe du désert",
+"size": "rare",
+"line": "Deux truffes du désert sur un petit tas de sable, tubercules ronds beiges à moitié dégagés."
+},
+{
+"id": "cha-champignon-lanterne",
+"name": "Champignon-lanterne",
+"size": "peu commun ✨",
+"line": "Une grappe de champignons-lanternes merveilleux sur un petit bloc de roche, chapeaux bleus lumineux."
+},
+{
+"id": "cha-champignon-nuage",
+"name": "Champignon-nuage",
+"size": "peu commun ✨",
+"line": "Un champignon-nuage merveilleux sur une petite motte de nuage, chapeau de coton blanc qui flotte au-dessus du pied."
+},
+{
+"id": "cha-morille-des-cendres",
+"name": "Morille des cendres",
+"size": "rare",
+"line": "Deux morilles des cendres sur une petite motte de cendres, chapeaux noirs alvéolés."
+}
+]
 }
 ],
-"lead": "Les champignons du Grand Carnet.",
+"lead": "Les champignons du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul champignon (ou une petite touffe), fond blanc, vu de trois quarts.",
@@ -2058,24 +2076,6 @@ window.PROMPTS_CARNET = [
 "line": "Un agneau tout rond, laine blanche courte et bouclée, tête et pattes noires, longues pattes fines, oreilles tombantes, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
-"id": "ele-chevre",
-"name": "Chèvre (femelle)",
-"size": "commun",
-"line": "Une chèvre ronde et joyeuse, poil beige et blanc, petites cornes courbées, barbichette, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-bouc",
-"name": "Bouc (mâle)",
-"size": "commun",
-"line": "Un bouc trapu, poil beige et blanc plus long, grandes cornes courbées vers l'arrière, longue barbiche, un peu plus grand que la chèvre, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-chevreau",
-"name": "Chevreau (petit)",
-"size": "commun",
-"line": "Un chevreau tout rond et joyeux, poil beige et blanc, pas encore de cornes, longues pattes, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
 "id": "ele-cochon",
 "name": "Truie (femelle)",
 "size": "commun",
@@ -2092,42 +2092,6 @@ window.PROMPTS_CARNET = [
 "name": "Porcelet (petit)",
 "size": "commun",
 "line": "Un porcelet rose tout petit et rond, groin dodu, oreilles tombantes, queue en tire-bouchon, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-canard",
-"name": "Canard (mâle)",
-"size": "commun",
-"line": "Un canard de ferme blanc et rond, bec et pattes orange, une petite plume bouclée au bout de la queue, un peu plus grand que la cane, environ 0,45 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-cane",
-"name": "Cane (femelle)",
-"size": "commun",
-"line": "Une cane de ferme blanche et ronde, bec et pattes orange, queue lisse sans plume bouclée, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-caneton",
-"name": "Caneton (petit)",
-"size": "commun",
-"line": "Un caneton tout rond en duvet jaune, petit bec et pattes orange, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-lapin-angora",
-"name": "Lapin angora (mâle)",
-"size": "commun",
-"line": "Un lapin angora en boule de poils blancs très longs et doux, tête large et ronde, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-lapine-angora",
-"name": "Lapine angora (femelle)",
-"size": "commun",
-"line": "Une lapine angora en boule de poils blancs très longs et doux, tête plus fine que le mâle, petit fanon de poils sous le menton, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-lapereau-angora",
-"name": "Lapereau angora (petit)",
-"size": "commun",
-"line": "Un lapereau angora tout petit, boule de duvet blanc encore court, petites oreilles, grands yeux, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-cheval",
@@ -2170,24 +2134,6 @@ window.PROMPTS_CARNET = [
 "name": "Larve d'abeille (petit)",
 "size": "peu commun",
 "line": "Une larve d'abeille blanche et dodue, enroulée en croissant au fond d'une alvéole de cire dorée, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-oie",
-"name": "Oie (femelle)",
-"size": "peu commun",
-"line": "Une oie blanche et grise au long cou, bec orange, l'air fier, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-jars",
-"name": "Jars (mâle)",
-"size": "peu commun",
-"line": "Un jars blanc et gris, plus grand que l'oie, cou plus long et plus épais, petite bosse orange à la base du bec, poitrail bombé, l'air fier, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-oison",
-"name": "Oison (petit)",
-"size": "peu commun",
-"line": "Un oison tout rond en duvet jaune-gris, petit bec orange, environ 0,2 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -2195,42 +2141,6 @@ window.PROMPTS_CARNET = [
 "name": "Les animaux de la Forêt profonde",
 "note": "",
 "items": [
-{
-"id": "ele-herisson",
-"name": "Hérisson (mâle)",
-"size": "commun",
-"line": "Un hérisson tout rond, piquants bruns arrondis, petit museau pointu et nez noir, environ 0,25 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-herissonne",
-"name": "Hérissonne (femelle)",
-"size": "commun",
-"line": "Une hérissonne toute ronde, un peu plus petite que le mâle, piquants bruns plus clairs aux pointes crème, museau plus fin, nez noir, environ 0,22 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-choupisson",
-"name": "Choupisson (petit)",
-"size": "commun",
-"line": "Un choupisson, bébé hérisson minuscule et rose, piquants blancs encore tout doux, yeux à peine ouverts, environ 0,1 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-marcassin",
-"name": "Marcassin (petit)",
-"size": "peu commun",
-"line": "Un marcassin rond, pelage brun rayé de clair, petit groin, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-sanglier-elevage",
-"name": "Sanglier (mâle)",
-"size": "peu commun",
-"line": "Un sanglier d'élevage trapu, pelage brun-noir hirsute, défenses blanches recourbées, l'air paisible, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-laie",
-"name": "Laie (femelle)",
-"size": "peu commun",
-"line": "Une laie trapue et douce, pelage brun-gris hirsute, groin rond, sans grandes défenses, un peu plus petite que le sanglier, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
-},
 {
 "id": "ele-faisan-elevage",
 "name": "Faisan (mâle)",
@@ -2248,24 +2158,6 @@ window.PROMPTS_CARNET = [
 "name": "Faisandeau (petit)",
 "size": "peu commun",
 "line": "Un faisandeau tout rond en duvet brun et crème rayé, petit bec, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-cerf-elevage",
-"name": "Cerf (mâle)",
-"size": "rare",
-"line": "Un cerf majestueux mais doux, pelage brun chaud, grands bois ramifiés, environ 1,6 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-biche",
-"name": "Biche (femelle)",
-"size": "rare",
-"line": "Une biche élancée et douce, pelage brun chaud, sans bois, grandes oreilles, grands yeux doux, environ 1,3 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-faon",
-"name": "Faon (petit)",
-"size": "rare",
-"line": "Un faon aux longues pattes fines, pelage fauve tacheté de blanc, grandes oreilles, grands yeux, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -2290,36 +2182,6 @@ window.PROMPTS_CARNET = [
 "name": "Têtard chanteur (petit)",
 "size": "peu commun ✨",
 "line": "Un têtard chanteur merveilleux, rond et dodu, vert sombre aux reflets dorés, longue queue souple, petites pattes arrière qui poussent, environ 0,1 P (grossi pour bien le voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-escargot-geant",
-"name": "Escargot géant (adulte)",
-"size": "peu commun ✨",
-"line": "Un escargot géant merveilleux, coquille en spirale beige et brune, corps gris-vert luisant, antennes, environ 0,5 P de haut, vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-escargot-geant-petit",
-"name": "Petit escargot géant (petit)",
-"size": "peu commun ✨",
-"line": "Un bébé escargot géant merveilleux, coquille en spirale encore fine et translucide beige pâle, corps gris-vert luisant, petites antennes, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-luciole-des-brumes",
-"name": "Luciole des brumes (mâle)",
-"size": "rare ✨",
-"line": "Une luciole des brumes merveilleuse, petit insecte rond à l'abdomen qui brille d'une lumière bleutée, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-luciole-des-brumes-f",
-"name": "Luciole des brumes (femelle)",
-"size": "rare ✨",
-"line": "Une luciole des brumes merveilleuse, femelle sans ailes au corps allongé en anneaux, posée au sol, l'abdomen qui brille d'une lumière bleutée plus forte que le mâle, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-larve-luciole",
-"name": "Larve de luciole des brumes (petit)",
-"size": "rare ✨",
-"line": "Une larve de luciole des brumes merveilleuse, allongée et segmentée, gris-bleu, de petits points lumineux bleutés le long du corps, environ 0,08 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
 }
 ]
 },
@@ -2344,24 +2206,6 @@ window.PROMPTS_CARNET = [
 "name": "Bébé tortue (petit)",
 "size": "peu commun",
 "line": "Une bébé tortue de mer minuscule, carapace vert sombre, grandes nageoires, grands yeux, environ 0,1 P de haut (grossie pour bien la voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-perroquet",
-"name": "Perroquet (mâle)",
-"size": "peu commun",
-"line": "Un perroquet dodu, plumes rouges, bleues et jaunes, gros bec courbé, environ 0,5 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
-},
-{
-"id": "ele-perroquet-f",
-"name": "Perroquet (femelle)",
-"size": "peu commun",
-"line": "Un perroquet femelle dodue, un peu plus petite que le mâle, plumes rouges, bleues et jaunes, bec courbé plus fin, environ 0,45 P de haut, posée, vue de face, corps entier, pose neutre, ailes repliées."
-},
-{
-"id": "ele-bebe-perroquet",
-"name": "Bébé perroquet (petit)",
-"size": "peu commun",
-"line": "Un bébé perroquet tout rond en duvet gris, quelques plumes rouges et bleues qui poussent, gros bec courbé, environ 0,2 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
 },
 {
 "id": "ele-bernard-l-ermite-geant",
@@ -2404,42 +2248,6 @@ window.PROMPTS_CARNET = [
 "name": "Veau de yak (petit)",
 "size": "peu commun",
 "line": "Un veau de yak tout rond, toison brune laineuse et frisée, pas encore de cornes, environ 0,6 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-bouquetin",
-"name": "Bouquetin (mâle)",
-"size": "rare",
-"line": "Un bouquetin trapu, pelage gris-brun, très grandes cornes annelées recourbées, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-etagne",
-"name": "Étagne (femelle)",
-"size": "rare",
-"line": "Une étagne, femelle du bouquetin, plus fine, pelage gris-brun clair, petites cornes fines légèrement courbées, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-cabri",
-"name": "Cabri (petit)",
-"size": "rare",
-"line": "Un cabri, petit du bouquetin, pelage gris-brun clair tout doux, minuscules cornes naissantes, longues pattes, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-mouton-de-givre",
-"name": "Brebis de givre (femelle)",
-"size": "rare ✨",
-"line": "Une brebis de givre merveilleuse, laine bleu pâle givrée et scintillante, sans cornes, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-belier-de-givre",
-"name": "Bélier de givre (mâle)",
-"size": "rare ✨",
-"line": "Un bélier de givre merveilleux, laine bleu pâle givrée et scintillante, grandes cornes de glace enroulées en spirale, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-agneau-de-givre",
-"name": "Agneau de givre (petit)",
-"size": "rare ✨",
-"line": "Un agneau de givre merveilleux, laine bleu très pâle courte et bouclée, quelques flocons qui brillent dedans, longues pattes fines, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
 }
 ]
 },
@@ -2486,8 +2294,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les animaux des Îles célestes",
-"note": "",
+"name": "Les animaux des Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "ele-mouton-nuage",
@@ -2546,8 +2354,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les animaux du Volcan",
-"note": "",
+"name": "Les animaux du Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "ele-salamandre-de-feu",
@@ -2566,24 +2374,6 @@ window.PROMPTS_CARNET = [
 "name": "Larve de salamandre de feu (petit)",
 "size": "rare ✨",
 "line": "Une larve de salamandre de feu merveilleuse, petite et ronde, branchies en plumeaux rouges comme des braises de chaque côté de la tête, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
-},
-{
-"id": "ele-poule-de-braise",
-"name": "Poule de braise (femelle)",
-"size": "rare ✨",
-"line": "Une poule de braise merveilleuse, plumes noires aux pointes rougeoyantes, crête comme une flamme, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-coq-de-braise",
-"name": "Coq de braise (mâle)",
-"size": "rare ✨",
-"line": "Un coq de braise merveilleux, plumes noires aux pointes rougeoyantes, haute crête comme une flamme, longue queue de plumes qui rougeoient, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "ele-poussin-de-braise",
-"name": "Poussin de braise (petit)",
-"size": "rare ✨",
-"line": "Un poussin de braise merveilleux, tout rond en duvet gris cendre aux pointes rougeoyantes, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "ele-phenix-des-cendres",
@@ -2610,9 +2400,243 @@ window.PROMPTS_CARNET = [
 "line": "Un dragonneau légendaire, bébé dragon dodu, écailles rouge rubis et ventre doré, petites ailes, petites cornes arrondies, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "ele-chevre",
+"name": "Chèvre (femelle)",
+"size": "commun",
+"line": "Une chèvre ronde et joyeuse, poil beige et blanc, petites cornes courbées, barbichette, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-bouc",
+"name": "Bouc (mâle)",
+"size": "commun",
+"line": "Un bouc trapu, poil beige et blanc plus long, grandes cornes courbées vers l'arrière, longue barbiche, un peu plus grand que la chèvre, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-chevreau",
+"name": "Chevreau (petit)",
+"size": "commun",
+"line": "Un chevreau tout rond et joyeux, poil beige et blanc, pas encore de cornes, longues pattes, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-canard",
+"name": "Canard (mâle)",
+"size": "commun",
+"line": "Un canard de ferme blanc et rond, bec et pattes orange, une petite plume bouclée au bout de la queue, un peu plus grand que la cane, environ 0,45 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-cane",
+"name": "Cane (femelle)",
+"size": "commun",
+"line": "Une cane de ferme blanche et ronde, bec et pattes orange, queue lisse sans plume bouclée, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-caneton",
+"name": "Caneton (petit)",
+"size": "commun",
+"line": "Un caneton tout rond en duvet jaune, petit bec et pattes orange, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-lapin-angora",
+"name": "Lapin angora (mâle)",
+"size": "commun",
+"line": "Un lapin angora en boule de poils blancs très longs et doux, tête large et ronde, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-lapine-angora",
+"name": "Lapine angora (femelle)",
+"size": "commun",
+"line": "Une lapine angora en boule de poils blancs très longs et doux, tête plus fine que le mâle, petit fanon de poils sous le menton, petites oreilles, environ 0,3 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-lapereau-angora",
+"name": "Lapereau angora (petit)",
+"size": "commun",
+"line": "Un lapereau angora tout petit, boule de duvet blanc encore court, petites oreilles, grands yeux, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-oie",
+"name": "Oie (femelle)",
+"size": "peu commun",
+"line": "Une oie blanche et grise au long cou, bec orange, l'air fier, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-jars",
+"name": "Jars (mâle)",
+"size": "peu commun",
+"line": "Un jars blanc et gris, plus grand que l'oie, cou plus long et plus épais, petite bosse orange à la base du bec, poitrail bombé, l'air fier, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-oison",
+"name": "Oison (petit)",
+"size": "peu commun",
+"line": "Un oison tout rond en duvet jaune-gris, petit bec orange, environ 0,2 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-herisson",
+"name": "Hérisson (mâle)",
+"size": "commun",
+"line": "Un hérisson tout rond, piquants bruns arrondis, petit museau pointu et nez noir, environ 0,25 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-herissonne",
+"name": "Hérissonne (femelle)",
+"size": "commun",
+"line": "Une hérissonne toute ronde, un peu plus petite que le mâle, piquants bruns plus clairs aux pointes crème, museau plus fin, nez noir, environ 0,22 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-choupisson",
+"name": "Choupisson (petit)",
+"size": "commun",
+"line": "Un choupisson, bébé hérisson minuscule et rose, piquants blancs encore tout doux, yeux à peine ouverts, environ 0,1 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-marcassin",
+"name": "Marcassin (petit)",
+"size": "peu commun",
+"line": "Un marcassin rond, pelage brun rayé de clair, petit groin, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-sanglier-elevage",
+"name": "Sanglier (mâle)",
+"size": "peu commun",
+"line": "Un sanglier d'élevage trapu, pelage brun-noir hirsute, défenses blanches recourbées, l'air paisible, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-laie",
+"name": "Laie (femelle)",
+"size": "peu commun",
+"line": "Une laie trapue et douce, pelage brun-gris hirsute, groin rond, sans grandes défenses, un peu plus petite que le sanglier, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-cerf-elevage",
+"name": "Cerf (mâle)",
+"size": "rare",
+"line": "Un cerf majestueux mais doux, pelage brun chaud, grands bois ramifiés, environ 1,6 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-biche",
+"name": "Biche (femelle)",
+"size": "rare",
+"line": "Une biche élancée et douce, pelage brun chaud, sans bois, grandes oreilles, grands yeux doux, environ 1,3 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-faon",
+"name": "Faon (petit)",
+"size": "rare",
+"line": "Un faon aux longues pattes fines, pelage fauve tacheté de blanc, grandes oreilles, grands yeux, environ 0,7 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-escargot-geant",
+"name": "Escargot géant (adulte)",
+"size": "peu commun ✨",
+"line": "Un escargot géant merveilleux, coquille en spirale beige et brune, corps gris-vert luisant, antennes, environ 0,5 P de haut, vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-escargot-geant-petit",
+"name": "Petit escargot géant (petit)",
+"size": "peu commun ✨",
+"line": "Un bébé escargot géant merveilleux, coquille en spirale encore fine et translucide beige pâle, corps gris-vert luisant, petites antennes, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-luciole-des-brumes",
+"name": "Luciole des brumes (mâle)",
+"size": "rare ✨",
+"line": "Une luciole des brumes merveilleuse, petit insecte rond à l'abdomen qui brille d'une lumière bleutée, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-luciole-des-brumes-f",
+"name": "Luciole des brumes (femelle)",
+"size": "rare ✨",
+"line": "Une luciole des brumes merveilleuse, femelle sans ailes au corps allongé en anneaux, posée au sol, l'abdomen qui brille d'une lumière bleutée plus forte que le mâle, environ 0,1 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-larve-luciole",
+"name": "Larve de luciole des brumes (petit)",
+"size": "rare ✨",
+"line": "Une larve de luciole des brumes merveilleuse, allongée et segmentée, gris-bleu, de petits points lumineux bleutés le long du corps, environ 0,08 P (grossie pour bien la voir), vue de face, corps entier, pose neutre."
+},
+{
+"id": "ele-perroquet",
+"name": "Perroquet (mâle)",
+"size": "peu commun",
+"line": "Un perroquet dodu, plumes rouges, bleues et jaunes, gros bec courbé, environ 0,5 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ele-perroquet-f",
+"name": "Perroquet (femelle)",
+"size": "peu commun",
+"line": "Un perroquet femelle dodue, un peu plus petite que le mâle, plumes rouges, bleues et jaunes, bec courbé plus fin, environ 0,45 P de haut, posée, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ele-bebe-perroquet",
+"name": "Bébé perroquet (petit)",
+"size": "peu commun",
+"line": "Un bébé perroquet tout rond en duvet gris, quelques plumes rouges et bleues qui poussent, gros bec courbé, environ 0,2 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ele-bouquetin",
+"name": "Bouquetin (mâle)",
+"size": "rare",
+"line": "Un bouquetin trapu, pelage gris-brun, très grandes cornes annelées recourbées, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-etagne",
+"name": "Étagne (femelle)",
+"size": "rare",
+"line": "Une étagne, femelle du bouquetin, plus fine, pelage gris-brun clair, petites cornes fines légèrement courbées, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-cabri",
+"name": "Cabri (petit)",
+"size": "rare",
+"line": "Un cabri, petit du bouquetin, pelage gris-brun clair tout doux, minuscules cornes naissantes, longues pattes, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-mouton-de-givre",
+"name": "Brebis de givre (femelle)",
+"size": "rare ✨",
+"line": "Une brebis de givre merveilleuse, laine bleu pâle givrée et scintillante, sans cornes, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-belier-de-givre",
+"name": "Bélier de givre (mâle)",
+"size": "rare ✨",
+"line": "Un bélier de givre merveilleux, laine bleu pâle givrée et scintillante, grandes cornes de glace enroulées en spirale, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-agneau-de-givre",
+"name": "Agneau de givre (petit)",
+"size": "rare ✨",
+"line": "Un agneau de givre merveilleux, laine bleu très pâle courte et bouclée, quelques flocons qui brillent dedans, longues pattes fines, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-poule-de-braise",
+"name": "Poule de braise (femelle)",
+"size": "rare ✨",
+"line": "Une poule de braise merveilleuse, plumes noires aux pointes rougeoyantes, crête comme une flamme, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-coq-de-braise",
+"name": "Coq de braise (mâle)",
+"size": "rare ✨",
+"line": "Un coq de braise merveilleux, plumes noires aux pointes rougeoyantes, haute crête comme une flamme, longue queue de plumes qui rougeoient, environ 0,5 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "ele-poussin-de-braise",
+"name": "Poussin de braise (petit)",
+"size": "rare ✨",
+"line": "Un poussin de braise merveilleux, tout rond en duvet gris cendre aux pointes rougeoyantes, environ 0,15 P de haut (grossi pour bien le voir), vue de face, corps entier, pose neutre debout."
+}
+]
 }
 ],
-"lead": "Les animaux à élever du Grand Carnet, chacun en mâle, femelle et petit (demande de Yo : ils s'accouplent et ont des petits, qui grandissent ; Grand Carnet, « Accouplement et générations »). L'escargot géant est mâle et femelle à la fois ; le dragonneau, légendaire, ne se reproduit pas. Ce sont des créatures (pour Meshy) : vue de face, corps entier, pose neutre (bible).",
+"lead": "Les animaux à élever du Grand Carnet, chacun en mâle, femelle et petit (demande de Yo : ils s'accouplent et ont des petits, qui grandissent ; Grand Carnet, « Accouplement et générations »). L'escargot géant est mâle et femelle à la fois ; le dragonneau, légendaire, ne se reproduit pas. Ce sont des créatures (pour Meshy) : vue de face, corps entier, pose neutre (bible). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT. Pour une même espèce, fais le mâle, la femelle et le petit dans la même conversation : ChatGPT garde mieux les mêmes couleurs et la même allure.",
 "Vérifie l'image : un seul animal, entier, fond blanc, vu de face. Le mâle et la femelle doivent se distinguer d'un coup d'œil ; le petit est plus rond, avec une grosse tête et de grands yeux.",
@@ -2907,36 +2931,6 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Le ciel des Îles célestes",
-"note": "",
-"items": [
-{
-"id": "poi-poisson-nuage",
-"name": "Poisson-nuage",
-"size": "peu commun ✨",
-"line": "Un poisson-nuage merveilleux, blanc et duveteux comme un petit nuage, nageoires bleu ciel, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
-},
-{
-"id": "poi-raie-des-vents",
-"name": "Raie des vents",
-"size": "rare ✨",
-"line": "Une raie des vents merveilleuse, grande raie bleu ciel aux ailes larges comme un cerf-volant, longue queue fine, environ 1,5 P de large, vue de côté, corps entier, pose neutre."
-}
-]
-},
-{
-"name": "Les lacs de lave du Volcan",
-"note": "",
-"items": [
-{
-"id": "poi-poisson-de-lave",
-"name": "Poisson de lave",
-"size": "rare ✨",
-"line": "Un poisson de lave merveilleux, écailles noires craquelées qui rougeoient de l'intérieur, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
-}
-]
-},
-{
 "name": "Aussi dans le jeu",
 "note": "Des poissons du jeu qui ne sont pas dans le carnet, gardés à la demande de Yo.",
 "items": [
@@ -2977,9 +2971,39 @@ window.PROMPTS_CARNET = [
 "line": "Un encornet rose nacré, corps fuselé, deux nageoires en losange, tentacules courts, grands yeux, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 }
 ]
+},
+{
+"name": "Le ciel des Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "poi-poisson-nuage",
+"name": "Poisson-nuage",
+"size": "peu commun ✨",
+"line": "Un poisson-nuage merveilleux, blanc et duveteux comme un petit nuage, nageoires bleu ciel, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "poi-raie-des-vents",
+"name": "Raie des vents",
+"size": "rare ✨",
+"line": "Une raie des vents merveilleuse, grande raie bleu ciel aux ailes larges comme un cerf-volant, longue queue fine, environ 1,5 P de large, vue de côté, corps entier, pose neutre."
+}
+]
+},
+{
+"name": "Les lacs de lave du Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "poi-poisson-de-lave",
+"name": "Poisson de lave",
+"size": "rare ✨",
+"line": "Un poisson de lave merveilleux, écailles noires craquelées qui rougeoient de l'intérieur, environ 0,4 P de long, vue de côté, corps entier, pose neutre."
+}
+]
 }
 ],
-"lead": "Les poissons du Grand Carnet, et ceux du jeu qui n'y sont pas. Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo : on voit mieux leur forme).",
+"lead": "Les poissons du Grand Carnet, et ceux du jeu qui n'y sont pas. Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo : on voit mieux leur forme). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul poisson, entier, fond blanc, vu de côté.",
@@ -3008,18 +3032,6 @@ window.PROMPTS_CARNET = [
 "line": "Une grappe de moules bleu nuit fermées, accrochées ensemble, environ 0,15 P, vue de côté, corps entier, pose neutre."
 },
 {
-"id": "fon-bigorneau",
-"name": "Bigorneau",
-"size": "commun",
-"line": "Un bigorneau, petit coquillage en spirale brun foncé, environ 0,05 P (grossi pour bien le voir), vue de côté, corps entier, pose neutre."
-},
-{
-"id": "fon-oursin",
-"name": "Oursin",
-"size": "commun",
-"line": "Un oursin tout rond violet foncé, couvert de piquants arrondis, environ 0,1 P, vue de côté, corps entier, pose neutre."
-},
-{
 "id": "fon-crabe",
 "name": "Crabe",
 "size": "commun",
@@ -3030,12 +3042,6 @@ window.PROMPTS_CARNET = [
 "name": "Crevette",
 "size": "commun",
 "line": "Une crevette rose translucide, longues antennes, queue en éventail, environ 0,1 P de long, vue de côté, corps entier, pose neutre."
-},
-{
-"id": "fon-concombre-de-mer",
-"name": "Concombre de mer",
-"size": "commun",
-"line": "Un concombre de mer brun et mou, couvert de petites bosses, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "fon-coquille-saint-jacques",
@@ -3086,18 +3092,6 @@ window.PROMPTS_CARNET = [
 "line": "Un bénitier, coquillage géant ondulé entrouvert, lèvres bleues et turquoise, environ 0,8 P de large, vue de côté, corps entier, pose neutre."
 },
 {
-"id": "fon-limace-de-mer",
-"name": "Limace de mer",
-"size": "peu commun",
-"line": "Une limace de mer de toutes les couleurs, violette à bords orange, petites plumes sur le dos, environ 0,15 P, vue de côté, corps entier, pose neutre."
-},
-{
-"id": "fon-langouste",
-"name": "Langouste",
-"size": "peu commun",
-"line": "Une langouste rouge orangé tachetée, très longues antennes épineuses, sans pinces, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
-},
-{
 "id": "fon-raie",
 "name": "Raie",
 "size": "peu commun",
@@ -3127,18 +3121,6 @@ window.PROMPTS_CARNET = [
 "name": "Les grands fonds et les épaves",
 "note": "",
 "items": [
-{
-"id": "fon-calmar-geant",
-"name": "Calmar géant",
-"size": "rare",
-"line": "Un calmar géant rouge profond, longs tentacules, énormes yeux, environ 4 P de long, vue de côté, corps entier, pose neutre."
-},
-{
-"id": "fon-crabe-araignee-geant",
-"name": "Crabe-araignée géant",
-"size": "rare",
-"line": "Un crabe-araignée géant orange pâle, corps rond et pattes immenses très fines, environ 2 P de large, vue de côté, corps entier, pose neutre."
-},
 {
 "id": "fon-meduse-lanterne",
 "name": "Méduse-lanterne",
@@ -3182,9 +3164,57 @@ window.PROMPTS_CARNET = [
 "line": "Un nautile d'or légendaire, coquille en spirale parfaite en or brillant qui luit dans le noir, environ 0,3 P, vue de côté, corps entier, pose neutre."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "fon-bigorneau",
+"name": "Bigorneau",
+"size": "commun",
+"line": "Un bigorneau, petit coquillage en spirale brun foncé, environ 0,05 P (grossi pour bien le voir), vue de côté, corps entier, pose neutre."
+},
+{
+"id": "fon-oursin",
+"name": "Oursin",
+"size": "commun",
+"line": "Un oursin tout rond violet foncé, couvert de piquants arrondis, environ 0,1 P, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "fon-concombre-de-mer",
+"name": "Concombre de mer",
+"size": "commun",
+"line": "Un concombre de mer brun et mou, couvert de petites bosses, environ 0,3 P de long, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "fon-limace-de-mer",
+"name": "Limace de mer",
+"size": "peu commun",
+"line": "Une limace de mer de toutes les couleurs, violette à bords orange, petites plumes sur le dos, environ 0,15 P, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "fon-langouste",
+"name": "Langouste",
+"size": "peu commun",
+"line": "Une langouste rouge orangé tachetée, très longues antennes épineuses, sans pinces, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "fon-calmar-geant",
+"name": "Calmar géant",
+"size": "rare",
+"line": "Un calmar géant rouge profond, longs tentacules, énormes yeux, environ 4 P de long, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "fon-crabe-araignee-geant",
+"name": "Crabe-araignée géant",
+"size": "rare",
+"line": "Un crabe-araignée géant orange pâle, corps rond et pattes immenses très fines, environ 2 P de large, vue de côté, corps entier, pose neutre."
+}
+]
 }
 ],
-"lead": "Les créatures des fonds du Grand Carnet (plongée). Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo).",
+"lead": "Les créatures des fonds du Grand Carnet (plongée). Créatures (pour Meshy) : vue de côté, corps entier (choix de Yo). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule créature, entière, fond blanc, vue de côté.",
@@ -3423,12 +3453,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "ins-sphinx-colibri",
-"name": "Sphinx colibri",
-"size": "peu commun",
-"line": "Un sphinx colibri, papillon dodu brun et orange qui fait du surplace, longue trompe, ailes floues, vue de côté, corps entier, pose neutre."
-},
-{
 "id": "ins-scarabee-joyau",
 "name": "Scarabée-joyau",
 "size": "peu commun",
@@ -3447,12 +3471,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "ins-bourdon-des-alpages",
-"name": "Bourdon des alpages",
-"size": "commun",
-"line": "Un bourdon des montagnes très velu et rond, rayé noir, jaune et roux, petites ailes, vue de côté, corps entier, pose neutre."
-},
-{
 "id": "ins-apollon",
 "name": "Apollon",
 "size": "rare",
@@ -3470,12 +3488,6 @@ window.PROMPTS_CARNET = [
 "name": "Le Désert et les ruines",
 "note": "",
 "items": [
-{
-"id": "ins-scarabee-bousier",
-"name": "Scarabée bousier",
-"size": "commun",
-"line": "Un scarabée bousier noir luisant qui pousse une boule brune ronde, vue de côté, corps entier, pose neutre."
-},
 {
 "id": "ins-criquet-du-desert",
 "name": "Criquet du désert",
@@ -3501,12 +3513,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "ins-grillon-des-cavernes",
-"name": "Grillon des cavernes",
-"size": "commun",
-"line": "Un grillon des cavernes beige pâle, très longues antennes et longues pattes, dos bossu, vue de côté, corps entier, pose neutre."
-},
-{
 "id": "ins-ver-luisant-des-grottes",
 "name": "Ver luisant des grottes",
 "size": "peu commun",
@@ -3515,20 +3521,14 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les Îles célestes",
-"note": "",
+"name": "Les Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "ins-papillon-nuage",
 "name": "Papillon-nuage",
 "size": "peu commun ✨",
 "line": "Un papillon-nuage merveilleux, ailes de coton blanc moelleux, ailes ouvertes, vue de côté, corps entier, pose neutre."
-},
-{
-"id": "ins-libellule-des-vents",
-"name": "Libellule des vents",
-"size": "rare ✨",
-"line": "Une libellule des vents merveilleuse, long corps bleu ciel, quatre très longues ailes pâles qui planent, vue de côté, corps entier, pose neutre."
 },
 {
 "id": "ins-papillon-aurore",
@@ -3539,8 +3539,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Le Volcan",
-"note": "",
+"name": "Le Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "ins-scarabee-de-lave",
@@ -3555,9 +3555,45 @@ window.PROMPTS_CARNET = [
 "line": "Un papillon de braise merveilleux, ailes incandescentes orange et rouge comme des braises, ailes ouvertes, vue de côté, corps entier, pose neutre."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "ins-sphinx-colibri",
+"name": "Sphinx colibri",
+"size": "peu commun",
+"line": "Un sphinx colibri, papillon dodu brun et orange qui fait du surplace, longue trompe, ailes floues, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "ins-bourdon-des-alpages",
+"name": "Bourdon des alpages",
+"size": "commun",
+"line": "Un bourdon des montagnes très velu et rond, rayé noir, jaune et roux, petites ailes, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "ins-scarabee-bousier",
+"name": "Scarabée bousier",
+"size": "commun",
+"line": "Un scarabée bousier noir luisant qui pousse une boule brune ronde, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "ins-grillon-des-cavernes",
+"name": "Grillon des cavernes",
+"size": "commun",
+"line": "Un grillon des cavernes beige pâle, très longues antennes et longues pattes, dos bossu, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "ins-libellule-des-vents",
+"name": "Libellule des vents",
+"size": "rare ✨",
+"line": "Une libellule des vents merveilleuse, long corps bleu ciel, quatre très longues ailes pâles qui planent, vue de côté, corps entier, pose neutre."
+}
+]
 }
 ],
-"lead": "Les insectes du Grand Carnet. Créatures (pour Meshy) : vue de côté légèrement en hauteur, corps entier (choix de Yo).",
+"lead": "Les insectes du Grand Carnet. Créatures (pour Meshy) : vue de côté légèrement en hauteur, corps entier (choix de Yo). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul insecte, entier, fond blanc, vu de côté.",
@@ -3730,12 +3766,6 @@ window.PROMPTS_CARNET = [
 "line": "Un colibri minuscule vert et violet irisé, long bec fin, environ 0,05 P (grossi pour bien le voir), posé, vue de face, corps entier, pose neutre, ailes repliées."
 },
 {
-"id": "ois-perroquet-ara",
-"name": "Perroquet ara",
-"size": "peu commun",
-"line": "Un perroquet ara rouge, jaune et bleu, gros bec courbé, longue queue, environ 0,6 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
-},
-{
 "id": "ois-toucan",
 "name": "Toucan",
 "size": "rare",
@@ -3816,15 +3846,9 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les Îles célestes",
-"note": "",
+"name": "Les Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
-{
-"id": "ois-oiseau-nuage",
-"name": "Oiseau-nuage",
-"size": "peu commun ✨",
-"line": "Un oiseau-nuage merveilleux, plumes de coton blanc moelleux, petit bec bleu ciel, environ 0,3 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
-},
 {
 "id": "ois-martinet-celeste",
 "name": "Martinet céleste",
@@ -3840,15 +3864,9 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Le Volcan",
-"note": "",
+"name": "Le Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
-{
-"id": "ois-corbeau-de-cendre",
-"name": "Corbeau de cendre",
-"size": "peu commun ✨",
-"line": "Un corbeau de cendre merveilleux, plumes gris cendre, yeux orange comme des braises, environ 0,4 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
-},
 {
 "id": "ois-oiseau-etincelle",
 "name": "Oiseau-étincelle",
@@ -3856,9 +3874,33 @@ window.PROMPTS_CARNET = [
 "line": "Un oiseau-étincelle merveilleux, petit oiseau orange et or dont la queue laisse une traînée d'étincelles, environ 0,2 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "ois-perroquet-ara",
+"name": "Perroquet ara",
+"size": "peu commun",
+"line": "Un perroquet ara rouge, jaune et bleu, gros bec courbé, longue queue, environ 0,6 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ois-oiseau-nuage",
+"name": "Oiseau-nuage",
+"size": "peu commun ✨",
+"line": "Un oiseau-nuage merveilleux, plumes de coton blanc moelleux, petit bec bleu ciel, environ 0,3 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+},
+{
+"id": "ois-corbeau-de-cendre",
+"name": "Corbeau de cendre",
+"size": "peu commun ✨",
+"line": "Un corbeau de cendre merveilleux, plumes gris cendre, yeux orange comme des braises, environ 0,4 P de haut, posé, vue de face, corps entier, pose neutre, ailes repliées."
+}
+]
 }
 ],
-"lead": "Les oiseaux du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, ailes repliées (bible).",
+"lead": "Les oiseaux du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, ailes repliées (bible). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul oiseau, entier, fond blanc, vu de face.",
@@ -3965,12 +4007,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "gib-chevre-sauvage",
-"name": "Chèvre sauvage",
-"size": "commun",
-"line": "Une chèvre sauvage brune et noire, cornes recourbées, barbichette, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
 "id": "gib-pintade",
 "name": "Pintade",
 "size": "commun",
@@ -3988,12 +4024,6 @@ window.PROMPTS_CARNET = [
 "name": "Les Montagnes enneigées",
 "note": "",
 "items": [
-{
-"id": "gib-chamois",
-"name": "Chamois",
-"size": "peu commun",
-"line": "Un chamois agile, pelage brun et masque blanc et noir, petites cornes en crochet, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
-},
 {
 "id": "gib-lievre-variable",
 "name": "Lièvre variable",
@@ -4025,22 +4055,10 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "gib-lievre-du-desert",
-"name": "Lièvre du désert",
-"size": "commun",
-"line": "Un lièvre du désert fauve, très grandes oreilles, longues pattes, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
 "id": "gib-outarde",
 "name": "Outarde",
 "size": "peu commun",
 "line": "Une outarde fière, plumage sable rayé, cou gris, environ 0,8 P de haut, vue de face, corps entier, pose neutre debout."
-},
-{
-"id": "gib-gazelle",
-"name": "Gazelle",
-"size": "peu commun",
-"line": "Une gazelle fine et rapide, pelage fauve, ventre blanc, cornes annelées en lyre, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
 },
 {
 "id": "gib-antilope-des-sables",
@@ -4051,15 +4069,9 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Les Îles célestes",
-"note": "",
+"name": "Les Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
-{
-"id": "gib-lievre-nuage",
-"name": "Lièvre-nuage",
-"size": "peu commun ✨",
-"line": "Un lièvre-nuage merveilleux, fourrure de nuage blanc, longues oreilles, pattes qui flottent, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
-},
 {
 "id": "gib-cerf-tempete",
 "name": "Cerf-tempête",
@@ -4069,8 +4081,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "Le Volcan",
-"note": "",
+"name": "Le Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "gib-sanglier-de-braise",
@@ -4085,9 +4097,45 @@ window.PROMPTS_CARNET = [
 "line": "Un varan de lave merveilleux, long lézard aux écailles noires craquelées de lave rouge, environ 0,5 P de haut et 2 P de long, vue de face, corps entier, pose neutre debout."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "gib-chevre-sauvage",
+"name": "Chèvre sauvage",
+"size": "commun",
+"line": "Une chèvre sauvage brune et noire, cornes recourbées, barbichette, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "gib-chamois",
+"name": "Chamois",
+"size": "peu commun",
+"line": "Un chamois agile, pelage brun et masque blanc et noir, petites cornes en crochet, environ 0,9 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "gib-lievre-du-desert",
+"name": "Lièvre du désert",
+"size": "commun",
+"line": "Un lièvre du désert fauve, très grandes oreilles, longues pattes, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "gib-gazelle",
+"name": "Gazelle",
+"size": "peu commun",
+"line": "Une gazelle fine et rapide, pelage fauve, ventre blanc, cornes annelées en lyre, environ 1 P de haut, vue de face, corps entier, pose neutre debout."
+},
+{
+"id": "gib-lievre-nuage",
+"name": "Lièvre-nuage",
+"size": "peu commun ✨",
+"line": "Un lièvre-nuage merveilleux, fourrure de nuage blanc, longues oreilles, pattes qui flottent, environ 0,4 P de haut, vue de face, corps entier, pose neutre debout."
+}
+]
 }
 ],
-"lead": "Le gibier du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, pose neutre debout (bible).",
+"lead": "Le gibier du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, pose neutre debout (bible). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul animal, entier, fond blanc, vu de face.",
@@ -4298,8 +4346,20 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "La grotte des Îles célestes",
+"name": "Dans toutes les grottes",
 "note": "",
+"items": [
+{
+"id": "mon-coffre-mimique",
+"name": "Coffre-mimique",
+"size": "petit",
+"line": "Un coffre-mimique, coffre au trésor en bois et ferrures dont le couvercle s'ouvre sur des crocs et une langue, environ ½ P, silhouette pointue et anguleuse, vue de face, corps entier, pose neutre debout."
+}
+]
+},
+{
+"name": "La grotte des Îles célestes (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "mon-esprit-du-vent",
@@ -4328,8 +4388,8 @@ window.PROMPTS_CARNET = [
 ]
 },
 {
-"name": "La grotte du Volcan",
-"note": "",
+"name": "La grotte du Volcan (grande mise à jour)",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
 "items": [
 {
 "id": "mon-salamandre-enragee",
@@ -4362,21 +4422,9 @@ window.PROMPTS_CARNET = [
 "line": "Un titan de lave colossal, corps de roche volcanique et de lave, épaules pointues, poings énormes, environ 3 P de haut, silhouette pointue et anguleuse, vue de face, corps entier, pose neutre debout."
 }
 ]
-},
-{
-"name": "Dans toutes les grottes",
-"note": "",
-"items": [
-{
-"id": "mon-coffre-mimique",
-"name": "Coffre-mimique",
-"size": "petit",
-"line": "Un coffre-mimique, coffre au trésor en bois et ferrures dont le couvercle s'ouvre sur des crocs et une langue, environ ½ P, silhouette pointue et anguleuse, vue de face, corps entier, pose neutre debout."
-}
-]
 }
 ],
-"lead": "Les monstres des grottes du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, silhouette pointue et anguleuse (bible).",
+"lead": "Les monstres des grottes du Grand Carnet. Créatures (pour Meshy) : vue de face, corps entier, silhouette pointue et anguleuse (bible). Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul monstre, entier, fond blanc, vu de face, silhouette pointue.",
@@ -4387,7 +4435,7 @@ window.PROMPTS_CARNET = [
 "key": "pierres",
 "label": "Pierres et minerais",
 "style": "objet",
-"lead": "Les pierres et minerais du Grand Carnet : les rochers tels qu'on les trouve dans la mine, ce qu'on en rapporte, les cristaux des géodes, puis les pierres des destinations à venir.",
+"lead": "Les pierres et minerais du Grand Carnet : les rochers tels qu'on les trouve dans la mine, ce qu'on en rapporte, les cristaux des géodes, puis les pierres des destinations à venir. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul rocher (ou une seule pierre), entier, fond blanc, vu de trois quarts.",
@@ -4603,12 +4651,6 @@ window.PROMPTS_CARNET = [
 "line": "Un morceau de minerai de fer, environ 0,3 P, roche gris foncé avec des veines couleur rouille et des éclats gris métal."
 },
 {
-"id": "pie-cristal-de-roche",
-"name": "Cristal de roche",
-"size": "peu commun",
-"line": "Un bouquet de cristaux de roche parfaitement transparents, en longues pointes douces, environ 0,4 P, qui accrochent la lumière."
-},
-{
 "id": "pie-cristal-de-glace",
 "name": "Cristal de glace",
 "size": "rare",
@@ -4642,17 +4684,11 @@ window.PROMPTS_CARNET = [
 "name": "Émeraude",
 "size": "rare",
 "line": "Une émeraude taillée en rectangle aux coins arrondis, vert profond, environ 0,25 P, avec un éclat de lumière."
-},
-{
-"id": "pie-turquoise",
-"name": "Turquoise",
-"size": "peu commun",
-"line": "Une turquoise polie en galet arrondi, bleu-vert opaque veiné de fines lignes brun clair, environ 0,3 P."
 }
 ]
 },
 {
-"name": "Le Volcan (plus tard)",
+"name": "Le Volcan (grande mise à jour)",
 "items": [
 {
 "id": "pie-obsidienne",
@@ -4665,6 +4701,25 @@ window.PROMPTS_CARNET = [
 "name": "Opale de feu",
 "size": "rare",
 "line": "Une opale de feu polie en goutte arrondie, environ 0,25 P, orange et rouge, avec des éclats de couleurs qui dansent à l'intérieur."
+}
+],
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images."
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "pie-cristal-de-roche",
+"name": "Cristal de roche",
+"size": "peu commun",
+"line": "Un bouquet de cristaux de roche parfaitement transparents, en longues pointes douces, environ 0,4 P, qui accrochent la lumière."
+},
+{
+"id": "pie-turquoise",
+"name": "Turquoise",
+"size": "peu commun",
+"line": "Une turquoise polie en galet arrondi, bleu-vert opaque veiné de fines lignes brun clair, environ 0,3 P."
 }
 ]
 }
@@ -4696,12 +4751,6 @@ window.PROMPTS_CARNET = [
 "name": "Pelle",
 "size": "outil",
 "line": "Une pelle à lame de cuivre arrondie, manche de bois couleur miel avec une poignée en T."
-},
-{
-"id": "out-faucille",
-"name": "Faucille",
-"size": "outil",
-"line": "Une faucille à lame de cuivre en croissant, manche de bois court et arrondi."
 },
 {
 "id": "out-arrosoir",
@@ -4764,12 +4813,6 @@ window.PROMPTS_CARNET = [
 "line": "Un masque de plongée enchanté en nacre irisée, contours de cuivre, petites runes bleues qui brillent."
 },
 {
-"id": "out-longue-vue",
-"name": "Longue-vue",
-"size": "outil",
-"line": "Une longue-vue en cuivre et cuir, trois tubes coulissants, lentille brillante."
-},
-{
 "id": "out-cisailles",
 "name": "Cisailles",
 "size": "outil",
@@ -4780,12 +4823,6 @@ window.PROMPTS_CARNET = [
 "name": "Seau",
 "size": "outil",
 "line": "Un seau en bois couleur miel cerclé de fer, anse de corde."
-},
-{
-"id": "out-brosse",
-"name": "Brosse",
-"size": "outil",
-"line": "Une brosse pour animaux en bois couleur miel, poils clairs, poignée en sangle de cuir."
 },
 {
 "id": "out-sac-a-dos",
@@ -4800,9 +4837,33 @@ window.PROMPTS_CARNET = [
 "line": "Un épais carnet de collection relié de cuir brun, coins de cuivre, ruban marque-page, quelques feuilles et une plume qui dépassent."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "out-faucille",
+"name": "Faucille",
+"size": "outil",
+"line": "Une faucille à lame de cuivre en croissant, manche de bois court et arrondi."
+},
+{
+"id": "out-longue-vue",
+"name": "Longue-vue",
+"size": "outil",
+"line": "Une longue-vue en cuivre et cuir, trois tubes coulissants, lentille brillante."
+},
+{
+"id": "out-brosse",
+"name": "Brosse",
+"size": "outil",
+"line": "Une brosse pour animaux en bois couleur miel, poils clairs, poignée en sangle de cuir."
+}
+]
 }
 ],
-"lead": "Les outils du Grand Carnet.",
+"lead": "Les outils du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul outil, entier, fond blanc, vu de trois quarts.",
@@ -4831,18 +4892,6 @@ window.PROMPTS_CARNET = [
 "line": "Une dague en cuivre, lame courte en feuille, poignée de cuir, petit pommeau rond."
 },
 {
-"id": "arm-rapiere",
-"name": "Rapière",
-"size": "légère",
-"line": "Une rapière à lame fine et longue, garde en coquille de cuivre ajourée."
-},
-{
-"id": "arm-paire-de-hachettes",
-"name": "Paire de hachettes",
-"size": "légère",
-"line": "Une paire de petites hachettes de cuivre à manche court en bois, croisées."
-},
-{
 "id": "arm-masse",
 "name": "Masse",
 "size": "lourde",
@@ -4853,6 +4902,96 @@ window.PROMPTS_CARNET = [
 "name": "Hache de guerre",
 "size": "lourde",
 "line": "Une hache de guerre à large lame de métal en croissant, long manche de bois cerclé de fer."
+},
+{
+"id": "arm-arc-court",
+"name": "Arc court",
+"size": "arc",
+"line": "Un arc court en bois couleur miel, corde tendue, poignée de cuir."
+},
+{
+"id": "arm-arc-long",
+"name": "Arc long",
+"size": "arc",
+"line": "Un grand arc long en bois d'if orange cuivré, corde tendue, poignée de cuir."
+},
+{
+"id": "arm-baton-runique",
+"name": "Bâton runique",
+"size": "runes",
+"line": "Un bâton runique en bois dur, sommet enroulé autour d'une pierre gravée d'une rune qui brille en bleu."
+}
+]
+},
+{
+"name": "Les runes",
+"note": "Une rune : une pierre plate et ronde gravée d'un signe qui brille.",
+"items": [
+{
+"id": "arm-rune-des-racines",
+"name": "Rune des racines",
+"size": "rune",
+"line": "Une rune des racines, pierre plate et ronde gravée de racines entrelacées qui brillent en vert."
+},
+{
+"id": "arm-rune-de-soin",
+"name": "Rune de soin",
+"size": "rune",
+"line": "Une rune de soin, pierre plate et ronde gravée d'une petite feuille qui brille en vert tendre."
+},
+{
+"id": "arm-rune-de-brume",
+"name": "Rune de brume",
+"size": "rune",
+"line": "Une rune de brume, pierre plate et ronde gravée de volutes, entourée d'un léger voile de brume blanche."
+},
+{
+"id": "arm-rune-de-givre",
+"name": "Rune de givre",
+"size": "rune",
+"line": "Une rune de givre, pierre plate et ronde gravée d'un flocon qui brille en bleu glacé."
+}
+]
+},
+{
+"name": "Avec les grandes mises à jour",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "arm-rune-de-vent",
+"name": "Rune de vent",
+"size": "rune",
+"line": "Une rune de vent, pierre plate et ronde gravée d'une spirale de vent qui brille en bleu ciel."
+},
+{
+"id": "arm-rune-de-foudre",
+"name": "Rune de foudre",
+"size": "rune",
+"line": "Une rune de foudre, pierre plate et ronde gravée d'un éclair qui crépite en jaune vif."
+},
+{
+"id": "arm-rune-de-feu",
+"name": "Rune de feu",
+"size": "rune",
+"line": "Une rune de feu, pierre plate et ronde gravée d'une flamme qui brille en orange."
+}
+]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "arm-rapiere",
+"name": "Rapière",
+"size": "légère",
+"line": "Une rapière à lame fine et longue, garde en coquille de cuivre ajourée."
+},
+{
+"id": "arm-paire-de-hachettes",
+"name": "Paire de hachettes",
+"size": "légère",
+"line": "Une paire de petites hachettes de cuivre à manche court en bois, croisées."
 },
 {
 "id": "arm-marteau-de-guerre",
@@ -4879,93 +5018,27 @@ window.PROMPTS_CARNET = [
 "line": "Une fronde en bois en Y, lanière de cuir, quelques cailloux ronds à côté."
 },
 {
-"id": "arm-arc-court",
-"name": "Arc court",
-"size": "arc",
-"line": "Un arc court en bois couleur miel, corde tendue, poignée de cuir."
-},
-{
-"id": "arm-arc-long",
-"name": "Arc long",
-"size": "arc",
-"line": "Un grand arc long en bois d'if orange cuivré, corde tendue, poignée de cuir."
-},
-{
 "id": "arm-arbalete",
 "name": "Arbalète",
 "size": "arc",
 "line": "Une arbalète de bois et de métal, arc de fer, carreau posé dessus."
 },
 {
-"id": "arm-baton-runique",
-"name": "Bâton runique",
-"size": "runes",
-"line": "Un bâton runique en bois dur, sommet enroulé autour d'une pierre gravée d'une rune qui brille en bleu."
-},
-{
 "id": "arm-orbe-runique",
 "name": "Orbe runique",
 "size": "runes",
 "line": "Un orbe runique, sphère de cristal tenue dans une monture de bois, trois petites runes qui flottent autour."
-}
-]
 },
-{
-"name": "Les runes",
-"note": "Une rune : une pierre plate et ronde gravée d'un signe qui brille.",
-"items": [
 {
 "id": "arm-rune-de-lumiere",
 "name": "Rune de lumière",
 "size": "rune",
 "line": "Une rune de lumière, pierre plate et ronde gravée d'un soleil qui brille d'une lumière jaune."
-},
-{
-"id": "arm-rune-des-racines",
-"name": "Rune des racines",
-"size": "rune",
-"line": "Une rune des racines, pierre plate et ronde gravée de racines entrelacées qui brillent en vert."
-},
-{
-"id": "arm-rune-de-soin",
-"name": "Rune de soin",
-"size": "rune",
-"line": "Une rune de soin, pierre plate et ronde gravée d'une petite feuille qui brille en vert tendre."
-},
-{
-"id": "arm-rune-de-brume",
-"name": "Rune de brume",
-"size": "rune",
-"line": "Une rune de brume, pierre plate et ronde gravée de volutes, entourée d'un léger voile de brume blanche."
-},
-{
-"id": "arm-rune-de-givre",
-"name": "Rune de givre",
-"size": "rune",
-"line": "Une rune de givre, pierre plate et ronde gravée d'un flocon qui brille en bleu glacé."
-},
-{
-"id": "arm-rune-de-vent",
-"name": "Rune de vent",
-"size": "rune",
-"line": "Une rune de vent, pierre plate et ronde gravée d'une spirale de vent qui brille en bleu ciel."
-},
-{
-"id": "arm-rune-de-foudre",
-"name": "Rune de foudre",
-"size": "rune",
-"line": "Une rune de foudre, pierre plate et ronde gravée d'un éclair qui crépite en jaune vif."
-},
-{
-"id": "arm-rune-de-feu",
-"name": "Rune de feu",
-"size": "rune",
-"line": "Une rune de feu, pierre plate et ronde gravée d'une flamme qui brille en orange."
 }
 ]
 }
 ],
-"lead": "Les armes et les runes du Grand Carnet.",
+"lead": "Les armes et les runes du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule arme (ou une seule rune), entière, fond blanc, vue de trois quarts.",
@@ -4994,12 +5067,6 @@ window.PROMPTS_CARNET = [
 "line": "Une armure de cuir brun aux épaulettes arrondies et aux coutures visibles, présentée sur un simple support de bois."
 },
 {
-"id": "arm-casque-a-chandelle",
-"name": "Casque à chandelle",
-"size": "légère",
-"line": "Un casque de cuivre arrondi avec une petite bougie de cire allumée fixée sur le dessus."
-},
-{
 "id": "arm-armure-de-cuivre",
 "name": "Armure de cuivre",
 "size": "moyenne",
@@ -5010,12 +5077,6 @@ window.PROMPTS_CARNET = [
 "name": "Tenue des marais",
 "size": "légère",
 "line": "Une tenue des marais en cuir huilé vert sombre avec un masque à herbes rond, présentée sur un simple support de bois."
-},
-{
-"id": "arm-armure-d-ecailles",
-"name": "Armure d'écailles",
-"size": "moyenne",
-"line": "Une armure d'écailles grises et vertes qui se chevauchent, présentée sur un simple support de bois."
 },
 {
 "id": "arm-cotte-de-mailles",
@@ -5030,17 +5091,17 @@ window.PROMPTS_CARNET = [
 "line": "Un manteau de fourrure épaisse blanche et grise avec une capuche, présenté sur un simple support de bois."
 },
 {
-"id": "arm-armure-de-plates",
-"name": "Armure de plates",
-"size": "lourde",
-"line": "Une armure de plates de fer poli, larges épaulières arrondies, présentée sur un simple support de bois."
-},
-{
 "id": "arm-tenue-du-desert",
 "name": "Tenue du désert",
 "size": "légère",
 "line": "Une tenue du désert en coton clair avec un voile de tête et une ceinture orange, présentée sur un simple support de bois."
+}
+]
 },
+{
+"name": "Avec les grandes mises à jour",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
 {
 "id": "arm-tenue-des-vents",
 "name": "Tenue des vents",
@@ -5066,9 +5127,33 @@ window.PROMPTS_CARNET = [
 "line": "Une armure légendaire des Sept Gardiens, faite d'écorce, d'écailles, de corail, de givre, de pierre, de plumes et de lave réunis, présentée sur un simple support de bois."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "arm-casque-a-chandelle",
+"name": "Casque à chandelle",
+"size": "légère",
+"line": "Un casque de cuivre arrondi avec une petite bougie de cire allumée fixée sur le dessus."
+},
+{
+"id": "arm-armure-d-ecailles",
+"name": "Armure d'écailles",
+"size": "moyenne",
+"line": "Une armure d'écailles grises et vertes qui se chevauchent, présentée sur un simple support de bois."
+},
+{
+"id": "arm-armure-de-plates",
+"name": "Armure de plates",
+"size": "lourde",
+"line": "Une armure de plates de fer poli, larges épaulières arrondies, présentée sur un simple support de bois."
+}
+]
 }
 ],
-"lead": "Les armures du Grand Carnet, présentées seules sur un support de bois.",
+"lead": "Les armures du Grand Carnet, présentées seules sur un support de bois. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule armure, entière, fond blanc, vue de trois quarts, personne dedans.",
@@ -5091,22 +5176,10 @@ window.PROMPTS_CARNET = [
 "line": "Un fauteuil en bois couleur miel, petit gabarit, coussin rouge tuile, pieds arrondis."
 },
 {
-"id": "dec-chaise-a-bascule",
-"name": "Chaise à bascule",
-"size": "petit",
-"line": "Une chaise à bascule en bois couleur miel, petit gabarit, patins arrondis, dossier à barreaux."
-},
-{
 "id": "dec-table-ronde",
 "name": "Table ronde",
 "size": "moyen",
 "line": "Une table ronde en bois couleur miel, gabarit moyen, plateau épais, pied central tourné."
-},
-{
-"id": "dec-bureau-d-ecriture",
-"name": "Bureau d'écriture",
-"size": "moyen",
-"line": "Un bureau d'écriture en bois couleur miel, gabarit moyen, petits tiroirs, encrier et plume posés dessus."
 },
 {
 "id": "dec-grande-table-de-banquet",
@@ -5131,12 +5204,6 @@ window.PROMPTS_CARNET = [
 "name": "Bibliothèque",
 "size": "moyen",
 "line": "Une bibliothèque en bois couleur miel, gabarit moyen, rayons de livres et de parchemins roulés."
-},
-{
-"id": "dec-vaisselier",
-"name": "Vaisselier",
-"size": "moyen",
-"line": "Un vaisselier en bois couleur miel, gabarit moyen, assiettes en terre cuite exposées, petits placards en bas."
 },
 {
 "id": "dec-horloge",
@@ -5167,18 +5234,6 @@ window.PROMPTS_CARNET = [
 "name": "Fontaine",
 "size": "grand",
 "line": "Une fontaine de pierre claire, grand gabarit, bassin rond à deux étages, eau qui coule."
-},
-{
-"id": "dec-banc-de-pierre",
-"name": "Banc de pierre",
-"size": "moyen",
-"line": "Un banc de pierre claire aux angles arrondis, gabarit moyen, pieds massifs."
-},
-{
-"id": "dec-vasque",
-"name": "Vasque",
-"size": "petit",
-"line": "Une vasque de pierre claire, petit gabarit, coupe ronde sur un pied, remplie de fleurs."
 },
 {
 "id": "dec-tomettes-et-dallages",
@@ -5251,24 +5306,6 @@ window.PROMPTS_CARNET = [
 "name": "Coussins",
 "size": "petit",
 "line": "Une pile de trois coussins de lin moelleux, rouge tuile, crème et vert sauge."
-},
-{
-"id": "dec-tapisserie",
-"name": "Tapisserie",
-"size": "mur",
-"line": "Une tapisserie de laine tissée suspendue à une barre de bois, montrant un grand arbre-esprit vaincu."
-},
-{
-"id": "dec-banniere",
-"name": "Bannière",
-"size": "mur",
-"line": "Une bannière de lin teint suspendue, pointe en bas, aux couleurs vert et or, un petit arbre brodé."
-},
-{
-"id": "dec-murs-a-la-chaux",
-"name": "Murs à la chaux",
-"size": "mur",
-"line": "Un petit coin de pièce en diorama : deux murs à la chaux teintée bleu pâle, sol de bois."
 }
 ]
 },
@@ -5307,18 +5344,6 @@ window.PROMPTS_CARNET = [
 "line": "Un puits rond en pierre claire, toit de tuiles orange, seau de bois sur une manivelle."
 },
 {
-"id": "dec-epouvantail",
-"name": "Épouvantail",
-"size": "moyen",
-"line": "Un épouvantail de bois et de paille, chemise de lin rapiécée, chapeau de paille, sourire cousu."
-},
-{
-"id": "dec-nichoir",
-"name": "Nichoir",
-"size": "petit",
-"line": "Un nichoir en bois couleur miel, toit pentu, petit trou rond, perchoir."
-},
-{
 "id": "dec-mangeoire",
 "name": "Mangeoire",
 "size": "petit",
@@ -5329,18 +5354,6 @@ window.PROMPTS_CARNET = [
 "name": "Bassin d'ornement",
 "size": "grand",
 "line": "Un bassin d'ornement rond en pierre claire, eau bleue, nénuphars et une carpe koï."
-},
-{
-"id": "dec-jardiniere",
-"name": "Jardinière",
-"size": "petit",
-"line": "Une jardinière rectangulaire en terre cuite rouge tuile, remplie de fleurs colorées."
-},
-{
-"id": "dec-balancoire",
-"name": "Balançoire",
-"size": "moyen",
-"line": "Une balançoire en bois couleur miel, portique arrondi, siège suspendu par deux cordes."
 },
 {
 "id": "dec-feu-de-camp",
@@ -5391,46 +5404,10 @@ window.PROMPTS_CARNET = [
 "line": "Une figure de proue de navire en bois sculpté et peint, une sirène aux cheveux d'algues, un peu usée par la mer."
 },
 {
-"id": "dec-carte-au-tresor-encadree",
-"name": "Carte au trésor encadrée",
-"size": "mur",
-"line": "Une carte au trésor sur parchemin jauni, croix rouge et îles dessinées, dans un cadre de bois."
-},
-{
 "id": "dec-bouquet",
 "name": "Bouquet",
 "size": "petit",
 "line": "Un bouquet de fleurs des prés noué d'un ruban, coquelicots, bleuets et marguerites."
-}
-]
-},
-{
-"name": "Les fêtes de saison",
-"note": "",
-"items": [
-{
-"id": "dec-guirlande-de-fleurs",
-"name": "Guirlande de fleurs",
-"size": "mur",
-"line": "Une guirlande de fleurs printanières tressées, pâquerettes, tulipes et feuillage, en arc."
-},
-{
-"id": "dec-lampions",
-"name": "Lampions",
-"size": "plafond ou extérieur",
-"line": "Une guirlande de lampions ronds en écorce de bouleau, lumière dorée à l'intérieur."
-},
-{
-"id": "dec-citrouille-sculptee",
-"name": "Citrouille sculptée",
-"size": "petit",
-"line": "Une citrouille orange sculptée d'un visage souriant, lumière de bougie à l'intérieur."
-},
-{
-"id": "dec-sapin-decore",
-"name": "Sapin décoré",
-"size": "grand",
-"line": "Un sapin décoré pour la fête d'hiver, guirlandes, boules rouges et dorées, étoile au sommet."
 }
 ]
 },
@@ -5467,7 +5444,43 @@ window.PROMPTS_CARNET = [
 "name": "Ensemble des sables",
 "size": "Désert et ruines",
 "line": "Un coffre de l'ensemble des sables en bois pétrifié orné de gemmes et de motifs anciens dorés."
+}
+]
 },
+{
+"name": "Les fêtes de saison (avec les mises à jour de saison)",
+"note": " Décidé avec Yo le 15 octobre 2026 : chaque décoration arrive avec la mise à jour de sa saison.",
+"items": [
+{
+"id": "dec-guirlande-de-fleurs",
+"name": "Guirlande de fleurs",
+"size": "mur",
+"line": "Une guirlande de fleurs printanières tressées, pâquerettes, tulipes et feuillage, en arc."
+},
+{
+"id": "dec-lampions",
+"name": "Lampions",
+"size": "plafond ou extérieur",
+"line": "Une guirlande de lampions ronds en écorce de bouleau, lumière dorée à l'intérieur."
+},
+{
+"id": "dec-citrouille-sculptee",
+"name": "Citrouille sculptée",
+"size": "petit",
+"line": "Une citrouille orange sculptée d'un visage souriant, lumière de bougie à l'intérieur."
+},
+{
+"id": "dec-sapin-decore",
+"name": "Sapin décoré",
+"size": "grand",
+"line": "Un sapin décoré pour la fête d'hiver, guirlandes, boules rouges et dorées, étoile au sommet."
+}
+]
+},
+{
+"name": "Avec les grandes mises à jour",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
 {
 "id": "dec-ensemble-des-nuages",
 "name": "Ensemble des nuages",
@@ -5481,9 +5494,93 @@ window.PROMPTS_CARNET = [
 "line": "Une chaise de l'ensemble de braise en obsidienne et bois de braise qui rougeoie doucement."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "dec-chaise-a-bascule",
+"name": "Chaise à bascule",
+"size": "petit",
+"line": "Une chaise à bascule en bois couleur miel, petit gabarit, patins arrondis, dossier à barreaux."
+},
+{
+"id": "dec-bureau-d-ecriture",
+"name": "Bureau d'écriture",
+"size": "moyen",
+"line": "Un bureau d'écriture en bois couleur miel, gabarit moyen, petits tiroirs, encrier et plume posés dessus."
+},
+{
+"id": "dec-vaisselier",
+"name": "Vaisselier",
+"size": "moyen",
+"line": "Un vaisselier en bois couleur miel, gabarit moyen, assiettes en terre cuite exposées, petits placards en bas."
+},
+{
+"id": "dec-banc-de-pierre",
+"name": "Banc de pierre",
+"size": "moyen",
+"line": "Un banc de pierre claire aux angles arrondis, gabarit moyen, pieds massifs."
+},
+{
+"id": "dec-vasque",
+"name": "Vasque",
+"size": "petit",
+"line": "Une vasque de pierre claire, petit gabarit, coupe ronde sur un pied, remplie de fleurs."
+},
+{
+"id": "dec-tapisserie",
+"name": "Tapisserie",
+"size": "mur",
+"line": "Une tapisserie de laine tissée suspendue à une barre de bois, montrant un grand arbre-esprit vaincu."
+},
+{
+"id": "dec-banniere",
+"name": "Bannière",
+"size": "mur",
+"line": "Une bannière de lin teint suspendue, pointe en bas, aux couleurs vert et or, un petit arbre brodé."
+},
+{
+"id": "dec-murs-a-la-chaux",
+"name": "Murs à la chaux",
+"size": "mur",
+"line": "Un petit coin de pièce en diorama : deux murs à la chaux teintée bleu pâle, sol de bois."
+},
+{
+"id": "dec-epouvantail",
+"name": "Épouvantail",
+"size": "moyen",
+"line": "Un épouvantail de bois et de paille, chemise de lin rapiécée, chapeau de paille, sourire cousu."
+},
+{
+"id": "dec-nichoir",
+"name": "Nichoir",
+"size": "petit",
+"line": "Un nichoir en bois couleur miel, toit pentu, petit trou rond, perchoir."
+},
+{
+"id": "dec-jardiniere",
+"name": "Jardinière",
+"size": "petit",
+"line": "Une jardinière rectangulaire en terre cuite rouge tuile, remplie de fleurs colorées."
+},
+{
+"id": "dec-balancoire",
+"name": "Balançoire",
+"size": "moyen",
+"line": "Une balançoire en bois couleur miel, portique arrondi, siège suspendu par deux cordes."
+},
+{
+"id": "dec-carte-au-tresor-encadree",
+"name": "Carte au trésor encadrée",
+"size": "mur",
+"line": "Une carte au trésor sur parchemin jauni, croix rouge et îles dessinées, dans un cadre de bois."
+}
+]
 }
 ],
-"lead": "Les meubles et la décoration du Grand Carnet (ceux qui ne sont pas déjà dans l'onglet Meubles), les trophées, les fêtes et les ensembles merveilleux.",
+"lead": "Les meubles et la décoration du Grand Carnet (ceux qui ne sont pas déjà dans l'onglet Meubles), les trophées, les fêtes et les ensembles merveilleux. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul objet, entier, fond blanc, vu de trois quarts.",
@@ -5552,12 +5649,6 @@ window.PROMPTS_CARNET = [
 "name": "Potée au chou",
 "size": "plat",
 "line": "Une marmite de fonte remplie de potée au chou fumante, chou, pommes de terre et oignons."
-},
-{
-"id": "pla-puree-aux-herbes",
-"name": "Purée aux herbes",
-"size": "plat",
-"line": "Une assiette de terre cuite de purée dorée, noix de beurre fondant, brins de thym."
 },
 {
 "id": "pla-salade-du-jardin",
@@ -5692,18 +5783,6 @@ window.PROMPTS_CARNET = [
 "line": "Une pile de crêpes dorées arrosées de miel, sur une assiette de terre cuite."
 },
 {
-"id": "pla-clafoutis-aux-cerises",
-"name": "Clafoutis aux cerises",
-"size": "dessert",
-"line": "Un clafoutis doré aux cerises rouges dans un plat de terre cuite."
-},
-{
-"id": "pla-confiture",
-"name": "Confiture",
-"size": "dessert",
-"line": "Un pot de confiture rouge fermé d'un tissu à carreaux noué, cuillère de bois."
-},
-{
 "id": "pla-chataignes-grillees",
 "name": "Châtaignes grillées",
 "size": "dessert",
@@ -5728,12 +5807,6 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "pla-tisane-de-tilleul",
-"name": "Tisane de tilleul",
-"size": "boisson",
-"line": "Une tasse de terre cuite de tisane dorée fumante, fleurs de tilleul à côté."
-},
-{
 "id": "pla-lait-chaud-au-miel",
 "name": "Lait chaud au miel",
 "size": "boisson",
@@ -5756,12 +5829,6 @@ window.PROMPTS_CARNET = [
 "name": "Hydromel",
 "size": "boisson",
 "line": "Une corne à boire remplie d'hydromel doré, un rayon de miel à côté."
-},
-{
-"id": "pla-liqueur-de-genepi",
-"name": "Liqueur de génépi",
-"size": "boisson",
-"line": "Un petit flacon de verre de liqueur verte et un petit verre, brin de génépi."
 }
 ]
 },
@@ -5775,6 +5842,18 @@ window.PROMPTS_CARNET = [
 "size": "plat ✨",
 "line": "Un bol de soupe pâle qui brille doucement comme la lune, morceaux de chou bleuté."
 },
+{
+"id": "pla-melon-oasis-frais",
+"name": "Melon-oasis frais",
+"size": "plat ✨",
+"line": "Une tranche de melon-oasis translucide pleine de jus frais, gouttes perlées."
+}
+]
+},
+{
+"name": "Avec les grandes mises à jour",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
 {
 "id": "pla-fraises-des-vents-a-la-creme",
 "name": "Fraises des vents à la crème",
@@ -5794,18 +5873,6 @@ window.PROMPTS_CARNET = [
 "line": "Une omelette dorée qui brille, dans une poêle de fer, coquilles d'œufs dorés à côté."
 },
 {
-"id": "pla-melon-oasis-frais",
-"name": "Melon-oasis frais",
-"size": "plat ✨",
-"line": "Une tranche de melon-oasis translucide pleine de jus frais, gouttes perlées."
-},
-{
-"id": "pla-ufs-de-braise-mollets",
-"name": "Œufs de braise mollets",
-"size": "plat ✨",
-"line": "Deux œufs à la coque noirs veinés de rouge dans des coquetiers de pierre."
-},
-{
 "id": "pla-ragout-de-tubercule-de-lave",
 "name": "Ragoût de tubercule de lave",
 "size": "plat ✨",
@@ -5818,9 +5885,51 @@ window.PROMPTS_CARNET = [
 "line": "Un grand plateau de festin avec un mets de chaque contrée : pain des nuages, poisson, fruits des îles, sorbet de givre et tubercule de lave."
 }
 ]
+},
+{
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "pla-puree-aux-herbes",
+"name": "Purée aux herbes",
+"size": "plat",
+"line": "Une assiette de terre cuite de purée dorée, noix de beurre fondant, brins de thym."
+},
+{
+"id": "pla-clafoutis-aux-cerises",
+"name": "Clafoutis aux cerises",
+"size": "dessert",
+"line": "Un clafoutis doré aux cerises rouges dans un plat de terre cuite."
+},
+{
+"id": "pla-confiture",
+"name": "Confiture",
+"size": "dessert",
+"line": "Un pot de confiture rouge fermé d'un tissu à carreaux noué, cuillère de bois."
+},
+{
+"id": "pla-tisane-de-tilleul",
+"name": "Tisane de tilleul",
+"size": "boisson",
+"line": "Une tasse de terre cuite de tisane dorée fumante, fleurs de tilleul à côté."
+},
+{
+"id": "pla-liqueur-de-genepi",
+"name": "Liqueur de génépi",
+"size": "boisson",
+"line": "Un petit flacon de verre de liqueur verte et un petit verre, brin de génépi."
+},
+{
+"id": "pla-ufs-de-braise-mollets",
+"name": "Œufs de braise mollets",
+"size": "plat ✨",
+"line": "Deux œufs à la coque noirs veinés de rouge dans des coquetiers de pierre."
+}
+]
 }
 ],
-"lead": "Les plats et les boissons du Grand Carnet.",
+"lead": "Les plats et les boissons du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : un seul plat, entier, fond blanc, vu de trois quarts.",
@@ -5847,12 +5956,6 @@ window.PROMPTS_CARNET = [
 "name": "Antidote",
 "size": "potion",
 "line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide vert clair, un brin de thym noué au col."
-},
-{
-"id": "pot-baume-d-arnica",
-"name": "Baume d'arnica",
-"size": "potion",
-"line": "Un petit pot de terre cuite rempli de baume jaune, couvercle de cire, fleur d'arnica."
 },
 {
 "id": "pot-grande-potion-de-soin",
@@ -5895,18 +5998,6 @@ window.PROMPTS_CARNET = [
 "name": "Potion de fraîcheur",
 "size": "potion",
 "line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide bleu glacé, givre sur le verre."
-},
-{
-"id": "pot-potion-de-pierre",
-"name": "Potion de pierre",
-"size": "potion",
-"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide gris pierre épais, petite gentiane bleue sur le bouchon."
-},
-{
-"id": "pot-potion-de-resistance-au-feu",
-"name": "Potion de résistance au feu",
-"size": "potion",
-"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide rouge incandescent, verre noirci par la chaleur."
 }
 ]
 },
@@ -5914,12 +6005,6 @@ window.PROMPTS_CARNET = [
 "name": "L'exploration",
 "note": "",
 "items": [
-{
-"id": "pot-potion-de-lumiere",
-"name": "Potion de lumière",
-"size": "potion",
-"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide jaune qui éclaire autour de lui."
-},
 {
 "id": "pot-potion-de-vision-nocturne",
 "name": "Potion de vision nocturne",
@@ -5943,18 +6028,6 @@ window.PROMPTS_CARNET = [
 "name": "Potion de vitesse",
 "size": "potion",
 "line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide rose vif pétillant, petite plume attachée au col."
-},
-{
-"id": "pot-potion-d-apaisement",
-"name": "Potion d'apaisement",
-"size": "potion",
-"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide lavande pâle, fleur de lotus sur le bouchon."
-},
-{
-"id": "pot-potion-de-chance",
-"name": "Potion de chance",
-"size": "potion",
-"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide doré scintillant, pétale d'or et petite étoile sur le bouchon."
 }
 ]
 },
@@ -5967,12 +6040,6 @@ window.PROMPTS_CARNET = [
 "name": "Potion de force",
 "size": "potion",
 "line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide rouge sombre, bouchon de cuivre."
-},
-{
-"id": "pot-huile-de-feu",
-"name": "Huile de feu",
-"size": "huile",
-"line": "Un petit flacon plat en verre d'huile orange qui rougeoie, bouchon de cire rouge."
 },
 {
 "id": "pot-huile-de-givre",
@@ -5999,22 +6066,10 @@ window.PROMPTS_CARNET = [
 "line": "Une petite bombe ronde faite d'une vesse-de-loup séchée ficelée de corde, mèche courte."
 },
 {
-"id": "pot-bombe-fumigene",
-"name": "Bombe fumigène",
-"size": "bombe",
-"line": "Une petite bombe ronde en terre cuite grise, mèche courte, filet de fumée."
-},
-{
 "id": "pot-bombe-collante",
 "name": "Bombe collante",
 "size": "bombe",
 "line": "Une petite bombe ronde enveloppée de soie d'araignée collante, mèche courte."
-},
-{
-"id": "pot-bombe-de-lumiere",
-"name": "Bombe de lumière",
-"size": "bombe",
-"line": "Une petite bombe ronde en verre qui brille de bleu, champignon lumineux à l'intérieur, mèche courte."
 },
 {
 "id": "pot-bombe-de-poison",
@@ -6027,12 +6082,6 @@ window.PROMPTS_CARNET = [
 "name": "Bombe de glace",
 "size": "bombe",
 "line": "Une petite bombe ronde de glace bleutée, mèche courte givrée."
-},
-{
-"id": "pot-bombe-de-feu",
-"name": "Bombe de feu",
-"size": "bombe",
-"line": "Une petite bombe ronde en terre cuite rouge, mèche qui crépite, petite flamme."
 }
 ]
 },
@@ -6041,22 +6090,58 @@ window.PROMPTS_CARNET = [
 "note": "",
 "items": [
 {
-"id": "pot-potion-des-fees",
-"name": "Potion des fées",
+"id": "pot-potion-de-mirage",
+"name": "Potion de mirage",
 "size": "potion ✨",
-"line": "Une toute petite fiole merveilleuse remplie d'un liquide bleu pâle scintillant, petite clochette des fées au col."
+"line": "Une fiole merveilleuse au liquide aux couleurs changeantes, son reflet double un peu flou."
+},
+{
+"id": "pot-elixir-du-c-ur-de-mousse",
+"name": "Élixir du Cœur-de-mousse",
+"size": "légendaire 👑",
+"line": "Un flacon légendaire en cristal en forme de cœur, liquide vert profond qui palpite doucement, mousse sur le bouchon."
+}
+]
+},
+{
+"name": "Avec les grandes mises à jour",
+"note": "Décidé avec Yo le 15 octobre 2026 : les Îles célestes et le Volcan arrivent après la sortie, en deux grandes mises à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "pot-potion-de-pierre",
+"name": "Potion de pierre",
+"size": "potion",
+"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide gris pierre épais, petite gentiane bleue sur le bouchon."
+},
+{
+"id": "pot-potion-de-resistance-au-feu",
+"name": "Potion de résistance au feu",
+"size": "potion",
+"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide rouge incandescent, verre noirci par la chaleur."
+},
+{
+"id": "pot-potion-de-chance",
+"name": "Potion de chance",
+"size": "potion",
+"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide doré scintillant, pétale d'or et petite étoile sur le bouchon."
+},
+{
+"id": "pot-huile-de-feu",
+"name": "Huile de feu",
+"size": "huile",
+"line": "Un petit flacon plat en verre d'huile orange qui rougeoie, bouchon de cire rouge."
+},
+{
+"id": "pot-bombe-de-feu",
+"name": "Bombe de feu",
+"size": "bombe",
+"line": "Une petite bombe ronde en terre cuite rouge, mèche qui crépite, petite flamme."
 },
 {
 "id": "pot-potion-des-nuages",
 "name": "Potion des nuages",
 "size": "potion ✨",
 "line": "Une fiole ronde merveilleuse remplie de nuage blanc moelleux, qui flotte un peu."
-},
-{
-"id": "pot-potion-de-mirage",
-"name": "Potion de mirage",
-"size": "potion ✨",
-"line": "Une fiole merveilleuse au liquide aux couleurs changeantes, son reflet double un peu flou."
 },
 {
 "id": "pot-elixir-d-etoile",
@@ -6069,17 +6154,53 @@ window.PROMPTS_CARNET = [
 "name": "Potion de phénix",
 "size": "potion ✨",
 "line": "Une fiole merveilleuse au liquide orange et or qui ondule comme des flammes, plume de feu au col."
+}
+]
 },
 {
-"id": "pot-elixir-du-c-ur-de-mousse",
-"name": "Élixir du Cœur-de-mousse",
-"size": "légendaire 👑",
-"line": "Un flacon légendaire en cristal en forme de cœur, liquide vert profond qui palpite doucement, mousse sur le bouchon."
+"name": "La réserve (plus tard)",
+"note": "Décidé avec Yo le 15 octobre 2026 (le tri du Grand Carnet) : pas au lancement ; ils arriveront avec une fête ou une mise à jour. Rien ne presse pour leurs images.",
+"items": [
+{
+"id": "pot-baume-d-arnica",
+"name": "Baume d'arnica",
+"size": "potion",
+"line": "Un petit pot de terre cuite rempli de baume jaune, couvercle de cire, fleur d'arnica."
+},
+{
+"id": "pot-potion-de-lumiere",
+"name": "Potion de lumière",
+"size": "potion",
+"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide jaune qui éclaire autour de lui."
+},
+{
+"id": "pot-potion-d-apaisement",
+"name": "Potion d'apaisement",
+"size": "potion",
+"line": "Une fiole ronde en verre fermée d'un bouchon de liège, remplie d'un liquide lavande pâle, fleur de lotus sur le bouchon."
+},
+{
+"id": "pot-bombe-fumigene",
+"name": "Bombe fumigène",
+"size": "bombe",
+"line": "Une petite bombe ronde en terre cuite grise, mèche courte, filet de fumée."
+},
+{
+"id": "pot-bombe-de-lumiere",
+"name": "Bombe de lumière",
+"size": "bombe",
+"line": "Une petite bombe ronde en verre qui brille de bleu, champignon lumineux à l'intérieur, mèche courte."
+},
+{
+"id": "pot-potion-des-fees",
+"name": "Potion des fées",
+"size": "potion ✨",
+"line": "Une toute petite fiole merveilleuse remplie d'un liquide bleu pâle scintillant, petite clochette des fées au col."
 }
 ]
 }
 ],
-"lead": "Les potions, huiles et bombes du Grand Carnet.",
+"lead": "Les potions, huiles et bombes du Grand Carnet. Rangé comme le Grand Carnet (15 octobre 2026) : d'abord ce qui est au lancement, puis les grandes mises à jour (Îles célestes, Volcan), puis la réserve.",
 "steps": [
 "Touche <b>Copier</b>, puis colle dans ChatGPT.",
 "Vérifie l'image : une seule fiole (ou une seule bombe), entière, fond blanc, vue de trois quarts.",
