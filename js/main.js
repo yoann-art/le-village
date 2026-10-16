@@ -9,7 +9,7 @@ import "./pleinecran.js";                                 // le plein écran (de
 import { $ } from "./outils.js";
 import { VERSION } from "./version.js";
 import { B } from "./donnees.js";
-import { renderer, camera, scene, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS } from "./monde/scene.js";
+import { renderer, camera, scene, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS, preparer } from "./monde/scene.js";
 import { VENT } from "./monde/formes.js";
 import { water, montrerChamp } from "./monde/ile.js";
 import { reglerRecul } from "./monde/chene.js";
@@ -45,7 +45,7 @@ import "./sac.js";
 import "./barre.js";
 import "./saisons.js";
 import "./station.js";
-import { debutImage, finImage } from "./performance.js";   // le compteur de performance (demande de Yo, 16 octobre 2026)
+import { debutImage, finImage, temps, noterPreparation } from "./performance.js";   // le compteur de performance (demande de Yo, 16 octobre 2026)
 
 /* Touche Échap : ferme ce qui est ouvert */
 window.addEventListener("keydown", e => {
@@ -97,7 +97,8 @@ function signaler(nom, e){
   vues.add(cle);
   toast(`⚠️ Erreur du jeu (${nom}) : ${e && e.message}. Dis-le à Claude, avec ce que tu faisais.`, 9000);
 }
-function garde(nom, f){ try{ return f(); }catch(e){ signaler(nom, e); } }
+/* chaque morceau est aussi chronométré (le profilage du compteur de performance, performance.js) */
+function garde(nom, f){ const t0 = performance.now(); try{ return f(); }catch(e){ signaler(nom, e); } finally { temps(nom, performance.now() - t0); } }
 window.addEventListener("error", e => signaler("page", e.error || {message: e.message}));
 window.addEventListener("unhandledrejection", e => signaler("page", e.reason || {message: "promesse"}));
 /* Le téléphone peut retirer l'affichage 3D au jeu (contexte WebGL perdu, par exemple quand la mémoire manque) : l'image
@@ -200,6 +201,19 @@ function camera_(now, dt, marche){
 /* ================= Démarrage ================= */
 $("#version").textContent = "v" + VERSION;
 renderHUD();
+{ const t0 = performance.now(); garde("préparation", preparer); noterPreparation(performance.now() - t0); }   // la carte graphique prête avant la première marche (scene.js)
+/* Préparer les polices (mission de Yo, 16 octobre 2026 : les saccades) : la première fois qu'un texte en gras apparaissait
+   (le nom de ce qu'on vise, sur le bouton d'action, en marchant vers une pierre), le navigateur préparait cette police à ce
+   moment-là : 115 ms mesurées, le processeur ralenti comme un téléphone (6 ms ensuite). Un petit texte invisible, dans
+   chaque police et chaque épaisseur du jeu, les prépare au chargement, puis s'en va */
+{
+  const sonde = document.createElement("div");
+  sonde.setAttribute("aria-hidden", "true");
+  sonde.style.cssText = "position:fixed;left:0;top:0;opacity:0;pointer-events:none;z-index:-1";
+  sonde.innerHTML = `<b style="font-weight:700">Aa 🪨🌳🍒</b><span style="font-weight:500">Aa</span><span>Aa</span><span class="display">Aa</span>`;
+  document.body.appendChild(sonde); void sonde.offsetWidth;
+  document.fonts.ready.then(() => sonde.remove(), () => sonde.remove());
+}
 requestAnimationFrame(tick);
 setTimeout(() => {
   if(migrationMsg) toast(migrationMsg, 4200);

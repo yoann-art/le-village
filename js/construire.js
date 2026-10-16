@@ -170,7 +170,7 @@ export function updateInteraction(dt){
     if(inb(x,z) && occ.has(idx(x,z))){ id = occ.get(idx(x,z)); break; }
   }
   const ctx = $("#btn-ctx");
-  if(id === null){ if(!ctx.hidden) ctx.hidden = true; ctx.dataset.id = ""; return; }
+  if(id === null){ if(!ctx.hidden) ctx.hidden = true; if(ctx.dataset.id) ctx.dataset.id = ""; return; }   // rien n'est réécrit s'il ne change pas (chaque image)
   if(ctx.dataset.id !== String(id) || ctx.hidden){
     const b = state.buildings.find(v => v.id === id);
     ctx.textContent = `${B[b.type].emoji} ${B[b.type].nom}`;

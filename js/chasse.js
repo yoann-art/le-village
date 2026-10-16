@@ -544,7 +544,7 @@ export function updateChasse(dt, actif, ou){
   dans = ici;
   if(ici) lieu = ou;
   groupe.visible = ici;
-  if(fleche) fleche.hidden = !ici;
+  if(fleche && fleche.hidden === ici) fleche.hidden = !ici;   // réécrit seulement s'il change (chaque image)
   if(!ici) return;
   const w = vent();
   if(aiguille) aiguille.style.transform = `rotate(${w.a}rad)`;

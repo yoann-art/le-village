@@ -3,7 +3,7 @@
    jouet). Selon son état : une pousse, des feuilles (jeune, pas sa saison, ou cueillie qui refleurit), ou en fleur,
    à sa couleur. Le dessin de la fleur selon sa forme (FLEURS dans donnees.js) : etoile (pétales en disque et coeur),
    coupe (tulipe, coquelicot), boule (rose, pissenlit), epi (lavande), clochette (muguet, perce-neige). */
-import { G, part } from "./formes.js";
+import { G, part, formeUnie, MAT_UNI } from "./formes.js";
 import { FLEURS } from "../donnees.js";
 
 const VERT = 0x5E9E4A, FEUILLE = 0x5A9A48;
@@ -22,8 +22,19 @@ function tete(g, f, c, x, y, z){
     for(const [dx, dy] of [[.08, -.04], [.12, -.11], [.05, -.16]]) g.add(part(G.head, c, .22, .26, .22, x + dx, y + dy, z));
   }
 }
-/* etat : 0 une pousse, 1 des feuilles, 2 en fleur */
+/* etat : 0 une pousse, 1 des feuilles, 2 en fleur. Ses morceaux sont rassemblés en une seule forme (formeUnie, formes.js :
+   un seul dessin au lieu de quatre à douze, et de même pour son ombre ; mission de Yo, 16 octobre 2026 : les saccades),
+   une par fleur, couleur et état, partagée */
+const CACHE = new Map();
 export function fleurModele(k, couleur, etat){
+  const cle = `${k}|${couleur}|${etat}`;
+  if(!CACHE.has(cle)) CACHE.set(cle, formeUnie(morceaux(k, couleur, etat)).geo);
+  const g = new THREE.Group(), m = new THREE.Mesh(CACHE.get(cle), MAT_UNI);
+  m.castShadow = m.receiveShadow = true;
+  g.add(m);
+  return g;
+}
+function morceaux(k, couleur, etat){
   const f = FLEURS[k], g = new THREE.Group(), h = f.taille;
   if(etat === 0){ g.add(part(G.leaf2, VERT, .45, .35, .45, 0, .06, 0)); return g; }
   g.add(part(G.leaf2, FEUILLE, .85, .4, .85, 0, .08, 0));

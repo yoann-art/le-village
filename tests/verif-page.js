@@ -30,7 +30,7 @@ import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, G
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol } from "../js/monde/ile.js";
-import { feuillesQuiVolent } from "../js/monde/chene.js";
+import { feuillesQuiVolent, MAT_OMBRE } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
@@ -465,6 +465,38 @@ export async function verifier(){
       if(!$("#perf").hidden) throw new Error("toucher la version ne l'éteint pas");
       return `${m.ips} images/s, ${m.triangles} triangles, ${m.dessins} dessins ; le rapport (${r.split("\n").length} lignes)`;
     } finally { allumerCompteur(false); }
+  });
+  await etape("La fluidité (mission de Yo, 16 octobre 2026) : le tri de ce que voit la caméra, les morceaux rassemblés, les programmes gardés, la carte graphique préparée", async () => {
+    const {ESSENCES} = await import("../js/monde/essences.js"), {MEUBLES} = await import("../js/donnees.js");
+    /* le tri par carrés donne exactement ce que donnait l'ancien tri, objet par objet, sous 40 caméras au hasard */
+    const grand = o => o === "tree" || ESSENCES.includes(o) || !!(MEUBLES[o] && MEUBLES[o].dehors);
+    const champ = new THREE.Frustum(), mv = new THREE.Matrix4(), boule = new THREE.Sphere(new THREE.Vector3(), 6), cam = camera.clone();
+    let faux = 0, tests = 0;
+    for(let k = 0; k < 40; k++){
+      const px = (Math.random() - .5) * 80, pz = (Math.random() - .5) * 80, loin = 60 + Math.random() * 30;
+      cam.position.set(px, 18, pz + 15); cam.lookAt(px, .4, pz); cam.updateMatrixWorld();
+      montrerChamp(cam, loin);
+      mv.copy(cam.matrixWorld).invert().premultiply(cam.projectionMatrix); champ.setFromProjectionMatrix(mv);
+      for(let i = 0; i < N * N; i++){
+        const g = objMesh(i); if(!g) continue;
+        boule.center.set(g.position.x, 1.5, g.position.z); tests++;
+        const vu = Math.hypot(g.position.x - cam.position.x, g.position.z - cam.position.z) < (grand(map.obj[i]) ? loin : Math.min(loin, 28)) && champ.intersectsSphere(boule);
+        if(vu !== g.visible) faux++;
+      }
+    }
+    montrerChamp(camera, scene.fog.far + 6);
+    if(faux) throw new Error(`le tri par carrés se trompe ${faux} fois sur ${tests}`);
+    /* une touffe de thym et une fleur : un seul morceau ; la Scierie : quelques formes au lieu de dizaines de morceaux */
+    const un = o => { const i = map.obj.findIndex(x => x === o); let n = 0; objMesh(i).traverse(m => { if(m.isMesh) n++; }); return n; };
+    if(un("thym") !== 1) throw new Error(`une touffe de thym est faite de ${un("thym")} morceaux`);
+    const fleur = map.obj.find(o => FLEURS[o]);
+    if(fleur && un(fleur) !== 1) throw new Error(`une fleur (${fleur}) est faite de ${un(fleur)} morceaux`);
+    /* les programmes de dessin sont gardés (aucun n'est jeté puis recompilé) ; les boules d'ombre ne se dessinent pas à l'image */
+    const jetables = renderer.info.programs.filter(p => p.usedTimes < 2).length;
+    if(jetables) throw new Error(`${jetables} programmes de dessin pourraient être jetés`);
+    if(MAT_OMBRE.visible) throw new Error("les boules d'ombre des arbres se dessinent à l'image");
+    if(!rapportPerf().includes("préparé au chargement")) throw new Error("le rapport ne dit pas la préparation de la carte graphique");
+    return `${tests} objets triés comme avant ; le thym et ${fleur} d'un seul morceau ; ${renderer.info.programs.length} programmes gardés`;
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();

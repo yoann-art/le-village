@@ -8,6 +8,12 @@
      entre deux images est bien plus long que ce travail, c'est le téléphone qui peine à dessiner ;
    - ce qu'il a fallu dessiner : les triangles (chaque objet 3D en est fait) et les dessins (chaque fois que le jeu demande
      au téléphone de dessiner un objet ou un groupe d'objets ; chacun coûte, même petit).
+   Le profilage (mission de Yo, 16 octobre 2026 : les saccades en marchant dans le village) : le temps de chaque morceau de
+   la boucle (temps(), appelé par garde dans main.js : la marche, la caméra, le champ, le dessin…), et dans chaque image ce
+   que la carte graphique a reçu pour la première fois : de nouveaux programmes de dessin (les « shaders », compilés la
+   première fois qu'une matière est dessinée) et de nouvelles formes (envoyées à la carte graphique la première fois
+   qu'elles se voient). Tout est rangé dans des tableaux fixes (aucune mémoire prise à chaque image, pour ne pas
+   provoquer lui-même le ménage de la mémoire du navigateur).
    « 📋 Rapport » montre tout cela en texte, avec l'endroit, la vue, la saison, l'écran et la puce graphique du téléphone :
    le copier et le coller dans la conversation avec Claude. */
 import { renderer } from "./monde/scene.js";
@@ -24,35 +30,92 @@ const CLE = "le-village-perf", SACCADE = 50, GARDE = 10000;   // une saccade : p
 let actif = false;
 try { actif = localStorage.getItem(CLE) === "1"; } catch(e){}
 renderer.info.autoReset = false;                          // le jeu dessine parfois deux fois par image (les mains) : on compte tout
-const images = [];                                         // [heure, durée depuis l'image d'avant, travail du jeu] en ms
-let avant = 0, debut = 0, dernier = 0, tri = 0, dessins = 0;
+/* le dessin des ombres du soleil, chronométré à part (il fait partie du « dessin ») */
+const ombresRender = renderer.shadowMap.render;
+renderer.shadowMap.render = function(lumieres, sc, cam){ const t0 = performance.now(); ombresRender.call(this, lumieres, sc, cam); temps("dessin des ombres", performance.now() - t0); };
 
+/* ---------- le relevé : un anneau de MAX images, dans des tableaux fixes ---------- */
+const MAX = 1200, NS = 32;                                 // 20 s à 60 images/s ; 32 morceaux de boucle au plus
+const T = new Float64Array(MAX), DT = new Float32Array(MAX), TRAV = new Float32Array(MAX);   // heure, depuis l'image d'avant, travail du jeu
+const PROG = new Int16Array(MAX), GEO = new Int16Array(MAX);                                  // nouveaux programmes, nouvelles formes
+const SEC = new Float32Array(MAX * NS);                    // le temps de chaque morceau, image par image
+const noms = [], colonne = new Map();
+let n = 0, tete = -1, avant = 0, debut = 0, dernier = 0, tri = 0, dessins = 0, progAvant = 0, geoAvant = 0;
+
+/* la préparation de la carte graphique au chargement (scene.js, preparer) : sa durée, pour le rapport */
+let preparation = 0;
+export function noterPreparation(ms){ preparation = ms; progAvant = renderer.info.programs.length; geoAvant = renderer.info.memory.geometries; }
+export const dureePreparation = () => preparation;
 /* au début de chaque image (main.js) */
 export function debutImage(now){
   renderer.info.reset();
   debut = performance.now();
-  if(avant) images.push([now, now - avant, 0]);
+  tete = (tete + 1) % MAX; if(n < MAX) n++;
+  T[tete] = now; DT[tete] = avant ? now - avant : 0; TRAV[tete] = 0; PROG[tete] = GEO[tete] = 0;
+  SEC.fill(0, tete * NS, tete * NS + NS);
   avant = now;
-  while(images.length && now - images[0][0] > GARDE) images.shift();
+}
+/* le temps d'un morceau de la boucle (garde, main.js) */
+export function temps(nom, ms){
+  if(tete < 0) return;
+  let c = colonne.get(nom);
+  if(c === undefined){ if(noms.length >= NS) return; c = noms.length; noms.push(nom); colonne.set(nom, c); }
+  SEC[tete * NS + c] += ms;
 }
 /* à la fin de chaque image, après le dessin */
 export function finImage(){
   const fin = performance.now();
-  if(images.length) images[images.length - 1][2] = fin - debut;
+  if(tete >= 0){
+    TRAV[tete] = fin - debut;
+    const p = renderer.info.programs ? renderer.info.programs.length : 0, g = renderer.info.memory.geometries;
+    PROG[tete] = Math.max(0, p - progAvant); GEO[tete] = Math.max(0, g - geoAvant);
+    progAvant = p; geoAvant = g;
+  }
   tri = renderer.info.render.triangles; dessins = renderer.info.render.calls;
   if(actif && fin - dernier > 500){ dernier = fin; afficher(); }
+}
+/* les images des `sur` dernières millisecondes, de la plus ancienne à la plus récente (leurs places dans l'anneau) */
+function places(sur){
+  const t0 = performance.now() - sur, out = [];
+  for(let k = n - 1; k >= 0; k--){ const j = (tete - k + MAX) % MAX; if(T[j] >= t0 && DT[j] > 0) out.push(j); }
+  return out;
 }
 
 /* les chiffres des dernières secondes */
 export function mesures(sur = GARDE){
-  const t0 = performance.now() - sur, L = images.filter(i => i[0] >= t0);
-  const n = L.length, somme = L.reduce((s, i) => s + i[1], 0), travail = L.reduce((s, i) => s + i[2], 0);
-  const pire = L.reduce((m, i) => Math.max(m, i[1]), 0), saccades = L.filter(i => i[1] > SACCADE).length;
+  const L = places(sur), t0 = performance.now() - sur;
+  let somme = 0, travail = 0, pire = 0, saccades = 0, prog = 0, geo = 0, pireTravail = 0;
+  for(const j of L){ somme += DT[j]; travail += TRAV[j]; pire = Math.max(pire, DT[j]); pireTravail = Math.max(pireTravail, TRAV[j]); if(DT[j] > SACCADE) saccades++; prog += PROG[j]; geo += GEO[j]; }
   /* la pire seconde : le moins d'images en une seconde */
   let pireSeconde = Infinity;
-  for(let s = 0; s < sur / 1000; s++){ const k = L.filter(i => i[0] >= t0 + s * 1000 && i[0] < t0 + (s + 1) * 1000).length; if(k) pireSeconde = Math.min(pireSeconde, k); }
-  return {ips: n ? Math.round(1000 * n / Math.max(1, somme)) : 0, ms: n ? somme / n : 0, travail: n ? travail / n : 0, pire, saccades,
-    pireSeconde: pireSeconde === Infinity ? 0 : pireSeconde, triangles: tri, dessins};
+  for(let s = 0; s < sur / 1000; s++){ let k = 0; for(const j of L) if(T[j] >= t0 + s * 1000 && T[j] < t0 + (s + 1) * 1000) k++; if(k) pireSeconde = Math.min(pireSeconde, k); }
+  const nb = L.length;
+  return {ips: nb ? Math.round(1000 * nb / Math.max(1, somme)) : 0, ms: nb ? somme / nb : 0, travail: nb ? travail / nb : 0, pire, pireTravail, saccades,
+    pireSeconde: pireSeconde === Infinity ? 0 : pireSeconde, triangles: tri, dessins, programmes: prog, formes: geo};
+}
+/* le détail du travail : chaque morceau de la boucle, sa moyenne et son pire, du plus lourd au plus léger */
+export function detail(sur = GARDE){
+  const L = places(sur);
+  return noms.map((nom, c) => {
+    let s = 0, m = 0;
+    for(const j of L){ const v = SEC[j * NS + c]; s += v; if(v > m) m = v; }
+    return {nom, moyenne: L.length ? s / L.length : 0, pire: m};
+  }).sort((a, b) => b.moyenne - a.moyenne);
+}
+/* les pics : les images où le jeu a travaillé plus de `seuil` ms, avec le morceau le plus lourd et ce que la carte
+   graphique a reçu pour la première fois */
+export function pics(sur = GARDE, seuil = 33){
+  return places(sur).filter(j => TRAV[j] > seuil).map(j => {
+    let c = 0; for(let k = 1; k < noms.length; k++) if(SEC[j * NS + k] > SEC[j * NS + c]) c = k;
+    return {travail: TRAV[j], morceau: noms[c], ms: SEC[j * NS + c], programmes: PROG[j], formes: GEO[j]};
+  });
+}
+/* Pour le banc de mesure (un essai sur le PC) : les images gardées après l'heure `depuis`, en clair */
+export function releve(depuis = 0){
+  return places(MAX * 100).filter(j => T[j] > depuis).map(j => {
+    const s = {}; noms.forEach((nom, c) => { if(SEC[j * NS + c]) s[nom] = +SEC[j * NS + c].toFixed(3); });
+    return {t: T[j], dt: DT[j], travail: TRAV[j], programmes: PROG[j], formes: GEO[j], s};
+  });
 }
 
 /* ---------- à l'écran ---------- */
@@ -93,13 +156,19 @@ const LIEUX = {mine: "la mine", foret: "la Forêt profonde", grotte: "la grotte"
 export function rapportPerf(){
   const m = mesures(), d = new Date(), p = player.position, pr = renderer.getPixelRatio(), mem = renderer.info.memory;
   const lieu = !isInside() ? "l'île" : LIEUX[currentPlace().b.type] || "dans un bâtiment";
+  const lourds = detail().filter(s => s.pire >= .5).slice(0, 6).map(s => `${s.nom} ${s.moyenne.toFixed(1)} (pire ${s.pire.toFixed(0)})`).join(", ");
+  const P = pics(), avecProg = P.filter(x => x.programmes).length, avecFormes = P.filter(x => x.formes).length;
+  const pire = P.reduce((a, x) => !a || x.travail > a.travail ? x : a, null);
   return [
     `📋 Rapport de performance · Hearthwild v${VERSION} · ${d.toLocaleDateString("fr-FR")} ${d.toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"})}`,
     `Lieu : ${lieu} (x ${p.x.toFixed(0)}, z ${p.z.toFixed(0)}), vue ${vuePremiere() ? "à la première personne" : "de dessus"} ; ${saison()}, ${meteo()}`,
     `Images par seconde : ${m.ips} en moyenne sur 10 s (la pire seconde : ${m.pireSeconde})`,
     `Une image : ${m.ms.toFixed(1)} ms en moyenne, la pire ${m.pire.toFixed(0)} ms ; saccades (plus de ${SACCADE} ms) : ${m.saccades} en 10 s`,
-    `Travail du jeu par image : ${m.travail.toFixed(1)} ms (le reste, c'est le téléphone qui dessine)`,
-    `Dessiné : ${fmt(m.triangles)} triangles, ${m.dessins} dessins ; en mémoire : ${mem.geometries} formes, ${mem.textures} images`,
+    `Travail du jeu par image : ${m.travail.toFixed(1)} ms, le pire ${m.pireTravail.toFixed(0)} ms (le reste, c'est le téléphone qui dessine)`,
+    `Détail du travail en ms (moyenne, pire) : ${lourds || "rien de lourd"}`,
+    `Pics de travail (plus de 33 ms) : ${P.length} en 10 s` + (P.length ? ` ; ${avecProg} avec de nouveaux shaders, ${avecFormes} avec de nouvelles formes ; le pire : ${pire.travail.toFixed(0)} ms (${pire.morceau} ${pire.ms.toFixed(0)} ms)` : ""),
+    `Nouveaux en 10 s : ${m.programmes} shaders, ${m.formes} formes envoyées à la carte graphique (tout préparé au chargement en ${fmt(preparation)} ms)`,
+    `Dessiné : ${fmt(m.triangles)} triangles, ${m.dessins} dessins ; en mémoire : ${mem.geometries} formes, ${mem.textures} images, ${renderer.info.programs ? renderer.info.programs.length : "?"} shaders`,
     `Écran : ${innerWidth} × ${innerHeight} points, finesse × ${pr} (${fmt(innerWidth * pr)} × ${fmt(innerHeight * pr)} pixels dessinés)`,
     `Téléphone : ${puce()} · ${navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 120)}`
   ].join("\n");

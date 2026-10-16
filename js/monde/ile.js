@@ -1,7 +1,7 @@
 /* ================= L'île =================
    Carte en cases, terrain, mer, arbres, rochers, herbes hautes et buissons de baies. */
 import { scene } from "./scene.js";
-import { mat, G, part, toon } from "./formes.js";
+import { mat, G, part, toon, formeUnie, MAT_UNI } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
@@ -299,6 +299,23 @@ const neigeBranches = () => neigeAuSol() > .3;
 const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
+/* Le thym : ses cinq feuilles et ses sept fleurs, rassemblées en une seule forme (formeUnie, formes.js : un seul dessin au
+   lieu de douze, et de même pour son ombre ; mission de Yo, 16 octobre 2026 : les saccades), une par état, partagée */
+const THYM = new Map();
+function thymModele(adulte, ras){
+  const cle = ras ? "rase" : adulte ? "fleurie" : "jeune";
+  if(!THYM.has(cle)){
+    const t = new THREE.Group(), h = ras ? .45 : .85;
+    [[0,0,.72],[.2,.1,.52],[-.19,.12,.54],[.06,-.2,.5],[-.14,-.14,.46]].forEach(([x, z, s], k) =>
+      t.add(part(G.leaf2, k % 2 ? 0x4F8A45 : 0x5F9C4F, s, s * h, s, x, .3 * s * h * .8, z)));
+    if(adulte && !ras) [[.12,.36,.06],[-.15,.32,.12],[.02,.4,-.15],[.22,.27,-.08],[-.06,.42,.02],[-.22,.25,-.1],[.1,.3,.2]].forEach(([x, y, z]) =>
+      t.add(part(G.head, 0xA77BD8, .24, .24, .24, x, y, z)));
+    THYM.set(cle, formeUnie(t).geo);
+  }
+  const m = new THREE.Mesh(THYM.get(cle), MAT_UNI);
+  m.castShadow = m.receiveShadow = true;
+  return m;
+}
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
   const o = map.obj[i], r = ((i*9301 + 49297) % 233280) / 233280;
@@ -330,11 +347,8 @@ function buildObj(i){
     if(st < 2) m.scale.multiplyScalar(st === 0 ? .3 : .6);
     g.add(m);
   } else if(o === "thym"){                          // une touffe basse vert sombre, fleurie de mauve ; rase une fois cueillie
-    const st = stageOf(i), ras = thymLeft(i) > 0, h = ras ? .45 : .85;
-    [[0,0,.72],[.2,.1,.52],[-.19,.12,.54],[.06,-.2,.5],[-.14,-.14,.46]].forEach(([x, z, s], k) =>
-      g.add(part(G.leaf2, k % 2 ? 0x4F8A45 : 0x5F9C4F, s, s * h, s, x, .3 * s * h * .8, z)));
-    if(st === 2 && !ras) [[.12,.36,.06],[-.15,.32,.12],[.02,.4,-.15],[.22,.27,-.08],[-.06,.42,.02],[-.22,.25,-.1],[.1,.3,.2]].forEach(([x, y, z]) =>
-      g.add(part(G.head, 0xA77BD8, .24, .24, .24, x, y, z)));
+    const st = stageOf(i);
+    g.add(thymModele(st === 2, thymLeft(i) > 0));
     if(st < 2) g.scale.setScalar(st === 0 ? .45 : .75);
   } else if(FLEURS[o]){                             // une fleur (étape 1.9) : pousse, feuilles, ou en fleur à sa couleur
     const st = stageOf(i);
@@ -350,30 +364,67 @@ function buildObj(i){
   } else g.add(rockMesh(o, r));                      // un rocher rapporté de la mine, à veines de cuivre ou non
   g.rotation.y = o === "coffre" || MEUBLES[o] ? 0 : r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
-  scene.add(g); meshes.set(i, g);
+  g.updateMatrixWorld(true); g.updateMatrixWorld = majSiVisible;   // sa place calculée une fois, puis seulement quand il se voit
+  scene.add(g); meshes.set(i, g); ranger(g, i, GRANDS(o));
 }
+/* Pour un téléphone milieu de gamme (mission de Yo, 16 octobre 2026 : les saccades en marchant) : three.js recalcule à
+   chaque image la place de chaque objet de la scène, même caché (environ 5 500 objets, dont 600 à l'écran : le cinquième
+   du temps du dessin). Un objet de l'île caché par montrerChamp ne bouge pas : on saute ce calcul tant qu'il est caché ;
+   sa place est calculée à sa création, puis à chaque image dès qu'il se voit (montrerChamp passe avant le dessin) */
+const MAJ = THREE.Object3D.prototype.updateMatrixWorld;
+function majSiVisible(force){ if(this.visible) MAJ.call(this, force); }
 /* Refait le modèle d'une case (après une coupe, une plantation, une pousse) */
 function refreshObj(i){
   const old = meshes.get(i);
-  if(old){ scene.remove(old); meshes.delete(i); looks.delete(i); }
+  if(old){ scene.remove(old); meshes.delete(i); looks.delete(i); sortir(old, i); }
   if(map.obj[i]) buildObj(i);
 }
 export const objMesh = i => meshes.get(i);
 /* Pour un téléphone modeste (l'île agrandie, étape 2.1 : trois fois plus de nature) : à chaque image, on ne garde à
-   dessiner que ce qui est dans le champ de la caméra, avec une marge pour les ombres qui y tombent, et pas plus loin que
-   le brouillard (main.js) ; le reste attend, sans rien coûter */
+   dessiner que ce qui est dans le champ de la caméra, avec une marge pour les ombres qui y tombent (une boule de 6 P autour
+   de chaque objet), et pas plus loin que le brouillard (main.js) ; le reste attend, sans rien coûter */
 /* les petites choses (herbes, fleurs, thym, buissons, rochers, souches) : seulement jusqu'à PRES P (à la première personne,
    au-delà, elles ne font que quelques points dans la brume) ; les arbres et les lumières, jusqu'au bout du brouillard */
 const PRES = 28, GRANDS = o => o === "tree" || ESSENCES.includes(o) || !!(MEUBLES[o] && MEUBLES[o].dehors);
 const champ = new THREE.Frustum(), mVue = new THREE.Matrix4(), boule = new THREE.Sphere(new THREE.Vector3(), 6);
+/* La partition de l'île (mission de Yo, 16 octobre 2026 : les saccades en marchant) : l'île est découpée en carrés de
+   CARRE × CARRE cases ; chaque objet est rangé dans le carré de sa case. Un carré entier hors du champ, ou plus loin que le
+   brouillard, cache d'un coup tout ce qu'il contient (une seule fois, tant qu'il reste dehors) ; ses objets ne sont
+   regardés un par un que s'il touche le champ, avec exactement la même règle qu'avant (la boule d'un carré, 6 P plus sa
+   demi-diagonale, contient celles de tous ses objets : rien n'apparaît ni ne disparaît plus tôt ou plus tard). Et rien
+   n'est pris en mémoire à chaque image (des tableaux, Math.sqrt) : le navigateur a moins de ménage à faire */
+const CARRE = 8, NC = N / CARRE, DEMI = CARRE * Math.SQRT1_2;
+const carres = Array.from({length: NC * NC}, (_, k) => ({x: (k % NC) * CARRE - H + CARRE / 2, z: Math.floor(k / NC) * CARRE - H + CARRE / 2,
+  objets: [], grands: [], cache: false}));
+const carreDe = i => Math.floor((i % N) / CARRE) + Math.floor(Math.floor(i / N) / CARRE) * NC;
+const bouleCarre = new THREE.Sphere(new THREE.Vector3(), 6 + DEMI);
+function ranger(g, i, grand){ const c = carres[carreDe(i)]; c.objets.push(g); c.grands.push(grand); c.cache = false; }
+function sortir(g, i){ const c = carres[carreDe(i)], k = c.objets.indexOf(g); if(k >= 0){ c.objets.splice(k, 1); c.grands.splice(k, 1); } }
+/* Ce qui est posé au sol hors de la carte (le bois et les cailloux, sol.js) suit la même règle, jusqu'au bout du brouillard
+   (au-delà, le brouillard le cache tout entier : rien ne change à l'image), et sa place n'est recalculée que quand il se voit */
+const caseDe = g => idx(tileOf(g.position.x), tileOf(g.position.z));
+export function dansLeChamp(g){ g.updateMatrixWorld(true); g.updateMatrixWorld = majSiVisible; ranger(g, caseDe(g), true); }
+export function horsDuChamp(g){ sortir(g, caseDe(g)); }
 export function montrerChamp(camera, loin){
   camera.updateMatrixWorld();
   mVue.copy(camera.matrixWorld).invert().premultiply(camera.projectionMatrix);
   champ.setFromProjectionMatrix(mVue);
   const cx = camera.position.x, cz = camera.position.z, pres = Math.min(loin, PRES);
-  for(const [i, g] of meshes){
-    boule.center.set(g.position.x, 1.5, g.position.z);
-    g.visible = Math.hypot(g.position.x - cx, g.position.z - cz) < (GRANDS(map.obj[i]) ? loin : pres) && champ.intersectsSphere(boule);
+  for(let k = 0; k < carres.length; k++){
+    const c = carres[k], L = c.objets;
+    if(!L.length) continue;
+    const dx = c.x - cx, dz = c.z - cz;
+    bouleCarre.center.set(c.x, 1.5, c.z);
+    if(Math.sqrt(dx * dx + dz * dz) - DEMI >= loin || !champ.intersectsSphere(bouleCarre)){
+      if(!c.cache){ for(let j = 0; j < L.length; j++) L[j].visible = false; c.cache = true; }
+      continue;
+    }
+    c.cache = false;
+    for(let j = 0; j < L.length; j++){
+      const g = L[j], ox = g.position.x - cx, oz = g.position.z - cz;
+      boule.center.set(g.position.x, 1.5, g.position.z);
+      g.visible = Math.sqrt(ox * ox + oz * oz) < (c.grands[j] ? loin : pres) && champ.intersectsSphere(boule);
+    }
   }
 }
 /* Change ce qu'il y a sur une case et le garde dans la partie (plante : heure de plantation) */

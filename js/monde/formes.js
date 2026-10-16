@@ -84,6 +84,56 @@ export function fusionner(morceaux){
   return r;
 }
 
+/* Rassembler les morceaux d'un modèle fait de part() (mission de Yo, 16 octobre 2026 : les saccades) : une touffe de thym,
+   une fleur, un bâtiment sont faits de morceaux de couleur unie ; le téléphone les dessinait un par un (et encore une fois
+   chacun pour leur ombre). uni(m) : une matière toon de couleur unie, opaque, sans lueur (celle de mat()). formeUnie(g)
+   rassemble tous les morceaux de g de cette sorte (où qu'ils soient dans g, leur place comptée depuis g) en une seule forme
+   aux couleurs par sommet, à dessiner avec MAT_UNI : la même couleur (la couleur du sommet remplace celle de la matière,
+   blanche), le même ombrage jouet, la même ombre ; un seul dessin. garder(o) : un morceau à laisser à part (qui bouge). Rend
+   {geo, lots, pris, reste} : geo, les morceaux qui font de l'ombre et en reçoivent (null s'il n'y en a pas) ; lots, une forme
+   par façon de faire et recevoir l'ombre ("11", "01"…) ; pris, les maillages rassemblés ; reste, ceux laissés à part (une
+   matière qui luit, transparente, ou un morceau retourné en miroir) */
+export const MAT_UNI = toon({vertexColors: true});
+export const uni = m => !!m && m.isMeshToonMaterial && !m.vertexColors && !m.map && !m.transparent && m.opacity === 1
+  && m.side === THREE.FrontSide && m.gradientMap === DEGRADE && m.emissive.getHex() === 0 && m.visible
+  && m.onBeforeCompile === THREE.Material.prototype.onBeforeCompile;
+/* une autre matière opaque sans image (une vitre qui s'allume la nuit, une lanterne) : ses morceaux se rassemblent entre eux,
+   avec cette même matière (elle change pour tous à la fois, la nuit) */
+const pareille = m => !!m && m.isMaterial && !m.transparent && !m.map && !m.vertexColors && m.visible
+  && m.onBeforeCompile === THREE.Material.prototype.onBeforeCompile;
+const mInv = new THREE.Matrix4();
+export function formeUnie(g, garder = () => false){
+  g.updateMatrixWorld(true);
+  mInv.copy(g.matrixWorld).invert();
+  const morceaux = new Map(), pris = [], reste = [];
+  g.traverse(o => {
+    if(!o.isMesh || o === g) return;
+    let vu = true; for(let p = o; p && p !== g; p = p.parent) if(!p.visible) vu = false;
+    const m = new THREE.Matrix4().multiplyMatrices(mInv, o.matrixWorld);
+    const u = uni(o.material);
+    if(vu && !o.isInstancedMesh && (u || pareille(o.material)) && m.determinant() > 0 && !garder(o)){
+      const cle = (o.castShadow ? "1" : "0") + (o.receiveShadow ? "1" : "0") + (u ? "" : "|" + o.material.uuid);
+      if(!morceaux.has(cle)) morceaux.set(cle, {M: [], mat: u ? MAT_UNI : o.material});
+      morceaux.get(cle).M.push({geo: o.geometry, m, c: u ? o.material.color.getHex() : 0xffffff});
+      pris.push(o);
+    } else reste.push(o);
+  });
+  const lots = new Map([...morceaux].map(([cle, {M, mat}]) => [cle, {geo: fusionner(M), mat}]));
+  return {geo: lots.has("11") ? lots.get("11").geo : null, lots, pris, reste};
+}
+/* Rassembler sur place : les morceaux unis de g sont remplacés par leurs formes rassemblées (une par façon de faire et
+   recevoir l'ombre), ajoutées à g ; le reste ne bouge pas */
+export function rassembler(g, garder){
+  const {lots, pris} = formeUnie(g, garder);
+  for(const o of pris) o.parent.remove(o);
+  for(const [cle, {geo, mat}] of lots){
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = cle[0] === "1"; m.receiveShadow = cle[1] === "1";
+    g.add(m);
+  }
+  return g;
+}
+
 /* Le vent dans le feuillage (étape 2.1) : VENT.temps avance, VENT.force suit la météo (main.js) ; feuillageMat()
    fait onduler ce qui est haut dans l'arbre (plus c'est haut, plus ça bouge), chaque arbre à son rythme */
 export const VENT = {temps: {value: 0}, force: {value: .03}};

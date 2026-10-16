@@ -180,7 +180,7 @@ let signature = "", verifie = 0;
 export function updateChemins(actif){
   const sorte = actif ? sorteTenue() : null;
   if(trace && sorte !== trace.sorte) arreter();
-  bTracer.hidden = !sorte;
+  if(bTracer.hidden !== !sorte) bTracer.hidden = !sorte;   // réécrit seulement s'il change (chaque image)
   if(sorte){
     const txt = trace ? `⏹️ Arrêter le chemin (${trace.n})` : `👣 Tracer : ${CHEMINS[sorte].nom}`;
     if(bTracer.textContent !== txt) bTracer.textContent = txt;

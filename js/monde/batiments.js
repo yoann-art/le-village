@@ -3,7 +3,7 @@
    Mesures de la bible : un étage fait 2 P, une porte 1,5 P.
    Chaque bâtiment tient dans son carré de cases (3 × 3 ou 4 × 4 P) ;
    sa façade avec la porte est tournée vers le bas de l'écran. */
-import { P, G, part, roof, toon } from "./formes.js";
+import { P, G, part, roof, toon, rassembler } from "./formes.js";
 import { scene } from "./scene.js";
 import { H, idx } from "./ile.js";
 import { B, ENTREE_MINE } from "../donnees.js";
@@ -499,7 +499,7 @@ const facades = new Map();                                    // b.id → [{x, z
 export const lumieresFacades = () => [...facades.values()].flat();
 export function placeMesh(b){
   if(bMeshes.has(b.id)) scene.remove(bMeshes.get(b.id));
-  const s = sizeOf(b.type), g = makeBuilding(b.type, b.lvl);
+  const s = sizeOf(b.type), g = rassembler(makeBuilding(b.type, b.lvl));   // ses morceaux unis en quelques formes (formes.js : un dessin au lieu de dizaines)
   g.position.set(b.x - H + s/2, 0, b.z - H + s/2);
   g.rotation.y = (b.rot || 0) * Math.PI / 2;          // tourné (étape 1.9) : la porte regarde vers b.rot
   const lf = [];

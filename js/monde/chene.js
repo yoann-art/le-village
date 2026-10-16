@@ -14,6 +14,7 @@
    Les petits outils d'ici (le tronc, les branches, le feuillage en écailles, la neige, les matières) servent aussi aux
    autres arbres de l'île (pommier.js, étape 2.1, morceau 2c). */
 import { toon, fusionner, feuillageMat } from "./formes.js";
+import { renderer } from "./scene.js";
 
 /* ---------- petits outils ---------- */
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -232,6 +233,12 @@ export const MAT_PLAT = toon({vertexColors: true, side: THREE.DoubleSide});
 /* Pour le téléphone : l'ombre d'un feuillage au sol vient de boules invisibles (une par boule de feuilles), pas de chacune
    des feuilles ; ces boules ne se dessinent pas, elles ne font que de l'ombre (et assombrissent le dessous des boules) */
 export const MAT_OMBRE = new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false});
+/* Elles n'écrivent rien à l'image : les y dessiner ne servait à rien (mission de Yo, 16 octobre 2026 : les saccades). Leur
+   matière n'est donc « visible » que pendant le dessin des ombres du soleil (three.js trie ce qu'il dessine à l'image avant
+   de dessiner les ombres, puis les ombres, puis l'image) : une ombre identique, un dessin de moins par arbre et par buisson */
+MAT_OMBRE.visible = false;
+const ombresDuSoleil = renderer.shadowMap.render;
+renderer.shadowMap.render = function(lumieres, sc, cam){ MAT_OMBRE.visible = true; try { ombresDuSoleil.call(this, lumieres, sc, cam); } finally { MAT_OMBRE.visible = false; } };
 export function ombreDe(f){
   return fusionner(f.boules.map(([x, y, z, r, fy = 1]) => ({geo: BOULE_BAS, m: new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion(), V(r * .8, r * .66 * fy, r * .8)), c: 0})));
 }

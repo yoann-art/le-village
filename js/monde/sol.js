@@ -6,7 +6,7 @@
    (décidé avec Yo, 12 octobre 2026). On marche dessus.
    state.sol = {case: "branche" | "caillou"} ; state.solT = l'heure du dernier retour (le premier jour). */
 import { scene } from "./scene.js";
-import { map, idx, inb, N, centerOf } from "./ile.js";
+import { map, idx, inb, N, centerOf, dansLeChamp, horsDuChamp } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state, save } from "../sauvegarde.js";
 import { doorTile } from "../regles.js";
@@ -21,11 +21,12 @@ function build(i){
   else g.add(caillouModele(saison(), r, map.type[i] === "sand"));   // le petit caillou (étape 2.1 : pierre.js, d'après l'image de Yo)
   g.rotation.y = r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
+  dansLeChamp(g);                                     // dessiné seulement dans le champ de la caméra, comme le reste de l'île (ile.js)
   scene.add(g); meshes.set(i, g);
 }
 function remove(i){
   const g = meshes.get(i);
-  if(g){ scene.remove(g); meshes.delete(i); }
+  if(g){ scene.remove(g); horsDuChamp(g); meshes.delete(i); }
   delete state.sol[i];
 }
 
@@ -57,7 +58,7 @@ function spawn(k, max = SOL[k].max){
 let saisonVue = saison();
 function rafraichir(){
   saisonVue = saison();
-  for(const i of Object.keys(state.sol)){ const g = meshes.get(+i); if(g){ scene.remove(g); meshes.delete(+i); } build(+i); }
+  for(const i of Object.keys(state.sol)){ const g = meshes.get(+i); if(g){ scene.remove(g); horsDuChamp(g); meshes.delete(+i); } build(+i); }
 }
 /* Ce qui est revenu depuis la dernière fois (aussi jeu fermé) ; un objet recouvert par un bâtiment disparaît */
 function update(){

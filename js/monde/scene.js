@@ -12,6 +12,12 @@ renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 app.prepend(renderer.domElement);
+/* Garder les programmes de dessin (mission de Yo, 16 octobre 2026 : les saccades en marchant). three.js jette le programme
+   d'une matière (son « shader », compilé par le téléphone) dès que plus aucune matière ne s'en sert : quand la dernière
+   ombre de poisson s'efface, par exemple ; la suivante doit alors le recompiler, et l'image se fige un instant. Chaque
+   programme compilé est donc gardé pour toute la partie (ils sont peu nombreux : une quinzaine) */
+const programmes = renderer.info.programs, ajouterProgramme = programmes.push;
+programmes.push = function(p){ p.usedTimes++; return ajouterProgramme.call(this, p); };
 
 const SKY = 0xA9E3EC;
 export const scene = new THREE.Scene();
@@ -64,6 +70,29 @@ export function setDistance(d){
   sc.updateProjectionMatrix();
 }
 setDistance(distanceFor(8));
+
+/* Préparer la carte graphique au chargement (mission de Yo, 16 octobre 2026 : les saccades en marchant) : la première fois
+   qu'une forme est dessinée, le téléphone l'envoie à sa carte graphique ; la première fois qu'une matière l'est, il compile
+   son programme. En marchant, cela tombait au moment où un arbre, un buisson ou une pierre entrait dans l'écran. On le fait
+   donc une fois pour toutes au chargement (main.js) : un dessin de toute la scène, tout montré (même ce qui est caché, de
+   près comme de loin), avec ses ombres, dans une toute petite image qu'on ne voit jamais. Rien ne change à l'écran */
+export function preparer(){
+  const montres = [], entiers = [], lods = [];
+  scene.traverse(o => {
+    if(!o.visible){ o.visible = true; montres.push(o); }
+    if(o.frustumCulled){ o.frustumCulled = false; entiers.push(o); }
+    if(o.isLOD && o.autoUpdate){ o.autoUpdate = false; lods.push(o); }
+  });
+  const cible = new THREE.WebGLRenderTarget(4, 4);
+  renderer.setRenderTarget(cible);
+  try { renderer.render(scene, camera); }
+  finally {
+    renderer.setRenderTarget(null); cible.dispose();
+    for(const o of montres) o.visible = false;
+    for(const o of entiers) o.frustumCulled = true;
+    for(const o of lods) o.autoUpdate = true;
+  }
+}
 
 /* Ce que touche le doigt : le rayon qui part de la caméra et passe sous le doigt */
 export const ray = new THREE.Raycaster();
