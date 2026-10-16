@@ -410,7 +410,7 @@ export async function verifier(){
     if(!v || v.etat !== "rase") throw new Error(`cueillies, la touffe n'est pas rase (${JSON.stringify(v)})`);
     return `une touffe de la saison (${u.saison}), cueillie : +${owned("fibre") - fibres} fibres, puis rase`;
   });
-  await etape("Le groseillier (nom et images de Yo) : ses grappes rouges, « 🍒 Groseillier », on y cueille des groseilles, puis ses grappes sont vides", async () => {
+  await etape("Le groseillier (nom et images de Yo, au plus près de la réalité) : l'été, ses grappes rouges, « 🍒 Groseillier », on y cueille des groseilles, puis ses grappes sont vides ; en fleurs au printemps, rien à cueillir en automne, nu l'hiver", async () => {
     hold(null);
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
@@ -420,21 +420,35 @@ export async function verifier(){
     if(!t) throw new Error("aucun groseillier plein accessible");
     const avant = owned("baie"), i = idx(...t);
     const modele = () => { let u = null; objMesh(i) && objMesh(i).traverse(o => { if(o.userData.groseillier) u = o.userData.groseillier; }); return u; };
-    const u = modele();
-    if(!u || u.etat !== "plein" || !(u.grappes > 0) || u.saison !== saison()) throw new Error(`le groseillier : ${JSON.stringify(u)}`);
-    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
     const b = $("#btn-act");
-    if(!b.textContent.includes("Groseillier")) throw new Error(`devant le groseillier, le bouton dit « ${b.textContent} »`);
-    if(!b.dataset.action.includes("Cueillir les groseilles")) throw new Error(`le toucher ferait « ${b.dataset.action} »`);
-    b.click(); frames(2);
-    const n = owned("baie") - avant;
-    if(n <= 0) throw new Error("cueillir le groseillier n'a pas donné de groseilles");
-    if(objet("baie").nom !== "Groseille") throw new Error(`dans le sac : « ${objet("baie").nom} »`);
-    if(!(objet("baie").prix > 0)) throw new Error("les groseilles n'ont pas de prix au comptoir");
-    const v = modele();
-    if(!v || v.etat !== "cueilli") throw new Error(`cueilli, le groseillier garde ses groseilles (${JSON.stringify(v)})`);
-    sacTake("baie", n);                                // le sac comme avant (sinon le thym ne rentre plus, plus loin)
-    return `« ${b.textContent.trim()} », ${u.grappes} grappes de la saison, +${n} groseilles (puis les grappes vides), ${objet("baie").prix} or au comptoir`;
+    try {
+      forcerSaison("ete"); rafraichirSaison();
+      const u = modele();
+      if(!u || u.etat !== "plein" || !(u.grappes > 0) || u.saison !== "ete") throw new Error(`l'été, le groseillier : ${JSON.stringify(u)}`);
+      placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
+      if(!b.textContent.includes("Groseillier")) throw new Error(`devant le groseillier, le bouton dit « ${b.textContent} »`);
+      if(!b.dataset.action.includes("Cueillir les groseilles")) throw new Error(`le toucher ferait « ${b.dataset.action} »`);
+      b.click(); frames(2);
+      const n = owned("baie") - avant;
+      if(n <= 0) throw new Error("cueillir le groseillier n'a pas donné de groseilles");
+      if(objet("baie").nom !== "Groseille") throw new Error(`dans le sac : « ${objet("baie").nom} »`);
+      if(!(objet("baie").prix > 0)) throw new Error("les groseilles n'ont pas de prix au comptoir");
+      const v = modele();
+      if(!v || v.etat !== "cueilli") throw new Error(`cueilli, le groseillier garde ses groseilles (${JSON.stringify(v)})`);
+      sacTake("baie", n);                              // le sac comme avant (sinon le thym ne rentre plus, plus loin)
+      setEtat(i, {vide: undefined, arrose: undefined});
+      forcerSaison("printemps"); rafraichirSaison();
+      const f = modele();
+      if(!f || f.etat !== "fleurs" || !(f.fleurs > 0)) throw new Error(`au printemps, le groseillier : ${JSON.stringify(f)}`);
+      forcerSaison("automne"); rafraichirSaison(); frames(1, .016);
+      if(!b.dataset.action.includes("été prochain")) throw new Error(`en automne, le toucher ferait « ${b.dataset.action} »`);
+      const au = modele();
+      if(!au || au.grappes) throw new Error(`en automne, le groseillier a encore des grappes (${JSON.stringify(au)})`);
+      forcerSaison("hiver"); rafraichirSaison();
+      const h = modele();
+      if(!h || !h.nu) throw new Error(`l'hiver, le groseillier n'est pas nu (${JSON.stringify(h)})`);
+      return `l'été, « ${b.textContent.trim()} », ${u.grappes} grappes, +${n} groseilles (puis les grappes vides), ${objet("baie").prix} or au comptoir ; ${f.fleurs} grappes de fleurs au printemps ; rien à cueillir en automne ; nu l'hiver`;
+    } finally { forcerSaison(null); rafraichirSaison(); }
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();
@@ -1147,6 +1161,7 @@ export async function verifier(){
     if(b < 0) throw new Error("pas de place pour trois buissons");
     const buissons = [b - 1, b, b + 1];
     try {
+      forcerSaison("ete");                              // les groseilles : l'été seulement
       for(const j of buissons){ setObj(j, "buisson"); setEtat(j, {vide: Date.now()}); }
       sans("arrosoir"); sacAdd("arrosoirBronze", 1); enMain("arrosoirBronze"); state.eau = OUTILS.arrosoirBronze.eau;
       placePlayer(centerOf(b % N), centerOf(Math.floor(b / N) + 1) + .1, 0, -1); frames(1, .016);
@@ -1155,7 +1170,7 @@ export async function verifier(){
       const arroses = buissons.filter(j => state.ile[j] && state.ile[j].arrose).length;
       if(arroses !== 3) throw new Error(`l'arrosoir en bronze a arrosé ${arroses} buisson(s) au lieu de 3`);
       if(state.eau !== OUTILS.arrosoirBronze.eau - 1) throw new Error("un seul arrosage aurait dû servir");
-    } finally { for(const j of buissons) setObj(j, null); forcerMeteo(null); hold(null); }
+    } finally { for(const j of buissons) setObj(j, null); forcerMeteo(null); forcerSaison(null); hold(null); }
     /* la canne en bois : le fil casse sur un poisson légendaire */
     sans("canne"); place(1); sacAdd("canneBois", 1); enMain("canneBois"); place(1);   // sac plein : pas de pêche
     let t = null;

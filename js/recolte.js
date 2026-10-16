@@ -34,7 +34,7 @@
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse,
-  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison } from "./donnees.js";
+  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh, lieuEau } from "./monde/ile.js";
@@ -320,6 +320,10 @@ function actionOf(t){
   if(t.o === "buisson"){
     if(g < 1) return info(`🌱 Jeune groseillier : adulte dans ${duree(growthLeft(t.i))}`);
     if(tenue === "hache") return {label: `🪓 Couper le groseillier${h ? ` (${RECOLTE.buisson.coups - h})` : ""}`, run: () => couper(t)};
+    if(!groseillesDeSaison()){                            // ses groseilles, l'été seulement (comme un vrai groseillier)
+      const s = saison();
+      return info(s === "printemps" ? "🌸 Groseillier en fleurs : ses groseilles mûriront en été" : s === "automne" ? "🍂 Groseillier : ses groseilles reviendront l'été prochain" : "❄️ Groseillier : il dort ; ses groseilles mûrissent en été");
+    }
     const b = baiesLeft(t.i);
     return b === 0 ? {label: "✋ Cueillir les groseilles", run: () => cueillirBaies(t)}
       : b < 0 ? avecOutil("arrosoir", 0, {label: `💧 Arroser${tenue === "arrosoir" ? ` (eau ${state.eau}/${OUTILS[state.main].eau})` : ""}`, run: () => arroser(t)}, "💧 Il te faut un arrosoir : fabrique-le à l'établi de la Scierie")

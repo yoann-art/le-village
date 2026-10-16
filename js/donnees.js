@@ -287,7 +287,7 @@ export const RECOLTE = {
   rockGrenat: {nom:"le rocher à grenats", outil:"pioche", coups:4, res:"grenat", auBout:1, force:3},
   rockGeode:  {nom:"la géode", outil:"pioche", coups:2, res:"geode", auBout:1, force:3},
   herbe:  {nom:"les herbes hautes", cueille:"fibre", n:2, repousse:900, graine:"graineHerbe"},
-  buisson:{nom:"le groseillier", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
+  buisson:{nom:"le groseillier", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600, saisons:["ete"]},   // ses groseilles : l'été seulement (comme un vrai groseillier, demande de Yo, 16 octobre 2026)
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
      3 fois sur 4 (chance) ; il repousse sur place en 12 h (repousse) ; à régler en jouant */
   thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75},
@@ -654,8 +654,8 @@ export const PRODUITS = {
   fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
   /* le groseillier de l'île (nom choisi par Yo, 16 octobre 2026 ; la clé « baie » reste, pour les parties en cours) ;
      règle de Yo (même jour) : toutes les baies du jeu ont un prix au comptoir (commune 1 or, peu commune 2, rare 8) */
-  baie:   {nom:"Groseille", pluriel:"groseilles", une:true, emoji:"🍒", prix:1, aide:"Les groseilles se cueillent sur les groseilliers de l'île (mains libres). Un groseillier cueilli et arrosé en redonne une heure après ; la pluie l'arrose aussi.",
-    usage:"Des grappes de groseilles rouges, translucides et acidulées. Plus tard (Grand Carnet), la tarte aux fruits et la confiture."},
+  baie:   {nom:"Groseille", pluriel:"groseilles", une:true, emoji:"🍒", prix:1, aide:"Les groseilles se cueillent l'été, sur les groseilliers de l'île (mains libres). L'été, un groseillier cueilli et arrosé en redonne une heure après ; la pluie l'arrose aussi.",
+    usage:"Des grappes de groseilles rouges, translucides et acidulées, l'été seulement. Plus tard (Grand Carnet), la tarte aux fruits et la confiture."},
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
   /* Les matières de la mine (étape 1.11, morceau 2 ; Grand Carnet, « Les pierres et minerais ») : leur dessin (pierreIco) ;
      prix au comptoir (morceau 3) */
@@ -1096,6 +1096,8 @@ export const reglerHemisphere = h => { sud = h === "sud"; };
 export const forcerSaison = s => { forcee = s; };            // pour la vérification et les essais (null : la vraie)
 export const saisonDu = d => forcee || SAISON_DU_MOIS[(d.getMonth() + (sud ? 6 : 0)) % 12];
 export const saison = () => saisonDu(new Date());
+/* Le groseillier n'a ses groseilles que l'été (au printemps il fleurit, en automne ses feuilles jaunissent, l'hiver il est nu) */
+export const groseillesDeSaison = () => RECOLTE.buisson.saisons.includes(saison());
 /* En hiver, ce qu'on a planté pousse deux fois moins vite (étape 1.10, morceau 4) : le temps passé en hiver compte
    pour moitié ; tempsDePousse compte mois par mois, la saison change avec le mois */
 export const POUSSE_HIVER = .5;

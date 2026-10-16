@@ -275,6 +275,7 @@ export function thymLeft(i){
 export function baiesLeft(i){                         // -1 : vide, pas arrosé ; 0 : plein ; sinon secondes avant le retour
   const c = state.ile[i];
   if(!c || !c.vide) return 0;
+  if(Date.now() - c.vide > 100 * 86400000) return 0;    // cueilli un été d'avant : l'été suivant, il est de nouveau plein
   const a = c.arrose || pluieDepuis(c.vide);          // la pluie arrose aussi (étape 1.10, morceau 4), même jeu fermé
   if(!a) return -1;
   return Math.max(0, RECOLTE.buisson.retour - (Date.now() - a) / 1000);

@@ -29,7 +29,7 @@ function lune(d){
 const EFFET = {
   beau: "Par beau temps, la carpe koï se montre à l'étang au printemps, et les papillons volettent.",
   nuages: "Un temps calme : tout le monde est de sortie.",
-  pluie: "La pluie arrose les groseilliers : leurs groseilles reviennent. L'anguille sort de l'étang la nuit, et les papillons se cachent.",
+  pluie: "La pluie arrose les groseilliers : l'été, leurs groseilles reviennent. L'anguille sort de l'étang la nuit, et les papillons se cachent.",
   orage: "L'orage arrose les groseilliers. Une nuit d'orage, le Vieux Silure rôde dans l'étang… Les papillons se cachent.",
   neige: "La neige blanchit l'herbe, et les papillons se cachent."
 };
