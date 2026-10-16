@@ -51,6 +51,7 @@ import { torcheAllumee, updateTorche } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
 import { forcerSaison, saisonDu, reglerHemisphere, saison } from "../js/donnees.js";
+import { allumerCompteur, rapportPerf, mesures } from "../js/performance.js";
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable, regard, tenirTorche } from "../js/monde/personnage.js";
@@ -449,6 +450,21 @@ export async function verifier(){
       if(!h || !h.nu) throw new Error(`l'hiver, le groseillier n'est pas nu (${JSON.stringify(h)})`);
       return `l'été, « ${b.textContent.trim()} », ${u.grappes} grappes, +${n} groseilles (puis les grappes vides), ${objet("baie").prix} or au comptoir ; ${f.fleurs} grappes de fleurs au printemps ; rien à cueillir en automne ; nu l'hiver`;
     } finally { forcerSaison(null); rafraichirSaison(); }
+  });
+  await etape("Le compteur de performance (demande de Yo) : il s'allume en touchant la version, compte les images, et son rapport dit tout", async () => {
+    try {
+      $("#version").click();                            // le toucher de Yo sur la version
+      if($("#perf").hidden) throw new Error("toucher la version n'allume pas le compteur");
+      await wait(1500);
+      const m = mesures();
+      if(!(m.ips > 0)) throw new Error(`le compteur ne compte pas les images (${JSON.stringify(m)})`);
+      if(!$("#perf").textContent.includes("images/s")) throw new Error(`le compteur affiche « ${$("#perf").textContent} »`);
+      const r = rapportPerf();
+      for(const mot of ["Rapport de performance", "Images par seconde", "triangles", "Téléphone"]) if(!r.includes(mot)) throw new Error(`le rapport ne dit pas « ${mot} »`);
+      $("#version").click();
+      if(!$("#perf").hidden) throw new Error("toucher la version ne l'éteint pas");
+      return `${m.ips} images/s, ${m.triangles} triangles, ${m.dessins} dessins ; le rapport (${r.split("\n").length} lignes)`;
+    } finally { allumerCompteur(false); }
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();

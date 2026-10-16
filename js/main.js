@@ -45,6 +45,7 @@ import "./sac.js";
 import "./barre.js";
 import "./saisons.js";
 import "./station.js";
+import { debutImage, finImage } from "./performance.js";   // le compteur de performance (demande de Yo, 16 octobre 2026)
 
 /* Touche Échap : ferme ce qui est ouvert */
 window.addEventListener("keydown", e => {
@@ -112,6 +113,7 @@ renderer.domElement.addEventListener("webglcontextlost", e => {
 let last = performance.now();
 function tick(now){
   requestAnimationFrame(tick);                              // en premier : la boucle repart, quoi qu'il arrive
+  garde("compteur", () => debutImage(now));                // le compteur de performance : le temps entre deux images
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && !voyageEnCours() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
   if(pushing) dirty = true;
@@ -137,6 +139,7 @@ function tick(now){
   garde("dessin", () => renderer.render(currentScene(), camera));
   if(premiereActive()) garde("mains", () => { updateMains(dt, isInside()); dessinerMains(); });   // à la première personne : les mains, par-dessus
   else mainsInactives();
+  garde("compteur", finImage);                             // ... et le travail du jeu sur cette image, ce qui a été dessiné
   if(dirty && now - lastSave > 2000) garde("sauvegarde", () => {
     const p = posBarque() || islandPos();                  // en barque : on se retrouvera au bout du ponton
     state.player = {x:+p.x.toFixed(2), z:+p.z.toFixed(2)};
