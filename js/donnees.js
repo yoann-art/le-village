@@ -652,8 +652,9 @@ export const PRODUITS = {
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19Q12 6 21 19Z" fill="#CFC6B4" stroke="#1C2230" stroke-opacity=".3"/><g fill="#8E8678"><circle cx="9" cy="16" r="1.3"/><circle cx="13" cy="13" r="1.1"/><circle cx="15.5" cy="17" r="1.4"/><circle cx="11.5" cy="17.5" r="1"/></g><g fill="#F2EDE2"><circle cx="11" cy="14.5" r="1"/><circle cx="17" cy="15" r=".9"/></g></svg>',
     usage:"En main, « 👣 Tracer » fait un chemin de gravier : une poignée par case."},
   fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
-  /* le groseillier de l'île (nom choisi par Yo, 16 octobre 2026 ; la clé « baie » reste, pour les parties en cours) */
-  baie:   {nom:"Groseille", pluriel:"groseilles", une:true, emoji:"🍒", aide:"Les groseilles se cueillent sur les groseilliers de l'île (mains libres). Un groseillier cueilli et arrosé en redonne une heure après ; la pluie l'arrose aussi.",
+  /* le groseillier de l'île (nom choisi par Yo, 16 octobre 2026 ; la clé « baie » reste, pour les parties en cours) ;
+     règle de Yo (même jour) : toutes les baies du jeu ont un prix au comptoir (commune 1 or, peu commune 2, rare 8) */
+  baie:   {nom:"Groseille", pluriel:"groseilles", une:true, emoji:"🍒", prix:1, aide:"Les groseilles se cueillent sur les groseilliers de l'île (mains libres). Un groseillier cueilli et arrosé en redonne une heure après ; la pluie l'arrose aussi.",
     usage:"Des grappes de groseilles rouges, translucides et acidulées. Plus tard (Grand Carnet), la tarte aux fruits et la confiture."},
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
   /* Les matières de la mine (étape 1.11, morceau 2 ; Grand Carnet, « Les pierres et minerais ») : leur dessin (pierreIco) ;

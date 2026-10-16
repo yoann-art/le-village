@@ -427,8 +427,9 @@ export async function verifier(){
     const n = owned("baie") - avant;
     if(n <= 0) throw new Error("cueillir le groseillier n'a pas donné de groseilles");
     if(objet("baie").nom !== "Groseille") throw new Error(`dans le sac : « ${objet("baie").nom} »`);
+    if(!(objet("baie").prix > 0)) throw new Error("les groseilles n'ont pas de prix au comptoir");
     sacTake("baie", n);                                // le sac comme avant (sinon le thym ne rentre plus, plus loin)
-    return `« ${b.textContent.trim()} », +${n} groseilles`;
+    return `« ${b.textContent.trim()} », +${n} groseilles, ${objet("baie").prix} or au comptoir`;
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();
