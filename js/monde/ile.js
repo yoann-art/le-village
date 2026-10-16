@@ -320,14 +320,14 @@ function buildObj(i){
     g.scale.setScalar(.92 + r * .2);
   } else if(o === "herbe"){                         // les herbes hautes (étape 2.1, morceau 3 : herbes.js, d'après l'image de Yo) ; rases une fois cueillies
     g.add(herbesModele(saison(), stageOf(i) < 2 ? "jeune" : herbeLeft(i) > 0 ? "rase" : "haute", r));
-  } else if(o === "buisson"){                       // une touffe ronde, avec ses baies si elle est pleine
+  } else if(o === "buisson"){                       // le groseillier : une touffe ronde, avec ses groseilles rouges s'il est plein (son modèle d'après l'image de Yo viendra)
     const st = stageOf(i);
     const [b1, b2] = enSaison().buisson;
     g.add(part(G.leaf, b1, 1.1, .9, 1.1, 0, .38, 0));
     g.add(part(G.leaf2, b2, 1.1, 1, 1.1, .18, .62, -.1));
     if(st === 2 && !baiesLeft(i))
       [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
-        g.add(part(G.head, 0x4A5FC1, .32, .32, .32, x, y, z)));
+        g.add(part(G.head, 0xD8303A, .32, .32, .32, x, y, z)));
     if(st < 2) g.scale.setScalar(st === 0 ? .4 : .7);
   } else if(ESSENCES.includes(o)){                  // un arbre de la forêt, planté avec sa graine : pousse, jeune plant, adulte
     const st = stageOf(i), m = arbreModele(o, r, st === 2 && (!FRUITS[o] || fruitsDeSaison(o) && !fruitsLeft(i)));

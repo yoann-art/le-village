@@ -7,8 +7,9 @@
      et ne revient jamais (ensuite, la pierre se trouve à la mine) ;
    - des herbes hautes : « ✋ Cueillir » (des fibres ; rases, elles repoussent) ; cueillies une 2e fois de suite :
      « ✋ Arracher » (des fibres et une graine ; elles ne repoussent pas) ;
-   - un buisson de baies : « ✋ Cueillir les baies » (le buisson est vide) ; vide : « 💧 Arroser » (l'arrosoir ;
-     les baies reviennent une heure après) ; la hache en main : « 🪓 Couper le buisson » (une graine) ;
+   - un groseillier (le buisson de baies de l'île, nommé par Yo le 16 octobre 2026) : « ✋ Cueillir les groseilles » (il
+     est vide) ; vide : « 💧 Arroser » (l'arrosoir ; les groseilles reviennent une heure après) ; la hache en main :
+     « 🪓 Couper le groseillier » (une graine) ;
    - l'eau (mer, étang), l'arrosoir en main : « 💧 Remplir l'arrosoir » ; chaque arrosage use une mesure d'eau
      (state.eau ; une jauge la montre dans sa case rapide et dans le sac) ;
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
@@ -240,7 +241,7 @@ function nomCible(t){
   if(FLEURS[t.o]) return jeune ? `🌱 Jeune ${FLEURS[t.o].nom.toLowerCase()}` : `${EMOJI_FLEUR[t.o] || "🌼"} ${FLEURS[t.o].nom}`;
   if(t.o === "herbe") return jeune ? "🌱 Jeunes herbes" : "🌾 Herbes hautes";
   if(t.o === "thym") return jeune ? "🌱 Jeune thym" : "🌿 Thym";
-  if(t.o === "buisson") return jeune ? "🌱 Jeune buisson" : "🫐 Buisson de baies";
+  if(t.o === "buisson") return jeune ? "🌱 Jeune groseillier" : "🍒 Groseillier";
   if(t.o === "tree" || ESSENCES.includes(t.o)){ const n = sansArticle(RECOLTE[t.o].nom); return jeune ? `🌱 Jeune ${n.toLowerCase()}` : `${EMOJI_ARBRE[t.o] || "🌳"} ${n}`; }
   if(t.o === "rock" && t.w === ILE) return "🪨 Pierre des champs";     // le rocher de l'île (nom choisi par Yo, 15 octobre 2026)
   if(RECOLTE[t.o]) return `${t.o === "rockOr" ? "✨" : PRECIEUX.has(t.o) ? "💎" : "🪨"} ${sansArticle(RECOLTE[t.o].nom)}`;
@@ -317,12 +318,12 @@ function actionOf(t){
     return r > 0 ? info(`🌿 Le thym repousse : encore ${duree(r)}`) : {label: "✋ Cueillir le thym", run: () => cueillirThym(t)};
   }
   if(t.o === "buisson"){
-    if(g < 1) return info(`🌱 Jeune buisson : adulte dans ${duree(growthLeft(t.i))}`);
-    if(tenue === "hache") return {label: `🪓 Couper le buisson${h ? ` (${RECOLTE.buisson.coups - h})` : ""}`, run: () => couper(t)};
+    if(g < 1) return info(`🌱 Jeune groseillier : adulte dans ${duree(growthLeft(t.i))}`);
+    if(tenue === "hache") return {label: `🪓 Couper le groseillier${h ? ` (${RECOLTE.buisson.coups - h})` : ""}`, run: () => couper(t)};
     const b = baiesLeft(t.i);
-    return b === 0 ? {label: "✋ Cueillir les baies", run: () => cueillirBaies(t)}
+    return b === 0 ? {label: "✋ Cueillir les groseilles", run: () => cueillirBaies(t)}
       : b < 0 ? avecOutil("arrosoir", 0, {label: `💧 Arroser${tenue === "arrosoir" ? ` (eau ${state.eau}/${OUTILS[state.main].eau})` : ""}`, run: () => arroser(t)}, "💧 Il te faut un arrosoir : fabrique-le à l'établi de la Scierie")
-      : info(`🫐 Baies dans ${duree(b)}`);
+      : info(`🍒 Groseilles dans ${duree(b)}`);
   }
   if(!t.o && GRAINES[state.main]) return {label: "🌱 Planter", run: () => planter(t)};
   if(!t.o && POSABLES[state.main])
@@ -469,7 +470,7 @@ function cueillirBaies(t){
   if(!sacOk(R.cueille, n)) return;
   sacAdd(R.cueille, n);
   setEtat(t.i, {vide: Date.now(), arrose: undefined}); save();      // l'heure de la cueillette : la pluie qui tombe ensuite l'arrose
-  toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le buisson pour qu'elles reviennent (la pluie l'arrose aussi)`, 3000);
+  toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le groseillier pour qu'elles reviennent (la pluie l'arrose aussi)`, 3000);
 }
 function arroser(t){
   const k = tenu("arrosoir");
@@ -477,7 +478,7 @@ function arroser(t){
   if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
   state.eau--;
   const cases = [t.i];
-  if(OUTILS[k].autour){                              // l'arrosoir en bronze : les buissons vides tout près, 3 au plus d'un coup
+  if(OUTILS[k].autour){                              // l'arrosoir en bronze : les groseilliers vides tout près, 3 au plus d'un coup
     for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++){
       if(!inb(t.x + dx, t.z + dz)) continue;
       const j = idx(t.x + dx, t.z + dz);
@@ -487,7 +488,7 @@ function arroser(t){
   for(const j of cases) setEtat(j, {arrose: Date.now()});
   renderBarre(); save();
   anim = {w: ILE, i: t.i, t: 0, kind: "shake"};
-  toast(`💧 ${cases.length > 1 ? `${cases.length} buissons arrosés` : "Arrosé"} : les baies reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
+  toast(`💧 ${cases.length > 1 ? `${cases.length} groseilliers arrosés` : "Arrosé"} : les groseilles reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
   user(k);
 }
 function remplir(){
@@ -497,7 +498,7 @@ function remplir(){
 }
 
 /* ----- Couper (un arbre, un buisson) ou miner (un rocher) ----- */
-const FIN = {tree: "🌳 L'arbre est tombé", pommier: "🍎 Le pommier est tombé", pin: "🌲 Le pin est tombé", bouleau: "🌳 Le bouleau est tombé", buisson: "🌿 Le buisson est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
+const FIN = {tree: "🌳 L'arbre est tombé", pommier: "🍎 Le pommier est tombé", pin: "🌲 Le pin est tombé", bouleau: "🌳 Le bouleau est tombé", buisson: "🍒 Le groseillier est coupé", rock: "🪨 Le rocher s'est brisé", rockCuivre: "🪨 Le rocher s'est brisé", rockOr: "✨ La veine d'or est épuisée",
   rockAmethyste: "💜 Le rocher s'ouvre sur une améthyste", rockGrenat: "❤️ Le rocher s'ouvre sur un grenat", rockGeode: "🥚 Une géode se détache"};
 const IL_FAUT = {hache: "🪓 Il te faut une hache : fabrique-la à l'établi de la Scierie", pioche: "⛏️ Il te faut une pioche : fabrique-la à l'établi de la Scierie"};
 const PIOCHE = {2: "une pioche en cuivre", 3: "une pioche en bronze"};
@@ -682,7 +683,7 @@ function reprendreLumiere(t){
 }
 
 /* ----- Planter ----- */
-const DEVIENT = {tree: "un chêne adulte", herbe: "des herbes hautes", buisson: "un buisson de baies", thym: "du thym prêt à cueillir"};
+const DEVIENT = {tree: "un chêne adulte", herbe: "des herbes hautes", buisson: "un groseillier", thym: "du thym prêt à cueillir"};
 function planter(t){
   const k = state.main, gr = GRAINES[k];
   const why = plantProblem(t, gr.plante);

@@ -177,7 +177,7 @@ export const OUTILS = {
     usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe trois fois plus fort que l'épée en bois, et dure longtemps."},
   epeeCuivre:  {nom:"Épée en cuivre", pluriel:"épées en cuivre", une:true, emoji:"🗡️", famille:"arme", force:2, solidite:50, tete:0xC8743C, usage:"Pour te défendre dans la grotte (⚔️ Attaquer) : elle frappe deux fois plus fort que l'épée en bois."},
   arrosoir:    {nom:"Arrosoir", pluriel:"arrosoirs", emoji:"🪣", famille:"arrosoir", force:1, eau:5, solidite:25,
-    usage:"5 arrosages quand il est plein. Remplis-le au bord de l'eau (mer ou étang), puis arrose les buissons de baies vides pour que les baies reviennent."},
+    usage:"5 arrosages quand il est plein. Remplis-le au bord de l'eau (mer ou étang), puis arrose les groseilliers vides pour que les groseilles reviennent."},
   /* Chaque outil dans chaque matière (morceau 3 de l'usure, validé par Yo) : à l'enclume de la Forge ; chaque matière
      dure plus longtemps, et apporte un petit avantage. eau : arrosages quand il est plein ; autour : arrose aussi les
      buissons vides tout près (3 au plus d'un coup) ; plusLoin : le filet attrape de plus loin (en P) ; pour la canne, la
@@ -185,9 +185,9 @@ export const OUTILS = {
   pelleBronze: {nom:"Pelle en bronze", pluriel:"pelles en bronze", une:true, emoji:"🪏", famille:"pelle", force:3, coups:1, solidite:100, tete:0xB98A4A,
     usage:"La plus solide des pelles : un seul coup par case, et elle dure longtemps. Face à l'eau douce : « Combler »."},
   arrosoirCuivre:{nom:"Arrosoir en cuivre", pluriel:"arrosoirs en cuivre", emoji:"🪣", famille:"arrosoir", force:2, eau:10, solidite:60, tete:0xC8743C,
-    usage:"10 arrosages quand il est plein. Remplis-le au bord de l'eau, puis arrose les buissons de baies vides."},
+    usage:"10 arrosages quand il est plein. Remplis-le au bord de l'eau, puis arrose les groseilliers vides."},
   arrosoirBronze:{nom:"Arrosoir en bronze", pluriel:"arrosoirs en bronze", emoji:"🪣", famille:"arrosoir", force:3, eau:15, solidite:125, autour:true, tete:0xB98A4A,
-    usage:"15 arrosages quand il est plein, et il arrose d'un coup les buissons vides tout près (3 au plus)."},
+    usage:"15 arrosages quand il est plein, et il arrose d'un coup les groseilliers vides tout près (3 au plus)."},
   canneCuivre: {nom:"Canne en cuivre", pluriel:"cannes en cuivre", une:true, emoji:"🎣", famille:"canne", force:2, solidite:40, tete:0xC8743C,
     usage:"Son moulinet de cuivre retient les poissons légendaires, qui cassent le fil de la canne en bois."},
   canneBronze: {nom:"Canne en bronze", pluriel:"cannes en bronze", une:true, emoji:"🎣", famille:"canne", force:3, solidite:80, tete:0xB98A4A,
@@ -223,8 +223,8 @@ export const GRAINES = {
     usage:"Prends-la en main, puis « Planter » devant une case d'herbe libre : un bouleau y poussera (jamais collé à un autre arbre). Ses feuilles deviennent d'or en automne."},
   graineHerbe:{nom:"Graine d'herbes", pluriel:"graines d'herbes", emoji:"🌱", plante:"herbe", pousse:1800,
     usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : des herbes hautes y pousseront."},
-  graineBuisson:{nom:"Graine de buisson", pluriel:"graines de buisson", emoji:"🌿", plante:"buisson", pousse:3600,
-    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : un buisson de baies y poussera."},
+  graineBuisson:{nom:"Graine de groseillier", pluriel:"graines de groseillier", emoji:"🌿", plante:"buisson", pousse:3600,
+    usage:"Prends-la en main, puis touche « Planter » devant une case d'herbe libre : un groseillier y poussera."},
   /* Le thym (étape 1.6, Grand Carnet : « Thym et sauge ») ; la durée de pousse est à régler en jouant */
   /* Les graines des arbres de la Forêt profonde (étape 1.7, Grand Carnet : « abattre un arbre peut donner sa graine,
      à replanter sur l'île ») ; sur l'île, l'arbre pousse en temps réel (pousse en secondes, à régler en jouant) */
@@ -287,7 +287,7 @@ export const RECOLTE = {
   rockGrenat: {nom:"le rocher à grenats", outil:"pioche", coups:4, res:"grenat", auBout:1, force:3},
   rockGeode:  {nom:"la géode", outil:"pioche", coups:2, res:"geode", auBout:1, force:3},
   herbe:  {nom:"les herbes hautes", cueille:"fibre", n:2, repousse:900, graine:"graineHerbe"},
-  buisson:{nom:"le buisson", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
+  buisson:{nom:"le groseillier", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600},
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
      3 fois sur 4 (chance) ; il repousse sur place en 12 h (repousse) ; à régler en jouant */
   thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75},
@@ -652,7 +652,9 @@ export const PRODUITS = {
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19Q12 6 21 19Z" fill="#CFC6B4" stroke="#1C2230" stroke-opacity=".3"/><g fill="#8E8678"><circle cx="9" cy="16" r="1.3"/><circle cx="13" cy="13" r="1.1"/><circle cx="15.5" cy="17" r="1.4"/><circle cx="11.5" cy="17.5" r="1"/></g><g fill="#F2EDE2"><circle cx="11" cy="14.5" r="1"/><circle cx="17" cy="15" r=".9"/></g></svg>',
     usage:"En main, « 👣 Tracer » fait un chemin de gravier : une poignée par case."},
   fibre:  {nom:"Fibre", pluriel:"fibres", emoji:"🌾", aide:"Les fibres se cueillent sur les herbes hautes."},
-  baie:   {nom:"Baie", pluriel:"baies", emoji:"🫐", aide:"Les baies se cueillent sur les buissons de baies."},
+  /* le groseillier de l'île (nom choisi par Yo, 16 octobre 2026 ; la clé « baie » reste, pour les parties en cours) */
+  baie:   {nom:"Groseille", pluriel:"groseilles", une:true, emoji:"🍒", aide:"Les groseilles se cueillent sur les groseilliers de l'île (mains libres). Un groseillier cueilli et arrosé en redonne une heure après ; la pluie l'arrose aussi.",
+    usage:"Des grappes de groseilles rouges, translucides et acidulées. Plus tard (Grand Carnet), la tarte aux fruits et la confiture."},
   cuivre: {nom:"Cuivre", pluriel:"cuivre", emoji:"🟠", aide:"Le cuivre se mine à la mine, sur les rochers à veines orangées."},
   /* Les matières de la mine (étape 1.11, morceau 2 ; Grand Carnet, « Les pierres et minerais ») : leur dessin (pierreIco) ;
      prix au comptoir (morceau 3) */
@@ -1168,6 +1170,7 @@ export const CHEMIN_DE = {gravier:"gravier", bloc:"paves", planche:"planches", g
   const grappe = col => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v6M12 6l5-2" stroke="#4E6B3A" stroke-width="1.5" fill="none"/>` +
     [[9, 12], [15, 12], [12, 16], [7.5, 17], [16.5, 17], [12, 21]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3" fill="${col}" stroke="#1C2230" stroke-opacity=".35"/>`).join("") + `</svg>`;
   PRODUITS.baiesHoux.icone = grappe("#D8342A");
+  PRODUITS.baie.icone = grappe("#E8384A");                 // une grappe de groseilles
   PRODUITS.baiesSureau.icone = grappe("#3A2A40");
   PRODUITS.fleursSureau.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">` +
     [[12, 6], [7, 10], [17, 10], [9, 15], [15, 15], [12, 19]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.2" fill="#F8F4E8" stroke="#C8B878"/><circle cx="${x}" cy="${y}" r=".9" fill="#E8C84A"/>`).join("") + `</svg>`;

@@ -927,15 +927,15 @@ window.PROMPTS_CARNET = [
 },
 {
 "id": "ile-buisson",
-"name": "Buisson de baies",
+"name": "Groseillier",
 "size": "commun",
-"line": "Un buisson de baies tout rond, environ 1 P de haut, feuillage vert en petites boules serrées, baies bleu nuit bien rondes."
+"line": "Un groseillier tout rond, environ 1 P de haut, feuillage vert tendre en petites boules serrées, petites feuilles à trois lobes, des grappes de groseilles rouges translucides et brillantes qui pendent tout autour."
 },
 {
 "id": "ile-buisson-vide",
-"name": "Buisson de baies, cueilli",
+"name": "Groseillier, cueilli",
 "size": "commun",
-"line": "Un buisson tout rond, environ 1 P de haut, feuillage vert en petites boules serrées, sans aucune baie."
+"line": "Le même groseillier tout rond, environ 1 P de haut, feuillage vert tendre en petites boules serrées, petites feuilles à trois lobes, sans aucune groseille : seulement quelques petites tiges vides."
 },
 {
 "id": "ile-thym",

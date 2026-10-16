@@ -28,7 +28,7 @@
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state, agrandirIle } from "../js/sauvegarde.js";
-import { sacAdd, sacCount, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
+import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol } from "../js/monde/ile.js";
 import { feuillesQuiVolent } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
@@ -409,6 +409,26 @@ export async function verifier(){
     const v = modele();
     if(!v || v.etat !== "rase") throw new Error(`cueillies, la touffe n'est pas rase (${JSON.stringify(v)})`);
     return `une touffe de la saison (${u.saison}), cueillie : +${owned("fibre") - fibres} fibres, puis rase`;
+  });
+  await etape("Le groseillier (le buisson de baies de l'île, nommé par Yo) : « 🍒 Groseillier », on y cueille des groseilles", async () => {
+    hold(null);
+    let t = null;
+    for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
+      const i = idx(x, z), s = idx(x, z + 1);
+      if(map.obj[i] === "buisson" && growth(i) >= 1 && baiesLeft(i) === 0 && !map.obj[s] && map.type[s] === "grass" && !state.sol[s] && !occ.has(s)){ t = [x, z]; break; }
+    }
+    if(!t) throw new Error("aucun groseillier plein accessible");
+    const avant = owned("baie");
+    placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
+    const b = $("#btn-act");
+    if(!b.textContent.includes("Groseillier")) throw new Error(`devant le groseillier, le bouton dit « ${b.textContent} »`);
+    if(!b.dataset.action.includes("Cueillir les groseilles")) throw new Error(`le toucher ferait « ${b.dataset.action} »`);
+    b.click(); frames(2);
+    const n = owned("baie") - avant;
+    if(n <= 0) throw new Error("cueillir le groseillier n'a pas donné de groseilles");
+    if(objet("baie").nom !== "Groseille") throw new Error(`dans le sac : « ${objet("baie").nom} »`);
+    sacTake("baie", n);                                // le sac comme avant (sinon le thym ne rentre plus, plus loin)
+    return `« ${b.textContent.trim()} », +${n} groseilles`;
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();
