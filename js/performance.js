@@ -46,12 +46,30 @@ let n = 0, tete = -1, avant = 0, debut = 0, dernier = 0, tri = 0, dessins = 0, p
 let preparation = 0;
 export function noterPreparation(ms){ preparation = ms; progAvant = renderer.info.programs.length; geoAvant = renderer.info.memory.geometries; }
 export const dureePreparation = () => preparation;
+/* Le jeu mis de côté (une autre application, l'écran éteint : le navigateur n'envoie plus d'images) : cette pause n'est pas
+   une saccade, elle n'est pas comptée (rapport de Yo du 16 octobre 2026 : 214 secondes passées hors du jeu comptées comme
+   une seule image, « 2 images par seconde ») ; on note quand le jeu a été repris, le rapport le dit */
+let reprise = 0, dehors = false, debutPause = 0, sauter = 0;
+const pauses = [];                                        // [début, fin] des dernières pauses : leurs secondes ne comptent pas
+export function mettreDeCote(oui){
+  if(oui === dehors) return;
+  dehors = oui;
+  avant = 0;                                              // l'image qui enjambe le départ ou le retour n'est pas comptée non plus
+  if(oui) debutPause = performance.now();
+  else { reprise = performance.now(); pauses.push([debutPause, reprise]); if(pauses.length > 8) pauses.shift(); sauter = 2; }   // la 1re image au retour peut porter une heure d'avant la pause : les 2 premières ne comptent pas
+}
+/* caché (une autre application, l'écran éteint), ou une autre fenêtre au premier plan (le navigateur ralentit alors le jeu à
+   une image par seconde sans le cacher) */
+document.addEventListener("visibilitychange", () => mettreDeCote(document.hidden));
+window.addEventListener("blur", () => mettreDeCote(true));
+window.addEventListener("focus", () => mettreDeCote(document.hidden));
 /* au début de chaque image (main.js) */
 export function debutImage(now){
   renderer.info.reset();
   debut = performance.now();
   tete = (tete + 1) % MAX; if(n < MAX) n++;
-  T[tete] = now; DT[tete] = avant ? now - avant : 0; TRAV[tete] = 0; PROG[tete] = GEO[tete] = 0;
+  T[tete] = now; DT[tete] = avant && !dehors && !sauter ? now - avant : 0; TRAV[tete] = 0; PROG[tete] = GEO[tete] = 0;   // pendant une pause : pas compté
+  if(sauter && !dehors) sauter--;
   SEC.fill(0, tete * NS, tete * NS + NS);
   avant = now;
 }
@@ -88,7 +106,12 @@ export function mesures(sur = GARDE){
   for(const j of L){ somme += DT[j]; travail += TRAV[j]; pire = Math.max(pire, DT[j]); pireTravail = Math.max(pireTravail, TRAV[j]); if(DT[j] > SACCADE) saccades++; prog += PROG[j]; geo += GEO[j]; }
   /* la pire seconde : le moins d'images en une seconde */
   let pireSeconde = Infinity;
-  for(let s = 0; s < sur / 1000; s++){ let k = 0; for(const j of L) if(T[j] >= t0 + s * 1000 && T[j] < t0 + (s + 1) * 1000) k++; if(k) pireSeconde = Math.min(pireSeconde, k); }
+  for(let s = 0; s < sur / 1000; s++){
+    const a = t0 + s * 1000, b = a + 1000;
+    if(pauses.some(([x, y]) => x < b + 100 && y > a - 100) || dehors && debutPause < b) continue;   // une seconde coupée par une pause
+    let k = 0; for(const j of L) if(T[j] >= a && T[j] < b) k++;
+    if(k) pireSeconde = Math.min(pireSeconde, k);
+  }
   const nb = L.length;
   return {ips: nb ? Math.round(1000 * nb / Math.max(1, somme)) : 0, ms: nb ? somme / nb : 0, travail: nb ? travail / nb : 0, pire, pireTravail, saccades,
     pireSeconde: pireSeconde === Infinity ? 0 : pireSeconde, triangles: tri, dessins, programmes: prog, formes: geo};
@@ -108,6 +131,15 @@ export function pics(sur = GARDE, seuil = 33){
   return places(sur).filter(j => TRAV[j] > seuil).map(j => {
     let c = 0; for(let k = 1; k < noms.length; k++) if(SEC[j * NS + k] > SEC[j * NS + c]) c = k;
     return {travail: TRAV[j], morceau: noms[c], ms: SEC[j * NS + c], programmes: PROG[j], formes: GEO[j]};
+  });
+}
+/* les saccades des `sur` dernières millisecondes : il y a combien de secondes, leur durée, le travail du jeu sur l'image
+   d'avant (celle qui s'est fait attendre), et si c'était juste au retour dans le jeu (moins de 2 s après une reprise) */
+export function saccades(sur = GARDE){
+  const t = performance.now();
+  return places(sur).filter(j => DT[j] > SACCADE).map(j => {
+    const p = (j - 1 + MAX) % MAX;
+    return {il: (t - T[j]) / 1000, ms: DT[j], travail: TRAV[p], retour: reprise > 0 && T[j] >= reprise && T[j] - reprise < 2000};
   });
 }
 /* Pour le banc de mesure (un essai sur le PC) : les images gardées après l'heure `depuis`, en clair */
@@ -166,6 +198,8 @@ export function rapportPerf(){
     `Une image : ${m.ms.toFixed(1)} ms en moyenne, la pire ${m.pire.toFixed(0)} ms ; saccades (plus de ${SACCADE} ms) : ${m.saccades} en 10 s`,
     `Travail du jeu par image : ${m.travail.toFixed(1)} ms, le pire ${m.pireTravail.toFixed(0)} ms (le reste, c'est le téléphone qui dessine)`,
     `Détail du travail en ms (moyenne, pire) : ${lourds || "rien de lourd"}`,
+    ...(() => { const S = saccades().slice(-6); return S.length ? [`Les saccades : ` + S.map(x => `il y a ${x.il.toFixed(1)} s, ${x.ms.toFixed(0)} ms (jeu ${x.travail.toFixed(0)} ms${x.retour ? ", au retour dans le jeu" : ""})`).join(" ; ")] : []; })(),
+    ...(reprise && performance.now() - reprise < GARDE ? [`Le jeu a été mis de côté (une autre application, l'écran éteint) puis repris il y a ${((performance.now() - reprise) / 1000).toFixed(1)} s : la pause n'est pas comptée`] : []),
     `Pics de travail (plus de 33 ms) : ${P.length} en 10 s` + (P.length ? ` ; ${avecProg} avec de nouveaux shaders, ${avecFormes} avec de nouvelles formes ; le pire : ${pire.travail.toFixed(0)} ms (${pire.morceau} ${pire.ms.toFixed(0)} ms)` : ""),
     `Nouveaux en 10 s : ${m.programmes} shaders, ${m.formes} formes envoyées à la carte graphique (tout préparé au chargement en ${fmt(preparation)} ms)`,
     `Dessiné : ${fmt(m.triangles)} triangles, ${m.dessins} dessins ; en mémoire : ${mem.geometries} formes, ${mem.textures} images, ${renderer.info.programs ? renderer.info.programs.length : "?"} shaders`,

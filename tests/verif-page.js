@@ -51,7 +51,7 @@ import { torcheAllumee, updateTorche } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
 import { forcerSaison, saisonDu, reglerHemisphere, saison } from "../js/donnees.js";
-import { allumerCompteur, rapportPerf, mesures } from "../js/performance.js";
+import { allumerCompteur, rapportPerf, mesures, mettreDeCote, releve } from "../js/performance.js";
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable, regard, tenirTorche } from "../js/monde/personnage.js";
@@ -461,6 +461,13 @@ export async function verifier(){
       if(!$("#perf").textContent.includes("images/s")) throw new Error(`le compteur affiche « ${$("#perf").textContent} »`);
       const r = rapportPerf();
       for(const mot of ["Rapport de performance", "Images par seconde", "triangles", "Téléphone"]) if(!r.includes(mot)) throw new Error(`le rapport ne dit pas « ${mot} »`);
+      /* le jeu mis de côté (une autre application) : la pause n'est pas comptée comme une image (rapport de Yo, 2 images/s) */
+      const t0 = performance.now();
+      mettreDeCote(true); while(performance.now() - t0 < 800){} mettreDeCote(false);   // 0,8 s sans aucune image, comme hors du jeu
+      await wait(500);
+      const pause = releve(t0).find(f => f.dt > 700);
+      if(pause) throw new Error(`la pause est comptée comme une image de ${pause.dt.toFixed(0)} ms`);
+      if(!rapportPerf().includes("mis de côté")) throw new Error("le rapport ne dit pas que le jeu a été mis de côté");
       $("#version").click();
       if(!$("#perf").hidden) throw new Error("toucher la version ne l'éteint pas");
       return `${m.ips} images/s, ${m.triangles} triangles, ${m.dessins} dessins ; le rapport (${r.split("\n").length} lignes)`;
