@@ -16,6 +16,7 @@ import { pinModele, souchePin } from "./pin.js";
 import { bouleauModele, soucheBouleau } from "./bouleau.js";
 import { pierreChamps } from "./pierre.js";
 import { herbesModele } from "./herbes.js";
+import { groseillierModele } from "./groseillier.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
    2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
@@ -294,7 +295,7 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock"]);
+const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
@@ -320,15 +321,9 @@ function buildObj(i){
     g.scale.setScalar(.92 + r * .2);
   } else if(o === "herbe"){                         // les herbes hautes (étape 2.1, morceau 3 : herbes.js, d'après l'image de Yo) ; rases une fois cueillies
     g.add(herbesModele(saison(), stageOf(i) < 2 ? "jeune" : herbeLeft(i) > 0 ? "rase" : "haute", r));
-  } else if(o === "buisson"){                       // le groseillier : une touffe ronde, avec ses groseilles rouges s'il est plein (son modèle d'après l'image de Yo viendra)
+  } else if(o === "buisson"){                       // le groseillier (étape 2.1, morceau 3 : groseillier.js, d'après les images de Yo) ; cueilli, ses grappes vides
     const st = stageOf(i);
-    const [b1, b2] = enSaison().buisson;
-    g.add(part(G.leaf, b1, 1.1, .9, 1.1, 0, .38, 0));
-    g.add(part(G.leaf2, b2, 1.1, 1, 1.1, .18, .62, -.1));
-    if(st === 2 && !baiesLeft(i))
-      [[.28,.5,.3],[-.3,.42,.26],[.05,.7,.34],[.36,.3,-.1],[-.2,.62,-.22],[-.38,.28,.05]].forEach(([x, y, z]) =>
-        g.add(part(G.head, 0xD8303A, .32, .32, .32, x, y, z)));
-    if(st < 2) g.scale.setScalar(st === 0 ? .4 : .7);
+    g.add(groseillierModele(st, saison(), st === 2 && !baiesLeft(i) ? "plein" : "cueilli", r, neigeBranches()));
   } else if(ESSENCES.includes(o)){                  // un arbre de la forêt, planté avec sa graine : pousse, jeune plant, adulte
     const st = stageOf(i), m = arbreModele(o, r, st === 2 && (!FRUITS[o] || fruitsDeSaison(o) && !fruitsLeft(i)));
     if(st < 2) m.scale.multiplyScalar(st === 0 ? .3 : .6);

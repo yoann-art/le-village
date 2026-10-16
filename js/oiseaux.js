@@ -150,7 +150,7 @@ function places(ou){
     const solLibre = map.type[i] !== "water" && traversable(o) && !occ.has(i);
     if(ou === "sol" && map.type[i] === "grass" && solLibre) out.push({x: cx, y: 0, z: cz});
     else if(ou === "arbres" && ARBRES.has(o) && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .75, y: 2.25, z: cz + Math.sin(a) * .75, perche: true});
-    else if(ou === "buissons" && o === "buisson" && growth(i) >= 1) out.push({x: cx, y: .85, z: cz, perche: true});
+    else if(ou === "buissons" && o === "buisson" && growth(i) >= 1) out.push({x: cx, y: 1.08, z: cz, perche: true});   // sur le dessus du groseillier
     else if(ou === "plage" && (map.type[i] === "sand" && solLibre && bord(x, z, j => eauLibre(j) && lieuEau(j) === "mer") || pontonCases.has(i))) out.push({x: cx, y: 0, z: cz});
     else if(ou === "etang" && solLibre && bord(x, z, j => map.type[j] === "water" && lieuEau(j) === "etang")) out.push({x: cx, y: 0, z: cz});
   }

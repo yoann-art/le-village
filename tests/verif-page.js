@@ -410,7 +410,7 @@ export async function verifier(){
     if(!v || v.etat !== "rase") throw new Error(`cueillies, la touffe n'est pas rase (${JSON.stringify(v)})`);
     return `une touffe de la saison (${u.saison}), cueillie : +${owned("fibre") - fibres} fibres, puis rase`;
   });
-  await etape("Le groseillier (le buisson de baies de l'île, nommé par Yo) : « 🍒 Groseillier », on y cueille des groseilles", async () => {
+  await etape("Le groseillier (nom et images de Yo) : ses grappes rouges, « 🍒 Groseillier », on y cueille des groseilles, puis ses grappes sont vides", async () => {
     hold(null);
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
@@ -418,7 +418,10 @@ export async function verifier(){
       if(map.obj[i] === "buisson" && growth(i) >= 1 && baiesLeft(i) === 0 && !map.obj[s] && map.type[s] === "grass" && !state.sol[s] && !occ.has(s)){ t = [x, z]; break; }
     }
     if(!t) throw new Error("aucun groseillier plein accessible");
-    const avant = owned("baie");
+    const avant = owned("baie"), i = idx(...t);
+    const modele = () => { let u = null; objMesh(i) && objMesh(i).traverse(o => { if(o.userData.groseillier) u = o.userData.groseillier; }); return u; };
+    const u = modele();
+    if(!u || u.etat !== "plein" || !(u.grappes > 0) || u.saison !== saison()) throw new Error(`le groseillier : ${JSON.stringify(u)}`);
     placePlayer(centerOf(t[0]), centerOf(t[1] + 1) + .1, 0, -1); frames(1, .016);
     const b = $("#btn-act");
     if(!b.textContent.includes("Groseillier")) throw new Error(`devant le groseillier, le bouton dit « ${b.textContent} »`);
@@ -428,8 +431,10 @@ export async function verifier(){
     if(n <= 0) throw new Error("cueillir le groseillier n'a pas donné de groseilles");
     if(objet("baie").nom !== "Groseille") throw new Error(`dans le sac : « ${objet("baie").nom} »`);
     if(!(objet("baie").prix > 0)) throw new Error("les groseilles n'ont pas de prix au comptoir");
+    const v = modele();
+    if(!v || v.etat !== "cueilli") throw new Error(`cueilli, le groseillier garde ses groseilles (${JSON.stringify(v)})`);
     sacTake("baie", n);                                // le sac comme avant (sinon le thym ne rentre plus, plus loin)
-    return `« ${b.textContent.trim()} », +${n} groseilles, ${objet("baie").prix} or au comptoir`;
+    return `« ${b.textContent.trim()} », ${u.grappes} grappes de la saison, +${n} groseilles (puis les grappes vides), ${objet("baie").prix} or au comptoir`;
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();

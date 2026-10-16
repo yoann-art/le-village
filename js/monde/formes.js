@@ -54,7 +54,8 @@ export const roof = (hex, w, h, y, x=0, z=0) => { const m = part(G.cone4, hex, w
    d'un arbre s'éclaire comme une boule, pas feuille par feuille ; n0 : la normale d'origine, pour la mêler) ; ombre(x, y, z)
    assombrit ou éclaire chaque sommet (l'ombre douce peinte, comme sur les images de Yo : le creux d'une boule de feuilles
    plus sombre, le dessus plus clair) ; une forme peut aussi porter sa propre teinte par sommet (l'attribut « teinte » :
-   la nervure d'une feuille, les sillons d'une écorce) */
+   la nervure d'une feuille, les sillons d'une écorce) ; couleur(x, y, z), quand il est là, donne la couleur de chaque sommet
+   (une groseille : rouge sombre en haut, orangée en bas, comme si la lumière la traversait) */
 const cTmp = new THREE.Color(), n0 = new THREE.Vector3();
 export function fusionner(morceaux){
   const prets = morceaux.map(p => { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone(); g.applyMatrix4(p.m); return [g, p]; });
@@ -70,6 +71,7 @@ export function fusionner(morceaux){
       n0.set(Nn.getX(i), Nn.getY(i), Nn.getZ(i));
       const v = p.normale ? p.normale(x, y, z, n0) : n0;
       nor[o * 3] = v.x; nor[o * 3 + 1] = v.y; nor[o * 3 + 2] = v.z;
+      if(p.couleur) cTmp.set(p.couleur(x, y, z));
       const k = (T ? T.getX(i) : 1) * (p.ombre ? p.ombre(x, y, z) : 1);
       col[o * 3] = cTmp.r * k; col[o * 3 + 1] = cTmp.g * k; col[o * 3 + 2] = cTmp.b * k;
     }
