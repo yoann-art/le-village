@@ -33,7 +33,7 @@ const paysage = await browser.newPage({viewport: {width: 812, height: 375}, isMo
 paysage.on("pageerror", e => erreurs.push(`✗ Erreur du jeu (en paysage) : ${e.message}`));
 try {
   await paysage.goto("http://localhost:8000/", {waitUntil: "load"});
-  await paysage.waitForFunction(() => /^v\d/.test(document.getElementById("version").textContent), null, {timeout: 30000});
+  await paysage.waitForFunction(() => /^v\d/.test(document.getElementById("version").textContent), null, {timeout: 60000});
   await paysage.waitForTimeout(1500);
   const p = await paysage.evaluate(async () => {
     const boite = s => { const e = document.querySelector(s); if(!e || e.hidden) return null; const b = e.getBoundingClientRect(); return b.width ? b : null; };

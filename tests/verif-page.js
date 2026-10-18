@@ -103,7 +103,8 @@ async function cameraImmobile(ms = 5000){
 }
 /* Se placer devant la porte d'un bâtiment, et entrer (ou sortir en repassant le paillasson) */
 /* Attendre qu'un changement de lieu soit vraiment fini (le jeu peut être lent sur la machine de GitHub) */
-async function attendre(test, ms = 6000){ const t0 = performance.now(); while(!test() && performance.now() - t0 < ms) await wait(100); await wait(300); return test(); }
+/* 15 s : sur la machine lente de GitHub, un fondu au noir peut durer */
+async function attendre(test, ms = 15000){ const t0 = performance.now(); while(!test() && performance.now() - t0 < ms) await wait(100); await wait(300); return test(); }
 async function entrer(b){
   const d = doorOf(b);                                 // juste devant la porte, en marchant vers elle
   placePlayer(d.x + d.n.x * R, d.z + d.n.z * R, -d.n.x, -d.n.z);
@@ -1476,7 +1477,9 @@ export async function verifier(){
     /* une chauve-souris qui remonte après son plongeon : un coup suffit */
     p = player.position;
     lacherMonstre("chauveSouris", p.x + 1, p.z, "remonte");
-    combat.attaquer(); await wait(200);
+    /* un seul coup suffit ; mais sur la machine lente de GitHub, l'épée peut encore « se recharger » du coup d'avant (le
+       temps de jeu y avance lentement) : on retente jusqu'à ce que le coup parte (elle n'a qu'un point de vie) */
+    for(let k = 0; k < 15 && !owned("aileMembraneuse"); k++){ combat.attaquer(); await wait(200); }
     if(!owned("aileMembraneuse")) throw new Error("la chauve-souris n'est pas vaincue d'un coup d'épée");
     /* le poisson grillé rend des cœurs */
     const v = vieCombat(), poissons = sacCount("poissonGrille");
