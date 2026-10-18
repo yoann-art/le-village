@@ -1,7 +1,7 @@
 /* ================= L'île =================
    Carte en cases, terrain, mer, arbres, rochers, herbes hautes et buissons de baies. */
 import { scene, sun } from "./scene.js";
-import { mat, G, part, toon, formeUnie, MAT_UNI } from "./formes.js";
+import { mat, G, part, toon } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
@@ -17,6 +17,7 @@ import { bouleauModele, soucheBouleau } from "./bouleau.js";
 import { pierreChamps } from "./pierre.js";
 import { herbesModele } from "./herbes.js";
 import { groseillierModele } from "./groseillier.js";
+import { thymModele } from "./thym.js";
 import { preparerSerie, oublierSerie, debutSeries, effacerSeries, ajouterEnSerie, finSeries } from "./series.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
@@ -297,26 +298,9 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson"]);
+const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson", "thym"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
-/* Le thym : ses cinq feuilles et ses sept fleurs, rassemblées en une seule forme (formeUnie, formes.js : un seul dessin au
-   lieu de douze, et de même pour son ombre ; mission de Yo, 16 octobre 2026 : les saccades), une par état, partagée */
-const THYM = new Map();
-function thymModele(adulte, ras){
-  const cle = ras ? "rase" : adulte ? "fleurie" : "jeune";
-  if(!THYM.has(cle)){
-    const t = new THREE.Group(), h = ras ? .45 : .85;
-    [[0,0,.72],[.2,.1,.52],[-.19,.12,.54],[.06,-.2,.5],[-.14,-.14,.46]].forEach(([x, z, s], k) =>
-      t.add(part(G.leaf2, k % 2 ? 0x4F8A45 : 0x5F9C4F, s, s * h, s, x, .3 * s * h * .8, z)));
-    if(adulte && !ras) [[.12,.36,.06],[-.15,.32,.12],[.02,.4,-.15],[.22,.27,-.08],[-.06,.42,.02],[-.22,.25,-.1],[.1,.3,.2]].forEach(([x, y, z]) =>
-      t.add(part(G.head, 0xA77BD8, .24, .24, .24, x, y, z)));
-    THYM.set(cle, formeUnie(t).geo);
-  }
-  const m = new THREE.Mesh(THYM.get(cle), MAT_UNI);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
 const meshes = new Map(), looks = new Map();
 function buildObj(i){
   const o = map.obj[i], r = ((i*9301 + 49297) % 233280) / 233280;
@@ -347,9 +331,9 @@ function buildObj(i){
     const st = stageOf(i), m = arbreModele(o, r, st === 2 && (!FRUITS[o] || fruitsDeSaison(o) && !fruitsLeft(i)));
     if(st < 2) m.scale.multiplyScalar(st === 0 ? .3 : .6);
     g.add(m);
-  } else if(o === "thym"){                          // une touffe basse vert sombre, fleurie de mauve ; rase une fois cueillie
+  } else if(o === "thym"){                          // le thym (étape 2.1, morceau 3 : thym.js, d'après l'image de Yo) ; ras une fois cueilli
     const st = stageOf(i);
-    g.add(thymModele(st === 2, thymLeft(i) > 0));
+    g.add(thymModele(saison(), st < 2 ? "jeune" : thymLeft(i) > 0 ? "rase" : "fleuri", r, neigeBranches()));
     if(st < 2) g.scale.setScalar(st === 0 ? .45 : .75);
   } else if(FLEURS[o]){                             // une fleur (étape 1.9) : pousse, feuilles, ou en fleur à sa couleur
     const st = stageOf(i);
@@ -460,7 +444,7 @@ export function setEtat(i, patch){
 }
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
 /* Une nouvelle saison (ou l'hémisphère choisi) : l'herbe et tout ce qui change de couleur sont repeints */
-const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || o === "souche" || o === "rock" || ESSENCES.includes(o);
+const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || o === "thym" || o === "souche" || o === "rock" || ESSENCES.includes(o);
 let peinte = saison();
 export function rafraichirSaison(){
   peinte = saison();

@@ -496,7 +496,8 @@ export async function verifier(){
     montrerChamp(camera, scene.fog.far + 6);
     if(faux) throw new Error(`le tri par carrés se trompe ${faux} fois sur ${tests}`);
     /* une touffe de thym et une fleur : un seul morceau ; la Scierie : quelques formes au lieu de dizaines de morceaux */
-    const un = o => { const i = map.obj.findIndex(x => x === o); let n = 0; objMesh(i).traverse(m => { if(m.isMesh) n++; }); return n; };
+    /* (le modèle près ou loin compte pour un, la boule invisible de son ombre ne se dessine pas) */
+    const un = o => { const i = map.obj.findIndex(x => x === o); let n = 0; objMesh(i).traverse(m => { if(m.isMesh && m.material !== MAT_OMBRE && !(m.parent.isLOD && m !== m.parent.levels[0].object)) n++; }); return n; };
     if(un("thym") !== 1) throw new Error(`une touffe de thym est faite de ${un("thym")} morceaux`);
     const fleur = map.obj.find(o => FLEURS[o]);
     if(fleur && un(fleur) !== 1) throw new Error(`une fleur (${fleur}) est faite de ${un(fleur)} morceaux`);
@@ -848,14 +849,30 @@ export async function verifier(){
     const libre = j => map.type[j] !== "water" && !map.obj[j] && !occ.has(j) && !state.sol[j];
     const i = map.obj.findIndex((o, j) => o === "thym" && libre(j + N));          // rien juste devant (vers le bas)
     if(i < 0) throw new Error("pas de thym sur l'île");
-    placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); frames(2);   // debout dans la touffe
-    if(!$("#btn-act").dataset.action.includes("thym")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
-    const avant = owned("thym");
-    $("#btn-act").click();
-    if(owned("thym") <= avant) throw new Error("pas de thym dans le sac");
-    frames(2);
-    if(!$("#btn-act").dataset.action.includes("repousse")) throw new Error(`après la cueillette, le bouton dit « ${$("#btn-act").dataset.action} »`);
-    return `${map.obj.filter(o => o === "thym").length} touffes sur l'île`;
+    /* son modèle d'après l'image de Yo : en fleurs l'été, ras une fois cueilli, des boutons au printemps, sans fleurs ensuite */
+    const modele = () => { let u = null; objMesh(i) && objMesh(i).traverse(o => { if(o.userData.thym) u = o.userData.thym; }); return u; };
+    try {
+      forcerSaison("ete"); rafraichirSaison();
+      const u = modele();
+      if(!u || u.etat !== "fleuri" || !(u.fleurs > 0)) throw new Error(`l'été, le thym : ${JSON.stringify(u)}`);
+      placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); frames(2);   // debout dans la touffe
+      if(!$("#btn-act").dataset.action.includes("thym")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
+      const avant = owned("thym");
+      $("#btn-act").click();
+      if(owned("thym") <= avant) throw new Error("pas de thym dans le sac");
+      frames(2);
+      if(!$("#btn-act").dataset.action.includes("repousse")) throw new Error(`après la cueillette, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      const v = modele();
+      if(!v || v.etat !== "rase" || v.fleurs) throw new Error(`cueilli, le thym : ${JSON.stringify(v)}`);
+      setEtat(i, {coupe: undefined});
+      forcerSaison("printemps"); rafraichirSaison();
+      const p = modele();
+      if(!p || !(p.tetes > 0) || p.saison !== "printemps") throw new Error(`au printemps, le thym : ${JSON.stringify(p)}`);
+      forcerSaison("hiver"); rafraichirSaison();
+      const h = modele();
+      if(!h || h.fleurs || h.tetes) throw new Error(`l'hiver, le thym fleurit (${JSON.stringify(h)})`);
+      return `${map.obj.filter(o => o === "thym").length} touffes sur l'île ; ${u.fleurs} fleurs l'été, rase une fois cueillie, ${p.tetes} têtes en boutons au printemps, sans fleurs l'hiver`;
+    } finally { forcerSaison(null); rafraichirSaison(); }
   });
   await etape("Le carnet de pêche", async () => {
     $("#btn-sac").click(); await wait(300);

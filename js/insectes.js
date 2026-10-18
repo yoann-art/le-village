@@ -159,7 +159,7 @@ function places(ou){
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
     if(!inb(x, z) || Math.hypot(x - px, z - pz) < 2) continue;
     const i = idx(x, z), o = map.obj[i], cx = centerOf(x), cz = centerOf(z), a = Math.random() * 6.28;
-    if(ou === "fleurs" && ((o === "thym" && !thymLeft(i) || o === "buisson") && growth(i) >= 1 || fleurie(i))) out.push({x: cx, y: o === "thym" ? .35 : o === "buisson" ? 1.05 : .55, z: cz});   // un jardin fleuri attire les papillons (carnet)
+    if(ou === "fleurs" && ((o === "thym" && !thymLeft(i) || o === "buisson") && growth(i) >= 1 || fleurie(i))) out.push({x: cx, y: o === "thym" ? .42 : o === "buisson" ? 1.05 : .55, z: cz});   // un jardin fleuri attire les papillons (carnet)
     else if(ou === "herbes" && o === "herbe") out.push({x: cx, y: .15, z: cz});
     else if(ou === "arbres" && ARBRES.has(o) && growth(i) >= 1) out.push({x: cx + Math.cos(a) * .3, y: .45 + Math.random() * .5, z: cz + Math.sin(a) * .3, tronc: true});
     else if(ou === "sol" && map.type[i] === "grass" && !o && !occ.has(i)) out.push({x: cx, y: .03, z: cz});
