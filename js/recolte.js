@@ -294,7 +294,9 @@ function actionOf(t){
     return g < 1 ? info(`🌱 Jeune chêne : adulte dans ${duree(growthLeft(t.i))}`)
       : avecOutil("hache", 0, {label: `🪓 Couper le chêne${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.hache);
   if(t.o === "rock" || t.o === "rockCuivre")         // mains libres : on le prend ; sinon, on le mine
-    return !state.main && !h ? {label: "✋ Prendre le rocher", run: () => prendre(t)}
+    /* la pierre des champs de l'île ne se ramasse pas à la main, elle se casse à la pioche (bug de Yo, 18 octobre 2026) ;
+       les rochers de la mine, oui (on les rapporte sur l'île) */
+    return !state.main && !h && !(t.w === ILE && t.o === "rock") ? {label: "✋ Prendre le rocher", run: () => prendre(t)}
       : avecOutil("pioche", 0, {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
   if(RECOLTE[t.o] && RECOLTE[t.o].outil === "pioche"){   // les roches des salles de la mine (étape 1.11)
     const R = RECOLTE[t.o];

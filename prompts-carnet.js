@@ -939,7 +939,7 @@ window.PROMPTS_CARNET = [
 },
 {
 "id": "ile-thym",
-"name": "Touffe de thym",
+"name": "Thym",
 "size": "commun",
 "line": "Une touffe basse de thym, environ 0,3 P de haut, petites feuilles vert-gris serrées et minuscules fleurs mauves."
 },
