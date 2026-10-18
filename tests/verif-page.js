@@ -861,17 +861,23 @@ export async function verifier(){
       $("#btn-act").click();
       if(owned("thym") <= avant) throw new Error("pas de thym dans le sac");
       frames(2);
-      if(!$("#btn-act").dataset.action.includes("repousse")) throw new Error(`après la cueillette, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      /* cueilli, il quitte sa place (décidé par Yo le 18 octobre 2026) ; ses graines selon la chance : on le remet */
+      if(map.obj[i]) throw new Error("cueilli, le thym reste à sa place");
+      setObj(i, "thym");
       const v = modele();
-      if(!v || v.etat !== "rase" || v.fleurs) throw new Error(`cueilli, le thym : ${JSON.stringify(v)}`);
+      if(!v || v.etat !== "fleuri") throw new Error(`remis, le thym : ${JSON.stringify(v)}`);
+      /* une partie d'avant : un thym cueilli avant ce jour est ras, et repousse */
+      setEtat(i, {coupe: Date.now()}); objMesh(i);
+      const ras = (() => { let u = null; objMesh(i).traverse(o => { if(o.userData.thym) u = o.userData.thym; }); return u; })();
       setEtat(i, {coupe: undefined});
+      if(!ras || ras.etat !== "rase") throw new Error(`un thym cueilli avant : ${JSON.stringify(ras)}`);
       forcerSaison("printemps"); rafraichirSaison();
       const p = modele();
       if(!p || !(p.tetes > 0) || p.saison !== "printemps") throw new Error(`au printemps, le thym : ${JSON.stringify(p)}`);
       forcerSaison("hiver"); rafraichirSaison();
       const h = modele();
       if(!h || h.fleurs || h.tetes) throw new Error(`l'hiver, le thym fleurit (${JSON.stringify(h)})`);
-      return `${map.obj.filter(o => o === "thym").length} touffes sur l'île ; ${u.fleurs} fleurs l'été, rase une fois cueillie, ${p.tetes} têtes en boutons au printemps, sans fleurs l'hiver`;
+      return `${map.obj.filter(o => o === "thym").length} touffes sur l'île ; ${u.fleurs} fleurs l'été, cueilli il quitte sa place (un thym cueilli avant reste ras), ${p.tetes} têtes en boutons au printemps, sans fleurs l'hiver`;
     } finally { forcerSaison(null); rafraichirSaison(); }
   });
   await etape("Le carnet de pêche", async () => {
@@ -1190,7 +1196,7 @@ export async function verifier(){
     hold(null);
     return `${poses} cases de planches en marchant, une enlevée à la pelle`;
   });
-  await etape("Les fleurs : cueillir, déterrer à la pelle, replanter la graine", async () => {
+  await etape("Les fleurs : cueillie, elle quitte sa place ; déterrer à la pelle, replanter la graine", async () => {
     place(3);
     const sauvages = map.obj.filter(o => FLEURS[o]).length;
     if(sauvages < 10) throw new Error(`seulement ${sauvages} fleurs sauvages sur l'île`);
@@ -1210,7 +1216,9 @@ export async function verifier(){
     const avant = owned(k);
     $("#btn-act").click(); frames(1);
     if(owned(k) !== avant + 1) throw new Error("la fleur cueillie n'est pas dans le sac");
-    if(!$("#btn-act").dataset.action.includes("refleurit")) throw new Error(`cueillie, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    /* cueillie, elle quitte sa place (décidé par Yo le 18 octobre 2026) ; on la remet pour la déterrer à la pelle */
+    if(map.obj[t.i]) throw new Error("cueillie, la fleur reste à sa place");
+    setObj(t.i, k, Date.now() - FLEUR_RARETE[FLEURS[k].rarete].pousse * 1000 - 1000);
     /* la pelle la déterre : sa graine revient dans le sac */
     if(!owned("pelleBois")) sacAdd("pelleBois", 1);
     enMain("pelleBois"); frames(1);

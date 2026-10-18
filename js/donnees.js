@@ -290,7 +290,7 @@ export const RECOLTE = {
   buisson:{nom:"le groseillier", outil:"hache", coups:2, parCoup:0, graine:"graineBuisson", cueille:"baie", n:3, retour:3600, saisons:["ete"]},   // ses groseilles : l'été seulement (comme un vrai groseillier, demande de Yo, 16 octobre 2026)
   /* Le thym (Grand Carnet, plante sauvage commune) : la cueillette donne toujours sa récolte, et sa graine
      3 fois sur 4 (chance) ; il repousse sur place en 12 h (repousse) ; à régler en jouant */
-  thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", chance:.75},
+  thym:   {nom:"le thym", cueille:"thym", n:2, repousse:43200, graine:"graineThym", rarete:"commun"},
   /* Les arbres de la Forêt profonde (étape 1.7, d'après le Grand Carnet) : on les coupe à la hache ; chacun donne son
      bois (res) et sa graine selon sa rareté (chance : commun 3 fois sur 4, peu commun 1 fois sur 2, rare 1 fois sur 5) ;
      dans la forêt, ils repoussent sur place (repousse en secondes : 1 jour, 3 jours, 1 semaine) ; sur l'île, ils
@@ -1084,7 +1084,15 @@ export const FLEURS = {
   perceNeige:{nom:"Perce-neige", pluriel:"perce-neige", couleurs:[0xFFFFFF], saisons:["hiver"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Il annonce la fin de l'hiver"},
   muguet:    {nom:"Muguet", pluriel:"muguets", couleurs:[0xFFFFFF], saisons:["printemps"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Porte-bonheur, à offrir"}
 };
-export const FLEUR_RARETE = {commun:{graine:.75, refleurit:43200, pousse:3600}, peuCommun:{graine:.5, refleurit:86400, pousse:10800}, rare:{graine:.2, refleurit:259200, pousse:21600}};
+export const FLEUR_RARETE = {commun:{graine:.75, deux:.25, refleurit:43200, pousse:3600}, peuCommun:{graine:.5, deux:.1, refleurit:86400, pousse:10800}, rare:{graine:.2, deux:0, refleurit:259200, pousse:21600}};
+/* Les graines d'une plante cueillie de l'île (décidé par Yo le 18 octobre 2026 : le thym et les fleurs disparaissent quand
+   on les cueille, « pour en avoir d'autres il faudra planter les graines ») : une graine selon sa rareté (comme les arbres :
+   commune 3 fois sur 4, peu commune 1 fois sur 2, rare 1 fois sur 5), et parfois une deuxième (deux : sa chance quand la
+   première est venue), pour qu'un bon jardinier puisse agrandir son jardin */
+export function grainesDe(rarete){
+  const R = FLEUR_RARETE[rarete] || FLEUR_RARETE.commun;
+  return Math.random() < R.graine ? 1 + (Math.random() < R.deux ? 1 : 0) : 0;
+}
 /* La saison d'une date, selon l'hémisphère du joueur (étape 1.10 ; bible : « le joueur choisit l'hémisphère nord ou
    sud au début de la partie ») : au sud, les saisons sont inversées (janvier y est en été). Tout ce qui suit les
    saisons passe par ici (fleurs, poissons, insectes, oiseaux, gibier, arbres, couleurs de l'île). L'hémisphère est

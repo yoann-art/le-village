@@ -14,9 +14,9 @@
      (state.eau ; une jauge la montre dans sa case rapide et dans le sac) ;
    - une graine en main : « 🌱 Planter » sur la case d'herbe libre devant soi ; elle pousse avec l'horloge
      du téléphone (pousse, jeune plant, adulte). Les arbres ne sont jamais collés ;
-   - du thym : « ✋ Cueillir le thym » (des brins, parfois sa graine ; il repousse sur place) ;
-   - une fleur en fleur (étape 1.9, FLEURS) : « ✋ Cueillir : … » (la fleur, parfois sa graine ; elle refleurit sur
-     place) ; hors de sa saison, des feuilles ; on les traverse, comme les herbes hautes et le thym ;
+   - du thym : « ✋ Cueillir le thym » (ses brins, ses graines selon la chance ; il quitte sa place, on replante ses graines) ;
+   - une fleur en fleur (étape 1.9, FLEURS) : « ✋ Cueillir : … » (la fleur, ses graines selon la chance ; elle ne refleurit pas sur
+     place : elle quitte sa place) ; hors de sa saison, des feuilles ; on les traverse, comme les herbes hautes et le thym ;
    - un insecte tout près : « 🥅 Attraper » (le filet ; voir insectes.js), avant tout le reste ; un oiseau posé :
      « 🥅 Lancer le filet » (voir oiseaux.js) ;
    - l'eau, la canne en main (ou dans le sac, mains libres) : « 🎣 Lancer » (voir peche.js) ;
@@ -33,7 +33,7 @@
    c'est au joueur de prendre lui-même l'outil adapté. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, objet, vitessePousse,
+import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, grainesDe, objet, vitessePousse,
   PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
@@ -198,8 +198,8 @@ function avecOutil(famille, force, action, manque){
 }
 const rien = () => {};
 /* Une graine récoltée : dans le sac (et une case rapide) ; sac plein : dans un coffre s'il y a de la place */
-function giveSeed(k){
-  const r = addOwned(k, 1);
+function giveSeed(k, n = 1){
+  const r = addOwned(k, n);
   if(r.sac) barreAuto(k);
   syncBarre();
   return r.sac ? "dans ton sac" : r.coffre ? "dans un coffre (sac plein)" : "perdue : ton sac et tes coffres sont pleins";
@@ -450,25 +450,28 @@ function arracher(t){
   const ou = giveSeed(R.graine); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}, +1 ${nomDe(R.graine, 1)} ${ou} : elles ne repousseront pas ici`, 3200);
 }
-/* Le thym (Grand Carnet) : la cueillette donne toujours ses brins, et parfois sa graine ; il repousse sur place */
+/* Le thym et les fleurs de l'île (décidé par Yo le 18 octobre 2026) : cueillis, ils quittent leur place et ne repoussent
+   pas ; on garde la récolte, et leurs graines selon la rareté (grainesDe) : pour en avoir d'autres, on les plante */
+const grainesTexte = (k, n, ou) => n ? `, +${n} ${nomDe(k, n)} ${ou}` : "";
 function cueillirThym(t){
   const R = RECOLTE.thym;
   if(!sacOk(R.cueille, R.n)) return;
   sacAdd(R.cueille, R.n);
-  setEtat(t.i, {coupe: Date.now()});
-  const graine = Math.random() < R.chance, ou = graine ? giveSeed(R.graine) : "";
+  setObj(t.i, null);
+  const n = grainesDe(R.rarete), ou = n ? giveSeed(R.graine, n) : "";
   save();
-  toast(`🌿 +${R.n} ${nomDe(R.cueille, R.n)}${graine ? `, +1 ${nomDe(R.graine, 1)} ${ou}` : ""}. Il repousse ici dans ${duree(R.repousse)}`, 3200);
+  toast(`🌿 +${R.n} ${nomDe(R.cueille, R.n)}${grainesTexte(R.graine, n, ou)}. ${n ? "Plante ses graines" : "Plante des graines de thym"} pour en avoir d'autres`, 3200);
 }
 /* Une fleur (étape 1.9, Grand Carnet : « cueillir une fleur sauvage donne toujours la fleur ; elle donne parfois sa
-   graine, selon sa rareté ; sans graine, on attend qu'elle refleurisse sur place ») */
+   graine, selon sa rareté ») */
 function cueillirFleur(t){
-  const f = FLEURS[t.o], R = FLEUR_RARETE[f.rarete];
+  const f = FLEURS[t.o], k = graineDeFleur(t.o);
   if(!sacOk(t.o, 1)) return;
   sacAdd(t.o, 1);
-  const graine = Math.random() < R.graine, ou = graine ? giveSeed(graineDeFleur(t.o)) : "";
-  setEtat(t.i, {cueilli: Date.now()}); save();
-  toast(`🌸 +1 ${f.nom.toLowerCase()}${graine ? `, +1 ${nomDe(graineDeFleur(t.o), 1)} ${ou}` : ""}. ${f.une ? "Elle" : "Il"} refleurit ici dans ${duree(R.refleurit)}`, 3200);
+  setObj(t.i, null);
+  const n = grainesDe(f.rarete), ou = n ? giveSeed(k, n) : "";
+  save();
+  toast(`🌸 +1 ${f.nom.toLowerCase()}${grainesTexte(k, n, ou)}. ${n ? "Plante sa graine" : "Plante une graine"} pour en avoir d'autres`, 3200);
 }
 function cueillirBaies(t){
   const R = RECOLTE.buisson, n = gain(R.n, R.cueille);

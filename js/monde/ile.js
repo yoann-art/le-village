@@ -282,7 +282,7 @@ export function baiesLeft(i){                         // -1 : vide, pas arrosé 
   if(!a) return -1;
   return Math.max(0, RECOLTE.buisson.retour - (Date.now() - a) / 1000);
 }
-/* Les fleurs (étape 1.9) : cueillie, elle refleurit sur place (FLEUR_RARETE.refleurit) ; temps restant en secondes */
+/* Les fleurs (étape 1.9) : cueillie, elle quitte sa place depuis le 18 octobre 2026 ; une fleur cueillie avant refleurit sur place (FLEUR_RARETE.refleurit) ; temps restant en secondes */
 export function fleurLeft(i){
   const c = state.ile[i], f = FLEURS[map.obj[i]];
   return f && c && c.cueilli ? Math.max(0, FLEUR_RARETE[f.rarete].refleurit - (Date.now() - c.cueilli) / 1000) : 0;
