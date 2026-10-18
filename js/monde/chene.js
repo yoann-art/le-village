@@ -279,7 +279,7 @@ export function presLoin(objPres, objLoin, dist){
   lod.update = function(camera){
     const L = this.levels;
     pCam.setFromMatrixPosition(camera.matrixWorld); pArbre.setFromMatrixPosition(this.matrixWorld);
-    const loin = petitALEcran(this.userData.hauteur * this.matrixWorld.getMaxScaleOnAxis(), pCam.distanceTo(pArbre), camera);
+    const loin = !recul && petitALEcran(this.userData.hauteur * this.matrixWorld.getMaxScaleOnAxis(), pCam.distanceTo(pArbre), camera);   // vu de dessus (recul) : toujours le modèle détaillé
     L[0].object.visible = !loin; L[1].object.visible = loin;
   };
   return lod;
