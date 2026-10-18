@@ -237,8 +237,12 @@ export const MAT_OMBRE = new THREE.MeshBasicMaterial({colorWrite: false, depthWr
    matière n'est donc « visible » que pendant le dessin des ombres du soleil (three.js trie ce qu'il dessine à l'image avant
    de dessiner les ombres, puis les ombres, puis l'image) : une ombre identique, un dessin de moins par arbre et par buisson */
 MAT_OMBRE.visible = false;
+export const MATS_OMBRE = [MAT_OMBRE];                // et sa copie pour les séries (series.js)
 const ombresDuSoleil = renderer.shadowMap.render;
-renderer.shadowMap.render = function(lumieres, sc, cam){ MAT_OMBRE.visible = true; try { ombresDuSoleil.call(this, lumieres, sc, cam); } finally { MAT_OMBRE.visible = false; } };
+renderer.shadowMap.render = function(lumieres, sc, cam){
+  for(const m of MATS_OMBRE) m.visible = true;
+  try { ombresDuSoleil.call(this, lumieres, sc, cam); } finally { for(const m of MATS_OMBRE) m.visible = false; }
+};
 export function ombreDe(f){
   return fusionner(f.boules.map(([x, y, z, r, fy = 1]) => ({geo: BOULE_BAS, m: new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion(), V(r * .8, r * .66 * fy, r * .8)), c: 0})));
 }
@@ -248,6 +252,7 @@ export function ombreDe(f){
 const LOIN = 24, pCam = new THREE.Vector3(), pArbre = new THREE.Vector3();
 let recul = 0;
 export const reglerRecul = d => { recul = d; };
+export const reculActuel = () => recul;
 function choisirDetail(camera){
   const L = this.levels;
   pCam.setFromMatrixPosition(camera.matrixWorld); pArbre.setFromMatrixPosition(this.matrixWorld);

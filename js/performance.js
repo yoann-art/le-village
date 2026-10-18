@@ -25,6 +25,7 @@ import { isInside, currentPlace } from "./lieux.js";
 import { vuePremiere } from "./vue.js";
 import { saison } from "./donnees.js";
 import { meteo } from "./monde/meteo.js";
+import { seriesIci } from "./monde/series.js";
 
 const CLE = "le-village-perf", SACCADE = 50, GARDE = 10000;   // une saccade : plus de 50 ms ; on garde les 10 dernières secondes
 let actif = false;
@@ -203,6 +204,7 @@ export function rapportPerf(){
     `Pics de travail (plus de 33 ms) : ${P.length} en 10 s` + (P.length ? ` ; ${avecProg} avec de nouveaux shaders, ${avecFormes} avec de nouvelles formes ; le pire : ${pire.travail.toFixed(0)} ms (${pire.morceau} ${pire.ms.toFixed(0)} ms)` : ""),
     `Nouveaux en 10 s : ${m.programmes} shaders, ${m.formes} formes envoyées à la carte graphique (tout préparé au chargement en ${fmt(preparation)} ms)`,
     `Dessiné : ${fmt(m.triangles)} triangles, ${m.dessins} dessins ; en mémoire : ${mem.geometries} formes, ${mem.textures} images, ${renderer.info.programs ? renderer.info.programs.length : "?"} shaders`,
+    (() => { const s = seriesIci(); return `Petites choses lointaines en série (à la première personne) : ${s.instances} objets en ${s.series} dessins`; })(),
     `Écran : ${innerWidth} × ${innerHeight} points, finesse × ${pr} (${fmt(innerWidth * pr)} × ${fmt(innerHeight * pr)} pixels dessinés)`,
     `Téléphone : ${puce()} · ${navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 120)}`
   ].join("\n");

@@ -1,6 +1,6 @@
 /* ================= L'île =================
    Carte en cases, terrain, mer, arbres, rochers, herbes hautes et buissons de baies. */
-import { scene } from "./scene.js";
+import { scene, sun } from "./scene.js";
 import { mat, G, part, toon, formeUnie, MAT_UNI } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
@@ -10,13 +10,14 @@ import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
-import { cheneModele, soucheModele } from "./chene.js";
+import { cheneModele, soucheModele, reculActuel } from "./chene.js";
 import { pommierModele, souchePommier } from "./pommier.js";
 import { pinModele, souchePin } from "./pin.js";
 import { bouleauModele, soucheBouleau } from "./bouleau.js";
 import { pierreChamps } from "./pierre.js";
 import { herbesModele } from "./herbes.js";
 import { groseillierModele } from "./groseillier.js";
+import { preparerSerie, oublierSerie, debutSeries, effacerSeries, ajouterEnSerie, finSeries } from "./series.js";
 
 /* Carte de l'île : N × N cases, une case = 1 P (agrandie de 40 à 56 avec Yo le 1er octobre 2026, puis à 96 le 14 octobre
    2026 : « une île plus ou moins équivalente à celle d'Animal Crossing » ; environ 70 cases de terre d'un bord à l'autre,
@@ -365,7 +366,8 @@ function buildObj(i){
   g.rotation.y = o === "coffre" || MEUBLES[o] ? 0 : r * 6.28;
   g.position.set(centerOf(i % N), 0, centerOf(Math.floor(i / N)));
   g.updateMatrixWorld(true); g.updateMatrixWorld = majSiVisible;   // sa place calculée une fois, puis seulement quand il se voit
-  scene.add(g); meshes.set(i, g); ranger(g, i, GRANDS(o));
+  scene.add(g); meshes.set(i, g); ranger(g, i);
+  if(EN_SERIE(o)) preparerSerie(g);                  // une petite chose : de loin, dessinée en série (series.js)
 }
 /* Pour un téléphone milieu de gamme (mission de Yo, 16 octobre 2026 : les saccades en marchant) : three.js recalcule à
    chaque image la place de chaque objet de la scène, même caché (environ 5 500 objets, dont 600 à l'écran : le cinquième
@@ -376,16 +378,18 @@ function majSiVisible(force){ if(this.visible) MAJ.call(this, force); }
 /* Refait le modèle d'une case (après une coupe, une plantation, une pousse) */
 function refreshObj(i){
   const old = meshes.get(i);
-  if(old){ scene.remove(old); meshes.delete(i); looks.delete(i); sortir(old, i); }
+  if(old){ scene.remove(old); meshes.delete(i); looks.delete(i); sortir(old, i); oublierSerie(old); }
   if(map.obj[i]) buildObj(i);
 }
 export const objMesh = i => meshes.get(i);
 /* Pour un téléphone modeste (l'île agrandie, étape 2.1 : trois fois plus de nature) : à chaque image, on ne garde à
    dessiner que ce qui est dans le champ de la caméra, avec une marge pour les ombres qui y tombent (une boule de 6 P autour
    de chaque objet), et pas plus loin que le brouillard (main.js) ; le reste attend, sans rien coûter */
-/* les petites choses (herbes, fleurs, thym, buissons, rochers, souches) : seulement jusqu'à PRES P (à la première personne,
-   au-delà, elles ne font que quelques points dans la brume) ; les arbres et les lumières, jusqu'au bout du brouillard */
-const PRES = 28, GRANDS = o => o === "tree" || ESSENCES.includes(o) || !!(MEUBLES[o] && MEUBLES[o].dehors);
+/* Tout, petites choses comprises (herbes, fleurs, thym, buissons, pierres, souches, coffres), jusqu'au bout du brouillard,
+   là où il les cache tout entières (correction de Yo, 16 octobre 2026 : des objets apparaissaient trop tard). Avant, les
+   petites choses s'arrêtaient à 28 P de la caméra (v2.1.6, pour un téléphone modeste) : à la première personne, le
+   brouillard n'en efface que 10 % à cette distance, elles y font 20 à 30 pixels, et jusqu'à 235 d'entre elles manquaient
+   à l'écran puis apparaissaient d'un coup en marchant (popping.mjs, dossier de la séance) */
 const champ = new THREE.Frustum(), mVue = new THREE.Matrix4(), boule = new THREE.Sphere(new THREE.Vector3(), 6);
 /* La partition de l'île (mission de Yo, 16 octobre 2026 : les saccades en marchant) : l'île est découpée en carrés de
    CARRE × CARRE cases ; chaque objet est rangé dans le carré de sa case. Un carré entier hors du champ, ou plus loin que le
@@ -395,21 +399,33 @@ const champ = new THREE.Frustum(), mVue = new THREE.Matrix4(), boule = new THREE
    n'est pris en mémoire à chaque image (des tableaux, Math.sqrt) : le navigateur a moins de ménage à faire */
 const CARRE = 8, NC = N / CARRE, DEMI = CARRE * Math.SQRT1_2;
 const carres = Array.from({length: NC * NC}, (_, k) => ({x: (k % NC) * CARRE - H + CARRE / 2, z: Math.floor(k / NC) * CARRE - H + CARRE / 2,
-  objets: [], grands: [], cache: false}));
+  objets: [], cache: false}));
 const carreDe = i => Math.floor((i % N) / CARRE) + Math.floor(Math.floor(i / N) / CARRE) * NC;
 const bouleCarre = new THREE.Sphere(new THREE.Vector3(), 6 + DEMI);
-function ranger(g, i, grand){ const c = carres[carreDe(i)]; c.objets.push(g); c.grands.push(grand); c.cache = false; }
-function sortir(g, i){ const c = carres[carreDe(i)], k = c.objets.indexOf(g); if(k >= 0){ c.objets.splice(k, 1); c.grands.splice(k, 1); } }
+function ranger(g, i){ const c = carres[carreDe(i)]; c.objets.push(g); c.cache = false; }
+function sortir(g, i){ const c = carres[carreDe(i)], k = c.objets.indexOf(g); if(k >= 0) c.objets.splice(k, 1); }
 /* Ce qui est posé au sol hors de la carte (le bois et les cailloux, sol.js) suit la même règle, jusqu'au bout du brouillard
    (au-delà, le brouillard le cache tout entier : rien ne change à l'image), et sa place n'est recalculée que quand il se voit */
 const caseDe = g => idx(tileOf(g.position.x), tileOf(g.position.z));
-export function dansLeChamp(g){ g.updateMatrixWorld(true); g.updateMatrixWorld = majSiVisible; ranger(g, caseDe(g), true); }
-export function horsDuChamp(g){ sortir(g, caseDe(g)); }
-export function montrerChamp(camera, loin){
+export function dansLeChamp(g){ g.updateMatrixWorld(true); g.updateMatrixWorld = majSiVisible; ranger(g, caseDe(g)); preparerSerie(g); }
+export function horsDuChamp(g){ sortir(g, caseDe(g)); oublierSerie(g); }
+/* Les petites choses vont en série au loin (series.js) ; pas les arbres (leurs modèles changent de feuillage selon la
+   distance), ni les lumières et les coffres posés */
+const EN_SERIE = o => !(o === "tree" || ESSENCES.includes(o) || MEUBLES[o] || o === "coffre");
+/* serie : à chaque image du jeu à la première personne (main.js), les petites choses lointaines dans le champ sont dessinées
+   en série au lieu d'elles-mêmes ; sans serie (vu de dessus, les essais), on ne fait que trier */
+export function montrerChamp(camera, loin, serie = false){
   camera.updateMatrixWorld();
   mVue.copy(camera.matrixWorld).invert().premultiply(camera.projectionMatrix);
   champ.setFromProjectionMatrix(mVue);
-  const cx = camera.position.x, cz = camera.position.z, pres = Math.min(loin, PRES);
+  const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z, recul = reculActuel();
+  let soleil = null;
+  if(!serie) effacerSeries();
+  else {                                              // la zone d'ombre du soleil de cette image (three.js la recalcule de même)
+    debutSeries();
+    sun.updateMatrixWorld(); sun.target.updateMatrixWorld(); sun.shadow.updateMatrices(sun);
+    soleil = sun.shadow.getFrustum();
+  }
   for(let k = 0; k < carres.length; k++){
     const c = carres[k], L = c.objets;
     if(!L.length) continue;
@@ -423,9 +439,12 @@ export function montrerChamp(camera, loin){
     for(let j = 0; j < L.length; j++){
       const g = L[j], ox = g.position.x - cx, oz = g.position.z - cz;
       boule.center.set(g.position.x, 1.5, g.position.z);
-      g.visible = Math.sqrt(ox * ox + oz * oz) < (c.grands[j] ? loin : pres) && champ.intersectsSphere(boule);
+      const vu = Math.sqrt(ox * ox + oz * oz) < loin && champ.intersectsSphere(boule);
+      /* de loin, en série : la même distance que celle du modèle léger (presLoin, chene.js), depuis la caméra en 3D */
+      g.visible = vu && !(serie && ajouterEnSerie(g, Math.sqrt(ox * ox + (g.position.y - cy) ** 2 + oz * oz), recul, champ, soleil));
     }
   }
+  if(serie) finSeries();
 }
 /* Change ce qu'il y a sur une case et le garde dans la partie (plante : heure de plantation) */
 export function setObj(i, o, plante){

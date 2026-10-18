@@ -474,9 +474,7 @@ export async function verifier(){
     } finally { allumerCompteur(false); }
   });
   await etape("La fluidité (mission de Yo, 16 octobre 2026) : le tri de ce que voit la caméra, les morceaux rassemblés, les programmes gardés, la carte graphique préparée", async () => {
-    const {ESSENCES} = await import("../js/monde/essences.js"), {MEUBLES} = await import("../js/donnees.js");
     /* le tri par carrés donne exactement ce que donnait l'ancien tri, objet par objet, sous 40 caméras au hasard */
-    const grand = o => o === "tree" || ESSENCES.includes(o) || !!(MEUBLES[o] && MEUBLES[o].dehors);
     const champ = new THREE.Frustum(), mv = new THREE.Matrix4(), boule = new THREE.Sphere(new THREE.Vector3(), 6), cam = camera.clone();
     let faux = 0, tests = 0;
     for(let k = 0; k < 40; k++){
@@ -487,7 +485,7 @@ export async function verifier(){
       for(let i = 0; i < N * N; i++){
         const g = objMesh(i); if(!g) continue;
         boule.center.set(g.position.x, 1.5, g.position.z); tests++;
-        const vu = Math.hypot(g.position.x - cam.position.x, g.position.z - cam.position.z) < (grand(map.obj[i]) ? loin : Math.min(loin, 28)) && champ.intersectsSphere(boule);
+        const vu = Math.hypot(g.position.x - cam.position.x, g.position.z - cam.position.z) < loin && champ.intersectsSphere(boule);
         if(vu !== g.visible) faux++;
       }
     }
@@ -504,6 +502,56 @@ export async function verifier(){
     if(MAT_OMBRE.visible) throw new Error("les boules d'ombre des arbres se dessinent à l'image");
     if(!rapportPerf().includes("préparé au chargement")) throw new Error("le rapport ne dit pas la préparation de la carte graphique");
     return `${tests} objets triés comme avant ; le thym et ${fleur} d'un seul morceau ; ${renderer.info.programs.length} programmes gardés`;
+  });
+  await etape("Les petits objets visibles dès qu'ils sont à l'écran (correction de Yo, 16 octobre 2026) : en avançant vers un groupe de fleurs, d'herbes, de pierres, vu de dessus et à la première personne", async () => {
+    const {view} = await import("../js/commandes.js"), {dessine, seriesIci} = await import("../js/monde/series.js");
+    const p0 = player.position.clone(), zoom0 = view.zoom, premiere0 = vuePremiere();
+    /* le coin le plus garni en petites choses (fleurs, herbes, thym, pierres, groseilliers) */
+    const petit = o => o && (FLEURS[o] || ["herbe", "thym", "rock", "buisson"].includes(o));
+    let but = null, mieux = 0;
+    for(let z = 10; z < N - 10; z += 2) for(let x = 10; x < N - 10; x += 2){
+      let n = 0; for(let dz = -4; dz <= 4; dz++) for(let dx = -4; dx <= 4; dx++) if(petit(map.obj[idx(x + dx, z + dz)])) n++;
+      if(n > mieux){ mieux = n; but = [x, z]; }
+    }
+    if(!but) throw new Error("aucun groupe de petites choses sur l'île");
+    const bx = centerOf(but[0]), bz = centerOf(but[1]);
+    /* ce que la caméra voit vraiment : la boîte de l'objet touche son champ, et il est plus près que la fin du brouillard */
+    const champ = new THREE.Frustum(), boite = new THREE.Box3();
+    const manquants = () => {
+      camera.updateMatrixWorld();
+      champ.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      const objets = [];
+      for(let i = 0; i < N * N; i++){ const g = objMesh(i); if(g) objets.push([g, map.obj[i]]); }
+      for(const i of Object.keys(state.sol || {})){ const g = solMesh(+i); if(g) objets.push([g, state.sol[i]]); }
+      let ecran = 0, caches = 0; const qui = [];
+      for(const [g, sorte] of objets){
+        boite.makeEmpty(); boite.expandByObject(g);
+        if(boite.isEmpty() || !champ.intersectsBox(boite) || boite.distanceToPoint(camera.position) >= scene.fog.far) continue;
+        ecran++;
+        if(!dessine(g)){ caches++; if(qui.length < 4) qui.push(`${sorte} à ${boite.distanceToPoint(camera.position).toFixed(0)} P`); }
+      }
+      return {ecran, caches, qui};
+    };
+    const vues = [["de dessus", false, 1], ["de dessus, dézoomé", false, 1.6], ["à la première personne", true, 1]];
+    let essais = 0, vusTotal = 0, enSerie = 0;
+    try {
+      for(const [nom, yeux, zoom] of vues){
+        choisirVue(yeux); view.zoom = zoom;
+        for(const d of [30, 22, 14, 7]){                  // il avance vers le groupe, en le regardant
+          placePlayer(bx, bz + d, 0, -1);
+          await wait(900);                                 // la caméra s'est posée, le tri a tourné
+          const r = manquants();
+          essais++; vusTotal += r.ecran;
+          if(yeux) enSerie = Math.max(enSerie, seriesIci().instances);
+          if(r.caches) throw new Error(`${nom}, à ${d} P du groupe : ${r.caches} objets à l'écran restent cachés (${r.qui.join(", ")})`);
+        }
+      }
+    } finally { choisirVue(premiere0); view.zoom = zoom0; placePlayer(p0.x, p0.z, 0, 1); await wait(300); }
+    /* et le tri cache toujours ce que la caméra ne voit pas */
+    let caches = 0; for(let i = 0; i < N * N; i++){ const g = objMesh(i); if(g && !g.visible) caches++; }
+    if(!caches) throw new Error("plus rien n'est caché : le tri de la caméra ne marche plus");
+    if(!enSerie) throw new Error("à la première personne, aucune petite chose lointaine n'est dessinée en série");
+    return `${essais} vues en avançant (dessus, dézoomé, aux yeux) : ${vusTotal} objets à l'écran, tous dessinés (jusqu'à ${enSerie} en série aux yeux) ; ${caches} objets hors du champ cachés`;
   });
   await etape("Le chêne (étape 2.1) : feuillu au printemps et en été, feuilles et glands au pied en automne, branches nues en hiver ; le jeune chêne", async () => {
     const t = arbreLibre();

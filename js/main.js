@@ -136,7 +136,7 @@ function tick(now){
     const cible = {beau: .025, nuages: .035, pluie: .065, orage: .12, neige: .03}[meteo()] || .03;
     VENT.force.value += (cible - VENT.force.value) * Math.min(1, dt * .5);
   });
-  if(!isInside()) garde("champ", () => { montrerChamp(camera, scene.fog.far + 6); reglerRecul(premiereActive() ? 0 : D); });   // seulement ce qu'on voit (l'île agrandie) ; les arbres du fond en moins détaillé
+  if(!isInside()) garde("champ", () => { reglerRecul(premiereActive() ? 0 : D); montrerChamp(camera, scene.fog.far + 6, premiereActive()); });   // seulement ce qu'on voit (l'île agrandie) ; les arbres du fond en moins détaillé ; aux yeux, les petites choses lointaines en série (series.js)
   garde("dessin", () => renderer.render(currentScene(), camera));
   if(premiereActive()) garde("mains", () => { updateMains(dt, isInside()); dessinerMains(); });   // à la première personne : les mains, par-dessus
   else mainsInactives();

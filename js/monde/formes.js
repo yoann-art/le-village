@@ -151,7 +151,11 @@ export function feuillageMat(o = {}, seuil = .9, gain = 1){
     sh.vertexShader = "uniform float ventTemps;\nuniform float ventForce;\n" + sh.vertexShader.replace("#include <begin_vertex>",
       `#include <begin_vertex>
       float hVent = max(0.0, position.y - ${seuil.toFixed(2)}) * ${gain.toFixed(2)};
+      #ifdef USE_INSTANCING
+      vec4 piedVent = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+      #else
       vec4 piedVent = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+      #endif
       float phVent = piedVent.x * 0.37 + piedVent.z * 0.29;
       transformed.x += sin(ventTemps * 1.6 + phVent + position.y * 0.8) * ventForce * hVent;
       transformed.z += cos(ventTemps * 1.25 + phVent * 1.3 + position.x) * ventForce * 0.6 * hVent;
