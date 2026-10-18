@@ -1088,6 +1088,10 @@ export const FLEURS = {
    flore sauvage (herbes hautes, groseilliers, thym ; les fleurs : combien de chaque commune et de chaque peu commune) */
 export const PIERRES_ILE = 30;
 export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 3};
+/* La nature qui se ressème (décidé avec Yo le 18 octobre 2026, monde/semis.js) : une fois par jour, la chance d'une plante
+   sauvage adulte de semer une voisine (tant que l'île n'en a pas plus qu'au départ), celle d'une plante arrosée, combien de
+   jours jeu fermé sont rattrapés au plus, et combien de petites plantes au plus dans un rayon de 2 cases */
+export const SEMIS = {sauvage: .05, arrose: .4, jours: 7, voisins: 8};
 export const FLEUR_RARETE = {commun:{graine:.75, deux:.25, refleurit:43200, pousse:3600}, peuCommun:{graine:.5, deux:.1, refleurit:86400, pousse:10800}, rare:{graine:.2, deux:0, refleurit:259200, pousse:21600}};
 /* Les graines d'une plante cueillie de l'île (décidé par Yo le 18 octobre 2026 : le thym et les fleurs disparaissent quand
    on les cueille, « pour en avoir d'autres il faudra planter les graines ») : une graine selon sa rareté (comme les arbres :

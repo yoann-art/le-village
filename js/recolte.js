@@ -33,7 +33,7 @@
    c'est au joueur de prendre lui-même l'outil adapté. */
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
-import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, enFleur, quandFleur, graineDeFleur, grainesDe, objet, vitessePousse,
+import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, SEMIS, enFleur, quandFleur, graineDeFleur, grainesDe, objet, vitessePousse,
   PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
@@ -306,6 +306,12 @@ function actionOf(t){
     if(g < 1) return info(`🌱 Jeunes herbes : hautes dans ${duree(growthLeft(t.i))}`);
     return herbeLeft(t.i) > 0 ? {label: "✋ Arracher (+1 graine)", run: () => arracher(t)} : {label: "✋ Cueillir", run: () => cueillirHerbe(t)};
   }
+  /* l'arrosoir en main, une fleur ou du thym adultes : on l'arrose, il se ressèmera peut-être (monde/semis.js) */
+  if(tenue === "arrosoir" && (FLEURS[t.o] || t.o === "thym") && g >= 1){
+    const c = state.ile[t.i], nom = t.o === "thym" ? "le thym" : FLEURS[t.o].nom.toLowerCase();
+    return c && c.arrose > (state.semisT || 0) ? info(`💧 Déjà arrosé : ${nom} se ressèmera peut-être demain`)
+      : {label: `💧 Arroser (eau ${state.eau}/${OUTILS[state.main].eau})`, run: () => arroserPlante(t)};
+  }
   if(FLEURS[t.o]){                                  // une fleur (étape 1.9) : en fleur à sa saison, elle se cueille
     const f = FLEURS[t.o], nom = f.nom.toLowerCase(), il = f.une ? "elle" : "il";
     if(g < 1) return info(`🌱 Jeune ${nom} : encore ${duree(growthLeft(t.i))}`);
@@ -497,6 +503,25 @@ function arroser(t){
   renderBarre(); save();
   anim = {w: ILE, i: t.i, t: 0, kind: "shake"};
   toast(`💧 ${cases.length > 1 ? `${cases.length} groseilliers arrosés` : "Arrosé"} : les groseilles reviennent dans ${duree(RECOLTE.buisson.retour)}. Eau : ${state.eau}/${OUTILS[k].eau}`, 2800);
+  user(k);
+}
+/* Arroser une fleur ou du thym (décidé avec Yo le 18 octobre 2026 : arrosée, une plante se ressème plus souvent, comme les
+   fleurs d'Animal Crossing) ; l'arrosoir en bronze arrose aussi les plantes de ce genre tout près, 3 au plus d'un coup */
+function arroserPlante(t){
+  const k = tenu("arrosoir");
+  if(!k) return;
+  if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
+  state.eau--;
+  const cases = [t.i], plante = j => (FLEURS[map.obj[j]] || map.obj[j] === "thym") && growth(j) >= 1;
+  if(OUTILS[k].autour) for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++){
+    if(!inb(t.x + dx, t.z + dz)) continue;
+    const j = idx(t.x + dx, t.z + dz);
+    if(cases.length < 3 && j !== t.i && plante(j)) cases.push(j);
+  }
+  for(const j of cases) setEtat(j, {arrose: Date.now()});
+  renderBarre(); save();
+  anim = {w: ILE, i: t.i, t: 0, kind: "shake"};
+  toast(`💧 ${cases.length > 1 ? `${cases.length} plantes arrosées` : "Arrosé"} : demain, ${cases.length > 1 ? "chacune" : "elle"} aura ${Math.round(SEMIS.arrose * 10)} chances sur 10 de semer une voisine. Eau : ${state.eau}/${OUTILS[k].eau}`, 3200);
   user(k);
 }
 function remplir(){

@@ -29,6 +29,7 @@
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
+import { ressemerMaintenant } from "../js/monde/semis.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol } from "../js/monde/ile.js";
 import { feuillesQuiVolent, MAT_OMBRE } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
@@ -1255,6 +1256,43 @@ export async function verifier(){
     if(ba.right > jo.left && ba.bottom > jo.top && ba.top < jo.bottom) throw new Error("un bouton au long texte passe sous le joystick");
     hold(null);
     return `${sauvages} touffes sauvages ; ${FLEURS[k].nom.toLowerCase()} : cueilli${FLEURS[k].une ? "e" : ""}, déterré${FLEURS[k].une ? "e" : ""}, replanté${FLEURS[k].une ? "e" : ""}`;
+  });
+  await etape("La nature se ressème (décidé avec Yo le 18 octobre 2026) : le thym sauvage revient sans dépasser son nombre de départ ; arrosée, une fleur sème une voisine", async () => {
+    const thyms = () => map.obj.filter(o => o === "thym").length, depart = thyms();
+    let n = 0;
+    map.obj.forEach((o, i) => { if(o === "thym" && n < 8){ setObj(i, null); n++; } });
+    const apres = thyms();
+    for(let k = 0; k < 40; k++) ressemerMaintenant();
+    const revenu = thyms();
+    if(revenu <= apres) throw new Error(`en 40 jours, le thym n'est pas revenu (${apres} → ${revenu})`);
+    if(revenu > FLORE_ILE.thym) throw new Error(`le thym sauvage dépasse son nombre de départ (${revenu})`);
+    /* l'arrosoir en main, devant une fleur : « Arroser » ; puis « Déjà arrosé » */
+    place(3);
+    const k = Object.keys(FLEURS)[0], c = Math.floor(N / 2), libre = j => map.type[j] === "grass" && !map.obj[j] && !occ.has(j) && !state.sol[j] && !state.chemins[j];
+    let t = null;
+    for(let r = 2; r < 9 && !t; r++) for(const [dx, dz] of [[0, -r], [r, 0], [-r, 0], [0, r]]){
+      const x = c + dx, z = c + dz, i = idx(x, z);
+      if(libre(i) && libre(idx(x, z + 1))){ t = {x, z, i}; break; }
+    }
+    if(!t) throw new Error("pas de case libre sur la place");
+    setObj(t.i, k, Date.now() - FLEUR_RARETE[FLEURS[k].rarete].pousse * 1000 - 1000);
+    if(!owned("arrosoir")) sacAdd("arrosoir", 1);
+    enMain("arrosoir"); state.eau = 5;
+    keys.u = keys.d = keys.l = keys.r = 0;
+    placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
+    if(!$("#btn-act").dataset.action.includes("Arroser")) throw new Error(`l'arrosoir en main, face à la fleur, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    $("#btn-act").click(); frames(60, .016);                                    // (le bouton revient après le geste d'arroser)
+    if(state.eau !== 4 || !(state.ile[t.i].arrose > 0)){ hold(null); throw new Error("la fleur n'est pas arrosée"); }
+    if(!$("#btn-act").dataset.action.includes("Déjà arrosé")){ hold(null); throw new Error(`arrosée, le bouton dit « ${$("#btn-act").dataset.action} »`); }
+    /* le lendemain, 4 chances sur 10 : on rejoue le jour jusqu'à ce qu'elle sème (l'arrosage est remis à chaque fois) */
+    const voisines = () => [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]].filter(([a, b]) => map.obj[idx(t.x + a, t.z + b)] === k).length;
+    const v0 = voisines();
+    for(let j = 0; j < 30 && voisines() === v0; j++){ setEtat(t.i, {arrose: Date.now() + 1}); ressemerMaintenant(); }
+    if(voisines() === v0) throw new Error("arrosée, la fleur n'a jamais semé de voisine");
+    hold(null);
+    for(const [a, b] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]) if(map.obj[idx(t.x + a, t.z + b)] === k) setObj(idx(t.x + a, t.z + b), null);
+    setObj(t.i, null);
+    return `thym : ${depart} au départ, ${apres} après la cueillette, ${revenu} quarante jours plus tard ; ${FLEURS[k].nom.toLowerCase()} arrosée, elle a semé une voisine`;
   });
   await etape("Attraper un insecte au filet", async () => {
     place(2);

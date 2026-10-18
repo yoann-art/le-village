@@ -38,6 +38,7 @@ import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci, meteo } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
+import "./monde/semis.js";                                 // la nature qui se ressème, une fois par jour (décidé avec Yo le 18 octobre 2026)
 import { vuePremiere, activerVue, tangageVue, horizon, premiereActive } from "./vue.js";
 import { updateMains, dessinerMains, mainsInactives } from "./monde/mains.js";
 import { enBarque } from "./barque.js";
