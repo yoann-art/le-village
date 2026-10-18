@@ -259,15 +259,27 @@ function choisirDetail(camera){
   const loin = pCam.distanceTo(pArbre) - recul > LOIN;
   L[0].object.visible = !loin; L[1].object.visible = loin;
 }
-/* De près et de loin, pour les petites choses du décor (la pierre des champs) : au-delà de dist P du personnage, le modèle
-   léger */
+/* De près et de loin, pour les petites choses du décor (pierres, cailloux, branches, herbes hautes, groseilliers) : le modèle
+   léger seulement quand l'objet est assez petit à l'écran pour qu'on ne voie plus ce qu'il perd (moins de SEUIL_PX pixels
+   de haut). Correction de Yo, 18 octobre 2026 : avant, il prenait le relais à 6 ou 7 P du personnage, alors que l'objet
+   était encore gros à l'écran, et en s'approchant « la pousse sur les pierres apparaît, les hautes herbes deviennent plus
+   touffues, les groseilliers aussi ». Vu de dessus, la caméra est assez près pour que tout ce qu'on voit garde son modèle
+   détaillé ; à la première personne, le relais se fait loin, dans le brouillard. (dist ne sert plus) */
+export const SEUIL_PX = 24;
+/* la hauteur de l'écran en pixels, comptée au moins à la finesse ×2 d'un téléphone (sur un écran moins fin, les objets
+   garderaient sinon leur modèle léger alors qu'ils sont aussi grands à l'œil) */
+export const petitALEcran = (h, d, camera) => h / Math.max(.01, d) / (2 * Math.tan(camera.fov * Math.PI / 360))
+  * Math.max(renderer.domElement.height, renderer.domElement.clientHeight * 2) < SEUIL_PX;
+const boiteLod = new THREE.Box3();
 export function presLoin(objPres, objLoin, dist){
   const lod = new THREE.LOD();
   lod.addLevel(objPres, 0); lod.addLevel(objLoin, dist);
+  boiteLod.setFromObject(objPres);
+  lod.userData.hauteur = Math.max(.05, boiteLod.max.y - boiteLod.min.y);   // sa hauteur, sans l'échelle de l'objet
   lod.update = function(camera){
     const L = this.levels;
     pCam.setFromMatrixPosition(camera.matrixWorld); pArbre.setFromMatrixPosition(this.matrixWorld);
-    const loin = pCam.distanceTo(pArbre) - recul > dist;
+    const loin = petitALEcran(this.userData.hauteur * this.matrixWorld.getMaxScaleOnAxis(), pCam.distanceTo(pArbre), camera);
     L[0].object.visible = !loin; L[1].object.visible = loin;
   };
   return lod;

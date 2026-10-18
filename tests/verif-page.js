@@ -517,7 +517,9 @@ export async function verifier(){
     const bx = centerOf(but[0]), bz = centerOf(but[1]);
     /* ce que la caméra voit vraiment : la boîte de l'objet touche son champ, et il est plus près que la fin du brouillard */
     const champ = new THREE.Frustum(), boite = new THREE.Box3();
+    let legers = 0;
     const manquants = () => {
+      legers = 0;
       camera.updateMatrixWorld();
       champ.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
       const objets = [];
@@ -528,9 +530,13 @@ export async function verifier(){
         boite.makeEmpty(); boite.expandByObject(g);
         if(boite.isEmpty() || !champ.intersectsBox(boite) || boite.distanceToPoint(camera.position) >= scene.fog.far) continue;
         ecran++;
+        /* vu de dessus, tout ce qui est à l'écran garde son modèle détaillé (la mousse des pierres, les brins des herbes, les
+           feuilles des groseilliers ne surgissent plus en s'approchant : correction de Yo, 18 octobre 2026) */
+        if(!vuePremiere() && g.visible && Math.hypot(g.position.x - player.position.x, g.position.z - player.position.z) < 20)   // avant : dès 6 P
+          g.traverse(o => { if(o.isLOD && o.levels[1].object.visible){ legers++; if(qui.length < 4) qui.push(`${sorte} en modèle léger`); } });
         if(!dessine(g)){ caches++; if(qui.length < 4) qui.push(`${sorte} à ${boite.distanceToPoint(camera.position).toFixed(0)} P`); }
       }
-      return {ecran, caches, qui};
+      return {ecran, caches, qui, legers};
     };
     const vues = [["de dessus", false, 1], ["de dessus, dézoomé", false, 1.6], ["à la première personne", true, 1]];
     let essais = 0, vusTotal = 0, enSerie = 0;
@@ -544,6 +550,7 @@ export async function verifier(){
           essais++; vusTotal += r.ecran;
           if(yeux) enSerie = Math.max(enSerie, seriesIci().instances);
           if(r.caches) throw new Error(`${nom}, à ${d} P du groupe : ${r.caches} objets à l'écran restent cachés (${r.qui.join(", ")})`);
+          if(r.legers) throw new Error(`${nom}, à ${d} P du groupe : ${r.legers} petites choses à l'écran en modèle léger (${r.qui.join(", ")})`);
         }
       }
     } finally { choisirVue(premiere0); view.zoom = zoom0; placePlayer(p0.x, p0.z, 0, 1); await wait(300); }

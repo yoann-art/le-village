@@ -10,7 +10,7 @@ import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
-import { cheneModele, soucheModele, reculActuel } from "./chene.js";
+import { cheneModele, soucheModele } from "./chene.js";
 import { pommierModele, souchePommier } from "./pommier.js";
 import { pinModele, souchePin } from "./pin.js";
 import { bouleauModele, soucheBouleau } from "./bouleau.js";
@@ -418,7 +418,7 @@ export function montrerChamp(camera, loin, serie = false){
   camera.updateMatrixWorld();
   mVue.copy(camera.matrixWorld).invert().premultiply(camera.projectionMatrix);
   champ.setFromProjectionMatrix(mVue);
-  const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z, recul = reculActuel();
+  const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z;
   let soleil = null;
   if(!serie) effacerSeries();
   else {                                              // la zone d'ombre du soleil de cette image (three.js la recalcule de même)
@@ -441,7 +441,7 @@ export function montrerChamp(camera, loin, serie = false){
       boule.center.set(g.position.x, 1.5, g.position.z);
       const vu = Math.sqrt(ox * ox + oz * oz) < loin && champ.intersectsSphere(boule);
       /* de loin, en série : la même distance que celle du modèle léger (presLoin, chene.js), depuis la caméra en 3D */
-      g.visible = vu && !(serie && ajouterEnSerie(g, Math.sqrt(ox * ox + (g.position.y - cy) ** 2 + oz * oz), recul, champ, soleil));
+      g.visible = vu && !(serie && ajouterEnSerie(g, Math.sqrt(ox * ox + (g.position.y - cy) ** 2 + oz * oz), camera, champ, soleil));
     }
   }
   if(serie) finSeries();

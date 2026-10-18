@@ -13,7 +13,7 @@
    processeur ralenti 4 fois : le dessin d'une image de 46 à 30 ms et de 33 à 23 ms) ; vu de dessus, il y en a peu à l'écran,
    chaque série n'en aurait qu'un ou deux, et elles coûtaient un peu plus qu'elles ne rapportaient. */
 import { scene } from "./scene.js";
-import { MATS_OMBRE } from "./chene.js";
+import { MATS_OMBRE, petitALEcran } from "./chene.js";
 
 const PRES_SEUL = 6;                                       // sans modèle léger : en série au-delà de 6 P (comme les autres)
 const lots = new Map();                                    // forme + matière + ombre → {mesh, n, cap, besoin}
@@ -59,11 +59,11 @@ function assez(L){
 const boite = new THREE.Box3(), sph = new THREE.Sphere(), mTmp = new THREE.Matrix4();
 export function preparerSerie(g){
   g.updateMatrixWorld(true);
-  let dist = PRES_SEUL, ok = true;
+  let haut = null, ok = true;
   const morceaux = [];
   (function voir(o){
-    if(o.isLOD){                                           // de loin : son modèle léger (le niveau 1)
-      dist = o.levels[1].distance;
+    if(o.isLOD){                                           // de loin : son modèle léger (le niveau 1), la même règle (chene.js)
+      haut = o.userData.hauteur * o.matrixWorld.getMaxScaleOnAxis();
       voir(o.levels[1].object);
       return;
     }
@@ -83,7 +83,7 @@ export function preparerSerie(g){
     boite.expandByPoint(sph.center.clone().addScalar(sph.radius)); boite.expandByPoint(sph.center.clone().addScalar(-sph.radius));
   }
   const boule = boite.getBoundingSphere(new THREE.Sphere());
-  const d = {dist, boule, morceaux: morceaux.map(p => {
+  const d = {haut, boule, morceaux: morceaux.map(p => {
     const seule = p.mat.colorWrite === false;                // ne fait que de l'ombre (les boules d'ombre des buissons)
     const avec = p.ombre ? lotDe(p.geo, p.mat, true, p.recoit) : null, sans = seule ? null : lotDe(p.geo, p.mat, false, p.recoit);
     for(const L of [avec, sans]) if(L){ L.besoin++; assez(L); }
@@ -110,14 +110,14 @@ export function effacerSeries(){
   image++; actives = false;
   for(const L of lots.values()) if(L.mesh && L.n){ L.n = 0; L.mesh.count = 0; L.mesh.visible = false; }
 }
-/* recul : la distance se compte depuis le personnage vu de dessus, comme le modèle léger (chene.js, presLoin) ; dCam : sa
-   distance à la caméra ; champ, soleil : le champ de la caméra et la zone d'ombre du soleil. Rend vrai si l'objet est
-   candidat à la série (il ne se dessine pas lui-même, sauf si finSeries le rend). Seulement s'il est vraiment dans le champ
-   (sinon three.js l'écarte lui-même, morceau par morceau, et le dessine seulement dans l'ombre s'il le faut) ; son ombre,
-   seulement dans la zone d'ombre */
-export function ajouterEnSerie(g, dCam, recul, champ, soleil){
+/* dCam : sa distance à la caméra ; il va en série quand il prend son modèle léger (petit à l'écran : petitALEcran, la même
+   règle que chene.js), ou au-delà de PRES_SEUL P s'il n'en a pas ; champ, soleil : le champ de la caméra et la zone
+   d'ombre du soleil. Rend vrai si l'objet est candidat à la série (il ne se dessine pas lui-même, sauf si finSeries le
+   rend). Seulement s'il est vraiment dans le champ (sinon three.js l'écarte lui-même, morceau par morceau, et le dessine
+   seulement dans l'ombre s'il le faut) ; son ombre, seulement dans la zone d'ombre */
+export function ajouterEnSerie(g, dCam, camera, champ, soleil){
   const d = descr.get(g);
-  if(!d || dCam - recul <= d.dist || !champ.intersectsSphere(d.boule)) return false;
+  if(!d || !(d.haut ? petitALEcran(d.haut, dCam, camera) : dCam > PRES_SEUL) || !champ.intersectsSphere(d.boule)) return false;
   const ombre = soleil.intersectsSphere(d.boule);
   for(const p of d.morceaux){ const L = ombre && p.avec || p.sans; if(L) L.compte++; }
   candidats.push(g, d, ombre);
