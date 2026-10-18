@@ -4,7 +4,7 @@ import { scene, sun } from "./scene.js";
 import { mat, G, part, toon } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
-import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
+import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, PIERRES_ILE, FLORE_ILE, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
 import { pluieDepuis, neigeAuSol } from "./meteo.js";
 import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
@@ -80,6 +80,12 @@ function genMap(seed){
   }
   /* La place du village : ni arbre ni rocher à moins de 9 cases du centre */
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++) if(Math.hypot(x-c, z-c) < 9) obj[idx(x,z)] = null;
+  /* 30 pierres des champs, pas plus (décidé avec Yo le 18 octobre 2026 : environ 70 pierres suffisent avant la mine, qui
+     en redonne chaque jour ; il y en avait 72, trois fois trop) : on garde les 30 premières selon un tirage par case, pour
+     ne rien déplacer d'autre */
+  const pierres = [];
+  obj.forEach((o, i) => { if(o === "rock") pierres.push(i); });
+  pierres.sort((a, b) => hache(a * 31 + 5) - hache(b * 31 + 5)).slice(PIERRES_ILE).forEach(i => obj[i] = null);
   return {type, obj};
 }
 export const map = genMap(state.seed);
@@ -118,43 +124,65 @@ const MER = new Uint8Array(N*N);
 export const lieuEau = i => MER[i] ? "mer" : "etang";
 /* De l'eau qu'on peut combler : l'eau douce (l'étang, l'eau creusée), jamais la mer */
 export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
-/* Herbes hautes et buissons de baies (étape 1.5) : posés après coup, avec leur propre tirage, pour ne pas
-   déplacer les arbres et les rochers des parties déjà commencées ; jamais sous un bâtiment déjà posé */
+/* La flore sauvage de l'île : herbes hautes, groseilliers, thym, fleurs des prés (décidé avec Yo le 18 octobre 2026 : moins
+   nombreuse et placée comme dans la vraie nature). Posée après coup, avec son propre tirage (pour ne pas déplacer les
+   arbres et les pierres), hors de la place du village, jamais sous un bâtiment, sur un chemin, devant le ponton ou le pont.
+   En taches d'une même sorte, de plus en plus serrées vers leur milieu, les taches loin les unes des autres :
+   - les herbes hautes (60) au bord de l'eau douce et en lisière des bois ;
+   - les groseilliers (18) en lisière des bois, à mi-ombre, seuls ou par deux ;
+   - le thym (24) au sec et au soleil : près du sable et des pierres, loin des arbres ;
+   - les fleurs (70) : 7 de chaque commune en deux taches, 3 de chaque peu commune en une ; en plein pré, sauf la
+     violette, le muguet et le perce-neige, qui aiment la lisière et l'ombre des bois */
 {
-  const rnd = mulberry32(state.seed * 7 + 3), c = (N-1)/2, sous = new Set();
-  state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
-  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
-    const i = idx(x, z), r = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || garde.has(i) || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .045) map.obj[i] = "herbe";               // de quoi cueillir partout, sans encombrer (moins denses depuis l'île agrandie)
-    else if(r < .06) map.obj[i] = "buisson";
-  }
-}
-/* Le thym (étape 1.6, Grand Carnet : « Thym et sauge », herbes aromatiques des prés de l'île) : des touffes
-   basses aux fleurs mauves, posées après coup avec leur propre tirage ; on les traverse comme les herbes hautes */
-{
-  const rnd = mulberry32(state.seed * 11 + 5), c = (N-1)/2, sous = new Set();
+  const c = (N-1)/2, sous = new Set();
   state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
   const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1, F = state.pontForet, entreeF = F ? idx(F.x, F.z + 1) : -1;
-  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
-    const i = idx(x, z), r = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || garde.has(i) || i === entree || i === entreeF || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .028) map.obj[i] = "thym";
+  const libre = i => { const x = i % N, z = (i - x) / N; return map.type[i] === "grass" && !map.obj[i] && !sous.has(i) && !garde.has(i)
+    && i !== entree && i !== entreeF && !state.chemins[i] && Math.hypot(x-c, z-c) >= 9; };
+  /* ce qu'il y a autour d'une case : des arbres, du sable, des pierres, de l'eau douce */
+  const ARBRE = new Set(["tree", "pommier", "pin", "bouleau"]);
+  const autour = (i, r, test) => { const x = i % N, z = (i - x) / N; let n = 0;
+    for(let dz = -r; dz <= r; dz++) for(let dx = -r; dx <= r; dx++) if(inb(x+dx, z+dz) && test(idx(x+dx, z+dz))) n++; return n; };
+  const arbres = i => autour(i, 2, j => ARBRE.has(map.obj[j]));
+  const lisiere = i => { const n = arbres(i); return n >= 1 && n <= 5; };
+  const humide = i => autour(i, 4, j => ORIGINE[j] === "water" && !MER[j]) > 0;
+  const sec = i => autour(i, 3, j => map.type[j] === "sand" || map.obj[j] === "rock") > 0 && arbres(i) === 0;
+  const pre = i => autour(i, 3, j => ARBRE.has(map.obj[j])) === 0;
+  const centres = [];
+  /* des taches de la sorte o (n plantes, taches de min à max) ; poids(i) : combien la case lui plaît */
+  function taches(rnd, o, n, min, max, poids){
+    const cand = [];
+    for(let i = 0; i < N*N; i++) if(libre(i)){ const w = poids(i); if(w > 0) cand.push([Math.pow(rnd(), 1 / w), i]); }
+    cand.sort((a, b) => b[0] - a[0]);
+    let pose = 0;
+    for(const ecart of [9, 6, 3, 0]) for(const [, i] of cand){
+      if(pose >= n) return;
+      const x = i % N, z = (i - x) / N;
+      if(!libre(i) || centres.some(([a, b]) => Math.hypot(a - x, b - z) < ecart)) continue;
+      centres.push([x, z]);
+      const voulu = Math.min(n - pose, min + Math.floor(rnd() * (max - min + 1)));
+      /* le milieu, puis les cases autour, les plus proches d'abord, une sur deux environ */
+      const places = [[0, 0]];
+      for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++) if(dx || dz) places.push([dx, dz]);
+      places.sort((p, q) => Math.hypot(...p) - Math.hypot(...q) + (rnd() - .5));
+      let k = 0;
+      for(const [dx, dz] of places){
+        if(k >= voulu) break;
+        const j = idx(x + dx, z + dz);
+        if(inb(x + dx, z + dz) && libre(j) && (k === 0 || rnd() < .7)){ map.obj[j] = o; k++; }
+      }
+      pose += k;
+    }
   }
-}
-/* Les fleurs des prés (étape 1.9, morceau 4 ; Grand Carnet : « Les fleurs de tous les jours, et les grandes classiques
-   du jardin ») : des touffes sauvages, posées après coup avec leur propre tirage (comme le thym, pour ne rien déplacer),
-   hors de la place du village, jamais sur un chemin ni devant le ponton ; les communes trois fois plus souvent.
-   Chacune fleurit à sa saison ; le reste de l'année, ce sont des feuilles */
-{
-  const rnd = mulberry32(state.seed * 13 + 7), c = (N-1)/2, sous = new Set();
-  state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
-  const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1, F = state.pontForet, entreeF = F ? idx(F.x, F.z + 1) : -1;
-  const sortes = Object.keys(FLEURS).flatMap(k => Array(FLEURS[k].rarete === "commun" ? 3 : 1).fill(k));
-  for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
-    const i = idx(x, z), r = rnd(), r2 = rnd();
-    if(map.type[i] !== "grass" || map.obj[i] || sous.has(i) || garde.has(i) || i === entree || i === entreeF || state.chemins[i] || Math.hypot(x-c, z-c) < 9) continue;
-    if(r < .055) map.obj[i] = sortes[Math.floor(r2 * sortes.length)];
+  const FLORE = FLORE_ILE;
+  taches(mulberry32(state.seed * 7 + 3), "herbe", FLORE.herbe, 3, 6, i => humide(i) ? 5 : lisiere(i) ? 3 : .3);
+  taches(mulberry32(state.seed * 7 + 4), "buisson", FLORE.buisson, 1, 2, i => lisiere(i) ? 5 : .1);
+  taches(mulberry32(state.seed * 11 + 5), "thym", FLORE.thym, 4, 6, i => sec(i) ? 5 : pre(i) ? .3 : 0);
+  const rnd = mulberry32(state.seed * 13 + 7), OMBRE = ["violette", "muguet", "perceNeige"];
+  for(const k of Object.keys(FLEURS)){
+    const commun = FLEURS[k].rarete === "commun", poids = OMBRE.includes(k) ? (i => lisiere(i) ? 5 : .1) : (i => pre(i) ? 4 : .4);
+    if(commun){ taches(rnd, k, 4, 3, 4, poids); taches(rnd, k, FLORE.fleurCommune - 4, 3, 3, poids); }
+    else taches(rnd, k, FLORE.fleurPeuCommune, 3, 3, poids);
   }
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */

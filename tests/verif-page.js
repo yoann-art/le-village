@@ -26,7 +26,7 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol } from "../js/monde/ile.js";
@@ -273,6 +273,22 @@ export async function verifier(){
     $("#btn-place").click();
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
+  });
+  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 74 fleurs en taches", async () => {
+    const n = o => map.obj.filter(x => typeof o === "function" ? o(x) : x === o).length;
+    /* (les essais d'avant ont pu en cueillir ou en casser quelques-uns) */
+    const voulu = {rock: PIERRES_ILE, herbe: FLORE_ILE.herbe, buisson: FLORE_ILE.buisson, thym: FLORE_ILE.thym};
+    for(const [o, v] of Object.entries(voulu)) if(n(o) > v || n(o) < v * .8) throw new Error(`${n(o)} ${o} sur l'île (${v} voulus)`);
+    const fleurs = n(o => FLEURS[o]), sortes = new Set(map.obj.filter(o => FLEURS[o]));
+    const toutes = Object.values(FLEURS).reduce((t, f) => t + (f.rarete === "commun" ? FLORE_ILE.fleurCommune : FLORE_ILE.fleurPeuCommune), 0);
+    if(fleurs > toutes || fleurs < toutes * .8) throw new Error(`${fleurs} fleurs sur l'île (${toutes} voulues)`);
+    if(sortes.size !== Object.keys(FLEURS).length) throw new Error(`${sortes.size} sortes de fleurs sur l'île`);
+    /* en taches : la plupart des fleurs ont une voisine de leur sorte */
+    let seules = 0;
+    map.obj.forEach((o, i) => { if(!FLEURS[o]) return; const x = i % N, z = (i - x) / N;
+      if(![[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1],[2,0],[-2,0],[0,2],[0,-2]].some(([a, b]) => map.obj[idx(x + a, z + b)] === o)) seules++; });
+    if(seules > fleurs * .2) throw new Error(`${seules} fleurs seules sur ${fleurs} (elles devraient pousser en taches)`);
+    return `${n("rock")} pierres, ${n("herbe")} herbes hautes, ${n("buisson")} groseilliers, ${n("thym")} thyms, ${fleurs} fleurs de ${sortes.size} sortes (${seules} seules)`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);

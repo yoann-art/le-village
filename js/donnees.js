@@ -1084,6 +1084,10 @@ export const FLEURS = {
   perceNeige:{nom:"Perce-neige", pluriel:"perce-neige", couleurs:[0xFFFFFF], saisons:["hiver"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Il annonce la fin de l'hiver"},
   muguet:    {nom:"Muguet", pluriel:"muguets", couleurs:[0xFFFFFF], saisons:["printemps"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Porte-bonheur, à offrir"}
 };
+/* Ce qu'il y a sur l'île au début d'une partie (décidé avec Yo le 18 octobre 2026, ile.js) : les pierres des champs, et la
+   flore sauvage (herbes hautes, groseilliers, thym ; les fleurs : combien de chaque commune et de chaque peu commune) */
+export const PIERRES_ILE = 30;
+export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 3};
 export const FLEUR_RARETE = {commun:{graine:.75, deux:.25, refleurit:43200, pousse:3600}, peuCommun:{graine:.5, deux:.1, refleurit:86400, pousse:10800}, rare:{graine:.2, deux:0, refleurit:259200, pousse:21600}};
 /* Les graines d'une plante cueillie de l'île (décidé par Yo le 18 octobre 2026 : le thym et les fleurs disparaissent quand
    on les cueille, « pour en avoir d'autres il faudra planter les graines ») : une graine selon sa rareté (comme les arbres :
