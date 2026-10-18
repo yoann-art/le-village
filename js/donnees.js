@@ -849,12 +849,12 @@ export const PRODUITS = {
     usage:"Une grande écaille grise et verte de l'Hydre des brumes : un trophée, et plus tard une armure (Grand Carnet). En attendant, elle se vend au comptoir."},
   boisArgent:{nom:"Bois d'argent", pluriel:"bois d'argent", emoji:"✨", aide:"Le bois d'argent est le présent du Cerf blanc, une seule fois dans tout le jeu.",
     usage:"Le présent du Cerf blanc, qu'on a suivi jusqu'au bout une nuit de pleine lune. Un seul dans tout le jeu."},
-  thym:   {nom:"Brin de thym", pluriel:"brins de thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
+  thym:   {nom:"Thym", pluriel:"thym", emoji:"🌿", aide:"Le thym se cueille dans les prés de l'île (les touffes basses aux fleurs mauves).",
     icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22V5M12 15l-5-5M12 12l5-5M12 18l4-3" stroke="#4E6B3A" stroke-width="1.6" fill="none" stroke-linecap="round"/><g fill="#7E9C66"><ellipse cx="8" cy="10.5" rx="2.4" ry="1.3"/><ellipse cx="16" cy="7.5" rx="2.4" ry="1.3"/><ellipse cx="15.5" cy="14.5" rx="2.2" ry="1.2"/><ellipse cx="10" cy="17" rx="2.2" ry="1.2"/></g><g fill="#B79AD6"><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.4"/><circle cx="17.5" cy="6" r="1.4"/></g></svg>',
     usage:"Une herbe aromatique des prés de l'île, toute l'année. Pour la cuisine (le poisson grillé) et, plus tard, des potions douces."},
-  poissonGrille:{nom:"Poisson grillé", pluriel:"poissons grillés", emoji:"🍢", prix:3, aide:"Le poisson grillé se cuisine au fourneau de la Taverne : un poisson et un brin de thym.",
+  poissonGrille:{nom:"Poisson grillé", pluriel:"poissons grillés", emoji:"🍢", prix:3, aide:"Le poisson grillé se cuisine au fourneau de la Taverne : un poisson et du thym.",
     icone:'<svg class="ico-poisson" viewBox="0 0 32 20" aria-hidden="true"><polygon points="21,10 31,5 31,15" fill="#B9733A" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="12" cy="10" rx="11" ry="5.6" fill="#C98A4B" stroke="#1C2230" stroke-opacity=".35"/><path d="M8 5.5v9M12 4.5v11M16 5.5v9" stroke="#5A3418" stroke-width="1.4" stroke-linecap="round"/><circle cx="5.5" cy="8.3" r="1.5" fill="#1C2230"/><g fill="#7E9C66"><ellipse cx="19" cy="4" rx="2" ry="1"/><ellipse cx="21.5" cy="5.5" rx="1.8" ry=".9"/></g></svg>',
-    usage:"Il soigne : dans la grotte, le bouton 🍢 te rend 2 cœurs. Se cuisine au fourneau de la Taverne (un poisson et un brin de thym) ; se vend 3 or au comptoir."}
+    usage:"Il soigne : dans la grotte, le bouton 🍢 te rend 2 cœurs. Se cuisine au fourneau de la Taverne (un poisson et du thym) ; se vend 3 or au comptoir."}
 };
 /* Plans de travail, par bâtiment : le meuble qui le représente dans la pièce, son prix pour le
    construire (cost, demande de Yo : il n'est pas gratuit), son nom avec article (le ; fem : nom féminin),

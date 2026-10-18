@@ -870,7 +870,7 @@ export async function verifier(){
     const pris = payer({poisson: 1, thym: 1}), poisson = Object.keys(pris).find(k => POISSONS[k]);
     if(!poisson || pris.thym !== 1) throw new Error(`pris : ${JSON.stringify(pris)}`);
     for(const [k, v] of Object.entries(pris)) addOwned(k, v);                   // rendus
-    return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et un brin de thym`;
+    return `${objet(poisson).une ? "une" : "un"} ${objet(poisson).nom.toLowerCase()} et du thym`;
   });
   /* Faire de la place dans le sac de la partie d'essai (12 emplacements : il se remplit au fil des essais) */
   const place = n => {

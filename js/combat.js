@@ -105,7 +105,7 @@ function rouler(){
 /* ----- 🍢 Soin : le poisson grillé ----- */
 function manger(){
   if(!pret()) return;
-  if(!sacCount("poissonGrille")){ toast("🍢 Pas de poisson grillé sur toi : il se cuisine au fourneau de la Taverne (un poisson et un brin de thym)", 4200); return; }
+  if(!sacCount("poissonGrille")){ toast("🍢 Pas de poisson grillé sur toi : il se cuisine au fourneau de la Taverne (un poisson et du thym)", 4200); return; }
   if(vie >= COMBAT.vie){ toast("❤️ Tu as déjà toute ta vie : garde ton poisson grillé pour plus tard", 2400); return; }
   sacTake("poissonGrille", 1); syncBarre();
   const avant = vie;
