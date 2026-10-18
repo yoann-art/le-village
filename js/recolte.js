@@ -25,7 +25,7 @@
    - dans la mine, ses rochers (voir monde/mine.js), ses galeries, et le Cœur de la mine (étape 1.11 : chaque pierre de
      la mine trouvée s'inscrit au carnet, noterPierre) ; dans la Forêt profonde, ses arbres et ses rochers, qui
      repoussent (voir monde/foret.js) ; au Marais brumeux (étape 1.13, morceau 4), ses arbres (l'eau de brume du saule
-     se recueille au bocal) et ses plantes à cueillir, à leur saison, certaines la nuit (voir monde/marais.js) ; un rocher, mains libres : « ✋ Prendre le rocher » (dans le sac) ;
+     se recueille au bocal) et ses plantes à cueillir, à leur saison, certaines la nuit (voir monde/marais.js) ; un rocher se mine à la pioche (il ne se ramasse plus à la main : demande de Yo, v2.1.25) ;
      un rocher en main : « 🪨 Poser le rocher » sur une case libre de l'île.
    Tout ce qu'on récolte va dans le sac (demande de Yo) ; s'il est plein, on le range dans un coffre.
    Demande de Yo (11 octobre 2026) : un outil ne sert que s'il est tenu en main, pris dans une case rapide (`avecOutil`,
@@ -293,11 +293,10 @@ function actionOf(t){
   if(t.o === "tree")
     return g < 1 ? info(`🌱 Jeune chêne : adulte dans ${duree(growthLeft(t.i))}`)
       : avecOutil("hache", 0, {label: `🪓 Couper le chêne${h ? ` (${RECOLTE.tree.coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.hache);
-  if(t.o === "rock" || t.o === "rockCuivre")         // mains libres : on le prend ; sinon, on le mine
-    /* la pierre des champs de l'île ne se ramasse pas à la main, elle se casse à la pioche (bug de Yo, 18 octobre 2026) ;
-       les rochers de la mine, oui (on les rapporte sur l'île) */
-    return !state.main && !h && !(t.w === ILE && t.o === "rock") ? {label: "✋ Prendre le rocher", run: () => prendre(t)}
-      : avecOutil("pioche", 0, {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
+  if(t.o === "rock" || t.o === "rockCuivre")         // un rocher se mine, à la pioche
+    /* il ne se ramasse jamais à la main (Yo, 18 octobre 2026 : la pierre des champs « juste la casser à la pioche » ; puis
+       « je veux que l'on ne puisse plus du tout rapporter des pierres de la mine ») */
+    return avecOutil("pioche", 0, {label: `⛏️ Miner${h ? ` (${RECOLTE[t.o].coups - h})` : ""}`, run: () => couper(t)}, IL_FAUT.pioche);
   if(RECOLTE[t.o] && RECOLTE[t.o].outil === "pioche"){   // les roches des salles de la mine (étape 1.11)
     const R = RECOLTE[t.o];
     return avecOutil("pioche", R.force || 0, {label: `⛏️ Miner ${R.nom}${h ? ` (${R.coups - h})` : ""}`, run: () => couper(t)},
@@ -609,14 +608,7 @@ function tombe(){
 }
 
 /* ----- Prendre un rocher (mains libres), et le poser sur l'île ----- */
-function prendre(t){
-  const k = RECOLTE[t.o].prendre;
-  if(!sacOk(k, 1)) return;
-  sacAdd(k, 1); barreAuto(k);
-  t.w.set(t.i, null);
-  syncBarre(); save();
-  toast(`🪨 ${objet(k).nom} dans ton sac : prends-le en main pour le poser sur ton île. (Pour miner, prends ta pioche.)`, 3600);
-}
+/* un rocher déjà dans le sac (rapporté de la mine avant la v2.1.25) se pose encore sur l'île */
 function poser(t){
   const k = state.main, why = poseProblem(t.i);
   if(why){ toast(why); return; }
