@@ -4,7 +4,7 @@ import { scene, sun } from "./scene.js";
 import { mat, G, part, toon } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
-import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, PIERRES_ILE, FLORE_ILE, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
+import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
 import { pluieDepuis, neigeAuSol } from "./meteo.js";
 import { fleurModele } from "./fleurs.js";
 import { makeMeuble } from "./meubles.js";
@@ -17,6 +17,7 @@ import { bouleauModele, soucheBouleau } from "./bouleau.js";
 import { pierreChamps } from "./pierre.js";
 import { herbesModele } from "./herbes.js";
 import { groseillierModele } from "./groseillier.js";
+import { galetsModele } from "./galets.js";
 import { thymModele } from "./thym.js";
 import { preparerSerie, oublierSerie, debutSeries, effacerSeries, ajouterEnSerie, finSeries } from "./series.js";
 
@@ -131,13 +132,15 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
    - les herbes hautes (60) au bord de l'eau douce et en lisière des bois ;
    - les groseilliers (18) en lisière des bois, à mi-ombre, seuls ou par deux ;
    - le thym (24) au sec et au soleil : près du sable et des pierres, loin des arbres ;
-   - les fleurs (70) : 7 de chaque commune en deux taches, 3 de chaque peu commune en une ; en plein pré, sauf la
-     violette, le muguet et le perce-neige, qui aiment la lisière et l'ombre des bois */
+   - les fleurs (74) : 7 de chaque commune en deux taches, 3 de chaque peu commune en une ; en plein pré, sauf la
+     violette, le muguet et le perce-neige, qui aiment la lisière et l'ombre des bois ;
+   - et les galets de plage (20), un décor sur le sable */
 {
   const c = (N-1)/2, sous = new Set();
   state.buildings.forEach(b => { const s = sizeOf(b.type); for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) sous.add(idx(b.x + dx, b.z + dz)); });
   const P = state.ponton, entree = P ? idx(P.x, P.z - 1) : -1, F = state.pontForet, entreeF = F ? idx(F.x, F.z + 1) : -1;
-  const libre = i => { const x = i % N, z = (i - x) / N; return map.type[i] === "grass" && !map.obj[i] && !sous.has(i) && !garde.has(i)
+  let terrain = "grass";                            // le sable pour les galets
+  const libre = i => { const x = i % N, z = (i - x) / N; return map.type[i] === terrain && !map.obj[i] && !sous.has(i) && !garde.has(i)
     && i !== entree && i !== entreeF && !state.chemins[i] && Math.hypot(x-c, z-c) >= 9; };
   /* ce qu'il y a autour d'une case : des arbres, du sable, des pierres, de l'eau douce */
   const ARBRE = new Set(["tree", "pommier", "pin", "bouleau"]);
@@ -184,6 +187,10 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
     if(commun){ taches(rnd, k, 4, 3, 4, poids); taches(rnd, k, FLORE.fleurCommune - 4, 3, 3, poids); }
     else taches(rnd, k, FLORE.fleurPeuCommune, 3, 3, poids);
   }
+  /* les galets de plage (décidé par Yo le 20 octobre 2026 : un décor) : sur le sable, surtout au bord de l'eau, là où la
+     mer les dépose, et près des pierres */
+  terrain = "sand";
+  taches(mulberry32(state.seed * 17 + 9), "galets", GALETS_ILE, 1, 1, i => (autour(i, 1, j => ORIGINE[j] === "water") ? 5 : 1) + (autour(i, 2, j => map.obj[j] === "rock") ? 3 : 0));
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
 state.buildings.forEach(b => {
@@ -326,7 +333,7 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson", "thym"]);
+const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson", "thym", "galets"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
@@ -371,6 +378,8 @@ function buildObj(i){
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre");
     c.scale.setScalar(.75); g.add(c);
+  } else if(o === "galets"){                        // les galets de plage (étape 2.1, morceau 3 : galets.js, d'après l'image de Yo)
+    g.add(galetsModele(r, neigeBranches()));
   } else if(o === "rock"){                          // la pierre des champs (étape 2.1, morceau 3 : pierre.js, d'après l'image de Yo)
     g.add(pierreChamps(saison(), r, neigeBranches(), map.type[i] === "sand"));
     g.scale.setScalar(.85 + r * .3);

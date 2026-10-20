@@ -1088,6 +1088,8 @@ export const FLEURS = {
    flore sauvage (herbes hautes, groseilliers, thym ; les fleurs : combien de chaque commune et de chaque peu commune) */
 export const PIERRES_ILE = 30;
 export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 3};
+/* les galets de plage (décidé par Yo le 20 octobre 2026 : un décor, une vingtaine de groupes sur le sable) */
+export const GALETS_ILE = 20;
 /* La nature qui se ressème (décidé avec Yo le 18 octobre 2026, monde/semis.js) : une fois par jour, la chance d'une plante
    sauvage adulte de semer une voisine (tant que l'île n'en a pas plus qu'au départ), celle d'une plante arrosée, combien de
    jours jeu fermé sont rattrapés au plus, et combien de petites plantes au plus dans un rayon de 2 cases */
@@ -1142,7 +1144,7 @@ for(const k of PLANTES_MARAIS){
   p.usage = `${p.note} (carnet). Plante ${r} du Marais brumeux, ${ou}, ${quandPlante(p)}${p.plante.nuit ? ", seulement la nuit" : ""}. Elle se vend au comptoir ; les potions viendront plus tard.`;
 }
 /* On traverse les herbes hautes, le thym et les fleurs */
-export const traversable = o => !o || o === "herbe" || o === "thym" || !!FLEURS[o];
+export const traversable = o => !o || o === "herbe" || o === "thym" || o === "galets" || !!FLEURS[o];
 const majuscule = t => t[0].toUpperCase() + t.slice(1);
 for(const [k, f] of Object.entries(FLEURS)){
   const hex = c => "#" + c.toString(16).padStart(6, "0"), c0 = hex(f.couleurs[0]), coeur = hex(f.coeur || 0xF2C94C);

@@ -153,11 +153,13 @@ function target(){
   if(pelle) return pelle;
   const arrosoir = state.main && OUTILS[state.main] && OUTILS[state.main].eau;
   const canne = state.main ? !!tenu("canne") : outilPour("canne").ou === "case";   // la canne en main, ou dans une case (mains libres)
+  let galets = null;                                  // les galets (un décor) : nommés seulement s'il n'y a rien d'autre à faire
   for(const dist of [.8, 1.3]){
     const [x, z] = frontTile(dist);
     if(!inb(x, z)) continue;
     const i = idx(x, z);
     if(occ.has(i)) return facadeCible(i, x, z);        // un bâtiment : c'est son bouton à lui (ou une lumière de sa façade)
+    if(map.obj[i] === "galets"){ galets = galets || {w: ILE, i, x, z, o: "galets"}; continue; }
     if(map.obj[i]) return {w: ILE, i, x, z, o: map.obj[i]};
     if((arrosoir || canne) && eauLibre(i)) return {i, x, z, eau: true, peche: !arrosoir};   // le bord de l'eau : l'arrosoir, ou la canne
   }
@@ -165,6 +167,7 @@ function target(){
   if(aPoser(state.main) && inb(x, z)) return {i: idx(x, z), x, z, o: null};
   const ici = inb(...own) && map.obj[idx(...own)];
   if(ici === "herbe" || ici === "thym" || FLEURS[ici]) return {w: ILE, i: idx(...own), x: own[0], z: own[1], o: ici};
+  if(galets) return galets;
   return inb(x, z) ? {i: idx(x, z), x, z, o: null} : null;
 }
 
@@ -243,6 +246,7 @@ function nomCible(t){
   if(t.o === "thym") return jeune ? "🌱 Jeune thym" : "🌿 Thym";
   if(t.o === "buisson") return jeune ? "🌱 Jeune groseillier" : "🍒 Groseillier";
   if(t.o === "tree" || ESSENCES.includes(t.o)){ const n = sansArticle(RECOLTE[t.o].nom); return jeune ? `🌱 Jeune ${n.toLowerCase()}` : `${EMOJI_ARBRE[t.o] || "🌳"} ${n}`; }
+  if(t.o === "galets") return "🪨 Galets";
   if(t.o === "rock" && t.w === ILE) return "🪨 Pierre des champs";     // le rocher de l'île (nom choisi par Yo, 15 octobre 2026)
   if(RECOLTE[t.o]) return `${t.o === "rockOr" ? "✨" : PRECIEUX.has(t.o) ? "💎" : "🪨"} ${sansArticle(RECOLTE[t.o].nom)}`;
   return null;
@@ -256,6 +260,7 @@ function actionNommee(t){
 function actionOf(t){
   if(t.sol) return {label: `✋ Ramasser : ${SOL[t.sol].nom.toLowerCase()}`, run: () => ramasser(t)};
   if(t.pelle) return actionTerrain(t);
+  if(t.o === "galets") return info("🪨 Des galets, polis par la mer");       // un décor (décidé par Yo, 20 octobre 2026)
   if(t.o === "souche") return {label: "🪏 Il te faut une pelle pour déterrer la souche", run: rien};   // au joueur de prendre la pelle
   if(t.o === "coffre") return {label: "🗃️ Ouvrir le coffre", run: () => openCoffre(state.ile[t.i].id)};
   if(t.facade) return facadeAction(t);

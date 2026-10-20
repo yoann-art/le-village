@@ -26,7 +26,7 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
@@ -275,7 +275,7 @@ export async function verifier(){
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
   });
-  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 74 fleurs en taches", async () => {
+  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 74 fleurs en taches, 20 groupes de galets", async () => {
     const n = o => map.obj.filter(x => typeof o === "function" ? o(x) : x === o).length;
     /* (les essais d'avant ont pu en cueillir ou en casser quelques-uns) */
     const voulu = {rock: PIERRES_ILE, herbe: FLORE_ILE.herbe, buisson: FLORE_ILE.buisson, thym: FLORE_ILE.thym};
@@ -289,7 +289,20 @@ export async function verifier(){
     map.obj.forEach((o, i) => { if(!FLEURS[o]) return; const x = i % N, z = (i - x) / N;
       if(![[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1],[2,0],[-2,0],[0,2],[0,-2]].some(([a, b]) => map.obj[idx(x + a, z + b)] === o)) seules++; });
     if(seules > fleurs * .2) throw new Error(`${seules} fleurs seules sur ${fleurs} (elles devraient pousser en taches)`);
-    return `${n("rock")} pierres, ${n("herbe")} herbes hautes, ${n("buisson")} groseilliers, ${n("thym")} thyms, ${fleurs} fleurs de ${sortes.size} sortes (${seules} seules)`;
+    /* les galets de plage (décidé par Yo le 20 octobre 2026) : un décor sur le sable, qu'on traverse, nommé quand on le vise */
+    const galets = []; map.obj.forEach((o, i) => { if(o === "galets") galets.push(i); });
+    if(galets.length !== GALETS_ILE) throw new Error(`${galets.length} groupes de galets (${GALETS_ILE} voulus)`);
+    if(galets.some(i => map.type[i] !== "sand")) throw new Error("des galets ailleurs que sur le sable");
+    if(!traversable("galets")) throw new Error("on ne traverse pas les galets");
+    let g = null; objMesh(galets[0]).traverse(o => { if(o.userData.galets) g = o.userData.galets; });
+    if(!g) throw new Error("les galets n'ont pas leur modèle");
+    const vise = galets.find(i => { const j = i + N; return map.type[j] !== "water" && !map.obj[j] && !occ.has(j); });
+    if(vise !== undefined){
+      hold(null); keys.u = keys.d = keys.l = keys.r = 0;
+      placePlayer(centerOf(vise % N), centerOf(Math.floor(vise / N) + 1), 0, -1); frames(1);
+      if(!$("#btn-act").textContent.includes("Galets")) throw new Error(`devant les galets, le bouton dit « ${$("#btn-act").textContent} »`);
+    }
+    return `${n("rock")} pierres, ${n("herbe")} herbes hautes, ${n("buisson")} groseilliers, ${n("thym")} thyms, ${fleurs} fleurs de ${sortes.size} sortes (${seules} seules), ${galets.length} groupes de galets sur le sable`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
