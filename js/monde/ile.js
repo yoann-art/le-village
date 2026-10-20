@@ -216,60 +216,142 @@ const SAISONS = {
     arbre: [[0x5E8A72, 0x648F76], 0x7AA08A], pousse: 0x86A890}
 };
 const enSaison = () => SAISONS[saison()];
-/* Terrain : dalle d'herbe ou de sable sur un socle de terre ; une place par case de l'île (une case d'eau a sa
-   place vide), pour pouvoir creuser et combler (étape 1.9) */
-const slabs = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.24,1), toon({color:0xffffff}), N*N);
-slabs.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N*N*3), 3);   // toutes les places dès le départ (slabs.count change)
-/* le socle de terre ne se voit qu'au bord de l'eau (ailleurs, les dalles le cachent) : seulement là, pour le téléphone
-   (l'île agrandie : 9 216 cases) ; refaireSocle le repose quand on creuse ou comble */
-const dirt = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.8,1), mat(0xA8774C), N*N);
-function refaireSocle(){
-  let n = 0;
-  for(let i = 0; i < N*N; i++){
-    if(map.type[i] === "water") continue;
-    const x = i % N, z = (i - x) / N;
-    if(![[x+1, z], [x-1, z], [x, z+1], [x, z-1]].some(([a, b]) => !inb(a, b) || map.type[idx(a, b)] === "water")) continue;
-    m4.makeTranslation(centerOf(x), -.64, centerOf(z)); dirt.setMatrixAt(n++, m4);
-  }
-  dirt.count = n; dirt.instanceMatrix.needsUpdate = true;
-}
-const m4 = new THREE.Matrix4(), col = new THREE.Color(), RIEN = new THREE.Matrix4().makeScale(0, 0, 0);
-/* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige des dalles peintes */
-const NEIGE = [new THREE.Color(0xEEF3F6), new THREE.Color(0xF6F9FB)], entamees = new Set();
+/* Le sol de l'île, d'un seul tenant (étape 2.1, morceau 4a ; Yo, 20 octobre 2026 : « refaire tout le sable et le rendre plus
+   naturel » ; son choix : tout le sol) : avant, une dalle carrée par case, en damier de deux couleurs, sur un socle de terre
+   au bord de l'eau ; maintenant une seule surface, faite de petits carrés de ⅓ de case (S sommets par case) :
+   - sa hauteur suit la terre (la part de terre autour d'un point, d'après les cases voisines) : le milieu d'une case de
+     terre est à 0 (là où l'on marche et où tout est posé), puis le sol descend en pente douce sous l'eau ; la côte n'est
+     plus en escalier, ses coins s'arrondissent ;
+   - sa couleur : l'herbe de la saison et le sable se mêlent sur ½ case, l'herbe varie doucement d'un endroit à l'autre
+     (plus de damier), le fond se fonce sous l'eau, la neige la blanchit, une case qu'on commence à creuser est de la terre ;
+   - découpée en carrés de CH × CH cases (chacun écarté du dessin hors du champ de la caméra) ; seulement la terre et
+     l'eau tout près (le fond de la mer, au-delà, reste plat) ; refaite autour d'une case qu'on creuse ou comble. */
+const S = 3, R = 1.6, CH = 16, NV = N * S + 1, ou = (gx, gz) => gz * NV + gx;
+const SOL_MAT = toon({vertexColors: true});
+const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV);   // gardés : la neige et la saison ne repeignent que la couleur
+const col = new THREE.Color();
+/* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige peinte sur le sol */
+const NEIGE = new THREE.Color(0xF2F6F9), entamees = new Set();
 let peinteNeige = 0;
-/* entame : une case qu'on a commencé à creuser (de la terre retournée, un peu plus bas) ; sans le dire, elle le reste */
-/* une dalle par case de terre seulement (l'île agrandie : la mer n'a pas de dalle à dessiner) : place[i], sa place dans la
-   série ; une case comblée en reçoit une à la fin */
-const place = new Int32Array(N*N).fill(-1);
-let nDalles = 0;
-function poserCase(i, entame = entamees.has(i)){
-  const x = i % N, z = Math.floor(i / N), wx = centerOf(x), wz = centerOf(z), alt = (x+z) % 2;
-  if(map.type[i] === "water"){ if(place[i] >= 0) slabs.setMatrixAt(place[i], RIEN); return; }
-  if(place[i] < 0){ place[i] = nDalles++; slabs.count = nDalles; }
-  m4.makeTranslation(wx, entame ? -.2 : -.12, wz); slabs.setMatrixAt(place[i], m4);
-  col.setHex(entame ? 0x9A6B45 : map.type[i] === "sand" ? (alt ? 0xEBD793 : 0xF1E0A3) : enSaison().herbe[alt]);
-  if(!entame && peinteNeige > 0 && map.type[i] !== "water") col.lerp(NEIGE[alt], peinteNeige * (map.type[i] === "sand" ? .6 : 1));   // le sable, un peu moins
-  slabs.setColorAt(place[i], col);
+const SABLE = new THREE.Color(0xEFDC9C), SABLE_ALT = new THREE.Color(0xE9D38E), TERRE = new THREE.Color(0x9A6B45), FOND = new THREE.Color(0x3E9DB4);
+const cH = new THREE.Color(), cH2 = new THREE.Color();
+/* un petit relief de couleur, doux (l'herbe qui varie d'un endroit à l'autre) */
+const doux = (x, z) => .5 + .25 * Math.sin(x * .37 + z * .11) * Math.cos(z * .29 - x * .07) + .25 * Math.sin(x * .13 - z * .41 + 1.7);
+/* la hauteur selon la part de terre : 1 → 0 (le milieu d'une case), ½ → juste au-dessus de l'eau, ¼ → dessous, 0 → le fond */
+const PENTE = [[0, -1.0], [.22, -.44], [.4, -.2], [.55, -.06], [.7, 0]];
+function hauteurDe(f){
+  for(let k = 1; k < PENTE.length; k++) if(f <= PENTE[k][0]){ const [a, ha] = PENTE[k - 1], [b, hb] = PENTE[k], t = (f - a) / (b - a); return ha + (hb - ha) * t * t * (3 - 2 * t); }
+  return 0;
 }
-/* La couleur de la dalle d'une case [r, g, b] (pour la vérification : l'herbe selon la saison, la neige) */
-export const couleurSol = i => place[i] >= 0 ? [...slabs.instanceColor.array.slice(place[i] * 3, place[i] * 3 + 3)] : null;
-for(let i = 0; i < N*N; i++) poserCase(i);
-slabs.instanceColor.needsUpdate = true;
-slabs.receiveShadow = true; dirt.receiveShadow = true;
-refaireSocle();
-scene.add(slabs, dirt);
-const terrainChange = () => { slabs.instanceMatrix.needsUpdate = dirt.instanceMatrix.needsUpdate = slabs.instanceColor.needsUpdate = true; };
+/* un point du sol (u, v en cases) : les cases à moins de R de lui, pondérées par la distance (plus R est grand, plus la côte
+   s'arrondit) ; rend sa hauteur, et sa couleur dans cH */
+function echantillon(u, v){
+  let w = 0, terre = 0, sable = 0, wt = 0, ent = 0;
+  for(let z = Math.floor(v - R - .5); z <= Math.floor(v + R - .5); z++) for(let x = Math.floor(u - R - .5); x <= Math.floor(u + R - .5); x++){
+    const d = Math.hypot(x + .5 - u, z + .5 - v); if(d >= R) continue;
+    const k = (1 - d / R) ** 2;
+    w += k;
+    if(!inb(x, z)) continue;
+    const i = idx(x, z), t = map.type[i];
+    if(t !== "water"){ terre += k; wt += k; if(t === "sand") sable += k; if(entamees.has(i)) ent += k; }
+  }
+  const f = w ? terre / w : 0, ici = idx(Math.max(0, Math.min(N - 1, Math.floor(u))), Math.max(0, Math.min(N - 1, Math.floor(v))));
+  const sb = wt ? sable / wt : (lieuEau(ici) === "mer" ? 1 : .3), e = wt ? ent / wt : 0;
+  /* le sable et l'herbe : leur limite un peu plus nette que la côte (la part de sable passe de ⅓ à ⅔) */
+  const sn = sb <= 0 || sb >= 1 ? sb : sb + (doux(u * 2.3 + 7, v * 2.1) - .5) * .4 + (doux(v * 6.1, u * 5.3) - .5) * .15;   // une limite irrégulière, comme dans la nature
+  const s = sn <= .2 ? 0 : sn >= .8 ? 1 : ((sn - .2) / .6) ** 2 * (3 - 2 * (sn - .2) / .6);
+  let h = hauteurDe(f);
+  if(e > 0) h -= .08 * e;
+  /* le milieu d'une case d'eau reste bien sous l'eau (une mare creusée à la pelle, d'une seule case, se voit) */
+  if(map.type[ici] === "water" && u >= 0 && v >= 0 && u < N && v < N){
+    const dc = Math.max(Math.abs(u - Math.floor(u) - .5), Math.abs(v - Math.floor(v) - .5)) / .5;
+    h = Math.min(h, -.6 + (h + .6) * dc);
+  }
+  dernier.s = s; dernier.e = e;
+  peindre(u, v, h, s, e);
+  return h;
+}
+const dernier = {s: 0, e: 0};
+/* la couleur d'un point : l'herbe de la saison, qui varie doucement, et le sable, mêlés ; le fond sous l'eau ; dans cH */
+function peindre(u, v, h, s, e){
+  const wx = u - H, wz = v - H, herbe = enSaison().herbe;
+  cH.setHex(herbe[0]).lerp(cH2.setHex(herbe[1]), doux(wx, wz));
+  col.copy(SABLE).lerp(SABLE_ALT, doux(wz * 1.7, wx * 1.3));
+  cH.lerp(col, s);
+  if(peinteNeige > 0) cH.lerp(NEIGE, peinteNeige * (1 - s * .4));   // le sable, un peu moins
+  if(e > 0) cH.lerp(TERRE, e);
+  if(h < -.2) cH.lerp(FOND, Math.min(1, (-.2 - h) / .6) * .8);
+}
+function sommet(gx, gz){
+  const q = ou(gx, gz);
+  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e;
+  COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
+}
+/* les morceaux du sol : un par carré de CH × CH cases ; seulement les petits carrés au-dessus du fond plat */
+const MORCEAUX = [];
+function utile(gx, gz){
+  for(const [a, b] of [[gx, gz], [gx + 1, gz], [gx, gz + 1], [gx + 1, gz + 1]]) if(HAUT[ou(a, b)] > -.99) return true;
+  return false;
+}
+function construireMorceau(cx, cz){
+  const ancien = MORCEAUX[cz * (N / CH) + cx];
+  const pos = [], cou = [], ind = [], g0x = cx * CH * S, g0z = cz * CH * S, n = CH * S + 1;
+  for(let j = 0; j < n; j++) for(let k = 0; k < n; k++){
+    const gx = g0x + k, gz = g0z + j, o = ou(gx, gz);
+    pos.push(gx / S - H, HAUT[o], gz / S - H); cou.push(COUL[o * 3], COUL[o * 3 + 1], COUL[o * 3 + 2]);
+  }
+  for(let j = 0; j < n - 1; j++) for(let k = 0; k < n - 1; k++){
+    if(!utile(g0x + k, g0z + j)) continue;
+    const a = j * n + k, b = a + 1, c = a + n, d = c + 1;
+    /* la diagonale suit la pente (sinon la côte fait des dents) */
+    if(Math.abs(HAUT[ou(g0x + k, g0z + j)] - HAUT[ou(g0x + k + 1, g0z + j + 1)]) > Math.abs(HAUT[ou(g0x + k + 1, g0z + j)] - HAUT[ou(g0x + k, g0z + j + 1)]))
+      ind.push(a, c, b, b, c, d); else ind.push(a, c, d, a, d, b);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(cou, 3));
+  g.setIndex(ind); g.computeVertexNormals(); g.computeBoundingSphere();
+  if(ancien){ ancien.geometry.dispose(); ancien.geometry = g; return; }
+  const m = new THREE.Mesh(g, SOL_MAT); m.receiveShadow = true;
+  MORCEAUX[cz * (N / CH) + cx] = m; scene.add(m);
+}
+/* refaire le sol entre les cases (x0, z0) et (x1, z1), et un peu autour */
+function refaireSol(x0 = 0, z0 = 0, x1 = N - 1, z1 = N - 1){
+  const ga = Math.max(0, (x0 - 2) * S), gb = Math.min(NV - 1, (x1 + 3) * S), ha = Math.max(0, (z0 - 2) * S), hb = Math.min(NV - 1, (z1 + 3) * S);
+  for(let gz = ha; gz <= hb; gz++) for(let gx = ga; gx <= gb; gx++) sommet(gx, gz);
+  for(let cz = Math.floor(ha / S / CH); cz <= Math.min(N / CH - 1, Math.floor(hb / S / CH)); cz++)
+    for(let cx = Math.floor(ga / S / CH); cx <= Math.min(N / CH - 1, Math.floor(gb / S / CH)); cx++) construireMorceau(cx, cz);
+}
+/* repeindre le sol (une nouvelle saison, la neige) : seulement ses couleurs, sans refaire sa forme */
+function repeindreSol(){
+  for(let gz = 0; gz < NV; gz++) for(let gx = 0; gx < NV; gx++){
+    const q = ou(gx, gz);
+    if(HAUT[q] <= -.99) continue;                    // le fond plat, qu'on ne dessine pas
+    peindre(gx / S, gz / S, HAUT[q], SAB[q], ENT[q]);
+    COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
+  }
+  MORCEAUX.forEach((m, k) => {
+    const cx = k % (N / CH), cz = Math.floor(k / (N / CH)), n = CH * S + 1, a = m.geometry.attributes.color.array;
+    for(let j = 0; j < n; j++) for(let q = 0; q < n; q++){ const o = ou(cx * CH * S + q, cz * CH * S + j) * 3, d = (j * n + q) * 3; a[d] = COUL[o]; a[d + 1] = COUL[o + 1]; a[d + 2] = COUL[o + 2]; }
+    m.geometry.attributes.color.needsUpdate = true;
+  });
+}
+/* La couleur du sol au milieu d'une case [r, g, b] (pour la vérification : l'herbe selon la saison, la neige) */
+export const couleurSol = i => { if(map.type[i] === "water") return null; echantillon(i % N + .5, Math.floor(i / N) + .5); return [cH.r, cH.g, cH.b]; };
+/* la hauteur du sol au milieu d'une case (pour la vérification) */
+export const hauteurSol = i => echantillon(i % N + .5, Math.floor(i / N) + .5);
+refaireSol();
 /* Creuser, combler (étape 1.9) : la case devient de l'eau (« water ») ou de la terre (son herbe ou son sable d'origine,
    de l'herbe pour l'étang comblé) ; gardé dans la partie. Rien n'y repousse tout seul ensuite */
 export function setTerrain(i, t){
   map.type[i] = t; entamees.delete(i);
   if(t === ORIGINE[i]) delete state.terrain[i]; else state.terrain[i] = t;
   if(!state.ile[i]) state.ile[i] = {o: null};
-  poserCase(i); refaireSocle(); terrainChange();
+  refaireSol(i % N, Math.floor(i / N), i % N, Math.floor(i / N));
 }
 export const terreDe = i => ORIGINE[i] === "water" ? "grass" : ORIGINE[i];
 /* Une case qu'on commence à creuser, ou qu'on laisse (entame = false) */
-export function entamer(i, entame){ if(entame) entamees.add(i); else entamees.delete(i); poserCase(i, entame); terrainChange(); }
+export function entamer(i, entame){ if(entame) entamees.add(i); else entamees.delete(i); refaireSol(i % N, Math.floor(i / N), i % N, Math.floor(i / N)); }
 export const water = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90),
   new THREE.MeshPhongMaterial({color:0x58C3D8, transparent:true, opacity:.8, shininess:90, specular:0x99DDEE}));
 water.rotation.x = -Math.PI/2; water.position.y = -.2; water.receiveShadow = true;
@@ -485,8 +567,8 @@ const SAISONNIER = o => o === "tree" || o === "herbe" || o === "buisson" || o ==
 let peinte = saison();
 export function rafraichirSaison(){
   peinte = saison();
-  for(let i = 0; i < N*N; i++){ poserCase(i); if(SAISONNIER(map.obj[i])) refreshObj(i); }
-  slabs.instanceColor.needsUpdate = true;
+  repeindreSol();
+  for(let i = 0; i < N*N; i++) if(SAISONNIER(map.obj[i])) refreshObj(i);
 }
 /* Ce qui a été planté grandit, les herbes repoussent, les baies reviennent : on regarde régulièrement */
 /* La neige au sol : on repeint l'herbe quand elle a assez changé (elle tombe et fond en douceur) */
@@ -494,8 +576,7 @@ setInterval(() => {
   const s = neigeAuSol();
   if(Math.abs(s - peinteNeige) < .03 && !(s === 0 && peinteNeige > 0)) return;
   peinteNeige = s < .01 ? 0 : s;
-  for(let i = 0; i < N*N; i++) if(map.type[i] !== "water") poserCase(i);
-  slabs.instanceColor.needsUpdate = true;
+  repeindreSol();
 }, 250);
 let neigeVue = neigeBranches();
 setInterval(() => {
