@@ -30,7 +30,7 @@ import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, G
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
-import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol, plageIci } from "../js/monde/ile.js";
 import { feuillesQuiVolent, MAT_OMBRE } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
@@ -304,7 +304,7 @@ export async function verifier(){
     }
     return `${n("rock")} pierres, ${n("herbe")} herbes hautes, ${n("buisson")} groseilliers, ${n("thym")} thyms, ${fleurs} fleurs de ${sortes.size} sortes (${seules} seules), ${galets.length} groupes de galets sur le sable`;
   });
-  await etape("Le sol d'un seul tenant (Yo, 20 octobre 2026 : « rendre le sable plus naturel ») : le milieu des cases de terre à plat, la côte qui descend sous l'eau, plus de damier", async () => {
+  await etape("Le sol d'un seul tenant (Yo, 20 octobre 2026 : « rendre le sable plus naturel ») : le milieu des cases de terre à plat, la côte qui descend sous l'eau, plus de damier, la plage mouillée au bord de la mer", async () => {
     let terre = 0, plats = 0, eau = 0, sous = 0, damier = 0, paires = 0;
     for(let i = 0; i < N * N; i++){
       const h = hauteurSol(i);
@@ -319,7 +319,11 @@ export async function verifier(){
     if(plats < terre * .99) throw new Error(`${terre - plats} cases de terre ne sont pas à plat`);
     if(sous < eau * .99) throw new Error(`${eau - sous} cases d'eau ne sont pas sous l'eau`);
     if(damier > paires * .02) throw new Error(`l'herbe change d'une case à l'autre (${damier} fois sur ${paires}) : un damier`);
-    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier`;
+    /* la plage (morceau 4b) : le sable mouillé au bord de la mer, le grain et les rides */
+    const pl = plageIci();
+    if(!pl.grain) throw new Error("le sol n'a pas le grain du sable ni les rides");
+    if(pl.mouilles < 300) throw new Error(`seulement ${pl.mouilles} points de sable mouillé au bord de la mer`);
+    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);

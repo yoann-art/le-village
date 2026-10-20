@@ -227,8 +227,37 @@ const enSaison = () => SAISONS[saison()];
    - découpée en carrés de CH × CH cases (chacun écarté du dessin hors du champ de la caméra) ; seulement la terre et
      l'eau tout près (le fond de la mer, au-delà, reste plat) ; refaite autour d'une case qu'on creuse ou comble. */
 const S = 3, R = 1.6, CH = 16, NV = N * S + 1, ou = (gx, gz) => gz * NV + gx;
+/* La plage (étape 2.1, morceau 4b) : le grain du sable et les rides que la mer laisse sur le sable mouillé, dessinés au pixel
+   (les couleurs des sommets, à ⅓ de case, ne peuvent pas les montrer) : deux nombres par sommet, sa part de sable (« sable »,
+   le grain) et combien il est mouillé (« mouille », les rides) ; le grain vient d'une petite image de bruit (GRAIN, répétée
+   sur le sol), les rides d'ondes qui serpentent */
+const GRAIN_IMG = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const x = c.getContext("2d"), d = x.createImageData(128, 128);
+  let g = 7;
+  const alea = () => { g = (g * 16807) % 2147483647; return g / 2147483647; };
+  for(let k = 0; k < 128 * 128; k++){
+    const r = alea(), v = r > .965 ? 70 : r > .93 ? 205 : 118 + alea() * 34;   // quelques grains sombres, d'autres clairs
+    d.data[k * 4] = d.data[k * 4 + 1] = d.data[k * 4 + 2] = v; d.data[k * 4 + 3] = 255;
+  }
+  x.putImageData(d, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  return t;
+})();
 const SOL_MAT = toon({vertexColors: true});
-const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV);   // gardés : la neige et la saison ne repeignent que la couleur
+SOL_MAT.onBeforeCompile = sh => {
+  sh.uniforms.grainSol = {value: GRAIN_IMG};
+  sh.vertexShader = "attribute float sable;\nattribute float mouille;\nvarying float vSable;\nvarying float vMouille;\nvarying vec2 vSolXZ;\n" +
+    sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n  vSable = sable; vMouille = mouille; vSolXZ = position.xz;");
+  sh.fragmentShader = "uniform sampler2D grainSol;\nvarying float vSable;\nvarying float vMouille;\nvarying vec2 vSolXZ;\n" +
+    sh.fragmentShader.replace("#include <color_fragment>", `#include <color_fragment>
+  float grainS = texture2D(grainSol, vSolXZ * 0.8).r - 0.53 + (texture2D(grainSol, vSolXZ * 0.27 + 0.3).r - 0.53) * 0.6;
+  diffuseColor.rgb *= 1.0 + grainS * 0.85 * vSable;
+  float rideS = sin(vSolXZ.x * 6.3 + vSolXZ.y * 2.4 + sin(vSolXZ.y * 1.7 + vSolXZ.x * 0.6) * 2.2 + sin(vSolXZ.x * 0.9) * 1.4);
+  diffuseColor.rgb *= 1.0 - smoothstep(0.55, 0.95, rideS) * 0.13 * vMouille + smoothstep(-0.2, -0.75, rideS) * 0.05 * vMouille;`);
+};
+SOL_MAT.customProgramCacheKey = () => "sol-plage";
+const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV), MOU = new Float32Array(NV * NV);   // gardés : la neige et la saison ne repeignent que la couleur
 const col = new THREE.Color();
 /* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige peinte sur le sol */
 const NEIGE = new THREE.Color(0xF2F6F9), entamees = new Set();
@@ -239,14 +268,16 @@ const cH = new THREE.Color(), cH2 = new THREE.Color();
 const doux = (x, z) => .5 + .25 * Math.sin(x * .37 + z * .11) * Math.cos(z * .29 - x * .07) + .25 * Math.sin(x * .13 - z * .41 + 1.7);
 /* la hauteur selon la part de terre : 1 → 0 (le milieu d'une case), ½ → juste au-dessus de l'eau, ¼ → dessous, 0 → le fond */
 const PENTE = [[0, -1.0], [.22, -.44], [.4, -.2], [.55, -.06], [.7, 0]];
-function hauteurDe(f){
-  for(let k = 1; k < PENTE.length; k++) if(f <= PENTE[k][0]){ const [a, ha] = PENTE[k - 1], [b, hb] = PENTE[k], t = (f - a) / (b - a); return ha + (hb - ha) * t * t * (3 - 2 * t); }
+/* la plage (morceau 4b) : au bord de la mer, le sable descend plus doucement, en haut-fond (l'eau claire du bord) */
+const PENTE_PLAGE = [[0, -.82], [.22, -.3], [.4, -.17], [.55, -.06], [.7, 0]];
+function hauteurDe(f, table = PENTE){
+  for(let k = 1; k < table.length; k++) if(f <= table[k][0]){ const [a, ha] = table[k - 1], [b, hb] = table[k], t = (f - a) / (b - a); return ha + (hb - ha) * t * t * (3 - 2 * t); }
   return 0;
 }
 /* un point du sol (u, v en cases) : les cases à moins de R de lui, pondérées par la distance (plus R est grand, plus la côte
    s'arrondit) ; rend sa hauteur, et sa couleur dans cH */
 function echantillon(u, v){
-  let w = 0, terre = 0, sable = 0, wt = 0, ent = 0;
+  let w = 0, terre = 0, sable = 0, wt = 0, ent = 0, mer = 0;
   for(let z = Math.floor(v - R - .5); z <= Math.floor(v + R - .5); z++) for(let x = Math.floor(u - R - .5); x <= Math.floor(u + R - .5); x++){
     const d = Math.hypot(x + .5 - u, z + .5 - v); if(d >= R) continue;
     const k = (1 - d / R) ** 2;
@@ -254,37 +285,44 @@ function echantillon(u, v){
     if(!inb(x, z)) continue;
     const i = idx(x, z), t = map.type[i];
     if(t !== "water"){ terre += k; wt += k; if(t === "sand") sable += k; if(entamees.has(i)) ent += k; }
+    else if(MER[i]) mer += k;
   }
   const f = w ? terre / w : 0, ici = idx(Math.max(0, Math.min(N - 1, Math.floor(u))), Math.max(0, Math.min(N - 1, Math.floor(v))));
   const sb = wt ? sable / wt : (lieuEau(ici) === "mer" ? 1 : .3), e = wt ? ent / wt : 0;
   /* le sable et l'herbe : leur limite un peu plus nette que la côte (la part de sable passe de ⅓ à ⅔) */
   const sn = sb <= 0 || sb >= 1 ? sb : sb + (doux(u * 2.3 + 7, v * 2.1) - .5) * .4 + (doux(v * 6.1, u * 5.3) - .5) * .15;   // une limite irrégulière, comme dans la nature
   const s = sn <= .2 ? 0 : sn >= .8 ? 1 : ((sn - .2) / .6) ** 2 * (3 - 2 * (sn - .2) / .6);
-  let h = hauteurDe(f);
+  /* la plage : le bord de la mer, côté sable */
+  const plage = mer > 0 ? Math.min(1, s * 1.4) : 0;
+  let h = plage > 0 ? hauteurDe(f) * (1 - plage) + hauteurDe(f, PENTE_PLAGE) * plage : hauteurDe(f);
   if(e > 0) h -= .08 * e;
   /* le milieu d'une case d'eau reste bien sous l'eau (une mare creusée à la pelle, d'une seule case, se voit) */
   if(map.type[ici] === "water" && u >= 0 && v >= 0 && u < N && v < N){
     const dc = Math.max(Math.abs(u - Math.floor(u) - .5), Math.abs(v - Math.floor(v) - .5)) / .5;
     h = Math.min(h, -.6 + (h + .6) * dc);
   }
-  dernier.s = s; dernier.e = e;
-  peindre(u, v, h, s, e);
+  /* le sable mouillé : la bande que la mer vient lécher, juste au-dessus de l'eau, et ce qui est dessous */
+  const m = plage > 0 ? plage * Math.min(1, Math.max(0, (-.015 - h) / .1)) : 0;
+  dernier.s = s; dernier.e = e; dernier.m = m;
+  peindre(u, v, h, s, e, m);
   return h;
 }
-const dernier = {s: 0, e: 0};
+const dernier = {s: 0, e: 0, m: 0};
+const MOUILLE = new THREE.Color(0xC9AE6E);
 /* la couleur d'un point : l'herbe de la saison, qui varie doucement, et le sable, mêlés ; le fond sous l'eau ; dans cH */
-function peindre(u, v, h, s, e){
+function peindre(u, v, h, s, e, m = 0){
   const wx = u - H, wz = v - H, herbe = enSaison().herbe;
   cH.setHex(herbe[0]).lerp(cH2.setHex(herbe[1]), doux(wx, wz));
   col.copy(SABLE).lerp(SABLE_ALT, doux(wz * 1.7, wx * 1.3));
   cH.lerp(col, s);
   if(peinteNeige > 0) cH.lerp(NEIGE, peinteNeige * (1 - s * .4));   // le sable, un peu moins
   if(e > 0) cH.lerp(TERRE, e);
+  if(m > 0) cH.lerp(MOUILLE, m * .75);                     // le sable mouillé, plus sombre et plus chaud
   if(h < -.2) cH.lerp(FOND, Math.min(1, (-.2 - h) / .6) * .8);
 }
 function sommet(gx, gz){
   const q = ou(gx, gz);
-  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e;
+  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e; MOU[q] = dernier.m;
   COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
 }
 /* les morceaux du sol : un par carré de CH × CH cases ; seulement les petits carrés au-dessus du fond plat */
@@ -295,10 +333,11 @@ function utile(gx, gz){
 }
 function construireMorceau(cx, cz){
   const ancien = MORCEAUX[cz * (N / CH) + cx];
-  const pos = [], cou = [], ind = [], g0x = cx * CH * S, g0z = cz * CH * S, n = CH * S + 1;
+  const pos = [], cou = [], sab = [], mou = [], ind = [], g0x = cx * CH * S, g0z = cz * CH * S, n = CH * S + 1;
   for(let j = 0; j < n; j++) for(let k = 0; k < n; k++){
     const gx = g0x + k, gz = g0z + j, o = ou(gx, gz);
     pos.push(gx / S - H, HAUT[o], gz / S - H); cou.push(COUL[o * 3], COUL[o * 3 + 1], COUL[o * 3 + 2]);
+    sab.push(SAB[o] * (1 - ENT[o])); mou.push(MOU[o]);
   }
   for(let j = 0; j < n - 1; j++) for(let k = 0; k < n - 1; k++){
     if(!utile(g0x + k, g0z + j)) continue;
@@ -310,6 +349,8 @@ function construireMorceau(cx, cz){
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("color", new THREE.Float32BufferAttribute(cou, 3));
+  g.setAttribute("sable", new THREE.Float32BufferAttribute(sab, 1));
+  g.setAttribute("mouille", new THREE.Float32BufferAttribute(mou, 1));
   g.setIndex(ind); g.computeVertexNormals(); g.computeBoundingSphere();
   if(ancien){ ancien.geometry.dispose(); ancien.geometry = g; return; }
   const m = new THREE.Mesh(g, SOL_MAT); m.receiveShadow = true;
@@ -327,7 +368,7 @@ function repeindreSol(){
   for(let gz = 0; gz < NV; gz++) for(let gx = 0; gx < NV; gx++){
     const q = ou(gx, gz);
     if(HAUT[q] <= -.99) continue;                    // le fond plat, qu'on ne dessine pas
-    peindre(gx / S, gz / S, HAUT[q], SAB[q], ENT[q]);
+    peindre(gx / S, gz / S, HAUT[q], SAB[q], ENT[q], MOU[q]);
     COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
   }
   MORCEAUX.forEach((m, k) => {
@@ -340,6 +381,8 @@ function repeindreSol(){
 export const couleurSol = i => { if(map.type[i] === "water") return null; echantillon(i % N + .5, Math.floor(i / N) + .5); return [cH.r, cH.g, cH.b]; };
 /* la hauteur du sol au milieu d'une case (pour la vérification) */
 export const hauteurSol = i => echantillon(i % N + .5, Math.floor(i / N) + .5);
+/* la plage (pour la vérification) : combien de points du sol sont mouillés, et si le sol a son grain et ses rides */
+export const plageIci = () => ({mouilles: MOU.reduce((n, v) => n + (v > .5 ? 1 : 0), 0), grain: MORCEAUX.some(m => m && m.geometry.attributes.sable && m.geometry.attributes.mouille)});
 refaireSol();
 /* Creuser, combler (étape 1.9) : la case devient de l'eau (« water ») ou de la terre (son herbe ou son sable d'origine,
    de l'herbe pour l'étang comblé) ; gardé dans la partie. Rien n'y repousse tout seul ensuite */
