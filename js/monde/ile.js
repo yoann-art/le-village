@@ -247,19 +247,56 @@ const GRAIN_IMG = (() => {
 const SOL_MAT = toon({vertexColors: true});
 SOL_MAT.onBeforeCompile = sh => {
   sh.uniforms.grainSol = {value: GRAIN_IMG};
-  sh.vertexShader = "attribute float sable;\nattribute float mouille;\nvarying float vSable;\nvarying float vMouille;\nvarying vec2 vSolXZ;\n" +
-    sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n  vSable = sable; vMouille = mouille; vSolXZ = position.xz;");
-  sh.fragmentShader = "uniform sampler2D grainSol;\nvarying float vSable;\nvarying float vMouille;\nvarying vec2 vSolXZ;\n" +
-    sh.fragmentShader.replace("#include <color_fragment>", `#include <color_fragment>
+  sh.vertexShader = "attribute float sable;\nattribute float mouille;\nattribute float berge;\nvarying float vSable;\nvarying float vMouille;\nvarying float vBerge;\nvarying float vSolY;\nvarying vec2 vSolXZ;\n" +
+    sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n  vSable = sable; vMouille = mouille; vBerge = berge; vSolY = position.y; vSolXZ = position.xz;");
+  sh.fragmentShader = `uniform sampler2D grainSol;
+varying float vSable;
+varying float vMouille;
+varying float vBerge;
+varying float vSolY;
+varying vec2 vSolXZ;
+float hSol(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float bruitSol(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hSol(i), hSol(i + vec2(1.0, 0.0)), f.x), mix(hSol(i + vec2(0.0, 1.0)), hSol(i + vec2(1.0, 1.0)), f.x), f.y); }
+/* des cellules rondes : la distance au centre de la plus proche (x), l'écart avec la suivante (y : le joint), son tirage (z) */
+vec2 cotSol;
+vec3 cellSol(vec2 uv){
+  vec2 i = floor(uv), f = fract(uv); float d1 = 8.0, d2 = 8.0, id = 0.0;
+  for(int y = -1; y <= 1; y++) for(int x = -1; x <= 1; x++){
+    vec2 o = vec2(float(x), float(y)), r = o + 0.2 + 0.6 * vec2(hSol(i + o), hSol(i + o + 31.7)) - f;
+    float d = dot(r, r);
+    if(d < d1){ d2 = d1; d1 = d; id = hSol(i + o + 7.3); cotSol = -r; } else if(d < d2) d2 = d;
+  }
+  return vec3(sqrt(d1), sqrt(d2) - sqrt(d1), id);
+}
+` + sh.fragmentShader.replace("#include <color_fragment>", `#include <color_fragment>
+  if(vBerge > 0.02){
+    if(vSolY > -0.2){
+      /* la berge : des mottes de terre rondes, claires au milieu, sombres aux joints, et de la mousse sur certaines */
+      float nB = bruitSol(vSolXZ * 4.0), n2B = bruitSol(vSolXZ * 1.3);
+      float motte = (nB - 0.5) * 0.22 + (texture2D(grainSol, vSolXZ * 1.1).r - 0.53) * 0.25;
+      float mousse = smoothstep(0.5, 0.6, n2B * 0.8 + nB * 0.25 + (1.0 - vBerge) * 0.35) * (1.0 - smoothstep(0.75, 0.88, dot(diffuseColor.rgb, vec3(0.333))));
+      vec3 cTerre = diffuseColor.rgb * (1.0 + motte);
+      vec3 cMousse = mix(vec3(0.44, 0.6, 0.15), vec3(0.6, 0.73, 0.21), nB) * (1.0 + motte * 0.5);
+      diffuseColor.rgb = mix(diffuseColor.rgb, mix(cTerre, cMousse, mousse * 0.85), smoothstep(0.1, 0.6, vBerge));
+    } else {
+      /* le fond de l'eau douce : des cailloux ronds, bruns et gris, entre eux la vase */
+      vec3 cC = cellSol(vSolXZ * 2.6 + 11.0);
+      float caillou = 1.0 - smoothstep(0.34, 0.4, cC.x);
+      vec3 teinte = mix(vec3(1.05, 0.98, 0.85), vec3(0.9, 0.92, 0.88), cC.z) * (1.0 + (1.0 - smoothstep(0.0, 0.35, cC.x)) * 0.18);
+      diffuseColor.rgb *= mix(vec3(0.62, 0.6, 0.5), teinte * (0.92 + dot(cotSol, vec2(-0.6, -0.8)) * 0.5), caillou);
+    }
+  }
   float grainS = texture2D(grainSol, vSolXZ * 0.8).r - 0.53 + (texture2D(grainSol, vSolXZ * 0.27 + 0.3).r - 0.53) * 0.6;
   diffuseColor.rgb *= 1.0 + grainS * 0.85 * vSable;
   float rideS = sin(vSolXZ.x * 6.3 + vSolXZ.y * 2.4 + sin(vSolXZ.y * 1.7 + vSolXZ.x * 0.6) * 2.2 + sin(vSolXZ.x * 0.9) * 1.4);
   diffuseColor.rgb *= 1.0 - smoothstep(0.55, 0.95, rideS) * 0.13 * vMouille + smoothstep(-0.2, -0.75, rideS) * 0.05 * vMouille;`);
 };
 SOL_MAT.customProgramCacheKey = () => "sol-plage";
-const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV), MOU = new Float32Array(NV * NV), MERV = new Uint8Array(NV * NV);
+const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV), MOU = new Float32Array(NV * NV), BER = new Float32Array(NV * NV), MERV = new Uint8Array(NV * NV);
 /* L'eau (étape 2.1, morceau 4c) lit le sol sous elle dans cette petite image, un point par sommet du sol : sa profondeur
-   (rouge) et si c'est la mer (vert ; l'étang et les mares n'ont pas d'écume) */
+   (rouge), si c'est la mer (vert ; l'étang et les mares n'ont pas d'écume), la terre floutée (bleu : la largeur de l'eau
+   claire et de l'écume) et la profondeur floutée (alpha : la forme ronde de l'étang) */
 const FOND_EAU = new Uint8Array(NV * NV * 4);
 const FOND_TEX = new THREE.DataTexture(FOND_EAU, NV, NV, THREE.RGBAFormat);
 FOND_TEX.magFilter = FOND_TEX.minFilter = THREE.LinearFilter; FOND_TEX.wrapS = FOND_TEX.wrapT = THREE.ClampToEdgeWrapping;
@@ -276,11 +313,14 @@ function flouBoite(a, b, r, pasL, pasC){
   }
 }
 function majFondEau(){
+  for(let q = 0; q < NV * NV; q++) PRES_A[q] = Math.min(1, Math.max(0, -.2 - HAUT[q]));
+  for(let k = 0; k < 2; k++){ flouBoite(PRES_A, PRES_B, 4, NV, 1); flouBoite(PRES_B, PRES_A, 4, 1, NV); }
+  for(let q = 0; q < NV * NV; q++) FOND_EAU[q * 4 + 3] = Math.round(PRES_A[q] * 255);
   for(let q = 0; q < NV * NV; q++) PRES_A[q] = HAUT[q] > -.2 ? 1 : 0;
   for(let k = 0; k < 2; k++){ flouBoite(PRES_A, PRES_B, 6, NV, 1); flouBoite(PRES_B, PRES_A, 6, 1, NV); }
   for(let q = 0; q < NV * NV; q++){
     FOND_EAU[q * 4] = Math.round(Math.min(1, Math.max(0, -.2 - HAUT[q])) * 255);
-    FOND_EAU[q * 4 + 1] = MERV[q] * 255; FOND_EAU[q * 4 + 2] = Math.round(PRES_A[q] * 255); FOND_EAU[q * 4 + 3] = 255;
+    FOND_EAU[q * 4 + 1] = MERV[q] * 255; FOND_EAU[q * 4 + 2] = Math.round(PRES_A[q] * 255);
   }
   FOND_TEX.needsUpdate = true;
 }   // gardés : la neige et la saison ne repeignent que la couleur
@@ -303,7 +343,7 @@ function hauteurDe(f, table = PENTE){
 /* un point du sol (u, v en cases) : les cases à moins de R de lui, pondérées par la distance (plus R est grand, plus la côte
    s'arrondit) ; rend sa hauteur, et sa couleur dans cH */
 function echantillon(u, v){
-  let w = 0, terre = 0, sable = 0, wt = 0, ent = 0, mer = 0;
+  let w = 0, terre = 0, sable = 0, wt = 0, ent = 0, mer = 0, douce = 0;
   for(let z = Math.floor(v - R - .5); z <= Math.floor(v + R - .5); z++) for(let x = Math.floor(u - R - .5); x <= Math.floor(u + R - .5); x++){
     const d = Math.hypot(x + .5 - u, z + .5 - v); if(d >= R) continue;
     const k = (1 - d / R) ** 2;
@@ -311,7 +351,7 @@ function echantillon(u, v){
     if(!inb(x, z)) continue;
     const i = idx(x, z), t = map.type[i];
     if(t !== "water"){ terre += k; wt += k; if(t === "sand") sable += k; if(entamees.has(i)) ent += k; }
-    else if(MER[i]) mer += k;
+    else if(MER[i]) mer += k; else douce += k;
   }
   const f = w ? terre / w : 0, ici = idx(Math.max(0, Math.min(N - 1, Math.floor(u))), Math.max(0, Math.min(N - 1, Math.floor(v))));
   const sb = wt ? sable / wt : (lieuEau(ici) === "mer" ? 1 : .3), e = wt ? ent / wt : 0;
@@ -327,28 +367,35 @@ function echantillon(u, v){
     const dc = Math.max(Math.abs(u - Math.floor(u) - .5), Math.abs(v - Math.floor(v) - .5)) / .5;
     h = Math.min(h, -.6 + (h + .6) * dc);
   }
+  /* l'eau douce a son propre fond de cailloux, en cuvette (pas le fond plat de la mer, qu'on ne dessine pas) */
+  if(mer === 0 && douce > 0) h = Math.max(h, -.45 - .2 * Math.min(1, douce / w * 1.6));
   /* le sable mouillé : la bande que la mer vient lécher, juste au-dessus de l'eau, et ce qui est dessous */
   const m = plage > 0 ? plage * Math.min(1, Math.max(0, (-.015 - h) / .1)) : 0;
-  dernier.s = s; dernier.e = e; dernier.m = m; dernier.mer = mer > 0 || (!wt && lieuEau(ici) === "mer") ? 1 : 0;
-  peindre(u, v, h, s, e, m);
+  /* la berge de l'étang et des mares (l'image de Yo, « Le bord de l'étang ») : une bande de terre brune en mottes rondes,
+     moussue, au bord de l'eau douce ; sous l'eau, le fond de cailloux */
+  const b = douce > 0 && w ? Math.min(1, Math.max(0, (douce / w - .1) / .12)) : 0;
+  dernier.s = s; dernier.e = e; dernier.m = m; dernier.b = b; dernier.mer = mer > 0 || (!wt && lieuEau(ici) === "mer") ? 1 : 0;
+  peindre(u, v, h, s, e, m, b);
   return h;
 }
-const dernier = {s: 0, e: 0, m: 0, mer: 0};
+const dernier = {s: 0, e: 0, m: 0, b: 0, mer: 0};
+const BERGE = new THREE.Color(0x94612F), FOND_DOUX = new THREE.Color(0x8E8A55);
 const MOUILLE = new THREE.Color(0xC9AE6E);
 /* la couleur d'un point : l'herbe de la saison, qui varie doucement, et le sable, mêlés ; le fond sous l'eau ; dans cH */
-function peindre(u, v, h, s, e, m = 0){
+function peindre(u, v, h, s, e, m = 0, b = 0){
   const wx = u - H, wz = v - H, herbe = enSaison().herbe;
   cH.setHex(herbe[0]).lerp(cH2.setHex(herbe[1]), doux(wx, wz));
   col.copy(SABLE).lerp(SABLE_ALT, doux(wz * 1.7, wx * 1.3));
   cH.lerp(col, s);
+  if(b > 0) cH.lerp(BERGE, b * b * (3 - 2 * b));            // la berge de terre brune
   if(peinteNeige > 0) cH.lerp(NEIGE, peinteNeige * (1 - s * .4));   // le sable, un peu moins
   if(e > 0) cH.lerp(TERRE, e);
   if(m > 0) cH.lerp(MOUILLE, m * .75);                     // le sable mouillé, plus sombre et plus chaud
-  if(h < -.2) cH.lerp(FOND, Math.min(1, (-.2 - h) / .6) * .8);
+  if(h < -.2) cH.lerp(b > 0 ? FOND_DOUX : FOND, Math.min(1, (-.2 - h) / .6) * (b > 0 ? .55 : .8));   // l'eau douce : un fond de cailloux brun-vert
 }
 function sommet(gx, gz){
   const q = ou(gx, gz);
-  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e; MOU[q] = dernier.m; MERV[q] = dernier.mer;
+  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e; MOU[q] = dernier.m; BER[q] = dernier.b; MERV[q] = dernier.mer;
   COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
 }
 /* les morceaux du sol : un par carré de CH × CH cases ; seulement les petits carrés au-dessus du fond plat */
@@ -359,11 +406,11 @@ function utile(gx, gz){
 }
 function construireMorceau(cx, cz){
   const ancien = MORCEAUX[cz * (N / CH) + cx];
-  const pos = [], cou = [], sab = [], mou = [], ind = [], g0x = cx * CH * S, g0z = cz * CH * S, n = CH * S + 1;
+  const pos = [], cou = [], sab = [], mou = [], ber = [], ind = [], g0x = cx * CH * S, g0z = cz * CH * S, n = CH * S + 1;
   for(let j = 0; j < n; j++) for(let k = 0; k < n; k++){
     const gx = g0x + k, gz = g0z + j, o = ou(gx, gz);
     pos.push(gx / S - H, HAUT[o], gz / S - H); cou.push(COUL[o * 3], COUL[o * 3 + 1], COUL[o * 3 + 2]);
-    sab.push(SAB[o] * (1 - ENT[o])); mou.push(MOU[o]);
+    sab.push(SAB[o] * (1 - ENT[o])); mou.push(MOU[o]); ber.push(BER[o] * (1 - ENT[o]));
   }
   for(let j = 0; j < n - 1; j++) for(let k = 0; k < n - 1; k++){
     if(!utile(g0x + k, g0z + j)) continue;
@@ -377,25 +424,66 @@ function construireMorceau(cx, cz){
   g.setAttribute("color", new THREE.Float32BufferAttribute(cou, 3));
   g.setAttribute("sable", new THREE.Float32BufferAttribute(sab, 1));
   g.setAttribute("mouille", new THREE.Float32BufferAttribute(mou, 1));
+  g.setAttribute("berge", new THREE.Float32BufferAttribute(ber, 1));
   g.setIndex(ind); g.computeVertexNormals(); g.computeBoundingSphere();
   if(ancien){ ancien.geometry.dispose(); ancien.geometry = g; return; }
   const m = new THREE.Mesh(g, SOL_MAT); m.receiveShadow = true;
   MORCEAUX[cz * (N / CH) + cx] = m; scene.add(m);
 }
 /* refaire le sol entre les cases (x0, z0) et (x1, z1), et un peu autour */
+/* La berge de l'étang et des mares (l'image de Yo, « Le bord de l'étang ») : des mottes de terre rondes, à demi dans l'eau,
+   tout le long de l'eau douce, certaines coiffées de mousse ; en série (un seul dessin pour toutes, deux avec la mousse) */
+const MOTTE_GEO = new THREE.SphereGeometry(1, 14, 9);
+const MOTTES = new THREE.InstancedMesh(MOTTE_GEO, toon({color: 0xffffff}), 2400);
+const MOUSSES = new THREE.InstancedMesh(MOTTE_GEO, toon({color: 0xffffff}), 2400);
+MOTTES.receiveShadow = MOUSSES.receiveShadow = true;
+MOTTES.setColorAt(0, new THREE.Color()); MOUSSES.setColorAt(0, new THREE.Color());
+MOTTES.count = MOUSSES.count = 0;
+scene.add(MOTTES, MOUSSES);
+const TERRE_MOTTE = [0x9C6331, 0x8A5527, 0xA9713B, 0x93602F].map(c => new THREE.Color(c));
+const MOUSSE_MOTTE = [0x7FA62A, 0x97BA33, 0x6E9524].map(c => new THREE.Color(c));
+const mM = new THREE.Matrix4(), qM = new THREE.Quaternion(), vM = new THREE.Vector3(), sM = new THREE.Vector3(), cM = new THREE.Color(), HAUT_Y = new THREE.Vector3(0, 1, 0);
+const tirM = q => (Math.imul(q + 7919, 2654435761) >>> 0) % 1000 / 1000;
+function majMottes(){
+  let n = 0, k = 0;
+  /* là où la ligne de l'eau coupe un petit côté du sol (entre deux points, l'un sec, l'autre sous l'eau) */
+  for(let gz = 1; gz < NV - 1; gz++) for(let gx = 1; gx < NV - 1; gx++) for(let c = 0; c < 2; c++){
+    const q = ou(gx, gz), o = c ? ou(gx, gz + 1) : ou(gx + 1, gz), h = HAUT[q], ho = HAUT[o];
+    if((h > -.2) === (ho > -.2) || ho <= -.99 || h <= -.99) continue;
+    if(Math.max(BER[q], BER[o]) < .4 || MERV[q] || MERV[o] || ENT[q] > 0 || ENT[o] > 0) continue;   // seulement l'eau douce
+    const qq = q * 2 + c;
+    if(tirM(qq * 7 + 1) > .95 || n >= 2400) continue;
+    const t = (h + .2) / (h - ho), r = .14 + tirM(qq * 3 + 2) * .11;
+    const x = (gx + (c ? 0 : t)) / S - H + (tirM(qq * 5 + 3) - .5) * .12, z = (gz + (c ? t : 0)) / S - H + (tirM(qq * 9 + 4) - .5) * .12;
+    qM.setFromAxisAngle(HAUT_Y, tirM(qq * 11) * 6.28);
+    vM.set(x, -.2 + r * .05, z); sM.set(r * 1.3, r * .8, r);
+    MOTTES.setMatrixAt(n, mM.compose(vM, qM, sM));
+    cM.copy(TERRE_MOTTE[Math.floor(tirM(qq * 13) * 4)]); if(peinteNeige > 0) cM.lerp(NEIGE, peinteNeige * .85);
+    MOTTES.setColorAt(n++, cM);
+    /* la mousse sur le dessus de certaines (pas sous la neige) */
+    if(tirM(qq * 17 + 5) < .35 && peinteNeige < .4 && k < 2400){
+      vM.y += r * .3; sM.set(r * 1.1, r * .64, r * .86);
+      MOUSSES.setMatrixAt(k, mM.compose(vM, qM, sM));
+      MOUSSES.setColorAt(k++, MOUSSE_MOTTE[Math.floor(tirM(qq * 19) * 3)]);
+    }
+  }
+  MOTTES.count = n; MOUSSES.count = k;
+  MOTTES.instanceMatrix.needsUpdate = MOUSSES.instanceMatrix.needsUpdate = true;
+  MOTTES.instanceColor.needsUpdate = MOUSSES.instanceColor.needsUpdate = true;
+}
 function refaireSol(x0 = 0, z0 = 0, x1 = N - 1, z1 = N - 1){
   const ga = Math.max(0, (x0 - 2) * S), gb = Math.min(NV - 1, (x1 + 3) * S), ha = Math.max(0, (z0 - 2) * S), hb = Math.min(NV - 1, (z1 + 3) * S);
   for(let gz = ha; gz <= hb; gz++) for(let gx = ga; gx <= gb; gx++) sommet(gx, gz);
   for(let cz = Math.floor(ha / S / CH); cz <= Math.min(N / CH - 1, Math.floor(hb / S / CH)); cz++)
     for(let cx = Math.floor(ga / S / CH); cx <= Math.min(N / CH - 1, Math.floor(gb / S / CH)); cx++) construireMorceau(cx, cz);
-  majFondEau();
+  majFondEau(); majMottes();
 }
 /* repeindre le sol (une nouvelle saison, la neige) : seulement ses couleurs, sans refaire sa forme */
 function repeindreSol(){
   for(let gz = 0; gz < NV; gz++) for(let gx = 0; gx < NV; gx++){
     const q = ou(gx, gz);
     if(HAUT[q] <= -.99) continue;                    // le fond plat, qu'on ne dessine pas
-    peindre(gx / S, gz / S, HAUT[q], SAB[q], ENT[q], MOU[q]);
+    peindre(gx / S, gz / S, HAUT[q], SAB[q], ENT[q], MOU[q], BER[q]);
     COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
   }
   MORCEAUX.forEach((m, k) => {
@@ -403,6 +491,7 @@ function repeindreSol(){
     for(let j = 0; j < n; j++) for(let q = 0; q < n; q++){ const o = ou(cx * CH * S + q, cz * CH * S + j) * 3, d = (j * n + q) * 3; a[d] = COUL[o]; a[d + 1] = COUL[o + 1]; a[d + 2] = COUL[o + 2]; }
     m.geometry.attributes.color.needsUpdate = true;
   });
+  majMottes();                                        // la neige sur les mottes de la berge
 }
 /* La couleur du sol au milieu d'une case [r, g, b] (pour la vérification : l'herbe selon la saison, la neige) */
 export const couleurSol = i => { if(map.type[i] === "water") return null; echantillon(i % N + .5, Math.floor(i / N) + .5); return [cH.r, cH.g, cH.b]; };
@@ -417,6 +506,17 @@ export const eauIci = () => {
     if(FOND_EAU[q * 4 + 1]){ if(FOND_EAU[q * 4 + 2] > 80 && FOND_EAU[q * 4 + 2] < 130) rivage++; } else douce++;
   }
   return {fond: !!EAU_MAT.onBeforeCompile && water.material === EAU_MAT, rivage, douce};
+};
+/* pour la vérification : les mottes de la berge, et qu'aucune n'est au bord de la mer */
+export const bergeIci = () => {
+  let mer = 0;
+  const m = new THREE.Matrix4(), v = new THREE.Vector3();
+  for(let k = 0; k < MOTTES.count; k++){
+    MOTTES.getMatrixAt(k, m); v.setFromMatrixPosition(m);
+    const x = Math.floor(v.x + H), z = Math.floor(v.z + H);
+    for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++) if(inb(x + dx, z + dz) && MER[idx(x + dx, z + dz)]){ mer++; dz = dx = 2; }
+  }
+  return {mottes: MOTTES.count, mousses: MOUSSES.count, mer};
 };
 export const plageIci = () => ({mouilles: MOU.reduce((n, v) => n + (v > .5 ? 1 : 0), 0), grain: MORCEAUX.some(m => m && m.geometry.attributes.sable && m.geometry.attributes.mouille)});
 refaireSol();
@@ -469,9 +569,11 @@ float caustique(vec2 uv, float t){
   float profE = fondE.r, merE = fondE.g, presE = fondE.b;
   /* l'eau claire du bord : on voit le sable du fond, jaune-vert, puis turquoise, puis bleu-vert au large */
   float largeE = clamp(smoothstep(0.08, 0.5, 0.5 - presE) * 0.8 + profE * 0.35, 0.0, 1.0);
-  largeE = mix(smoothstep(0.0, 0.42, profE) * 0.85, largeE, merE);   // l'étang et les mares : clairs au bord, plus sombres au milieu
+  largeE = mix(smoothstep(0.04, 0.4, fondE.a) * 0.85, largeE, merE);   // l'étang et les mares : clairs au bord, plus sombres au milieu
   vec3 colE = mix(vec3(0.62, 0.86, 0.62), vec3(0.30, 0.82, 0.80), smoothstep(0.0, 0.4, largeE));
   colE = mix(colE, vec3(0.08, 0.55, 0.68), smoothstep(0.35, 1.0, largeE));
+  /* l'étang et les mares (l'image de Yo, « Le bord de l'étang ») : une eau plus verte, jaune-vert au bord, bleu-vert au milieu */
+  colE = mix(mix(vec3(0.66, 0.84, 0.5), vec3(0.22, 0.66, 0.66), smoothstep(0.0, 0.85, largeE)), colE, merE);
   float opacE = mix(0.22, 0.92, smoothstep(0.0, 1.0, largeE));
   /* les reflets de lumière sur le fond peu profond */
   float causE = (1.0 - smoothstep(0.3, 0.9, largeE)) * (0.55 + 0.45 * merE);

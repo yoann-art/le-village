@@ -30,7 +30,7 @@ import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, G
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
-import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol, plageIci, eauIci } from "../js/monde/ile.js";
+import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol, plageIci, eauIci, bergeIci } from "../js/monde/ile.js";
 import { feuillesQuiVolent, MAT_OMBRE } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
 import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
@@ -304,7 +304,7 @@ export async function verifier(){
     }
     return `${n("rock")} pierres, ${n("herbe")} herbes hautes, ${n("buisson")} groseilliers, ${n("thym")} thyms, ${fleurs} fleurs de ${sortes.size} sortes (${seules} seules), ${galets.length} groupes de galets sur le sable`;
   });
-  await etape("Le sol d'un seul tenant (Yo, 20 octobre 2026 : « rendre le sable plus naturel ») : le milieu des cases de terre à plat, la côte qui descend sous l'eau, plus de damier, la plage mouillée au bord de la mer, l'écume du rivage", async () => {
+  await etape("Le sol d'un seul tenant (Yo, 20 octobre 2026 : « rendre le sable plus naturel ») : le milieu des cases de terre à plat, la côte qui descend sous l'eau, plus de damier, la plage mouillée au bord de la mer, l'écume du rivage, la berge de l'étang", async () => {
     let terre = 0, plats = 0, eau = 0, sous = 0, damier = 0, paires = 0;
     for(let i = 0; i < N * N; i++){
       const h = hauteurSol(i);
@@ -328,7 +328,11 @@ export async function verifier(){
     if(!ea.fond) throw new Error("l'eau ne lit pas le sol sous elle");
     if(ea.rivage < 500) throw new Error(`seulement ${ea.rivage} points de rivage pour l'écume`);
     if(ea.douce < 50) throw new Error(`l'étang et les mares : ${ea.douce} points d'eau douce`);
-    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume`;
+    /* le bord de l'étang (Yo, 21 octobre 2026) : des mottes de terre tout autour de l'eau douce, jamais au bord de la mer */
+    const bg = bergeIci();
+    if(bg.mottes < 60) throw new Error(`seulement ${bg.mottes} mottes au bord de l'étang et des mares`);
+    if(bg.mer) throw new Error(`${bg.mer} mottes au bord de la mer`);
+    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
