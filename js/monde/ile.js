@@ -18,6 +18,7 @@ import { pierreChamps } from "./pierre.js";
 import { herbesModele } from "./herbes.js";
 import { groseillierModele } from "./groseillier.js";
 import { galetsModele, galetsEtangModele } from "./galets.js";
+import { MAT_BERGE, MAT_NENUPHAR, NUANCES, massetteGeo, petiteGeo, nenupharGeo } from "./berge.js";
 import { thymModele } from "./thym.js";
 import { preparerSerie, oublierSerie, debutSeries, effacerSeries, ajouterEnSerie, finSeries } from "./series.js";
 
@@ -447,6 +448,58 @@ const tirM = q => (Math.imul(q + 7919, 2654435761) >>> 0) % 1000 / 1000;
 /* les galets de l'étang (morceau 2 du bord de l'étang) : des groupes posés sur la ligne de l'eau douce, écartés */
 const GALETS_ETANG = new THREE.Group(), GALETS_ETANG_MAX = 16, GALETS_ETANG_ECART = 3.5;
 scene.add(GALETS_ETANG);
+/* les plantes du bord (morceau 3) : chaque sorte et chaque nuance dessinée en série */
+const SERIES_BERGE = {m: [], p: [], n: []};
+function serieBerge(cle, geo, mat, max, ombre){
+  for(let v = 0; v < NUANCES; v++){
+    const im = new THREE.InstancedMesh(geo(v), mat, max);
+    im.count = 0; im.visible = false; im.frustumCulled = false; im.castShadow = ombre; im.receiveShadow = true;
+    scene.add(im); SERIES_BERGE[cle].push(im);
+  }
+}
+serieBerge("m", v => massetteGeo("ete", v), MAT_BERGE, 30, true);
+serieBerge("p", v => petiteGeo("ete", v), MAT_BERGE, 240, false);
+serieBerge("n", v => nenupharGeo("ete", v), MAT_NENUPHAR, 90, false);
+function plantesBerge(places, neige){
+  const ss = saison(), geos = {m: v => massetteGeo(ss, v), p: v => petiteGeo(ss, v), n: v => nenupharGeo(ss, v)}, nb = {};
+  for(const cle in SERIES_BERGE) SERIES_BERGE[cle].forEach((im, v) => { const g = geos[cle](v); if(g) im.geometry = g; nb[cle + v] = g ? 0 : -1; });
+  const met = (cle, v, x, y, z, rot, sc) => {
+    const im = SERIES_BERGE[cle][v], k = nb[cle + v];
+    if(k < 0 || k >= im.instanceMatrix.count) return false;
+    qM.setFromAxisAngle(HAUT_Y, rot); vM.set(x, y, z); sM.setScalar(sc);
+    im.setMatrixAt(k, mM.compose(vM, qM, sM)); nb[cle + v] = k + 1;
+    return true;
+  };
+  /* les massettes : des touffes sur la ligne de l'eau, écartées, pas sur les galets */
+  const touffes = [];
+  for(const [qq, x1, z1, sx, sz] of [...BORD].sort((a, b) => tirM(a[0] * 31 + 11) - tirM(b[0] * 31 + 11))){
+    if(touffes.length >= 24) break;
+    const dl = Math.hypot(sx - x1, sz - z1) || 1, x = x1 - (sx - x1) / dl * .3, z = z1 - (sz - z1) / dl * .3;   // les pieds dans l'eau
+    if(touffes.some(([px, pz]) => Math.hypot(px - x, pz - z) < 2.6) || places.some(([px, pz]) => Math.hypot(px - x, pz - z) < 1.1)) continue;
+    if(met("m", Math.floor(tirM(qq * 43) * NUANCES), x, -.22, z, tirM(qq * 47) * 6.28, .85 + tirM(qq * 53) * .3)) touffes.push([x, z]);
+  }
+  /* les petites plantes : sur la berge, côté terre, un peu en retrait de l'eau (pas sous la neige) */
+  const petites = [];
+  if(!neige) for(const [qq, x, z, sx, sz, sh] of BORD){
+    if(tirM(qq * 37 + 2) > .6 || petites.length >= 500) continue;
+    const dx = sx - x, dz = sz - z, d = Math.hypot(dx, dz) || 1, e = .3 + tirM(qq * 59) * .35;
+    const px = x + dx / d * e, pz = z + dz / d * e;
+    if(petites.some(([a, b]) => Math.hypot(a - px, b - pz) < .55) || places.some(([a, b]) => Math.hypot(a - px, b - pz) < .8) || touffes.some(([a, b]) => Math.hypot(a - px, b - pz) < .45)) continue;
+    if(met("p", Math.floor(tirM(qq * 61) * NUANCES), px, Math.min(0, sh) - .02, pz, tirM(qq * 67) * 6.28, 1.05 + tirM(qq * 71) * .5)) petites.push([px, pz]);
+  }
+  /* les feuilles de nénuphar : sur l'eau douce, loin du bord */
+  for(let i = 0; i < N * N; i++){
+    if(map.type[i] !== "water" || MER[i] || tirM(i * 41 + 3) > .42) continue;
+    const x = i % N, z = Math.floor(i / N);
+    let terre = false;
+    for(const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if(!inb(x + dx, z + dz) || map.type[idx(x + dx, z + dz)] !== "water") terre = true;
+    if(terre) continue;
+    met("n", Math.floor(tirM(i * 73) * NUANCES), x - H + .5 + (tirM(i * 79) - .5) * .5, -.18, z - H + .5 + (tirM(i * 83) - .5) * .5, tirM(i * 89) * 6.28, .85 + tirM(i * 97) * .35);
+  }
+  for(const cle in SERIES_BERGE) SERIES_BERGE[cle].forEach((im, v) => {
+    im.count = Math.max(0, nb[cle + v]); im.visible = im.count > 0; im.instanceMatrix.needsUpdate = true;
+  });
+}
 const BORD = [];
 function majMottes(){
   let n = 0, k = 0;
@@ -457,7 +510,8 @@ function majMottes(){
     if((h > -.2) === (ho > -.2) || ho <= -.99 || h <= -.99) continue;
     if(Math.max(BER[q], BER[o]) < .4 || MERV[q] || MERV[o] || ENT[q] > 0 || ENT[o] > 0) continue;   // seulement l'eau douce
     const qq = q * 2 + c, t = (h + .2) / (h - ho);
-    BORD.push([qq, (gx + (c ? 0 : t)) / S - H, (gz + (c ? t : 0)) / S - H]);
+    const sec = h > -.2, sx = (sec ? gx : gx + (c ? 0 : 1)) / S - H, sz = (sec ? gz : gz + (c ? 1 : 0)) / S - H;
+    BORD.push([qq, (gx + (c ? 0 : t)) / S - H, (gz + (c ? t : 0)) / S - H, sx, sz, sec ? h : ho]);
   }
   /* les galets d'abord, chaque groupe loin des autres ; puis les mottes, pas sur eux */
   const neige = peinteNeige > .3, places = [];
@@ -470,6 +524,7 @@ function majMottes(){
     g.position.set(x, -.2, z);
     GALETS_ETANG.add(g);
   }
+  plantesBerge(places, peinteNeige > .5);
   for(const [qq, x0, z0] of BORD){
     if(tirM(qq * 7 + 1) > .95 || n >= 2400) continue;
     if(places.some(([px, pz]) => Math.hypot(px - x0, pz - z0) < .55)) continue;
@@ -536,7 +591,8 @@ export const bergeIci = () => {
     const x = Math.floor(v.x + H), z = Math.floor(v.z + H);
     for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++) if(inb(x + dx, z + dz) && MER[idx(x + dx, z + dz)]){ mer++; dz = dx = 2; }
   }
-  return {mottes: MOTTES.count, mousses: MOUSSES.count, mer, galets: GALETS_ETANG.children.length};
+  const nb = cle => SERIES_BERGE[cle].reduce((t, im) => t + im.count, 0);
+  return {mottes: MOTTES.count, mousses: MOUSSES.count, mer, galets: GALETS_ETANG.children.length, massettes: nb("m"), petites: nb("p"), nenuphars: nb("n")};
 };
 export const plageIci = () => ({mouilles: MOU.reduce((n, v) => n + (v > .5 ? 1 : 0), 0), grain: MORCEAUX.some(m => m && m.geometry.attributes.sable && m.geometry.attributes.mouille)});
 refaireSol();

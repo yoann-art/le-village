@@ -304,7 +304,7 @@ export async function verifier(){
     }
     return `${n("rock")} pierres, ${n("herbe")} herbes hautes, ${n("buisson")} groseilliers, ${n("thym")} thyms, ${fleurs} fleurs de ${sortes.size} sortes (${seules} seules), ${galets.length} groupes de galets sur le sable`;
   });
-  await etape("Le sol d'un seul tenant (Yo, 20 octobre 2026 : « rendre le sable plus naturel ») : le milieu des cases de terre à plat, la côte qui descend sous l'eau, plus de damier, la plage mouillée au bord de la mer, l'écume du rivage, la berge de l'étang", async () => {
+  await etape("Le sol d'un seul tenant (Yo, 20 octobre 2026 : « rendre le sable plus naturel ») : le milieu des cases de terre à plat, la côte qui descend sous l'eau, plus de damier, la plage mouillée au bord de la mer, l'écume du rivage, la berge de l'étang, ses galets et ses plantes", async () => {
     let terre = 0, plats = 0, eau = 0, sous = 0, damier = 0, paires = 0;
     for(let i = 0; i < N * N; i++){
       const h = hauteurSol(i);
@@ -333,7 +333,10 @@ export async function verifier(){
     if(bg.mottes < 60) throw new Error(`seulement ${bg.mottes} mottes au bord de l'étang et des mares`);
     if(bg.mer) throw new Error(`${bg.mer} mottes au bord de la mer`);
     if(bg.galets < 4) throw new Error(`seulement ${bg.galets} groupes de galets au bord de l'étang et des mares`);
-    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets`;
+    if(bg.massettes < 4) throw new Error(`seulement ${bg.massettes} touffes de massettes au bord de l'eau douce`);
+    if(bg.petites < 20) throw new Error(`seulement ${bg.petites} petites plantes sur la berge`);
+    if(saison() !== "hiver" && bg.nenuphars < 2) throw new Error(`seulement ${bg.nenuphars} feuilles de nénuphar sur l'étang`);
+    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
