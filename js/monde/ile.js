@@ -1,7 +1,7 @@
 /* ================= L'île =================
    Carte en cases, terrain, mer, arbres, rochers, herbes hautes et buissons de baies. */
 import { scene, sun } from "./scene.js";
-import { mat, G, part, toon } from "./formes.js";
+import { mat, G, part, toon, VENT } from "./formes.js";
 import { state } from "../sauvegarde.js";
 import { doorTile, sizeOf } from "../regles.js";
 import { GRAINES, RECOLTE, FLEURS, FLEUR_RARETE, MEUBLES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, enFleur, saison, POUSSE_HIVER, vitessePousse, tempsDePousse } from "../donnees.js";
@@ -257,7 +257,33 @@ SOL_MAT.onBeforeCompile = sh => {
   diffuseColor.rgb *= 1.0 - smoothstep(0.55, 0.95, rideS) * 0.13 * vMouille + smoothstep(-0.2, -0.75, rideS) * 0.05 * vMouille;`);
 };
 SOL_MAT.customProgramCacheKey = () => "sol-plage";
-const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV), MOU = new Float32Array(NV * NV);   // gardés : la neige et la saison ne repeignent que la couleur
+const HAUT = new Float32Array(NV * NV), COUL = new Float32Array(NV * NV * 3), SAB = new Float32Array(NV * NV), ENT = new Float32Array(NV * NV), MOU = new Float32Array(NV * NV), MERV = new Uint8Array(NV * NV);
+/* L'eau (étape 2.1, morceau 4c) lit le sol sous elle dans cette petite image, un point par sommet du sol : sa profondeur
+   (rouge) et si c'est la mer (vert ; l'étang et les mares n'ont pas d'écume) */
+const FOND_EAU = new Uint8Array(NV * NV * 4);
+const FOND_TEX = new THREE.DataTexture(FOND_EAU, NV, NV, THREE.RGBAFormat);
+FOND_TEX.magFilter = FOND_TEX.minFilter = THREE.LinearFilter; FOND_TEX.wrapS = FOND_TEX.wrapT = THREE.ClampToEdgeWrapping;
+const PRES_A = new Float32Array(NV * NV), PRES_B = new Float32Array(NV * NV);
+/* flou d'une ligne ou d'une colonne (boîte de rayon r), de a vers b */
+function flouBoite(a, b, r, pasL, pasC){
+  for(let l = 0; l < NV; l++){
+    let somme = 0;
+    for(let c = -r; c <= r; c++) somme += a[l * pasL + Math.max(0, Math.min(NV - 1, c)) * pasC];
+    for(let c = 0; c < NV; c++){
+      b[l * pasL + c * pasC] = somme / (2 * r + 1);
+      somme += a[l * pasL + Math.min(NV - 1, c + r + 1) * pasC] - a[l * pasL + Math.max(0, c - r) * pasC];
+    }
+  }
+}
+function majFondEau(){
+  for(let q = 0; q < NV * NV; q++) PRES_A[q] = HAUT[q] > -.2 ? 1 : 0;
+  for(let k = 0; k < 2; k++){ flouBoite(PRES_A, PRES_B, 6, NV, 1); flouBoite(PRES_B, PRES_A, 6, 1, NV); }
+  for(let q = 0; q < NV * NV; q++){
+    FOND_EAU[q * 4] = Math.round(Math.min(1, Math.max(0, -.2 - HAUT[q])) * 255);
+    FOND_EAU[q * 4 + 1] = MERV[q] * 255; FOND_EAU[q * 4 + 2] = Math.round(PRES_A[q] * 255); FOND_EAU[q * 4 + 3] = 255;
+  }
+  FOND_TEX.needsUpdate = true;
+}   // gardés : la neige et la saison ne repeignent que la couleur
 const col = new THREE.Color();
 /* La neige au sol (étape 1.10, morceau 4) blanchit l'herbe : peinteNeige, de 0 à 1, la neige peinte sur le sol */
 const NEIGE = new THREE.Color(0xF2F6F9), entamees = new Set();
@@ -303,11 +329,11 @@ function echantillon(u, v){
   }
   /* le sable mouillé : la bande que la mer vient lécher, juste au-dessus de l'eau, et ce qui est dessous */
   const m = plage > 0 ? plage * Math.min(1, Math.max(0, (-.015 - h) / .1)) : 0;
-  dernier.s = s; dernier.e = e; dernier.m = m;
+  dernier.s = s; dernier.e = e; dernier.m = m; dernier.mer = mer > 0 || (!wt && lieuEau(ici) === "mer") ? 1 : 0;
   peindre(u, v, h, s, e, m);
   return h;
 }
-const dernier = {s: 0, e: 0, m: 0};
+const dernier = {s: 0, e: 0, m: 0, mer: 0};
 const MOUILLE = new THREE.Color(0xC9AE6E);
 /* la couleur d'un point : l'herbe de la saison, qui varie doucement, et le sable, mêlés ; le fond sous l'eau ; dans cH */
 function peindre(u, v, h, s, e, m = 0){
@@ -322,7 +348,7 @@ function peindre(u, v, h, s, e, m = 0){
 }
 function sommet(gx, gz){
   const q = ou(gx, gz);
-  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e; MOU[q] = dernier.m;
+  HAUT[q] = echantillon(gx / S, gz / S); SAB[q] = dernier.s; ENT[q] = dernier.e; MOU[q] = dernier.m; MERV[q] = dernier.mer;
   COUL[q * 3] = cH.r; COUL[q * 3 + 1] = cH.g; COUL[q * 3 + 2] = cH.b;
 }
 /* les morceaux du sol : un par carré de CH × CH cases ; seulement les petits carrés au-dessus du fond plat */
@@ -362,6 +388,7 @@ function refaireSol(x0 = 0, z0 = 0, x1 = N - 1, z1 = N - 1){
   for(let gz = ha; gz <= hb; gz++) for(let gx = ga; gx <= gb; gx++) sommet(gx, gz);
   for(let cz = Math.floor(ha / S / CH); cz <= Math.min(N / CH - 1, Math.floor(hb / S / CH)); cz++)
     for(let cx = Math.floor(ga / S / CH); cx <= Math.min(N / CH - 1, Math.floor(gb / S / CH)); cx++) construireMorceau(cx, cz);
+  majFondEau();
 }
 /* repeindre le sol (une nouvelle saison, la neige) : seulement ses couleurs, sans refaire sa forme */
 function repeindreSol(){
@@ -382,6 +409,15 @@ export const couleurSol = i => { if(map.type[i] === "water") return null; echant
 /* la hauteur du sol au milieu d'une case (pour la vérification) */
 export const hauteurSol = i => echantillon(i % N + .5, Math.floor(i / N) + .5);
 /* la plage (pour la vérification) : combien de points du sol sont mouillés, et si le sol a son grain et ses rides */
+/* pour la vérification : l'eau lit le sol sous elle (FOND_TEX) ; les points du rivage de la mer, où vient l'écume, et ceux de l'eau douce, sans écume */
+export const eauIci = () => {
+  let rivage = 0, douce = 0;
+  for(let q = 0; q < NV * NV; q++){
+    if(FOND_EAU[q * 4] === 0) continue;
+    if(FOND_EAU[q * 4 + 1]){ if(FOND_EAU[q * 4 + 2] > 80 && FOND_EAU[q * 4 + 2] < 130) rivage++; } else douce++;
+  }
+  return {fond: !!EAU_MAT.onBeforeCompile && water.material === EAU_MAT, rivage, douce};
+};
 export const plageIci = () => ({mouilles: MOU.reduce((n, v) => n + (v > .5 ? 1 : 0), 0), grain: MORCEAUX.some(m => m && m.geometry.attributes.sable && m.geometry.attributes.mouille)});
 refaireSol();
 /* Creuser, combler (étape 1.9) : la case devient de l'eau (« water ») ou de la terre (son herbe ou son sable d'origine,
@@ -395,8 +431,72 @@ export function setTerrain(i, t){
 export const terreDe = i => ORIGINE[i] === "water" ? "grass" : ORIGINE[i];
 /* Une case qu'on commence à creuser, ou qu'on laisse (entame = false) */
 export function entamer(i, entame){ if(entame) entamees.add(i); else entamees.delete(i); refaireSol(i % N, Math.floor(i / N), i % N, Math.floor(i / N)); }
-export const water = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90),
-  new THREE.MeshPhongMaterial({color:0x58C3D8, transparent:true, opacity:.8, shininess:90, specular:0x99DDEE}));
+/* L'eau de l'île (étape 2.1, morceau 4c ; l'image de Yo, « Le rivage de la mer », 20 octobre 2026) : une eau turquoise,
+   transparente au bord (on voit le sable du fond), plus foncée et plus opaque vers le large ; des reflets de lumière en réseau
+   qui dansent sur le fond peu profond (les caustiques) ; au bord de la mer, une épaisse frange d'écume blanche, festonnée,
+   percée de petites bulles, qui monte et redescend avec les vagues, et de fines lignes d'écume qui arrivent du large ;
+   l'étang et les mares restent calmes, sans écume. Elle lit la profondeur dans FOND_TEX (le sol, refait quand on creuse ou
+   comble) ; son temps est celui du vent (VENT.temps). */
+const EAU_MAT = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, shininess: 70, specular: 0x6FB8C8});
+EAU_MAT.onBeforeCompile = sh => {
+  sh.uniforms.fondEau = {value: FOND_TEX}; sh.uniforms.tEau = VENT.temps;
+  sh.vertexShader = "varying vec2 vEauXZ;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n  vEauXZ = (modelMatrix * vec4(transformed, 1.0)).xz;");
+  sh.fragmentShader = `uniform sampler2D fondEau;
+uniform float tEau;
+varying vec2 vEauXZ;
+float hEau(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float bruitEau(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hEau(i), hEau(i + vec2(1.0, 0.0)), f.x), mix(hEau(i + vec2(0.0, 1.0)), hEau(i + vec2(1.0, 1.0)), f.x), f.y); }
+/* des bulles rondes, une par cellule (sa place et sa taille tirées), certaines absentes */
+float bulle(vec2 uv){
+  vec2 i = floor(uv), f = fract(uv);
+  float r = 0.12 + 0.2 * hEau(i + 3.7), d = length(f - 0.5 - (vec2(hEau(i), hEau(i + 9.1)) - 0.5) * (0.9 - 2.0 * r));
+  return (1.0 - smoothstep(r - 0.04, r, d)) * step(0.55, hEau(i + 5.3));
+}
+/* les reflets de lumière sur le fond : un réseau de cellules rondes (leurs bords brillent), qui bougent doucement */
+float caustique(vec2 uv, float t){
+  vec2 i = floor(uv), f = fract(uv); float d1 = 8.0, d2 = 8.0;
+  for(int y = -1; y <= 1; y++) for(int x = -1; x <= 1; x++){
+    vec2 o = vec2(float(x), float(y)), h = vec2(hEau(i + o), hEau(i + o + 17.3));
+    vec2 r = o + 0.5 + 0.38 * sin(t + 6.2831 * h) - f;
+    float d = dot(r, r);
+    if(d < d1){ d2 = d1; d1 = d; } else if(d < d2) d2 = d;
+  }
+  /* des cellules rondes : sombres au milieu, claires entre elles, et leurs bords plus brillants */
+  return smoothstep(0.22, 0.5, sqrt(d1)) * 0.6 + (1.0 - smoothstep(0.0, 0.12, sqrt(d2) - sqrt(d1))) * 0.55;
+}
+` + sh.fragmentShader.replace("vec4 diffuseColor = vec4( diffuse, opacity );", `vec4 fondE = texture2D(fondEau, ((vEauXZ + ${H.toFixed(1)}) * ${S.toFixed(1)} + 0.5) / ${NV.toFixed(1)});
+  float profE = fondE.r, merE = fondE.g, presE = fondE.b;
+  /* l'eau claire du bord : on voit le sable du fond, jaune-vert, puis turquoise, puis bleu-vert au large */
+  float largeE = clamp(smoothstep(0.08, 0.5, 0.5 - presE) * 0.8 + profE * 0.35, 0.0, 1.0);
+  largeE = mix(smoothstep(0.0, 0.42, profE) * 0.85, largeE, merE);   // l'étang et les mares : clairs au bord, plus sombres au milieu
+  vec3 colE = mix(vec3(0.62, 0.86, 0.62), vec3(0.30, 0.82, 0.80), smoothstep(0.0, 0.4, largeE));
+  colE = mix(colE, vec3(0.08, 0.55, 0.68), smoothstep(0.35, 1.0, largeE));
+  float opacE = mix(0.22, 0.92, smoothstep(0.0, 1.0, largeE));
+  /* les reflets de lumière sur le fond peu profond */
+  float causE = (1.0 - smoothstep(0.3, 0.9, largeE)) * (0.55 + 0.45 * merE);
+  if(causE > 0.01) causE *= caustique(vEauXZ * 1.5 + vec2(bruitEau(vEauXZ * 0.9), bruitEau(vEauXZ * 0.9 + 7.0)) * 0.5, tEau * 0.6);   // au large, pas de calcul
+  colE += causE * vec3(0.5, 0.55, 0.45); opacE += causE * 0.18;
+  /* l'écume du bord de la mer : une épaisse frange qui monte et redescend, son bord festonné, percée de bulles */
+  float nE = bruitEau(vEauXZ * 2.3 + vec2(tEau * 0.12, 0.0)), n2E = bruitEau(vEauXZ * 5.1 - vec2(0.0, tEau * 0.1));
+  float vagueE = 0.5 + 0.5 * sin(tEau * 0.8 + bruitEau(vEauXZ * 0.3) * 6.0);
+  float bordE = 0.38 - vagueE * 0.05 + (nE - 0.5) * 0.06 + (n2E - 0.5) * 0.02 - bulle(vEauXZ * 2.2 + 0.7) * 0.04;   // des festons ronds
+  /* une bande, pas plus large (dans une anse, la terre est proche de tous côtés), et toujours collée au sable */
+  float ecumeE = max(smoothstep(bordE - 0.012, bordE + 0.004, presE) * (1.0 - smoothstep(bordE + 0.16, bordE + 0.2, presE)),
+                     1.0 - smoothstep(0.02 + vagueE * 0.03, 0.05 + vagueE * 0.03, profE)) * merE;
+  float bullesE = max(bulle(vEauXZ * 5.0), bulle(vEauXZ * 8.0 + 4.3));
+  ecumeE *= 1.0 - bullesE * smoothstep(bordE + 0.01, bordE + 0.04, presE) * 0.85;
+  /* quelques bulles détachées devant la frange */
+  float goutE = bulle(vEauXZ * 6.0 + 1.7) * (smoothstep(bordE - 0.07, bordE - 0.03, presE) - smoothstep(bordE - 0.02, bordE, presE));
+  ecumeE = max(ecumeE, goutE * merE);
+  /* de fines lignes d'écume qui arrivent du large vers la plage */
+  float phE = fract(tEau * 0.1 + presE * 3.0 + nE * 0.15);
+  ecumeE = max(ecumeE, smoothstep(0.955, 1.0, phE) * smoothstep(0.12, 0.3, presE) * (1.0 - smoothstep(bordE - 0.04, bordE, presE)) * merE * (0.45 + 0.4 * nE));
+  colE = mix(colE, vec3(1.0, 1.0, 0.98), ecumeE); opacE = mix(opacE, 1.0, ecumeE);
+  vec4 diffuseColor = vec4(colE * diffuse, clamp(opacE, 0.0, 1.0));`);
+};
+EAU_MAT.customProgramCacheKey = () => "eau-ile";
+export const water = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90), EAU_MAT);
 water.rotation.x = -Math.PI/2; water.position.y = -.2; water.receiveShadow = true;
 const seabed = new THREE.Mesh(new THREE.PlaneGeometry(N+90, N+90), mat(0x2F93AE));
 seabed.rotation.x = -Math.PI/2; seabed.position.y = -1.05;
