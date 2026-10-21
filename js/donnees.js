@@ -745,9 +745,9 @@ export const PRODUITS = {
      la nuit (carnet), verbe : « Arracher » plutôt que « Cueillir ». On la cueille au Marais (n), elle revient sur place
      (PLANTE_RETOUR) ; les potions viendront plus tard : en attendant, tout se vend au comptoir. Prix choisis par Claude */
   cresson:   {nom:"Cresson", pluriel:"cresson", emoji:"🌿", prix:1, n:2, note:"Cuisine et potions",
-    plante:{ou:"rive", saisons:["printemps"], rarete:"commun"}},
+    plante:{ou:"rive", saisons:["printemps", "ete", "automne"], rarete:"commun"}},
   rizSauvage:{nom:"Riz sauvage", pluriel:"riz sauvage", emoji:"🌾", prix:2, n:2, note:"Des grains pour la cuisine",
-    plante:{ou:"eau", saisons:["ete"], rarete:"peuCommun"}},
+    plante:{ou:"eau", saisons:["ete", "automne"], rarete:"peuCommun"}},
   canneberge:{nom:"Canneberge", pluriel:"canneberges", une:true, emoji:"🔴", prix:2, n:3, note:"Des baies rouges pour la cuisine, et une teinture rose",
     plante:{ou:"rive", saisons:["automne"], rarete:"peuCommun"}},
   mandragore:{nom:"Mandragore", pluriel:"mandragores", une:true, emoji:"🌱", prix:8, n:1, note:"Une racine qui crie quand on l'arrache ; potions puissantes",
@@ -755,7 +755,7 @@ export const PRODUITS = {
   chouLune:  {nom:"Chou-lune", pluriel:"choux-lune", emoji:"🥬", prix:8, n:1, note:"Un chou pâle et lumineux, qui ne pousse que la nuit ; potion pour voir la nuit",
     plante:{ou:"ilot", rarete:"rare", nuit:true}},
   iris:      {nom:"Iris des marais", pluriel:"iris des marais", emoji:"🌼", prix:1, n:1, note:"Il borde les bassins",
-    plante:{ou:"rive", saisons:["printemps"], rarete:"commun"}},
+    plante:{ou:"rive", saisons:["printemps", "ete"], rarete:"commun"}},
   nenuphar:  {nom:"Nénuphar", pluriel:"nénuphars", emoji:"🌸", prix:2, n:1, note:"Il flotte sur les bassins et les mares",
     plante:{ou:"eau", saisons:["ete"], rarete:"peuCommun"}},
   lotus:     {nom:"Lotus", pluriel:"lotus", emoji:"🌸", prix:2, n:1, note:"Potions de calme",
@@ -1073,17 +1073,20 @@ export const PALIER_MONSTRES_MARAIS = {1:[["crapaud", 2], ["sangsue", 2], ["feuF
    l'île au départ (les prés : pâquerette, pissenlit, coquelicot, bleuet, marguerite ; la lisière des bois : violette,
    muguet, perce-neige) ; 6 fleurs de jardin (jardin : où elles poussent à l'état sauvage), qu'on n'a qu'en graines :
    à l'étal du Marché, en voyage là où elles poussent (avec chaque lieu), puis elles se multiplient au jardin */
+/* Leurs saisons suivent la vraie nature (règle de Yo, 21 octobre 2026 : « Comme dans la vraie nature. Et cela pour tout ce
+   qui est flore et végétation dans le jeu ») : la pâquerette du printemps à l'automne, le pissenlit au printemps puis
+   en automne, le coquelicot, le bleuet et la marguerite de mai à l'été, les fleurs de jardin de l'été aux gelées */
 export const FLEURS = {
-  paquerette:{nom:"Pâquerette", pluriel:"pâquerettes", une:true, couleurs:[0xFFFFFF, 0xF4B8C8], coeur:0xF2C94C, saisons:["printemps"], rarete:"commun", forme:"etoile", taille:.32, prix:1, note:"Couronnes et petits bouquets"},
-  coquelicot:{nom:"Coquelicot", pluriel:"coquelicots", couleurs:[0xE03A2E, 0xF08A30, 0xF4F0E8], coeur:0x2A2A2A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.55, prix:1, note:"Bouquets ; il attire les abeilles"},
-  bleuet:    {nom:"Bleuet", pluriel:"bleuets", couleurs:[0x3A6FD8, 0xE88AB0, 0xF4F0E8], coeur:0x2A3A8A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:.5, prix:1, note:"Bouquets, encre bleue"},
-  pissenlit: {nom:"Pissenlit", pluriel:"pissenlits", couleurs:[0xF4C430], saisons:["printemps"], rarete:"commun", forme:"boule", taille:.35, prix:1, note:"En salade ; on souffle ses graines au vent"},
-  marguerite:{nom:"Marguerite", pluriel:"marguerites", une:true, couleurs:[0xFFFFFF, 0xF4D44A], coeur:0xF2B930, saisons:["ete"], rarete:"commun", forme:"etoile", taille:.55, prix:1, note:"Bouquets"},
-  tournesol: {nom:"Tournesol", pluriel:"tournesols", couleurs:[0xF4C430, 0xC8642A], coeur:0x5A3A1A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:1.2, prix:1, jardin:"au Désert, dans ses plaines chaudes", note:"Graines à grignoter ; grand décor"},
-  capucine:  {nom:"Capucine", pluriel:"capucines", une:true, couleurs:[0xF08A30, 0xE03A2E, 0xF4C430], coeur:0xF4D44A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.3, prix:1, jardin:"au Récif et dans les îles du Sud", note:"Fleurs à manger en salade"},
-  cosmos:    {nom:"Cosmos", pluriel:"cosmos", couleurs:[0xF08AB8, 0xF4F0E8, 0xA03A8A], coeur:0xF2C94C, saisons:["automne"], rarete:"commun", forme:"etoile", taille:.6, prix:1, jardin:"au Récif et dans les îles du Sud", note:"Il attire les papillons"},
+  paquerette:{nom:"Pâquerette", pluriel:"pâquerettes", une:true, couleurs:[0xFFFFFF, 0xF4B8C8], coeur:0xF2C94C, saisons:["printemps", "ete", "automne"], rarete:"commun", forme:"etoile", taille:.32, prix:1, note:"Couronnes et petits bouquets"},
+  coquelicot:{nom:"Coquelicot", pluriel:"coquelicots", couleurs:[0xE03A2E, 0xF08A30, 0xF4F0E8], coeur:0x2A2A2A, saisons:["printemps", "ete"], rarete:"commun", forme:"coupe", taille:.55, prix:1, note:"Bouquets ; il attire les abeilles"},
+  bleuet:    {nom:"Bleuet", pluriel:"bleuets", couleurs:[0x3A6FD8, 0xE88AB0, 0xF4F0E8], coeur:0x2A3A8A, saisons:["printemps", "ete"], rarete:"commun", forme:"etoile", taille:.5, prix:1, note:"Bouquets, encre bleue"},
+  pissenlit: {nom:"Pissenlit", pluriel:"pissenlits", couleurs:[0xF4C430], saisons:["printemps", "automne"], rarete:"commun", forme:"boule", taille:.35, prix:1, note:"En salade ; on souffle ses graines au vent"},
+  marguerite:{nom:"Marguerite", pluriel:"marguerites", une:true, couleurs:[0xFFFFFF, 0xF4D44A], coeur:0xF2B930, saisons:["printemps", "ete"], rarete:"commun", forme:"etoile", taille:.55, prix:1, note:"Bouquets"},
+  tournesol: {nom:"Tournesol", pluriel:"tournesols", couleurs:[0xF4C430, 0xC8642A], coeur:0x5A3A1A, saisons:["ete", "automne"], rarete:"commun", forme:"etoile", taille:1.2, prix:1, jardin:"au Désert, dans ses plaines chaudes", note:"Graines à grignoter ; grand décor"},
+  capucine:  {nom:"Capucine", pluriel:"capucines", une:true, couleurs:[0xF08A30, 0xE03A2E, 0xF4C430], coeur:0xF4D44A, saisons:["ete", "automne"], rarete:"commun", forme:"coupe", taille:.3, prix:1, jardin:"au Récif et dans les îles du Sud", note:"Fleurs à manger en salade"},
+  cosmos:    {nom:"Cosmos", pluriel:"cosmos", couleurs:[0xF08AB8, 0xF4F0E8, 0xA03A8A], coeur:0xF2C94C, saisons:["ete", "automne"], rarete:"commun", forme:"etoile", taille:.6, prix:1, jardin:"au Récif et dans les îles du Sud", note:"Il attire les papillons"},
   tulipe:    {nom:"Tulipe", pluriel:"tulipes", une:true, couleurs:[0xE03A2E, 0xF4C430, 0xF4F0E8, 0x8A4AC8], rares:[0x2A1A2A], saisons:["printemps"], rarete:"peuCommun", forme:"coupe", taille:.5, prix:2, jardin:"aux Montagnes enneigées (la tulipe sauvage)", note:"Massifs et pots"},
-  rose:      {nom:"Rose", pluriel:"roses", une:true, couleurs:[0xD8283A, 0xF4A0B8, 0xF4F0E8, 0xF4D44A], rares:[0x4A7AE0], saisons:["ete"], rarete:"peuCommun", forme:"boule", taille:.55, prix:2, jardin:"en lisière de la Forêt profonde (l'églantier, la rose sauvage)", note:"Bouquets ; eau de rose pour les potions"},
+  rose:      {nom:"Rose", pluriel:"roses", une:true, couleurs:[0xD8283A, 0xF4A0B8, 0xF4F0E8, 0xF4D44A], rares:[0x4A7AE0], saisons:["ete", "automne"], rarete:"peuCommun", forme:"boule", taille:.55, prix:2, jardin:"en lisière de la Forêt profonde (l'églantier, la rose sauvage)", note:"Bouquets ; eau de rose pour les potions"},
   lavande:   {nom:"Lavande", pluriel:"lavandes", une:true, couleurs:[0x9A6AD0], saisons:["ete"], rarete:"peuCommun", forme:"epi", taille:.5, prix:2, jardin:"au Désert, dans la garrigue des ruines", note:"Parfum, potions apaisantes ; elle attire les papillons"},
   violette:  {nom:"Violette", pluriel:"violettes", une:true, couleurs:[0x7A3AB8, 0xF4F0E8], coeur:0xF2C94C, saisons:["printemps"], rarete:"peuCommun", forme:"etoile", taille:.25, prix:2, note:"Bonbons, potions"},
   perceNeige:{nom:"Perce-neige", pluriel:"perce-neige", couleurs:[0xFFFFFF], saisons:["hiver"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Il annonce la fin de l'hiver"},
@@ -1134,14 +1137,15 @@ export function tempsDePousse(debut, fin){
   return s;
 }
 const QUAND_FLEUR = {printemps:"au printemps", ete:"en été", automne:"en automne", hiver:"en hiver"};
-export const quandFleur = f => f.saisons.map(s => QUAND_FLEUR[s]).join(" et ");
+const enListe = l => l.length > 1 ? l.slice(0, -1).join(", ") + " et " + l[l.length - 1] : l[0];   // « au printemps, en été et en automne »
+export const quandFleur = f => enListe(f.saisons.map(s => QUAND_FLEUR[s]));
 export const enFleur = f => f.saisons.includes(saisonDu(new Date()));
 /* Les plantes du Marais brumeux (étape 1.13, morceau 4 ; PRODUITS[…].plante) : à leur saison (toute l'année sans
    saisons) ; elles reviennent sur place selon leur rareté (comme les fleurs : 12 h, 1 jour, 3 jours) */
 export const PLANTE_RETOUR = {commun:43200, peuCommun:86400, rare:259200};
 export const PLANTES_MARAIS = Object.keys(PRODUITS).filter(k => PRODUITS[k].plante);
 export const enSaisonPlante = p => !p.plante.saisons || p.plante.saisons.includes(saisonDu(new Date()));
-export const quandPlante = p => p.plante.saisons ? p.plante.saisons.map(s => QUAND_FLEUR[s]).join(" et ") : "toute l'année";
+export const quandPlante = p => p.plante.saisons ? enListe(p.plante.saisons.map(s => QUAND_FLEUR[s])) : "toute l'année";
 for(const k of PLANTES_MARAIS){
   const p = PRODUITS[k], r = {commun:"commune", peuCommun:"peu commune", rare:"rare"}[p.plante.rarete];
   const ou = {rive:"au bord des îlots", eau:"dans l'eau, au bord des îlots et des passerelles", ilot:"sur les îlots"}[p.plante.ou];
