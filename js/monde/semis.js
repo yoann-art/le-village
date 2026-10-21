@@ -23,7 +23,7 @@ const joursEntre = (a, b) => { const [x, y] = [a, b].map(s => { const [an, m, j]
 const PETITES = o => o === "thym" || o === "herbe" || o === "buisson" || !!FLEURS[o];
 const SEME = o => o === "thym" || !!FLEURS[o];
 /* combien l'île en garde à l'état sauvage, au plus */
-const limite = o => o === "thym" ? FLORE_ILE.thym : FLEURS[o].rarete === "commun" ? FLORE_ILE.fleurCommune : FLORE_ILE.fleurPeuCommune;
+const limite = o => o === "thym" ? FLORE_ILE.thym : FLEURS[o].jardin ? 0 : FLEURS[o].rarete === "commun" ? FLORE_ILE.fleurCommune : FLORE_ILE.fleurPeuCommune;
 /* sauvage : posée par la nature au début (aucun état) ou ressemée seule ; sinon plantée par le joueur */
 const sauvage = i => { const c = state.ile[i]; return !c || !c.plante || !!c.sauvage; };
 const portes = () => new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return inb(x, z) ? idx(x, z) : -1; }));

@@ -1068,18 +1068,23 @@ export const PALIER_MONSTRES_MARAIS = {1:[["crapaud", 2], ["sangsue", 2], ["feuF
    dessin : etoile, coupe, boule, epi, clochette), coeur (le milieu de la fleur), taille (hauteur en P), prix au
    comptoir (choisi par Claude, à régler). Cueillie : la fleur, et parfois sa graine (FLEUR_RARETE.graine, carnet :
    « les mêmes chances que les plantes du potager ») ; sans graine, elle refleurit sur place (refleurit, en secondes) */
+/* Les 14 fleurs des prés du Grand Carnet. Décidé avec Yo le 21 octobre 2026 (comme dans la vraie nature, et comme Animal
+   Crossing ou Stardew Valley : peu de sortes au départ, le jardin et la découverte font le reste) : 8 fleurs sauvages sur
+   l'île au départ (les prés : pâquerette, pissenlit, coquelicot, bleuet, marguerite ; la lisière des bois : violette,
+   muguet, perce-neige) ; 6 fleurs de jardin (jardin : où elles poussent à l'état sauvage), qu'on n'a qu'en graines :
+   à l'étal du Marché, en voyage là où elles poussent (avec chaque lieu), puis elles se multiplient au jardin */
 export const FLEURS = {
   paquerette:{nom:"Pâquerette", pluriel:"pâquerettes", une:true, couleurs:[0xFFFFFF, 0xF4B8C8], coeur:0xF2C94C, saisons:["printemps"], rarete:"commun", forme:"etoile", taille:.32, prix:1, note:"Couronnes et petits bouquets"},
   coquelicot:{nom:"Coquelicot", pluriel:"coquelicots", couleurs:[0xE03A2E, 0xF08A30, 0xF4F0E8], coeur:0x2A2A2A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.55, prix:1, note:"Bouquets ; il attire les abeilles"},
   bleuet:    {nom:"Bleuet", pluriel:"bleuets", couleurs:[0x3A6FD8, 0xE88AB0, 0xF4F0E8], coeur:0x2A3A8A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:.5, prix:1, note:"Bouquets, encre bleue"},
   pissenlit: {nom:"Pissenlit", pluriel:"pissenlits", couleurs:[0xF4C430], saisons:["printemps"], rarete:"commun", forme:"boule", taille:.35, prix:1, note:"En salade ; on souffle ses graines au vent"},
   marguerite:{nom:"Marguerite", pluriel:"marguerites", une:true, couleurs:[0xFFFFFF, 0xF4D44A], coeur:0xF2B930, saisons:["ete"], rarete:"commun", forme:"etoile", taille:.55, prix:1, note:"Bouquets"},
-  tournesol: {nom:"Tournesol", pluriel:"tournesols", couleurs:[0xF4C430, 0xC8642A], coeur:0x5A3A1A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:1.2, prix:1, note:"Graines à grignoter ; grand décor"},
-  capucine:  {nom:"Capucine", pluriel:"capucines", une:true, couleurs:[0xF08A30, 0xE03A2E, 0xF4C430], coeur:0xF4D44A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.3, prix:1, note:"Fleurs à manger en salade"},
-  cosmos:    {nom:"Cosmos", pluriel:"cosmos", couleurs:[0xF08AB8, 0xF4F0E8, 0xA03A8A], coeur:0xF2C94C, saisons:["automne"], rarete:"commun", forme:"etoile", taille:.6, prix:1, note:"Il attire les papillons"},
-  tulipe:    {nom:"Tulipe", pluriel:"tulipes", une:true, couleurs:[0xE03A2E, 0xF4C430, 0xF4F0E8, 0x8A4AC8], rares:[0x2A1A2A], saisons:["printemps"], rarete:"peuCommun", forme:"coupe", taille:.5, prix:2, note:"Massifs et pots"},
-  rose:      {nom:"Rose", pluriel:"roses", une:true, couleurs:[0xD8283A, 0xF4A0B8, 0xF4F0E8, 0xF4D44A], rares:[0x4A7AE0], saisons:["ete"], rarete:"peuCommun", forme:"boule", taille:.55, prix:2, note:"Bouquets ; eau de rose pour les potions"},
-  lavande:   {nom:"Lavande", pluriel:"lavandes", une:true, couleurs:[0x9A6AD0], saisons:["ete"], rarete:"peuCommun", forme:"epi", taille:.5, prix:2, note:"Parfum, potions apaisantes ; elle attire les papillons"},
+  tournesol: {nom:"Tournesol", pluriel:"tournesols", couleurs:[0xF4C430, 0xC8642A], coeur:0x5A3A1A, saisons:["ete"], rarete:"commun", forme:"etoile", taille:1.2, prix:1, jardin:"au Désert, dans ses plaines chaudes", note:"Graines à grignoter ; grand décor"},
+  capucine:  {nom:"Capucine", pluriel:"capucines", une:true, couleurs:[0xF08A30, 0xE03A2E, 0xF4C430], coeur:0xF4D44A, saisons:["ete"], rarete:"commun", forme:"coupe", taille:.3, prix:1, jardin:"au Récif et dans les îles du Sud", note:"Fleurs à manger en salade"},
+  cosmos:    {nom:"Cosmos", pluriel:"cosmos", couleurs:[0xF08AB8, 0xF4F0E8, 0xA03A8A], coeur:0xF2C94C, saisons:["automne"], rarete:"commun", forme:"etoile", taille:.6, prix:1, jardin:"au Récif et dans les îles du Sud", note:"Il attire les papillons"},
+  tulipe:    {nom:"Tulipe", pluriel:"tulipes", une:true, couleurs:[0xE03A2E, 0xF4C430, 0xF4F0E8, 0x8A4AC8], rares:[0x2A1A2A], saisons:["printemps"], rarete:"peuCommun", forme:"coupe", taille:.5, prix:2, jardin:"aux Montagnes enneigées (la tulipe sauvage)", note:"Massifs et pots"},
+  rose:      {nom:"Rose", pluriel:"roses", une:true, couleurs:[0xD8283A, 0xF4A0B8, 0xF4F0E8, 0xF4D44A], rares:[0x4A7AE0], saisons:["ete"], rarete:"peuCommun", forme:"boule", taille:.55, prix:2, jardin:"en lisière de la Forêt profonde (l'églantier, la rose sauvage)", note:"Bouquets ; eau de rose pour les potions"},
+  lavande:   {nom:"Lavande", pluriel:"lavandes", une:true, couleurs:[0x9A6AD0], saisons:["ete"], rarete:"peuCommun", forme:"epi", taille:.5, prix:2, jardin:"au Désert, dans la garrigue des ruines", note:"Parfum, potions apaisantes ; elle attire les papillons"},
   violette:  {nom:"Violette", pluriel:"violettes", une:true, couleurs:[0x7A3AB8, 0xF4F0E8], coeur:0xF2C94C, saisons:["printemps"], rarete:"peuCommun", forme:"etoile", taille:.25, prix:2, note:"Bonbons, potions"},
   perceNeige:{nom:"Perce-neige", pluriel:"perce-neige", couleurs:[0xFFFFFF], saisons:["hiver"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Il annonce la fin de l'hiver"},
   muguet:    {nom:"Muguet", pluriel:"muguets", couleurs:[0xFFFFFF], saisons:["printemps"], rarete:"peuCommun", forme:"clochette", taille:.3, prix:2, note:"Porte-bonheur, à offrir"}
@@ -1087,7 +1092,7 @@ export const FLEURS = {
 /* Ce qu'il y a sur l'île au début d'une partie (décidé avec Yo le 18 octobre 2026, ile.js) : les pierres des champs, et la
    flore sauvage (herbes hautes, groseilliers, thym ; les fleurs : combien de chaque commune et de chaque peu commune) */
 export const PIERRES_ILE = 30;
-export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 3};
+export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 5};   // fleurs : seulement les sauvages (5 × 7 + 3 × 5 = 50, choix de Yo le 21 octobre 2026)
 /* les galets de plage (décidé par Yo le 20 octobre 2026 : un décor, une vingtaine de groupes sur le sable) */
 export const GALETS_ILE = 20;
 /* La nature qui se ressème (décidé avec Yo le 18 octobre 2026, monde/semis.js) : une fois par jour, la chance d'une plante
@@ -1156,8 +1161,9 @@ for(const [k, f] of Object.entries(FLEURS)){
   f.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 13V22" stroke="#4E8A3A" stroke-width="1.6"/><path d="M12 19Q8 16 6 17Q8 20 12 19Z" fill="#6FA85A"/>${tete}</svg>`;
   f.emoji = "🌸";
   const r = {commun:"commune", peuCommun:"peu commune", rare:"rare"}[f.rarete];
-  f.aide = `${f.une ? "La" : "Le"} ${f.nom.toLowerCase()} se cueille dans les prés de l'île, ${quandFleur(f)}.`;
-  f.usage = `${f.note}. Fleur ${r} des prés de l'île, qui fleurit ${quandFleur(f)}. Elle se vend au comptoir ; bientôt, en bouquet ou en pot.`;
+  const ou = f.jardin ? `une fleur de jardin : sa graine s'achète au Marché ; sauvage, elle pousse ${f.jardin}` : ["violette", "muguet", "perceNeige"].includes(k) ? "en lisière des bois de l'île" : "dans les prés de l'île";
+  f.aide = f.jardin ? `${f.une ? "La" : "Le"} ${f.nom.toLowerCase()} est ${ou}. ${f.une ? "Elle" : "Il"} fleurit ${quandFleur(f)}.` : `${f.une ? "La" : "Le"} ${f.nom.toLowerCase()} se cueille ${ou}, ${quandFleur(f)}.`;
+  f.usage = `${f.note}. Fleur ${r}${f.jardin ? ", " + ou : " sauvage, " + ou}, qui fleurit ${quandFleur(f)}. Elle se vend au comptoir ; bientôt, en bouquet ou en pot.`;
   /* sa graine : en main, « Planter » ; la fleur pousse en temps réel, et ne fleurit qu'à sa saison */
   GRAINES["graine" + majuscule(k)] = {nom:`Graine de ${f.nom.toLowerCase()}`, pluriel:`graines de ${f.nom.toLowerCase()}`, emoji:"🌱", plante:k,
     pousse:FLEUR_RARETE[f.rarete].pousse, sachet:f.couleurs[0],

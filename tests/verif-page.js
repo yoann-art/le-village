@@ -275,15 +275,16 @@ export async function verifier(){
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
   });
-  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 74 fleurs en taches, 20 groupes de galets", async () => {
+  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 50 fleurs sauvages en taches (8 sortes, pas les fleurs de jardin), 20 groupes de galets", async () => {
     const n = o => map.obj.filter(x => typeof o === "function" ? o(x) : x === o).length;
     /* (les essais d'avant ont pu en cueillir ou en casser quelques-uns) */
     const voulu = {rock: PIERRES_ILE, herbe: FLORE_ILE.herbe, buisson: FLORE_ILE.buisson, thym: FLORE_ILE.thym};
     for(const [o, v] of Object.entries(voulu)) if(n(o) > v || n(o) < v * .8) throw new Error(`${n(o)} ${o} sur l'île (${v} voulus)`);
     const fleurs = n(o => FLEURS[o]), sortes = new Set(map.obj.filter(o => FLEURS[o]));
-    const toutes = Object.values(FLEURS).reduce((t, f) => t + (f.rarete === "commun" ? FLORE_ILE.fleurCommune : FLORE_ILE.fleurPeuCommune), 0);
+    const sauvages = Object.keys(FLEURS).filter(k => !FLEURS[k].jardin);
+    const toutes = sauvages.reduce((t, k) => t + (FLEURS[k].rarete === "commun" ? FLORE_ILE.fleurCommune : FLORE_ILE.fleurPeuCommune), 0);
     if(fleurs > toutes || fleurs < toutes * .8) throw new Error(`${fleurs} fleurs sur l'île (${toutes} voulues)`);
-    if(sortes.size !== Object.keys(FLEURS).length) throw new Error(`${sortes.size} sortes de fleurs sur l'île`);
+    if(sortes.size !== sauvages.length || [...sortes].some(k => FLEURS[k].jardin)) throw new Error(`${sortes.size} sortes de fleurs sur l'île (${[...sortes].join(", ")}) : seulement les ${sauvages.length} sauvages`);
     /* en taches : la plupart des fleurs ont une voisine de leur sorte */
     let seules = 0;
     map.obj.forEach((o, i) => { if(!FLEURS[o]) return; const x = i % N, z = (i - x) / N;

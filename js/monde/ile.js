@@ -184,6 +184,7 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
   taches(mulberry32(state.seed * 11 + 5), "thym", FLORE.thym, 4, 6, i => sec(i) ? 5 : pre(i) ? .3 : 0);
   const rnd = mulberry32(state.seed * 13 + 7), OMBRE = ["violette", "muguet", "perceNeige"];
   for(const k of Object.keys(FLEURS)){
+    if(FLEURS[k].jardin) continue;                  // les fleurs de jardin ne poussent pas seules sur l'île (Yo, 21 octobre 2026)
     const commun = FLEURS[k].rarete === "commun", poids = OMBRE.includes(k) ? (i => lisiere(i) ? 5 : .1) : (i => pre(i) ? 4 : .4);
     if(commun){ taches(rnd, k, 4, 3, 4, poids); taches(rnd, k, FLORE.fleurCommune - 4, 3, 3, poids); }
     else taches(rnd, k, FLORE.fleurPeuCommune, 3, 3, poids);
