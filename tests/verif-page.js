@@ -879,7 +879,9 @@ export async function verifier(){
     if(!t) throw new Error("aucun bord de l'eau");
     placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
     if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
-    if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2)) throw new Error("pas d'ombre de poisson possible ici");   // une ombre devant soi
+    /* une ombre devant soi, d'un poisson commun (tiré au hasard, ce pouvait être un légendaire, qui casse le fil de la canne en bois) */
+    const commun = lieuEau(idx(t[0], t[1] + 1)) === "mer" ? "maquereau" : "perche";
+    if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2, commun)) throw new Error("pas d'ombre de poisson possible ici");
     $("#btn-act").click();
     let k = 0;
     while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
