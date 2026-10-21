@@ -332,7 +332,8 @@ export async function verifier(){
     const bg = bergeIci();
     if(bg.mottes < 60) throw new Error(`seulement ${bg.mottes} mottes au bord de l'étang et des mares`);
     if(bg.mer) throw new Error(`${bg.mer} mottes au bord de la mer`);
-    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues`;
+    if(bg.galets < 4) throw new Error(`seulement ${bg.galets} groupes de galets au bord de l'étang et des mares`);
+    return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);

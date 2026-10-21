@@ -17,7 +17,7 @@ import { bouleauModele, soucheBouleau } from "./bouleau.js";
 import { pierreChamps } from "./pierre.js";
 import { herbesModele } from "./herbes.js";
 import { groseillierModele } from "./groseillier.js";
-import { galetsModele } from "./galets.js";
+import { galetsModele, galetsEtangModele } from "./galets.js";
 import { thymModele } from "./thym.js";
 import { preparerSerie, oublierSerie, debutSeries, effacerSeries, ajouterEnSerie, finSeries } from "./series.js";
 
@@ -444,17 +444,37 @@ const TERRE_MOTTE = [0x9C6331, 0x8A5527, 0xA9713B, 0x93602F].map(c => new THREE.
 const MOUSSE_MOTTE = [0x7FA62A, 0x97BA33, 0x6E9524].map(c => new THREE.Color(c));
 const mM = new THREE.Matrix4(), qM = new THREE.Quaternion(), vM = new THREE.Vector3(), sM = new THREE.Vector3(), cM = new THREE.Color(), HAUT_Y = new THREE.Vector3(0, 1, 0);
 const tirM = q => (Math.imul(q + 7919, 2654435761) >>> 0) % 1000 / 1000;
+/* les galets de l'étang (morceau 2 du bord de l'étang) : des groupes posés sur la ligne de l'eau douce, écartés */
+const GALETS_ETANG = new THREE.Group(), GALETS_ETANG_MAX = 16, GALETS_ETANG_ECART = 3.5;
+scene.add(GALETS_ETANG);
+const BORD = [];
 function majMottes(){
   let n = 0, k = 0;
-  /* là où la ligne de l'eau coupe un petit côté du sol (entre deux points, l'un sec, l'autre sous l'eau) */
+  /* là où la ligne de l'eau douce coupe un petit côté du sol (entre deux points, l'un sec, l'autre sous l'eau) */
+  BORD.length = 0;
   for(let gz = 1; gz < NV - 1; gz++) for(let gx = 1; gx < NV - 1; gx++) for(let c = 0; c < 2; c++){
     const q = ou(gx, gz), o = c ? ou(gx, gz + 1) : ou(gx + 1, gz), h = HAUT[q], ho = HAUT[o];
     if((h > -.2) === (ho > -.2) || ho <= -.99 || h <= -.99) continue;
     if(Math.max(BER[q], BER[o]) < .4 || MERV[q] || MERV[o] || ENT[q] > 0 || ENT[o] > 0) continue;   // seulement l'eau douce
-    const qq = q * 2 + c;
+    const qq = q * 2 + c, t = (h + .2) / (h - ho);
+    BORD.push([qq, (gx + (c ? 0 : t)) / S - H, (gz + (c ? t : 0)) / S - H]);
+  }
+  /* les galets d'abord, chaque groupe loin des autres ; puis les mottes, pas sur eux */
+  const neige = peinteNeige > .3, places = [];
+  GALETS_ETANG.clear();
+  for(const [qq, x, z] of [...BORD].sort((a, b) => tirM(a[0] * 23 + 7) - tirM(b[0] * 23 + 7))){
+    if(places.length >= GALETS_ETANG_MAX) break;
+    if(places.some(([px, pz]) => Math.hypot(px - x, pz - z) < GALETS_ETANG_ECART)) continue;
+    places.push([x, z]);
+    const g = galetsEtangModele(tirM(qq * 29 + 3), neige);
+    g.position.set(x, -.2, z);
+    GALETS_ETANG.add(g);
+  }
+  for(const [qq, x0, z0] of BORD){
     if(tirM(qq * 7 + 1) > .95 || n >= 2400) continue;
-    const t = (h + .2) / (h - ho), r = .14 + tirM(qq * 3 + 2) * .11;
-    const x = (gx + (c ? 0 : t)) / S - H + (tirM(qq * 5 + 3) - .5) * .12, z = (gz + (c ? t : 0)) / S - H + (tirM(qq * 9 + 4) - .5) * .12;
+    if(places.some(([px, pz]) => Math.hypot(px - x0, pz - z0) < .55)) continue;
+    const r = .14 + tirM(qq * 3 + 2) * .11;
+    const x = x0 + (tirM(qq * 5 + 3) - .5) * .12, z = z0 + (tirM(qq * 9 + 4) - .5) * .12;
     qM.setFromAxisAngle(HAUT_Y, tirM(qq * 11) * 6.28);
     vM.set(x, -.2 + r * .05, z); sM.set(r * 1.3, r * .8, r);
     MOTTES.setMatrixAt(n, mM.compose(vM, qM, sM));
@@ -516,7 +536,7 @@ export const bergeIci = () => {
     const x = Math.floor(v.x + H), z = Math.floor(v.z + H);
     for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++) if(inb(x + dx, z + dz) && MER[idx(x + dx, z + dz)]){ mer++; dz = dx = 2; }
   }
-  return {mottes: MOTTES.count, mousses: MOUSSES.count, mer};
+  return {mottes: MOTTES.count, mousses: MOUSSES.count, mer, galets: GALETS_ETANG.children.length};
 };
 export const plageIci = () => ({mouilles: MOU.reduce((n, v) => n + (v > .5 ? 1 : 0), 0), grain: MORCEAUX.some(m => m && m.geometry.attributes.sable && m.geometry.attributes.mouille)});
 refaireSol();

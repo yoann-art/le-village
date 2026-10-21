@@ -149,3 +149,60 @@ export function galetsModele(r = 0, neige = false){
   g.userData.galets = {neige};
   return g;
 }
+
+/* ================= Les galets de l'étang =================
+   Au bord de l'étang et des mares (l'image de Yo, « Le bord de l'étang », 21 octobre 2026 ; morceau 2 du bord de l'étang),
+   au plus près de l'image : deux gros galets ronds côte à côte et de plus petits autour, à demi dans l'eau, beige-gris,
+   la pierre faite de petites facettes de tons un peu différents, des plaques de mousse jaune-vert sur le dessus et les
+   flancs. Un décor : posés sur la ligne de l'eau (ile.js), ils ne prennent pas de case. Quand il neige, un peu de neige
+   sur le dessus (et la mousse se cache). Le point 0 du modèle est à la surface de l'eau. */
+const ETANG = [
+  /* [x, z, demi-longueur, demi-hauteur, demi-largeur, tour, couleur] */
+  [-.16, -.06, .38, .27, .33, .3, 0xAEA48C],
+  [.34, .2, .29, .21, .25, -.5, 0xA39C88],
+  [.04, .4, .15, .11, .13, .9, 0xA89D85],
+  [.55, -.16, .12, .09, .11, .2, 0x9C927D],
+  [-.5, .32, .1, .075, .09, 1.3, 0xAA9F88]
+];
+const MOUSSE_E = new THREE.Color(0x9CB43A), MOUSSE_E2 = new THREE.Color(0x7E9E2C);
+function galetEtang(M, [x, z, lx, ly, lz, tour, c], alea, leger, neige){
+  const cy = ly * .32, centre = V(x, cy, z), q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), tour), taille = V(lx, ly, lz);
+  const base = new THREE.Color(c), graine = alea() * 50;
+  M.push({geo: leger ? BOULE_LEGERE : BOULE, m: new THREE.Matrix4().compose(centre, q, taille),
+    couleur: (px, py, pz) => {
+      /* de petites facettes de tons différents, comme une mosaïque */
+      const f = bruit(Math.floor(px * 22) + graine, Math.floor(py * 22), Math.floor(pz * 22));
+      cT.copy(base).multiplyScalar(.84 + f * .3);
+      if(f > .93) cT.lerp(MOUSSE_E2, .3);                   // quelques facettes verdies
+      /* les plaques de mousse, sur le dessus et les flancs */
+      const haut = (py - cy) / ly, m = bruit(Math.floor(px * 9) + graine, Math.floor(py * 9) + 3, Math.floor(pz * 9));
+      if(!neige && haut > .1 && m > .7) cT.lerp(f > .5 ? MOUSSE_E : MOUSSE_E2, Math.min(.85, (m - .7) * 5));
+      return cT;
+    },
+    ombre: (px, py) => .72 + .36 * Math.min(1, Math.max(0, (py + .02) / (ly * 1.2)))});
+  if(neige){
+    M.push({geo: NEIGE_GEO, m: new THREE.Matrix4().compose(V(x, cy + ly * .72, z), q, V(lx * .6, ly * .34, lz * .6)), c: 0xF4F8FA});
+  }
+}
+const CACHE_E = new Map();
+function geosEtang(variante, neige){
+  const cle = variante + ":" + (neige ? 1 : 0);
+  if(!CACHE_E.has(cle)){
+    const fait = leger => {
+      const alea = aleaDe(7013 + variante * 71), M = [];
+      ETANG.forEach((g, k) => { if(leger && k > 1) return; galetEtang(M, g, alea, leger, neige); });
+      return fusionner(M);
+    };
+    CACHE_E.set(cle, {pres: fait(false), loin: fait(true)});
+  }
+  return CACHE_E.get(cle);
+}
+/* Un groupe de galets de l'étang : r, son tirage (nuance, taille, sens) ; neige : il neige */
+export function galetsEtangModele(r = 0, neige = false){
+  const variante = Math.floor(r * 3) % 3, G = geosEtang(variante, neige), g = new THREE.Group();
+  g.add(presLoin(mesh(G.pres, MAT_BOIS), mesh(G.loin, MAT_BOIS), LOIN));
+  g.rotation.y = r * Math.PI * 2;
+  g.scale.setScalar(.9 + r * .25);
+  g.userData.galetsEtang = {neige};
+  return g;
+}
