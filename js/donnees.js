@@ -1170,6 +1170,17 @@ for(const [k, f] of Object.entries(FLEURS)){
     usage:`Prends-la en main, puis « Planter » devant une case d'herbe libre : ${f.une ? "une" : "un"} ${f.nom.toLowerCase()} y poussera, et fleurira ${quandFleur(f)}.`};
 }
 export const graineDeFleur = k => "graine" + majuscule(k);
+/* L'étal de graines du comptoir du Marché (décidé avec Yo le 21 octobre 2026, comme Leif dans Animal Crossing) : chaque jour,
+   deux des six fleurs de jardin, qui changent chaque jour ; toutes reviennent en quelques jours (les 15 paires de fleurs
+   défilent une à une, chaque fleur revient au moins tous les 3 jours). Prix choisis par Claude : la graine vaut un peu
+   plus que trois fleurs (commune 3 or, peu commune 5 or), à régler en jouant. */
+export const ETAL_GRAINES = {prix: {commun: 3, peuCommun: 5, rare: 12}};
+export function etalDuJour(graine = 0, date = new Date()){
+  const jardin = Object.keys(FLEURS).filter(k => FLEURS[k].jardin), paires = [];
+  for(let a = 0; a < jardin.length; a++) for(let b = a + 1; b < jardin.length; b++) paires.push([jardin[a], jardin[b]]);
+  const jour = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 864e5);
+  return paires[((jour * 7 + Math.abs(graine | 0)) % paires.length + paires.length) % paires.length];
+}
 
 /* Les chemins (étape 1.9, morceau 2 ; Grand Carnet : « Chemins : gravier, pavés ou planches, se tracent librement sur
    l'île ») : avec = ce qu'il faut tenir en main pour les tracer (une pièce par case, prise dans le sac, rendue quand

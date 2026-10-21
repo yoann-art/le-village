@@ -12,7 +12,7 @@
    Étape 1.11, morceau 4 : à la table de taille, « Ouvrir une géode » (hasard) : le cristal est tiré au sort quand la
    géode est prête (tirerCristal), et s'inscrit au carnet. */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, objet, icone, tirerCristal } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, ETAL_GRAINES, etalDuJour, graineDeFleur, quandFleur, objet, icone, tirerCristal } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre, placesSac } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
@@ -26,7 +26,7 @@ const info = k => { const o = objet(k); return {nom: o.nom, pluriel: o.pluriel |
 const label = (k, n) => n > 1 ? `${n} ${info(k).pluriel}` : info(k).nom;
 const many = (k, n) => `${n} ${n > 1 ? info(k).pluriel : POISSONS[k] && POISSONS[k].rarete === "legendaire" ? info(k).nom : info(k).nom.toLowerCase()}`;   // « 6 pierres », « 1 gardon », « 1 or »
 /* Le nom d'une recette (ou d'une vente : « 6 bois → 1 or ») */
-const nameOf = (a, r) => r.nom && r.out ? `${r.nom}${a.vente ? ` → ${many(r.out, r.n || 1)}` : ""}` : a.vente ? Object.entries(r.in).map(([k, v]) => many(k, v)).join(" + ") + ` → ${many(r.out, r.n || 1)}` : label(r.out, r.n || 1);
+const nameOf = (a, r) => r.achat ? r.nom : r.nom && r.out ? `${r.nom}${a.vente ? ` → ${many(r.out, r.n || 1)}` : ""}` : a.vente ? Object.entries(r.in).map(([k, v]) => many(k, v)).join(" + ") + ` → ${many(r.out, r.n || 1)}` : label(r.out, r.n || 1);
 const emojiOf = (a, r) => r.icone || icone(a.vente ? Object.keys(r.in)[0] : r.out);
 const duree = s => s < 60 ? `${Math.ceil(s)} s` : `${Math.floor(s / 60)} min${s % 60 ? " " + Math.round(s % 60) : ""}`;
 
@@ -58,6 +58,12 @@ const sacPropose = r => !r.out || !objet(r.out).sac || (objet(r.out).sac === (st
 function recettesDe(b){
   const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i})).filter(sacPropose);
   if(!a.vente) return list;
+  /* l'étal de graines (étape 2.1, les fleurs, morceau 2) : deux fleurs de jardin aujourd'hui */
+  for(const f of etalDuJour(state.seed)){
+    const k = graineDeFleur(f), prix = ETAL_GRAINES.prix[FLEURS[f].rarete];
+    list.push({key: "a:" + k, cat: "L'étal de graines (aujourd'hui)", achat: true, nom: `Graine de ${FLEURS[f].nom.toLowerCase()}`, icone: icone(k),
+      quand: `${FLEURS[f].une ? "elle" : "il"} fleurit ${quandFleur(FLEURS[f])}`, out: k, n: 1, in: {or: prix}, lvl: 1});
+  }
   const cat = "Prises et plats", aVendre = VENDABLES().filter(k => owned(k) > 0), tous = {};
   for(const k of aVendre) if(!(POISSONS[k] && POISSONS[k].rarete === "legendaire")) tous[k] = owned(k);
   const nb = Object.values(tous).reduce((n, v) => n + v, 0);
@@ -81,6 +87,14 @@ function recettesDe(b){
 /* Vendre au comptoir : tout de suite (demande de Yo) ; l'or va dans la bourse, avec le bonus du Marché */
 function vendre(a, b, r){
   if(r.lock || b.lvl < r.lvl || !hasAll(r.in)) return;
+  if(r.achat){                                        // l'étal de graines : on achète, sans le bonus du Marché
+    if(placeFor(r.out) < 1){ toast("🎒 Fais de la place dans ton sac ou un coffre pour cette graine", 2600); return; }
+    payer(r.in); addOwned(r.out, 1);
+    if(enCaseAuto(r.out)) barreAuto(r.out);
+    save(); renderHUD();
+    toast(`🌱 Tu achètes une ${r.nom.toLowerCase()} pour ${many("or", r.in.or)}`, 2600);
+    return;
+  }
   const pris = payer(r.in), n = gain(r.n || 1, r.out);
   addOwned(r.out, n);
   save(); renderHUD();
@@ -192,10 +206,10 @@ function render(){
   openSheet(`<div class="sh-head"><h2 class="display">${a.emoji} ${a.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">${B[b.type].nom} niveau ${b.lvl}. ${a.note ? a.note + " " : ""}${waiting
       ? `Ses ${a.titre ? a.titre.toLowerCase() : "recettes"} arrivent bientôt.`
-      : a.vente ? "Ce que tu vends part tout de suite, et l'or arrive aussitôt dans ta bourse."
+      : a.vente ? "Ce que tu vends part tout de suite, et l'or arrive aussitôt dans ta bourse. Chaque jour, l'étal propose deux graines de fleurs de jardin."
       : "Ce qui est fini va tout seul dans ton sac (ou dans un coffre de réserve s'il est plein), même jeu fermé."}</p>
     ${waiting || a.vente ? "" : `<h3 style="margin:10px 0 2px">En cours (${q.length} sur ${queueSlots(b.lvl)})</h3><div id="atelier-file">${fileHTML(b)}</div>`}
-    <h3 style="margin:14px 0 2px">${a.titre || (a.vente ? "Ventes" : "Recettes")}</h3>` +
+    <h3 style="margin:14px 0 2px">${a.titre || (a.vente ? "Acheter et vendre" : "Recettes")}</h3>` +
     recs.map((r, i) => {
       /* Recettes rangées par catégorie (Matériaux, Outils, Meubles) quand elles en ont une */
       const head = r.cat && r.cat !== (recs[i - 1] || {}).cat ? `<h4 class="rec-cat">${r.cat}</h4>` : "";
@@ -209,10 +223,10 @@ function recetteHTML(b, a, r, full){
     <button class="btn primary" disabled>Bientôt</button></div>`;
   const plein = full && !a.vente;                     // le comptoir n'a pas de file : on vend tout de suite
   const locked = b.lvl < r.lvl, ok = !locked && !plein && hasAll(r.in);
-  const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : a.vente ? "Vendre" : "Fabriquer";
+  const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : r.achat ? "Acheter" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-      ${a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : objet(r.out).sac ? `🎒 ${placesSac()} → ${SACS[objet(r.out).sac].places} emplacements` : `tu en as : ${owned(r.out)}`}</p>`}
+      ${r.achat ? `<p>${many("or", r.in.or)} · ${r.quand} · tu en as : ${owned(r.out)}</p>` : a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : objet(r.out).sac ? `🎒 ${placesSac()} → ${SACS[objet(r.out).sac].places} emplacements` : `tu en as : ${owned(r.out)}`}</p>`}
       <div>${r.tout ? "" : Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
     <button class="btn primary" data-fab="${r.key}" ${ok ? "" : "disabled"}>${r.tout ? "Tout vendre" : why}</button></div>`;
 }

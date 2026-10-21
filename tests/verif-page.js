@@ -1806,7 +1806,7 @@ export async function verifier(){
     await sortir();
     return `${coups} coups d'épée, puis du cuir épais et une défense`;
   });
-  await etape("Vendre au comptoir, tout de suite", async () => {
+  await etape("Vendre au comptoir, tout de suite ; l'étal de graines du Marché", async () => {
     /* un Marché d'essai, avec son comptoir, le temps de vendre un poisson (retiré ensuite) */
     const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
     state.buildings.push(marche);
@@ -1825,8 +1825,17 @@ export async function verifier(){
       place(1); sacAdd("granit", 1);                        // ce qu'on rapporte de la mine se vend aussi (étape 1.11)
       openAtelier(marche); await wait(200);
       if(!$("#sheet [data-fab='v:granit']")) throw new Error("pas de ligne pour vendre le granit");
+      /* l'étal de graines (les fleurs, morceau 2) : deux graines de fleurs de jardin aujourd'hui, qu'on achète */
+      const etal = [...document.querySelectorAll("#sheet [data-fab^='a:']")];
+      if(etal.length !== 2) throw new Error(`${etal.length} graines à l'étal (2 voulues)`);
+      const g = etal[0].dataset.fab.slice(2), ng = owned(g);
+      state.res.or += 10; renderHUD(); openAtelier(marche); await wait(200);
+      const orAvant = state.res.or;
+      $(`#sheet [data-fab='a:${g}']`).click();
+      if(owned(g) !== ng + 1) throw new Error("la graine achetée n'est pas dans le sac");
+      if(state.res.or >= orAvant) throw new Error("la graine n'a rien coûté");
       $("#sheetWrap [data-close]").click(); await wait(300);
-      return `+${state.res.or - or} or`;
+      return `+${state.res.or - or} or ; l'étal de graines : ${etal.map(e => objet(e.dataset.fab.slice(2)).nom.toLowerCase()).join(" et ")}, une achetée ${orAvant - state.res.or} or`;
     } finally {
       state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
     }
