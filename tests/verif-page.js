@@ -290,10 +290,13 @@ export async function verifier(){
     map.obj.forEach((o, i) => { if(!FLEURS[o]) return; const x = i % N, z = (i - x) / N;
       if(![[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1],[2,0],[-2,0],[0,2],[0,-2]].some(([a, b]) => map.obj[idx(x + a, z + b)] === o)) seules++; });
     if(seules > fleurs * .2) throw new Error(`${seules} fleurs seules sur ${fleurs} (elles devraient pousser en taches)`);
-    /* la pâquerette d'après l'image de Yo (les fleurs, morceau 3) : son modèle à elle */
+    /* la pâquerette et le pissenlit d'après les images de Yo (les fleurs, morceau 3) : leur modèle à eux */
     const pq = map.obj.indexOf("paquerette");
     let mp = null; if(pq >= 0 && objMesh(pq)) objMesh(pq).traverse(o => { if(o.userData.paquerette) mp = o.userData.paquerette; });
     if(!mp) throw new Error("la pâquerette n'a pas son modèle");
+    const pi = map.obj.indexOf("pissenlit");
+    let mpi = null; if(pi >= 0 && objMesh(pi)) objMesh(pi).traverse(o => { if(o.userData.pissenlit) mpi = o.userData.pissenlit; });
+    if(!mpi) throw new Error("le pissenlit n'a pas son modèle");
     /* les galets de plage (décidé par Yo le 20 octobre 2026) : un décor sur le sable, qu'on traverse, nommé quand on le vise */
     const galets = []; map.obj.forEach((o, i) => { if(o === "galets") galets.push(i); });
     if(galets.length !== GALETS_ILE) throw new Error(`${galets.length} groupes de galets (${GALETS_ILE} voulus)`);

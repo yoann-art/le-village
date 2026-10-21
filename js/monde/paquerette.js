@@ -8,14 +8,14 @@
    neige dessus quand il neige) ; en fleur à sa saison ; cueillie ou hors saison, les feuilles seulement ; une pousse :
    quelques petites feuilles.
    Pour le téléphone : une forme par (saison, état, couleur, nuance), partagée ; un modèle léger quand elle est petite à
-   l'écran (presLoin) ; elle bouge un peu au vent. */
+   l'écran (presLoin) ; elle bouge un peu au vent. Ses feuilles et ses outils servent aussi au pissenlit (pissenlit.js). */
 import { fusionner, feuillageMat } from "./formes.js";
 import { aleaDe, mesh, presLoin, NEIGE_GEO } from "./chene.js";
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const LOIN = 5;
 export const MAT_PAQUERETTE = feuillageMat({}, .1, 1.4);
-const TONS = {
+export const TONS = {
   printemps: [0x6CB42A, 0x4E961E, 0x8CC836], ete: [0x66AC28, 0x4A8E1C, 0x84C034],
   automne: [0x86B23A, 0x729C30, 0x9CBE4A], hiver: [0x5E9A3A, 0x4E8632, 0x6EA846]
 };
@@ -27,7 +27,7 @@ const bruit = (x, y, z) => { const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7
    (une section ovale, large de 2 × large × forme(t), épaisse d'epais fois sa largeur : la feuille posée est étirée en
    longueur dans ce sens ; le bout arrondi) ; teinte : le pied
    à l'ombre, le bout plus clair, le dessous un peu plus sombre */
-function feuilleGeo(T, large, plie, forme, tour = 8, epais = .17){
+export function feuilleGeo(T, large, plie, forme, tour = 8, epais = .17){
   const pos = [], nor = [], te = [], ind = [];
   let y = 0, z = 0, sPrec = 0;
   T.forEach(t => {
@@ -53,11 +53,11 @@ function feuilleGeo(T, large, plie, forme, tour = 8, epais = .17){
   g.setIndex(ind);
   return g;
 }
-const RANGS = [0, .15, .3, .45, .58, .7, .8, .88, .94, .98, 1], RANGS_LEGERS = [0, .45, .8, 1];
-const ronde = t => t < .82 ? .7 + .3 * Math.min(1, t * 3) : Math.sqrt(Math.max(0, 1 - ((t - .82) / .18) ** 2));          // une lanière au bout arrondi
+export const RANGS = [0, .15, .3, .45, .58, .7, .8, .88, .94, .98, 1], RANGS_LEGERS = [0, .45, .8, 1];
+export const ronde = t => t < .82 ? .7 + .3 * Math.min(1, t * 3) : Math.sqrt(Math.max(0, 1 - ((t - .82) / .18) ** 2));          // une lanière au bout arrondi
 const spatule = t => (.35 + .65 * Math.sin(Math.PI * Math.min(1, t * .95)) ** .6 * Math.min(1, t * 2.2)) * (1 + .12 * Math.sin(t * 22)) * (t > .9 ? Math.sqrt((1 - t) / .1) : 1);   // large, festonnée
-const LANIERE = [feuilleGeo(RANGS, .5, .7, ronde, 6, .26), feuilleGeo(RANGS, .5, 1.2, ronde, 6, .26), feuilleGeo(RANGS, .5, 1.8, ronde, 6, .26)];
-const LANIERE_LEGERE = [feuilleGeo(RANGS_LEGERS, .5, 1, ronde, 4), feuilleGeo(RANGS_LEGERS, .5, 1.6, ronde, 4), feuilleGeo(RANGS_LEGERS, .5, 2.2, ronde, 4)];
+export const LANIERE = [feuilleGeo(RANGS, .5, .7, ronde, 6, .26), feuilleGeo(RANGS, .5, 1.2, ronde, 6, .26), feuilleGeo(RANGS, .5, 1.8, ronde, 6, .26)];
+export const LANIERE_LEGERE = [feuilleGeo(RANGS_LEGERS, .5, 1, ronde, 4), feuilleGeo(RANGS_LEGERS, .5, 1.6, ronde, 4), feuilleGeo(RANGS_LEGERS, .5, 2.2, ronde, 4)];
 const SPATULE = feuilleGeo(RANGS, .5, 1.1, spatule, 8, .1);
 
 /* un pétale : un ovale aplati, son sillon au milieu (plus sombre), de 0 à 1 le long de +x */
@@ -70,11 +70,11 @@ const PETALE = (() => {
 })();
 const PETALE_LEGER = (() => { const g = new THREE.SphereGeometry(1, 5, 3); g.scale(.5, .16, .2); g.translate(.5, 0, 0); return g; })();
 const COEUR = new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), COEUR_LEGER = new THREE.SphereGeometry(1, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2);
-const TIGE = new THREE.CylinderGeometry(1, 1, 1, 6, 1); TIGE.translate(0, .5, 0);
-const BOULE = new THREE.SphereGeometry(1, 10, 7), COUPE = new THREE.SphereGeometry(1, 10, 5, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);   // les sépales : une coupe sous le bouton
+export const TIGE = new THREE.CylinderGeometry(1, 1, 1, 6, 1); TIGE.translate(0, .5, 0);
+export const BOULE = new THREE.SphereGeometry(1, 10, 7), COUPE = new THREE.SphereGeometry(1, 10, 5, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);   // les sépales : une coupe sous le bouton
 
 /* une feuille posée : pied, direction b autour de la touffe, pente, longueur, largeur, couleur, tour */
-function poser(M, geo, pied, b, pente, long, larg, c){
+export function poser(M, geo, pied, b, pente, long, larg, c){
   const vers = V(Math.cos(b), 0, Math.sin(b));
   const Y = V(0, 1, 0).multiplyScalar(Math.cos(pente)).addScaledVector(vers, Math.sin(pente)).normalize();
   const X = V(0, 1, 0).cross(vers).normalize(), Z = X.clone().cross(Y).normalize();
@@ -106,7 +106,7 @@ function bouton(M, haut, dir, vert){
   M.push({geo: COUPE, m: new THREE.Matrix4().compose(haut.clone().addScaledVector(dir, .012), q, V(.033, .03, .033)), c: vert});
 }
 /* une tige : de pied à haut, fine */
-const tige = (M, pied, haut, vert) => {
+export const tige = (M, pied, haut, vert) => {
   const d = haut.clone().sub(pied), q = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), d.clone().normalize());
   M.push({geo: TIGE, m: new THREE.Matrix4().compose(pied, q, V(.008, d.length(), .008)), c: vert});
 };
