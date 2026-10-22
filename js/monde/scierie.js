@@ -141,7 +141,7 @@ function appentis(g){
 }
 /* la pile de rondins, devant à gauche : chaque rondin son écorce, son bout clair et ses cernes */
 function rondins(g){
-  const rangs = [[[-1.68, .19], [-1.3, .19], [-.95, .19]], [[-1.49, .5], [-1.13, .5]], [[-1.31, .8]]];
+  const rangs = [[[-2.0, .19], [-1.63, .19], [-1.28, .19]], [[-1.82, .5], [-1.46, .5]], [[-1.64, .8]]];   // à gauche de la porte (demande de Yo, v2.1.47)
   rangs.flat().forEach(([x, y], k) => {
     const z = 1.45 - (k % 2) * .05, l = .62 + (k % 3) * .04;
     const r = ajoute(g, part(G.cyl, ECORCE, .36, l, .36, x, y, z)); r.rotation.x = Math.PI / 2;
@@ -152,16 +152,17 @@ function rondins(g){
 /* les deux tréteaux et la grande scie posée dessus */
 function treteaux(g){
   const zs = 1.68;
-  for(const x of [.35, 1.55]){
+  const dx = .25;                                         // un peu plus à droite (demande de Yo, v2.1.47)
+  for(const x of [.35 + dx, 1.55 + dx]){
     boite(g, POUTRE, .16, .14, .5, x, .74, zs);                                                   // la traverse du dessus
     for(const s of [-1, 1]) for(const t of [-1, 1]) planche(g, CLAIR, .11, .78, .11, x + s * .1, .36, zs + t * .15, t * .18, 0, -s * .2);
     boite(g, POUTRE, .32, .06, .06, x, .3, zs + .17); boite(g, POUTRE, .32, .06, .06, x, .3, zs - .17);
   }
   /* la scie : sa lame d'acier et ses dents, posée à plat sur les deux traverses, ses deux poignées debout */
   const y = .84;
-  boite(g, LAME, 1.5, .03, .26, .95, y, zs);
-  for(let k = 0; k < 18; k++) planche(g, LAME, .06, .028, .06, .25 + k * .082, y, zs + .14, 0, Math.PI / 4, 0);
-  for(const x of [.15, 1.75]){ boite(g, POUTRE, .08, .3, .1, x, y + .12, zs); boite(g, FER, .1, .04, .14, x, y + .01, zs); }
+  boite(g, LAME, 1.5, .03, .26, .95 + dx, y, zs);
+  for(let k = 0; k < 18; k++) planche(g, LAME, .06, .028, .06, .25 + dx + k * .082, y, zs + .14, 0, Math.PI / 4, 0);
+  for(const x of [.15 + dx, 1.75 + dx]){ boite(g, POUTRE, .08, .3, .1, x, y + .12, zs); boite(g, FER, .1, .04, .14, x, y + .01, zs); }
 }
 
 export function scierieNiveau1(g){
