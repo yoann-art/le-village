@@ -275,7 +275,7 @@ export async function verifier(){
     scierie = state.buildings.find(b => b.type === "scierie");
     if(!scierie) throw new Error("la Scierie n'est pas posée");
   });
-  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 51 fleurs sauvages en taches (7 sortes, pas les fleurs de jardin ni la marguerite), 20 groupes de galets", async () => {
+  await etape("Ce qu'il y a sur l'île au départ (décidé avec Yo le 18 octobre 2026) : 30 pierres, 60 herbes hautes, 18 groseilliers, 24 thyms, 43 fleurs sauvages en taches (7 sortes, pas les fleurs de jardin ni la marguerite), 20 groupes de galets", async () => {
     const n = o => map.obj.filter(x => typeof o === "function" ? o(x) : x === o).length;
     /* (les essais d'avant ont pu en cueillir ou en casser quelques-uns) */
     const voulu = {rock: PIERRES_ILE, herbe: FLORE_ILE.herbe, buisson: FLORE_ILE.buisson, thym: FLORE_ILE.thym};

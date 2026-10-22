@@ -1096,7 +1096,7 @@ export const FLEURS = {
 /* Ce qu'il y a sur l'île au début d'une partie (décidé avec Yo le 18 octobre 2026, ile.js) : les pierres des champs, et la
    flore sauvage (herbes hautes, groseilliers, thym ; les fleurs : combien de chaque commune et de chaque peu commune) */
 export const PIERRES_ILE = 30;
-export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 9, fleurPeuCommune: 5};   // fleurs : seulement les sauvages (4 × 9 + 3 × 5 = 51 : environ 50, choix de Yo le 21 octobre 2026 ; 9 au lieu de 7 depuis que la marguerite est en réserve)
+export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 5};   // fleurs : seulement les sauvages (4 × 7 + 3 × 5 = 43 ; choix de Yo le 22 octobre 2026 : 7 de chaque, la marguerite en réserve)
 /* les galets de plage (décidé par Yo le 20 octobre 2026 : un décor, une vingtaine de groupes sur le sable) */
 export const GALETS_ILE = 20;
 /* La nature qui se ressème (décidé avec Yo le 18 octobre 2026, monde/semis.js) : une fois par jour, la chance d'une plante
