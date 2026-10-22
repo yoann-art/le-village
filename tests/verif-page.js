@@ -33,7 +33,7 @@ import { ressemerMaintenant } from "../js/monde/semis.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol, plageIci, eauIci, bergeIci } from "../js/monde/ile.js";
 import { feuillesQuiVolent, MAT_OMBRE } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
-import { occ, toitDe, lumieresFacades } from "../js/monde/batiments.js";
+import { occ, toitDe, lumieresFacades, makeBuilding } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
 import { enBarque, auLarge, updateBarque, accosterBarque, barquePrete } from "../js/barque.js";
 import { voyageEnCours, passerTrajet } from "../js/voyage.js";
@@ -351,6 +351,14 @@ export async function verifier(){
     if(bg.petites < 20) throw new Error(`seulement ${bg.petites} petites plantes sur la berge`);
     if(saison() !== "hiver" && bg.nenuphars < 2) throw new Error(`seulement ${bg.nenuphars} feuilles de nénuphar sur l'étang`);
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
+  });
+  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026) et la Scierie au niveau 1 d'après son image", async () => {
+    const tailles = {scierie: 4, chaumiere: 4, carriere: 4, forge: 4, marche: 5, taverne: 5, chateau: 6};
+    for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
+    const g = makeBuilding("scierie", 1);
+    let n = 0; g.traverse(o => { if(o.isMesh) n++; });
+    if(n < 100 || !(g.userData.toit > 3)) throw new Error(`la Scierie du niveau 1 n'a pas son nouveau modèle (${n} morceaux, faîte à ${g.userData.toit})`);
+    return `petits 4 × 4, grands 5 × 5, Château 6 × 6 ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
@@ -2091,7 +2099,7 @@ export async function verifier(){
     return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, déplacé d'un appui long, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
   });
   if(scierie) await etape("Les autres lumières : une lanterne murale accrochée à la façade de la Scierie, qui s'allume seule la nuit", async () => {
-    const s = 3, x = scierie.x, z = scierie.z;              // la colonne de gauche (la porte est au milieu)
+    const s = sizeOf(scierie.type), x = scierie.x, z = scierie.z;              // la colonne de gauche (la porte est au milieu)
     const devant = () => { pickUp(idx(x, z + s)); placePlayer(centerOf(x), centerOf(z + s) + .1, 0, -1); frames(3); return $("#btn-act").dataset.action; };
     place(2); sacAdd("lanterneMurale", 1); enMain("lanterneMurale");
     if(!devant().includes("Accrocher la lanterne murale")) throw new Error(`devant la façade, la lanterne en main, le bouton dit « ${$("#btn-act").dataset.action} »`);

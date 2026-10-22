@@ -5,12 +5,13 @@
    sa façade avec la porte est tournée vers le bas de l'écran. */
 import { P, G, part, roof, toon, rassembler } from "./formes.js";
 import { scene } from "./scene.js";
-import { H, idx } from "./ile.js";
-import { B, ENTREE_MINE } from "../donnees.js";
-import { state } from "../sauvegarde.js";
-import { sizeOf, maxLvl } from "../regles.js";
+import { H, idx, N, inb, map, setObj } from "./ile.js";
+import { B, ENTREE_MINE, traversable } from "../donnees.js";
+import { state, save } from "../sauvegarde.js";
+import { sizeOf, maxLvl, doorTile } from "../regles.js";
 import { VITRE, lanterne } from "./ciel.js";
 import { makeMeuble } from "./meubles.js";
+import { scierieNiveau1, FACADE as FACADE_SCIERIE } from "./scierie.js";
 
 const MUR = 2 * P, PORTE = 1.5 * P;
 const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8553D, white:0xF4EFE6, blue:0x4E6DB3, stone:0xAEB0B3, stone2:0x8E9195, gold:0xE2B24D, lit:0xF6D27A,
@@ -24,7 +25,15 @@ lanterne(null, 0, 0, LANTERNE);
 
 /* La façade est à 0,2 P du bord du carré de cases ; la place de la porte
    sur la façade est dans les données (B[type].door) */
-const frontOf = type => sizeOf(type) / 2 - .2;
+/* Les bâtiments agrandis (décidé avec Yo le 22 octobre 2026 : l'île est plus grande, « on peut se permettre d'agrandir la
+   taille des bâtiments ») : leur ancienne taille de carré (ANCIEN) ; en attendant d'être refaits d'après les images de
+   Yo (NOUVEAUX : la Scierie au niveau 1, scierie.js), leur ancien modèle est agrandi d'autant (echelle) */
+const ANCIEN = {chaumiere: 3, scierie: 3, carriere: 3, forge: 3, marche: 4, taverne: 4, chateau: 4};
+const ANCIENNE_PORTE = {chaumiere: 0, scierie: -.45, carriere: -.45, forge: -.4, marche: 0, taverne: 0, chateau: 0};
+const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE]}};
+const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];
+const echelle = (type, lvl) => nouveau(type, lvl) || !ANCIEN[type] ? 1 : sizeOf(type) / ANCIEN[type];
+const frontOf = (type, lvl) => nouveau(type, lvl) ? nouveau(type, lvl)[1] : ANCIEN[type] ? (ANCIEN[type] / 2 - .2) * echelle(type, lvl) : sizeOf(type) / 2 - .2;
 
 function door(g, x, z){
   g.add(part(G.box, C.dark, 1.14*P, PORTE + .07, .05, x, (PORTE + .07)/2, z + .01));
@@ -471,9 +480,14 @@ BUILD.foret = g => {
   g.add(part(G.leaf2, 0x4E8A44, .8, .45, .45, .55, 2.1, f - .05));
 };
 export function makeBuilding(type, lvl){
-  const g = new THREE.Group();
-  BUILD[type](g, Math.min(maxLvl(type), Math.max(1, lvl || 1)));
-  if(!B[type].fixe) door(g, B[type].door, frontOf(type));
+  const g = new THREE.Group(), n = Math.min(maxLvl(type), Math.max(1, lvl || 1)), neuf = nouveau(type, n);
+  if(neuf){ neuf[0](g); return g; }                   // refait d'après l'image de Yo : sa porte est dans son modèle
+  const k = echelle(type, n), dedans = new THREE.Group();
+  BUILD[type](dedans, n);
+  dedans.scale.setScalar(k); g.add(dedans);
+  if(ANCIEN[type]) dedans.position.x = (B[type].door || 0) - ANCIENNE_PORTE[type] * k;   // sa porte d'avant devant la nouvelle place de la porte
+  g.userData.toit = (dedans.userData.toit || MUR + 1.05) * k;
+  if(!B[type].fixe) door(g, B[type].door, frontOf(type, n));
   return g;
 }
 
@@ -489,11 +503,11 @@ export function footprint(type, x, z){
    lanterne murales, dehors aussi) : b.facade = [{type, col, torche?}], col = la colonne de cases (0 à gauche), jamais
    celle de la porte (colPorte). Elles suivent le bâtiment (déplacé, amélioré) : elles font partie de son modèle. */
 export const colPorte = type => Math.floor(sizeOf(type) / 2 + (B[type].door || 0));
-export function placeFacade(type, col){
+export function placeFacade(type, col, lvl = 1){
   const s = sizeOf(type), d = B[type].door || 0;
   let x = col + .5 - s/2;
   if(Math.abs(x - d) < .75) x += Math.sign(x - d) * .15;     // un peu plus loin du bord de la porte
-  return {x, z: frontOf(type) + .25};                         // la plaque touche le mur de devant
+  return {x, z: frontOf(type, lvl) + .25};                         // la plaque touche le mur de devant
 }
 const facades = new Map();                                    // b.id → [{x, z, f}] : leur place sur l'île (lumieres.js)
 export const lumieresFacades = () => [...facades.values()].flat();
@@ -504,7 +518,7 @@ export function placeMesh(b){
   g.rotation.y = (b.rot || 0) * Math.PI / 2;          // tourné (étape 1.9) : la porte regarde vers b.rot
   const lf = [];
   if(!b.rot) for(const f of b.facade || []){
-    const m = makeMeuble(f.type, undefined, f), p = placeFacade(b.type, f.col);
+    const m = makeMeuble(f.type, undefined, f), p = placeFacade(b.type, f.col, b.lvl);
     m.position.set(p.x, 0, p.z); g.add(m);
     lf.push({x: g.position.x + p.x, z: g.position.z + p.z, f, b, mesh: m});
   }
@@ -526,6 +540,44 @@ export function pickBuilding(ray){
   }
   return best;
 }
+/* Une partie d'avant l'agrandissement des bâtiments (décidé avec Yo le 22 octobre 2026) : chaque bâtiment grandit sur
+   place, sa façade de devant au même rang (le chemin vers sa porte ne change pas), il s'élargit vers l'arrière et les
+   côtés ; s'il ne tient plus (l'eau, un voisin, sa porte bloquée, un arbre), il glisse vers la place libre la plus proche.
+   Une seule fois (state.taillesBat) ; les lumières de façade qui se trouveraient devant la porte passent à côté. */
+function agrandirBatiments(){
+  if(state.taillesBat === 2) return;
+  state.taillesBat = 2;
+  if(!state.buildings.length) return;
+  const occupe = new Set(), portes = new Set();
+  const cases = (t, x, z) => footprint(t, x, z).map(([cx, cz]) => [cx, cz, idx(cx, cz)]);
+  const marquer = b => { cases(b.type, b.x, b.z).forEach(c => occupe.add(c[2])); const [dx, dz] = doorTile(b.type, b.x, b.z, b.rot); if(inb(dx, dz)) portes.add(idx(dx, dz)); };
+  const tient = (t, x, z) => {
+    const cs = cases(t, x, z);
+    if(cs.some(([cx, cz, i]) => !inb(cx, cz) || map.type[i] === "water" || occupe.has(i) || portes.has(i) || (map.obj[i] && !traversable(map.obj[i])))) return false;
+    const [dx, dz] = doorTile(t, x, z);
+    return inb(dx, dz) && map.type[idx(dx, dz)] !== "water" && !occupe.has(idx(dx, dz));
+  };
+  state.buildings.filter(b => B[b.type].fixe).forEach(marquer);
+  for(const b of state.buildings.filter(b => !B[b.type].fixe).sort((a, c) => a.id - c.id)){
+    const avant = ANCIEN[b.type] || sizeOf(b.type), plus = sizeOf(b.type) - avant;
+    let x = b.x - Math.floor(plus / 2), z = b.z - plus;
+    if(!tient(b.type, x, z)){
+      let mieux = null;
+      for(let r = 1; r <= 14 && !mieux; r++) for(let dz = -r; dz <= r; dz++) for(let dx = -r; dx <= r; dx++){
+        if(Math.max(Math.abs(dx), Math.abs(dz)) !== r || !tient(b.type, x + dx, z + dz)) continue;
+        const d = Math.hypot(dx, dz); if(!mieux || d < mieux.d) mieux = {x: x + dx, z: z + dz, d};
+      }
+      if(mieux){ x = mieux.x; z = mieux.z; }
+    }
+    b.x = x; b.z = z; delete b.rot;
+    cases(b.type, x, z).forEach(([, , i]) => { if(map.obj[i]) setObj(i, null); });   // les herbes et les fleurs sous le bâtiment s'en vont
+    marquer(b);
+    const pc = colPorte(b.type);
+    for(const f of b.facade || []){ if(f.col === pc) f.col = pc + 1 < sizeOf(b.type) ? pc + 1 : pc - 1; if(f.col >= sizeOf(b.type)) f.col = sizeOf(b.type) - 1; }
+  }
+  save();
+}
+agrandirBatiments();
 state.buildings.forEach(b => {
   placeMesh(b);
   footprint(b.type, b.x, b.z).forEach(([x,z]) => occ.set(idx(x,z), b.id));

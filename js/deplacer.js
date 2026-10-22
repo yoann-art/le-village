@@ -67,7 +67,7 @@ function suivre(){
     const b = lift.b, s = sizeOf(b.type), col = Math.max(0, Math.min(s - 1, tileOf(hit.x) - b.x));
     lift.col = col;
     lift.ok = col === lift.f.col || col !== colPorte(b.type) && !(b.facade || []).some(v => v !== lift.f && v.col === col);
-    lift.mesh.position.x = placeFacade(b.type, col).x;
+    lift.mesh.position.x = placeFacade(b.type, col, b.lvl).x;
     marque.position.set(centerOf(b.x + col), .03, centerOf(b.z + s));
     hint(lift.ok ? `${nomDe(lift.type)} : glisse-${laLe(lift.type)} le long de la façade, puis lève le doigt`
       : col === colPorte(b.type) ? "Pas devant la porte" : "Il y a déjà une lumière ici", !lift.ok);
