@@ -9,6 +9,7 @@ import { pluieDepuis, neigeAuSol } from "./meteo.js";
 import { fleurModele } from "./fleurs.js";
 import { paqueretteModele } from "./paquerette.js";
 import { pissenlitModele } from "./pissenlit.js";
+import { coquelicotModele } from "./coquelicot.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
@@ -739,7 +740,7 @@ export function couleurDe(i){
 /* Ce que montre le modèle d'une case : quand cela change (pousse, repousse, baies), on le refait */
 /* la neige sur les branches des chênes et sur les souches (étape 2.1) : quand il neige assez */
 const neigeBranches = () => neigeAuSol() > .3;
-const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson", "thym", "galets", "paquerette", "pissenlit"]);
+const ENNEIGE = new Set(["tree", "souche", "pommier", "pin", "bouleau", "rock", "buisson", "thym", "galets", "paquerette", "pissenlit", "coquelicot"]);
 const lookOf = i => map.obj[i] + stageOf(i) + (ENNEIGE.has(map.obj[i]) ? (neigeBranches() ? "N" : "") : "") + (map.obj[i] === "herbe" ? (herbeLeft(i) > 0 ? "r" : "h") : "") + (map.obj[i] === "buisson" ? (baiesLeft(i) ? "v" : "p") : "") + (map.obj[i] === "thym" ? (thymLeft(i) > 0 ? "r" : "h") : "") + (FRUITS[map.obj[i]] ? (fruitsLeft(i) > 0 || !fruitsDeSaison(map.obj[i]) ? "n" : "f") : "") + (FLEURS[map.obj[i]] ? (fleurie(i) ? "F" : "n") : "");
 
 const meshes = new Map(), looks = new Map();
@@ -779,7 +780,7 @@ function buildObj(i){
   } else if(FLEURS[o]){                             // une fleur (étape 1.9) : pousse, feuilles, ou en fleur à sa couleur
     const st = stageOf(i);
     const etat = st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1;
-    g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
+    g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : o === "coquelicot" ? coquelicotModele(saison(), etat, couleurDe(i), r, neigeBranches()) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
   } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
     g.add(makeMeuble(o, undefined, state.ile[i]));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
@@ -888,7 +889,7 @@ export function setEtat(i, patch){
 }
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
 /* Une nouvelle saison (ou l'hémisphère choisi) : l'herbe et tout ce qui change de couleur sont repeints */
-const SAISONNIER = o => o === "paquerette" || o === "pissenlit" || o === "tree" || o === "herbe" || o === "buisson" || o === "thym" || o === "souche" || o === "rock" || ESSENCES.includes(o);
+const SAISONNIER = o => o === "paquerette" || o === "pissenlit" || o === "coquelicot" || o === "tree" || o === "herbe" || o === "buisson" || o === "thym" || o === "souche" || o === "rock" || ESSENCES.includes(o);
 let peinte = saison();
 export function rafraichirSaison(){
   peinte = saison();
