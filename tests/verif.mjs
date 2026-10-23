@@ -32,7 +32,7 @@ await page.screenshot({path: "capture.png"});
 const paysage = await browser.newPage({viewport: {width: 812, height: 375}, isMobile: true, hasTouch: true});
 paysage.on("pageerror", e => erreurs.push(`✗ Erreur du jeu (en paysage) : ${e.message}`));
 try {
-  await paysage.goto("http://localhost:8000/", {waitUntil: "load"});
+  await paysage.goto("http://localhost:8000/", {waitUntil: "load", timeout: 90000});   // la machine de GitHub est parfois lente (v2.1.50 : 30 s dépassées)
   await paysage.waitForFunction(() => /^v\d/.test(document.getElementById("version").textContent), null, {timeout: 60000});
   await paysage.waitForTimeout(1500);
   const p = await paysage.evaluate(async () => {
