@@ -187,7 +187,7 @@ export function scierieNiveau1(g){
    poteaux et ses jambes de force, des piles de planches à l'abri, et contre lui la roue à eau : sa goulotte de bois
    amène l'eau par derrière, l'eau tombe sur la roue, descend d'aube en aube et retombe dans un bassin de pierres, d'où
    elle déborde par devant (Yo : « Améliore l'eau qui coule dans la roue. Je veux que cela soit parfait ») ; devant à
-   gauche, la table à scie circulaire et une pile de rondins ; à droite, des rondins rangés contre le mur et une pile
+   gauche, la table à scie circulaire (sans la pile de rondins devant elle, demande de Yo) ; à droite, des rondins rangés contre le mur et une pile
    de planches. Corrigé : tout tient dans le carré de 4 × 4 (sur l'image, l'appentis et la roue débordaient loin), la
    porte reste en x = −0,5. Ce qui bouge : la roue tourne, l'eau coule, bouillonne et éclabousse, au temps du vent (VENT). */
 
@@ -371,8 +371,7 @@ function rondin(g, x, y, z, r, l){
   }
 }
 function rondins2(g){
-  const r = .14;
-  [[-1.97, 0], [-1.69, 0], [-1.41, 0], [-1.83, 1], [-1.55, 1], [-1.69, 2]].forEach(([x, k], i) => rondin(g, x, r + k * r * 1.72, 1.8 - (i % 2) * .04, r, .42 + (i % 3) * .04));
+  /* plus de pile de rondins devant la table à scie (demande de Yo, v2.1.49 : qu'on voie la scie) */
   /* à droite, rangés contre le mur entre deux poteaux */
   for(let c = 0; c < 2; c++) for(let k = 0; k < 3; k++) rondin(g, 1.48 + c * .3, .15 + k * .27, .55 - (k + c) % 2 * .04, .14, .9);
   for(const x of [1.36, 1.95]) boite(g, POTEAU2, .08, .85, .1, x, .425, 1.02);
