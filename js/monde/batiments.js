@@ -11,7 +11,7 @@ import { state, save } from "../sauvegarde.js";
 import { sizeOf, maxLvl, doorTile } from "../regles.js";
 import { VITRE, lanterne } from "./ciel.js";
 import { makeMeuble } from "./meubles.js";
-import { scierieNiveau1, FACADE as FACADE_SCIERIE } from "./scierie.js";
+import { scierieNiveau1, scierieNiveau2, FACADE as FACADE_SCIERIE } from "./scierie.js";
 
 const MUR = 2 * P, PORTE = 1.5 * P;
 const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8553D, white:0xF4EFE6, blue:0x4E6DB3, stone:0xAEB0B3, stone2:0x8E9195, gold:0xE2B24D, lit:0xF6D27A,
@@ -30,7 +30,7 @@ lanterne(null, 0, 0, LANTERNE);
    Yo (NOUVEAUX : la Scierie au niveau 1, scierie.js), leur ancien modèle est agrandi d'autant (echelle) */
 const ANCIEN = {chaumiere: 3, scierie: 3, carriere: 3, forge: 3, marche: 4, taverne: 4, chateau: 4};
 const ANCIENNE_PORTE = {chaumiere: 0, scierie: -.45, carriere: -.45, forge: -.4, marche: 0, taverne: 0, chateau: 0};
-const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE]}};
+const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE]}};
 const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];
 const echelle = (type, lvl) => nouveau(type, lvl) || !ANCIEN[type] ? 1 : sizeOf(type) / ANCIEN[type];
 const frontOf = (type, lvl) => nouveau(type, lvl) ? nouveau(type, lvl)[1] : ANCIEN[type] ? (ANCIEN[type] / 2 - .2) * echelle(type, lvl) : sizeOf(type) / 2 - .2;

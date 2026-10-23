@@ -352,13 +352,18 @@ export async function verifier(){
     if(saison() !== "hiver" && bg.nenuphars < 2) throw new Error(`seulement ${bg.nenuphars} feuilles de nénuphar sur l'étang`);
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
-  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026) et la Scierie au niveau 1 d'après son image", async () => {
+  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026) et la Scierie aux niveaux 1 et 2 d'après ses images", async () => {
     const tailles = {scierie: 4, chaumiere: 4, carriere: 4, forge: 4, marche: 5, taverne: 5, chateau: 6};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
     let n = 0; g.traverse(o => { if(o.isMesh) n++; });
     if(n < 100 || !(g.userData.toit > 3)) throw new Error(`la Scierie du niveau 1 n'a pas son nouveau modèle (${n} morceaux, faîte à ${g.userData.toit})`);
-    return `petits 4 × 4, grands 5 × 5, Château 6 × 6 ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P`;
+    /* le niveau 2 d'après l'image de Yo (23 octobre 2026) : plus haut, sa roue à eau et son eau qui coule */
+    const g2 = makeBuilding("scierie", 2);
+    let eau = 0; g2.traverse(o => { if(o.isMesh && o.material.transparent && o.material.side === THREE.DoubleSide) eau++; });
+    if(!(g2.userData.toit > g.userData.toit)) throw new Error("le niveau 2 de la Scierie n'est pas plus haut que le niveau 1");
+    if(eau < 4) throw new Error(`la roue du niveau 2 n'a que ${eau} nappes d'eau`);
+    return `petits 4 × 4, grands 5 × 5, Château 6 × 6 ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
