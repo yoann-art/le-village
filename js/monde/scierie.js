@@ -353,8 +353,9 @@ function tableScie(g){
   const x = -1.6, z = 1.45, y = .58;
   for(let k = 0; k < 4; k++) boite(g, k % 2 ? CLAIR : ton2(k), .62, .08, .095, x, y, z - .15 + k * .1);
   boite(g, POTEAU2, .66, .08, .44, x, y - .06, z);
-  for(const s of [-1, 1]) for(const t of [-1, 1]) planche(g, POTEAU2, .09, .58, .09, x + s * .24, y / 2 - .04, z + t * .15, t * .1, 0, -s * .12);
+  for(const s of [-1, 1]) for(const t of [-1, 1]) boite(g, POTEAU2, .09, y - .06, .09, x + s * .25, (y - .06) / 2, z + t * .15);   // les pieds bien droits (demande de Yo, v2.1.50)
   boite(g, POTEAU2, .5, .06, .06, x, .2, z + .15); boite(g, POTEAU2, .5, .06, .06, x, .2, z - .15);
+  for(const s of [-1, 1]) boite(g, POTEAU2, .06, .06, .3, x + s * .25, .2, z);
   boite(g, FONCE, .03, .02, .3, x + .04, y + .045, z);
   const r = .2, lame = ajoute(g, part(G.cyl, LAME, r * 2, .015, r * 2, x + .04, y + .05, z)); lame.rotation.z = Math.PI / 2;
   const moyeu = ajoute(g, part(G.cyl, 0x6E7278, .07, .03, .07, x + .04, y + .05, z)); moyeu.rotation.z = Math.PI / 2;
