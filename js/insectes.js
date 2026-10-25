@@ -228,9 +228,19 @@ let tinte = -1e9;
 export function lacherInsecte(k, x, z, y = .3){ const b = ajouter(k, {x, y, z}); b.alpha = 1; b.pause = 99; b.essai = true; return b; }   // elle attend, sans esquiver
 /* Pour la vérification automatique : un coup de filet raté sur cette bête */
 export const essaiRate = b => rater(b);
+/* … et une bête surprise parce qu'on arrive trop vite */
+export const essaiFuite = b => fuir(b, true);
 let conseil = -1e9;
 function fuir(b, vite){
   if(b.etat !== "vit") return;
+  /* surprise parce qu'on arrive trop vite (Yo, 25 octobre 2026 : « la libellule disparaît et ne va pas se poser plus loin ») :
+     une commune ou peu commune va se poser plus loin, plus méfiante, comme après un coup de filet raté ; la rare s'en va */
+  if(vite && INSECTES[b.k].rarete !== "rare" && b.mefiance < 2){
+    b.mefiance++;
+    if(seReposer(b)){ if(performance.now() - conseil > 45000){ conseil = performance.now();
+      toast(`💨 Trop vite : ${leNom(b.k)} s'est posé${INSECTES[b.k].une ? "e" : ""} plus loin. Approche à pas de loup, en poussant le joystick doucement`, 3600); }
+      return; }
+  }
   b.etat = "fuit"; b.ang = Math.atan2(b.z - player.position.z, b.x - player.position.x);
   if(vite && performance.now() - conseil > 45000){ conseil = performance.now();
     toast(`💨 Trop vite : ${leNom(b.k)} s'est enfui${INSECTES[b.k].une ? "e" : ""} ! Approche à pas de loup, en poussant le joystick doucement`, 3600); }
@@ -348,14 +358,17 @@ function rater(b){
   const p = INSECTES[b.k], e = p.une ? "e" : "";
   b.mefiance++;
   const pourDeBon = () => { fuir(b); toast(`💨 Raté ! ${leNom(b.k, true)} s'est envolé${e} pour de bon`, 3000); };
-  if(p.rarete === "rare" || b.mefiance >= 3) return pourDeBon();
-  const P = player.position, [a, z] = COUP.loin;
-  const pl = p.ou.flatMap(o => places(o)).filter(q => { const d = Math.hypot(q.x - P.x, q.z - P.z);
-    return d > a && d < z && !betes.some(o => o !== b && Math.hypot(o.base.x - q.x, o.base.z - q.z) < .8); });
-  if(!pl.length) return pourDeBon();
-  const q = pl[Math.floor(Math.random() * pl.length)];
-  b.etat = "vole"; b.vol = {t: 0, x0: b.x, y0: b.y, z0: b.z, q};
+  if(p.rarete === "rare" || b.mefiance >= 3 || !seReposer(b)) return pourDeBon();
   toast(`💨 Raté ! ${leNom(b.k, true)} s'est posé${e} un peu plus loin, plus méfiant${e}`, 3000);
+}
+/* Elle va se poser un peu plus loin : une place de sa sorte, à COUP.loin du personnage (rend faux s'il n'y en a pas) */
+function seReposer(b){
+  const P = player.position, [a, z] = COUP.loin;
+  const pl = INSECTES[b.k].ou.flatMap(o => places(o)).filter(q => { const d = Math.hypot(q.x - P.x, q.z - P.z);
+    return d > a && d < z && !betes.some(o => o !== b && Math.hypot(o.base.x - q.x, o.base.z - q.z) < .8); });
+  if(!pl.length) return false;
+  b.etat = "vole"; b.vol = {t: 0, x0: b.x, y0: b.y, z0: b.z, q: pl[Math.floor(Math.random() * pl.length)]};
+  return true;
 }
 function attraper(b, k){
   const p = INSECTES[b.k];                            // la luciole et le frelon : au bocal (étape 1.11, morceau 3)

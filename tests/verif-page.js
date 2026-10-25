@@ -42,7 +42,7 @@ import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde
 import { footOf } from "../js/monde/meubles.js";
 import { updateVitrine } from "../js/vitrine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
-import { lacherInsecte, pauseInsectes, insectesPresents, essaiRate, attrapeEnCours } from "../js/insectes.js";
+import { lacherInsecte, pauseInsectes, insectesPresents, essaiRate, essaiFuite, attrapeEnCours } from "../js/insectes.js";
 import { lacherOiseau, pauseOiseaux, oiseauEnCours } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci, hydreIci, pochesIci, eclaterPoche } from "../js/monstres.js";
@@ -1412,6 +1412,11 @@ export async function verifier(){
     frames(40);
     const loin = Math.hypot(f.x - player.position.x, f.z - player.position.z);
     if(f.etat !== "vit" || f.mefiance !== 1 || loin < 2.4) throw new Error(`la fourmi ratée : ${f.etat}, méfiance ${f.mefiance}, à ${loin.toFixed(1)} P`);
+    /* surprise parce qu'on arrive trop vite, une commune va aussi se poser plus loin (Yo : « la libellule disparaît ») */
+    const f2 = lacherInsecte("fourmi", player.position.x, player.position.z + .7, .03); frames(2);
+    essaiFuite(f2);
+    if(f2.etat !== "vole") throw new Error(`la fourmi surprise ne va pas se poser plus loin (${f2.etat})`);
+    frames(40);
     const rare = lacherInsecte("grandPaon", player.position.x, player.position.z + .7, .5); frames(2);
     essaiRate(rare);
     if(rare.etat !== "fuit") throw new Error(`le Grand Paon de nuit raté ne s'envole pas (${rare.etat})`);
