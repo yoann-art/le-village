@@ -3,7 +3,8 @@
    Grand Carnet revu avec Yo) : sur les fleurs (thym, buissons), dans les herbes hautes, sur les arbres, au sol,
    sous les pierres, au bord de l'étang, autour des lanternes la nuit. Au plus INSECTE.max autour du personnage ;
    chacune reste un moment puis s'en va.
-   On les attrape au filet (du sac, pris en main tout seul) : « 🥅 Attraper » quand on est tout près.
+   On les attrape au filet (du sac, pris en main tout seul) : « 🥅 Attraper » quand on est tout près ; depuis le 25 octobre
+   2026, un vrai coup de filet qu'on peut rater (COUP : la bête qui bouge, la rare qui esquive ; ratée, elle se pose plus loin).
    À pas de loup : en poussant le joystick doucement (allure sous ALLURE_DOUCE, ou Maj au clavier), on approche ;
    trop vite, elles s'enfuient. La luciole se prend au bocal (carnet ; le bocal se fait à l'enclume depuis l'étape 1.11).
    Une bête attrapée va dans le sac (vendue au comptoir, plus tard exposée à la Maison des ailes) ; le carnet la
@@ -25,7 +26,8 @@ import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
 import { lumieresIle } from "./lumieres.js";
-import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
+import { player, pencheMain, allure, ALLURE_DOUCE, placePlayer } from "./monde/personnage.js";
+import { gesteOutil } from "./monde/mains.js";
 import { saisonDe, pleineLune } from "./peche.js";
 import { meteo, brouillard } from "./monde/meteo.js";
 import { marais, maraisObj, plante, mcx, mcz, W as WM } from "./monde/marais.js";
@@ -35,6 +37,16 @@ import { user } from "./usure.js";
 
 /* Combien, où, combien de temps (à régler en jouant) ; peur : à quelle distance une bête fuit qui nous voit arriver trop vite */
 export const INSECTE = {max: 6, rayon: 9, vie: [50, 110], portee: 1.3};
+/* Combien à la fois autour du personnage, selon la saison (décidé avec Yo le 25 octobre 2026 : l'été ça grouille, l'hiver
+   c'est calme ; Animal Crossing n'en montre que 4 ou 5 sur toute l'île) */
+export const INSECTES_SAISON = {printemps: 5, ete: 6, automne: 5, hiver: 4};
+const maxIci = () => INSECTES_SAISON[saisonDe(new Date())] || INSECTE.max;
+/* Le coup de filet (décidé avec Yo le 25 octobre 2026, « Mélange ») : le filet s'abat là où était la bête quand on a touché
+   le bouton ; s'il touche (après COUP.touche secondes), elle est prise ; si elle a bougé hors de la zone du filet, c'est
+   raté. Une bête rare, ou méfiante (déjà ratée), peut esquiver dès qu'elle voit le filet arriver. Ratée, une bête
+   commune ou peu commune va se poser un peu plus loin, plus méfiante (elle fuit de plus loin) ; une rare, ou une bête
+   ratée trois fois, s'envole et disparaît. */
+export const COUP = {duree: .4, touche: .2, zone: .32, esquive: {commun: 0, peuCommun: .12, rare: .3}, mefiance: .15, loin: [2.5, 6]};
 const PEUR = {papillon: 2.6, libellule: 3, bourdon: 2.2, sauteur: 2.6, coleo: 1.8, fourmi: 1.6, cloporte: 1.6, araignee: 1.8, mante: 2, cigale: 2.4, phasme: 1.4, lucane: 1.8};
 const VOLE = {papillon: true, libellule: true, bourdon: true};
 
@@ -187,7 +199,7 @@ function ajouter(k, pl){
   mesh.position.set(pl.x, pl.y, pl.z);
   groupe.add(mesh);
   const b = {k, x: pl.x, y: pl.y, z: pl.z, base: pl, t: Math.random() * 10, vie: INSECTE.vie[0] + Math.random() * (INSECTE.vie[1] - INSECTE.vie[0]),
-    age: 0, etat: "vit", alpha: 0, mesh, mats, cible: null, pause: Math.random() * 2, saut: null, ang: Math.random() * 6.28};
+    age: 0, etat: "vit", alpha: 0, mesh, mats, cible: null, pause: Math.random() * 2, saut: null, ang: Math.random() * 6.28, mefiance: 0};
   betes.push(b);
   return b;
 }
@@ -213,7 +225,9 @@ function pondre(){
 }
 let tinte = -1e9;
 /* Pour la vérification automatique : une bête à un endroit précis */
-export function lacherInsecte(k, x, z, y = .3){ const b = ajouter(k, {x, y, z}); b.alpha = 1; return b; }
+export function lacherInsecte(k, x, z, y = .3){ const b = ajouter(k, {x, y, z}); b.alpha = 1; b.pause = 99; b.essai = true; return b; }   // elle attend, sans esquiver
+/* Pour la vérification automatique : un coup de filet raté sur cette bête */
+export const essaiRate = b => rater(b);
 let conseil = -1e9;
 function fuir(b, vite){
   if(b.etat !== "vit") return;
@@ -232,6 +246,13 @@ function vivre(b, dt){
   } else if(b.etat === "part"){
     b.alpha -= dt; if(VOLE[f]) b.y += .5 * dt;
     if(b.alpha <= 0){ retirer(b); return; }
+  } else if(b.etat === "vole"){                       // ratée : elle va se poser un peu plus loin
+    const v = b.vol, T = VOLE[f] || f === "sauteur" ? 1 : 1.6;
+    v.t += dt; const u = Math.min(1, v.t / T);
+    b.x = v.x0 + (v.q.x - v.x0) * u; b.z = v.z0 + (v.q.z - v.z0) * u;
+    b.y = v.y0 + (v.q.y - v.y0) * u + (VOLE[f] || f === "sauteur" ? Math.sin(u * Math.PI) * .7 : 0);
+    b.ang = Math.atan2(v.q.z - v.z0, v.q.x - v.x0);
+    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
   } else {
     b.alpha = Math.min(1, b.alpha + dt);
     if(b.age > b.vie) b.etat = "part";
@@ -280,7 +301,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = VOLE[f] || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite) * .7 : .1);
   b.mesh.position.set(b.x, b.y, b.z);
   if(f !== "mante" && f !== "cigale") b.mesh.rotation.y = -b.ang - Math.PI/2;
@@ -302,10 +323,42 @@ function aPortee(){
     if(d < (INSECTES[b.k].bocal ? INSECTE.portee : loin) && d < md){ md = d; mieux = b; } }
   return mieux;
 }
-function attraper(b){
-  const p = INSECTES[b.k];
-  const k = p.bocal ? tenu("bocal") : filetDuSac();             // la luciole et le frelon : au bocal (étape 1.11, morceau 3)
+let coup = null;                   // le coup de filet en cours : {b, t, vise, k, fait, esquive}
+function lancerCoup(b){
+  if(coup || montre) return;
+  const p = INSECTES[b.k], k = p.bocal ? tenu("bocal") : filetDuSac();
   if(!k) return;
+  if(sacPlace(b.k) < 1){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve", 3200); return; }
+  const dx = b.x - player.position.x, dz = b.z - player.position.z, l = Math.hypot(dx, dz) || 1;
+  placePlayer(player.position.x, player.position.z, dx / l, dz / l);           // on se tourne vers elle
+  coup = {b, t: 0, vise: {x: b.x, y: b.y, z: b.z}, k, fait: false,
+    esquive: !b.essai && Math.random() < COUP.esquive[p.rarete] + COUP.mefiance * b.mefiance};
+  gesteOutil(k);                                      // à la première personne, la main balaie (mains.js)
+  if(coup.esquive){ b.cible = null; b.pause = 0; }    // elle a vu le filet : elle bouge
+}
+function finirCoup(){
+  const {b, vise, k, esquive} = coup;
+  if(b.etat !== "vit" || !betes.includes(b)) return;
+  const zone = COUP.zone + (OUTILS[k].plusLoin || 0) * .3;                   // un filet en cuivre ou en bronze couvre plus large
+  if(!esquive && Math.hypot(b.x - vise.x, b.y - vise.y, b.z - vise.z) < zone) attraper(b, k);
+  else rater(b);
+}
+/* Ratée : une commune ou peu commune se pose un peu plus loin, plus méfiante ; une rare, ou ratée trois fois, s'en va */
+function rater(b){
+  const p = INSECTES[b.k], e = p.une ? "e" : "";
+  b.mefiance++;
+  const pourDeBon = () => { fuir(b); toast(`💨 Raté ! ${leNom(b.k, true)} s'est envolé${e} pour de bon`, 3000); };
+  if(p.rarete === "rare" || b.mefiance >= 3) return pourDeBon();
+  const P = player.position, [a, z] = COUP.loin;
+  const pl = p.ou.flatMap(o => places(o)).filter(q => { const d = Math.hypot(q.x - P.x, q.z - P.z);
+    return d > a && d < z && !betes.some(o => o !== b && Math.hypot(o.base.x - q.x, o.base.z - q.z) < .8); });
+  if(!pl.length) return pourDeBon();
+  const q = pl[Math.floor(Math.random() * pl.length)];
+  b.etat = "vole"; b.vol = {t: 0, x0: b.x, y0: b.y, z0: b.z, q};
+  toast(`💨 Raté ! ${leNom(b.k, true)} s'est posé${e} un peu plus loin, plus méfiant${e}`, 3000);
+}
+function attraper(b, k){
+  const p = INSECTES[b.k];                            // la luciole et le frelon : au bocal (étape 1.11, morceau 3)
   if(sacPlace(b.k) < 1){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve", 3200); return; }
   sacAdd(b.k, 1);
   const c = state.carnet.insectes, e = c[b.k] || (c[b.k] = {n: 0});
@@ -318,7 +371,7 @@ function attraper(b){
 }
 /* Le bouton d'action pour la bête à portée (recolte.js l'affiche, avant le reste) */
 export function insecteAction(){
-  if(montre) return {label: "🥅 …", run: () => {}};
+  if(montre || coup) return {label: "🥅 …", run: () => {}};
   if(!filetDuSac() && !tenu("bocal")) return null;          // sans filet ni bocal en main, on ne prend pas la place des autres actions
   const b = aPortee();
   if(!b) return null;
@@ -326,7 +379,7 @@ export function insecteAction(){
   const nom = `${p.emoji || "🦋"} ${p.nom}`;              // le bouton dit son nom (demande de Yo, 13 octobre 2026)
   if(p.bocal && !bocal) return {label: `🫙 ${p.nom} : elle se prend au bocal`, nom, run: () => {}};   // au joueur de prendre le bocal
   if(!p.bocal && !filetDuSac()) return null;
-  return {label: `${bocal ? "🫙" : "🥅"} Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, nom, run: () => { if(b.etat === "vit" && betes.includes(b)) attraper(b); }};
+  return {label: `${bocal ? "🫙" : "🥅"} Attraper : ${INSECTES[b.k].nom.toLowerCase()}`, nom, run: () => { if(b.etat === "vit" && betes.includes(b)) lancerCoup(b); }};
 }
 
 /* À chaque image (recolte.js) ; ou : le milieu, « ile » ou « foret » (null dans un bâtiment ou la mine) */
@@ -337,6 +390,12 @@ export function pauseInsectes(oui){ enPause = oui; if(oui) for(const b of [...be
 export function updateInsectes(dt, actif, ou){
   changer(ou);
   groupe.visible = !!ou;
+  if(coup){                                           // le coup de filet : la main s'abat, puis revient
+    coup.t += dt;
+    if(!montre) pencheMain(coup.t < COUP.touche ? .35 + 1.4 * coup.t / COUP.touche : 1.75 - 1.4 * Math.min(1, (coup.t - COUP.touche) / (COUP.duree - COUP.touche)));
+    if(!coup.fait && coup.t >= COUP.touche){ coup.fait = true; finirCoup(); }
+    if(coup.t >= COUP.duree){ coup = null; if(!montre) pencheMain(); }
+  }
   if(montre){
     montre.t += dt; const u = Math.min(1, montre.t / .25);
     pencheMain(montre.t < .2 ? .35 + 1.2 * montre.t / .2 : .35);
@@ -349,10 +408,10 @@ export function updateInsectes(dt, actif, ou){
   for(const b of [...betes]){
     const d = Math.hypot(b.x - p.x, b.z - p.z);
     if(d > INSECTE.rayon + 4){ retirer(b); continue; }
-    if(vite && d < PEUR[INSECTES[b.k].forme]) fuir(b, true);
+    if(vite && d < PEUR[INSECTES[b.k].forme] * (1 + .35 * b.mefiance)) fuir(b, true);   // méfiante, elle fuit de plus loin
     vivre(b, dt);
   }
   ponte -= dt;
   if(enPause) return;
-  if(ponte <= 0){ ponte = 1.5; if(betes.filter(b => b.etat === "vit").length < INSECTE.max) pondre(); }
+  if(ponte <= 0){ ponte = 1.5; if(betes.filter(b => b.etat === "vit" || b.etat === "vole").length < maxIci()) pondre(); }
 }

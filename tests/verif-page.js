@@ -42,8 +42,8 @@ import { devantGalerie, galerieOuverte, salleEn, devantCoeur } from "../js/monde
 import { footOf } from "../js/monde/meubles.js";
 import { updateVitrine } from "../js/vitrine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
-import { lacherInsecte, pauseInsectes, insectesPresents } from "../js/insectes.js";
-import { lacherOiseau, pauseOiseaux } from "../js/oiseaux.js";
+import { lacherInsecte, pauseInsectes, insectesPresents, essaiRate, attrapeEnCours } from "../js/insectes.js";
+import { lacherOiseau, pauseOiseaux, oiseauEnCours } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci, hydreIci, pochesIci, eclaterPoche } from "../js/monstres.js";
 import { antre } from "../js/monde/grotte.js";
@@ -1184,7 +1184,7 @@ export async function verifier(){
       sacAdd("filet", 1); enMain("filet");
       lacherInsecte("araigneeEau", mcx(t.i), mcz(t.i), -.17); frames(2);
       if(!bouton().includes("Attraper")) throw new Error(`le bouton dit « ${bouton()} » (pas d'araignée d'eau à attraper)`);
-      $("#btn-act").click(); frames(40);
+      $("#btn-act").click(); frames(50);
       if(!state.carnet.insectes.araigneeEau) throw new Error("l'araignée d'eau n'est pas au carnet");
       lacherOiseau("colvert", mcx(t.i), mcz(t.i), -.18); frames(2);
       if(!bouton().includes("Lancer le filet")) throw new Error(`le bouton dit « ${bouton()} » (pas de canard colvert)`);
@@ -1401,11 +1401,22 @@ export async function verifier(){
     frames(2);
     if(!$("#btn-act").dataset.action.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned("fourmi");
-    $("#btn-act").click();
+    $("#btn-act").click(); frames(8);                                            // le coup de filet (insectes.js : COUP)
     if(owned("fourmi") <= avant) throw new Error("pas de fourmi dans le sac");
     if(!state.carnet.insectes.fourmi) throw new Error("la fourmi n'est pas au carnet");
     frames(40);
-    return "une fourmi, inscrite au carnet";
+    /* raté (décidé avec Yo le 25 octobre 2026) : une bête commune va se poser un peu plus loin, plus méfiante ; une rare s'en va */
+    const f = lacherInsecte("fourmi", player.position.x, player.position.z + .7, .03); frames(2);
+    essaiRate(f);
+    if(f.etat !== "vole") throw new Error(`la fourmi ratée ne va pas se poser plus loin (${f.etat})`);
+    frames(40);
+    const loin = Math.hypot(f.x - player.position.x, f.z - player.position.z);
+    if(f.etat !== "vit" || f.mefiance !== 1 || loin < 2.4) throw new Error(`la fourmi ratée : ${f.etat}, méfiance ${f.mefiance}, à ${loin.toFixed(1)} P`);
+    const rare = lacherInsecte("grandPaon", player.position.x, player.position.z + .7, .5); frames(2);
+    essaiRate(rare);
+    if(rare.etat !== "fuit") throw new Error(`le Grand Paon de nuit raté ne s'envole pas (${rare.etat})`);
+    frames(40);
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);
@@ -1419,7 +1430,7 @@ export async function verifier(){
     frames(2);
     if(!$("#btn-act").dataset.action.includes("🫙")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = owned("luciole");
-    $("#btn-act").click();
+    $("#btn-act").click(); frames(8);
     if(owned("luciole") <= avant) throw new Error("pas de luciole dans le sac");
     frames(40);
     return "une luciole, prise au bocal";
@@ -1441,7 +1452,7 @@ export async function verifier(){
     sacAdd("filetCuivre", 1); enMain("filetCuivre"); frames(2);
     if(!$("#btn-act").dataset.action.includes("Attraper")) throw new Error(`avec le filet en cuivre, à 1,6 P, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const fourmis = owned("fourmi");
-    $("#btn-act").click(); frames(40);
+    $("#btn-act").click(); frames(50);
     if(owned("fourmi") <= fourmis) throw new Error("la fourmi n'est pas prise au filet en cuivre");
     /* l'arrosoir en bronze : trois buissons vides côte à côte, arrosés d'un coup */
     forcerMeteo("beau");
@@ -1521,15 +1532,16 @@ export async function verifier(){
     /* un phasme sur la rive, puis un pic vert posé un peu plus loin */
     lacherInsecte("phasme", p.x - t.dz * .7, p.z + t.dx * .7, .1); frames(2);
     if(!$("#btn-act").dataset.action.includes("Attraper")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » (pas d'insecte à attraper)`);
-    $("#btn-act").click(); frames(40);
+    $("#btn-act").click(); frames(50);                                           // le coup de filet (0,2 s), puis la bête montrée
     if(!state.carnet.insectes.phasme) throw new Error("le phasme n'est pas au carnet");
     lacherOiseau("picVert", p.x + t.dz * 1.4, p.z - t.dx * 1.4); frames(2);
     if(!$("#btn-act").dataset.action.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} » (pas d'oiseau)`);
     $("#btn-act").click(); frames(40);
     if(!state.carnet.oiseaux.picVert) throw new Error("le pic vert n'est pas au carnet");
     /* pêcher : la canne en main, une ombre dans l'eau, juste devant */
+    placePlayer(fcx(t.j), fcz(t.j), t.dx, t.dz);                                // face à l'eau (le coup de filet nous a tournés vers le phasme)
     enMain("canneBois"); frames(2);
-    if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au bord du ruisseau, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au bord du ruisseau, le bouton dit « ${$("#btn-act").dataset.action} » (insecte montré : ${attrapeEnCours()}, oiseau montré : ${oiseauEnCours()})`);
     if(!lacherOmbre(fcx(t.i) + t.dx * .3, fcz(t.i) + t.dz * .3)) throw new Error("pas d'ombre de poisson possible dans le ruisseau");
     $("#btn-act").click();
     let k = 0;
