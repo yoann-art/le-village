@@ -117,9 +117,9 @@ function pied(M, ctr, b, saison, etat, leger, alea, taille){
 function touffe(saison, etat, variante, leger){
   const alea = aleaDe(9961 + variante * 59), M = [];
   /* la mousse et deux petits trèfles, à son pied */
-  for(let k = 0; k < (leger ? 4 : 10); k++){
-    const a = k * 2.39996 + alea() * .3, r = .05 + .11 * Math.sqrt((k + .5) / 10), c = V(Math.cos(a) * r, 0, Math.sin(a) * r);
-    for(let j = 0; j < (leger ? 2 : 6); j++){
+  for(let k = 0; k < (leger ? 4 : 8); k++){
+    const a = k * 2.39996 + alea() * .3, r = .05 + .11 * Math.sqrt((k + .5) / 8), c = V(Math.cos(a) * r, 0, Math.sin(a) * r);
+    for(let j = 0; j < (leger ? 2 : 4); j++){
       const e = .006 + alea() * .005;
       M.push({geo: BRIN, m: new THREE.Matrix4().compose(c.clone().add(V((alea() - .5) * .05, alea() * .008, (alea() - .5) * .05)), new THREE.Quaternion(), V(e, e * 1.6, e)), c: MOUSSE[(k + j) % 3]});
     }
