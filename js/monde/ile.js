@@ -13,6 +13,7 @@ import { coquelicotModele } from "./coquelicot.js";
 import { bleuetModele } from "./bleuet.js";
 import { perceNeigeModele } from "./perceNeige.js";
 import { violetteModele } from "./violette.js";
+import { muguetModele } from "./muguet.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 import { ESSENCES, FRUITS, arbreModele, fruitsDeSaison } from "./essences.js";
@@ -783,7 +784,7 @@ function buildObj(i){
   } else if(FLEURS[o]){                             // une fleur (étape 1.9) : pousse, feuilles, ou en fleur à sa couleur
     const st = stageOf(i);
     const etat = st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1;
-    g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : o === "coquelicot" ? coquelicotModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "bleuet" ? bleuetModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "perceNeige" ? perceNeigeModele(saison(), etat, r, neigeBranches()) : o === "violette" ? violetteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
+    g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : o === "coquelicot" ? coquelicotModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "bleuet" ? bleuetModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "perceNeige" ? perceNeigeModele(saison(), etat, r, neigeBranches()) : o === "violette" ? violetteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "muguet" ? muguetModele(saison(), etat, r) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
   } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
     g.add(makeMeuble(o, undefined, state.ile[i]));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
@@ -892,7 +893,7 @@ export function setEtat(i, patch){
 }
 map.obj.forEach((o, i) => { if(o) buildObj(i); });
 /* Une nouvelle saison (ou l'hémisphère choisi) : l'herbe et tout ce qui change de couleur sont repeints */
-const SAISONNIER = o => o === "paquerette" || o === "pissenlit" || o === "coquelicot" || o === "bleuet" || o === "perceNeige" || o === "violette" || o === "tree" || o === "herbe" || o === "buisson" || o === "thym" || o === "souche" || o === "rock" || ESSENCES.includes(o);
+const SAISONNIER = o => o === "paquerette" || o === "pissenlit" || o === "coquelicot" || o === "bleuet" || o === "perceNeige" || o === "violette" || o === "muguet" || o === "tree" || o === "herbe" || o === "buisson" || o === "thym" || o === "souche" || o === "rock" || ESSENCES.includes(o);
 let peinte = saison();
 export function rafraichirSaison(){
   peinte = saison();

@@ -316,6 +316,12 @@ export async function verifier(){
     if(!mvi) throw new Error("la violette n'a pas son modèle");
     const { violetteModele } = await import("/js/monde/violette.js");
     if(!(triangles(violetteModele("hiver", 1, 0x7A3AB8, .3)) > 3000)) throw new Error("la violette perd ses feuilles l'hiver");
+    /* le muguet (Yo, 25 octobre 2026) : son modèle d'après l'image ; l'hiver, il dort sous terre */
+    const mg = map.obj.indexOf("muguet");
+    let mmg = null; if(mg >= 0 && objMesh(mg)) objMesh(mg).traverse(o => { if(o.userData.muguet) mmg = o.userData.muguet; });
+    if(!mmg) throw new Error("le muguet n'a pas son modèle");
+    const { muguetModele } = await import("/js/monde/muguet.js");
+    if(!(triangles(muguetModele("hiver", 1, .3)) < triangles(muguetModele("printemps", 2, .3)) / 3)) throw new Error("le muguet ne dort pas sous terre l'hiver");
     /* les galets de plage (décidé par Yo le 20 octobre 2026) : un décor sur le sable, qu'on traverse, nommé quand on le vise */
     const galets = []; map.obj.forEach((o, i) => { if(o === "galets") galets.push(i); });
     if(galets.length !== GALETS_ILE) throw new Error(`${galets.length} groupes de galets (${GALETS_ILE} voulus)`);
