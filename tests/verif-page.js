@@ -303,6 +303,13 @@ export async function verifier(){
     const bl = map.obj.indexOf("bleuet");
     let mbl = null; if(bl >= 0 && objMesh(bl)) objMesh(bl).traverse(o => { if(o.userData.bleuet) mbl = o.userData.bleuet; });
     if(!mbl) throw new Error("le bleuet n'a pas son modèle");
+    /* le perce-neige (Yo, 25 octobre 2026) : son modèle d'après l'image ; l'été, il dort sous terre (seulement son tertre) */
+    const pn = map.obj.indexOf("perceNeige");
+    let mpn = null; if(pn >= 0 && objMesh(pn)) objMesh(pn).traverse(o => { if(o.userData.perceNeige) mpn = o.userData.perceNeige; });
+    if(!mpn) throw new Error("le perce-neige n'a pas son modèle");
+    const { perceNeigeModele } = await import("/js/monde/perceNeige.js");
+    const triangles = g => { let n = 0; g.traverse(o => { if(o.isMesh) n += o.geometry.attributes.position.count / 3; }); return n; };
+    if(!(triangles(perceNeigeModele("ete", 1, .3)) < triangles(perceNeigeModele("hiver", 2, .3)) / 3)) throw new Error("le perce-neige ne dort pas sous terre l'été");
     /* les galets de plage (décidé par Yo le 20 octobre 2026) : un décor sur le sable, qu'on traverse, nommé quand on le vise */
     const galets = []; map.obj.forEach((o, i) => { if(o === "galets") galets.push(i); });
     if(galets.length !== GALETS_ILE) throw new Error(`${galets.length} groupes de galets (${GALETS_ILE} voulus)`);
