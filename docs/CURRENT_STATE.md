@@ -15,9 +15,9 @@
 
 ## En partie fait
 
-- Les insectes de l'île : 21 (v2.1.63 : le cloporte et l'épeire, qui ne sont pas des insectes, en réserve pour une future mise à jour, décision de Yo). D'après images : 10 sur 21 (le hanneton qui compte ses sous avant de s'envoler, v2.1.71 ; le grillon champêtre qui marche et chante, v2.1.70 ; les insectes fuient les oiseaux, v2.1.69 ; le perce-oreille, mâles et femelles, qui menace, v2.1.68 ; le bourdon terrestre qui butine, v2.1.67 ; avec l'abeille à miel qui se pose pour butiner, v2.1.64, la grande sauterelle verte, mâles et femelles, v2.1.65, et l'anax empereur qui se perche sur les massettes, v2.1.66), tous faits comme des vrais (décision de Yo) : la piéride ; la fourmi, noire
+- Les insectes de l'île : 21 (v2.1.63 : le cloporte et l'épeire, qui ne sont pas des insectes, en réserve pour une future mise à jour, décision de Yo). D'après images : 11 sur 21 (la punaise verte plate, qui brunit avec la saison, v2.1.72 ; le hanneton qui compte ses sous avant de s'envoler, v2.1.71 ; le grillon champêtre qui marche et chante, v2.1.70 ; les insectes fuient les oiseaux, v2.1.69 ; le perce-oreille, mâles et femelles, qui menace, v2.1.68 ; le bourdon terrestre qui butine, v2.1.67 ; avec l'abeille à miel qui se pose pour butiner, v2.1.64, la grande sauterelle verte, mâles et femelles, v2.1.65, et l'anax empereur qui se perche sur les massettes, v2.1.66), tous faits comme des vrais (décision de Yo) : la piéride ; la fourmi, noire
   comme la fourmi des jardins, qui marche en deux trépieds ; la coccinelle à sept points, qui lève ses élytres pour
-  s'envoler (v2.1.60, envoyée ; la vérification de GitHub a 15 minutes depuis la v2.1.61) ; leur taille dans l'ordre de la nature (v2.1.62 : fourmi 0,25 P, coccinelle 0,3 P, piéride 0,4 P). Les 11 autres de l'île gardent leur forme simple
+  s'envoler (v2.1.60, envoyée ; la vérification de GitHub a 15 minutes depuis la v2.1.61) ; leur taille dans l'ordre de la nature (v2.1.62 : fourmi 0,25 P, coccinelle 0,3 P, piéride 0,4 P). Les 10 autres de l'île gardent leur forme simple
   (`modele` dans `js/insectes.js`) ; les 7 de la forêt et les 4 du Marais aussi. Proposition de Claude, non codée : la piéride
   posée sur une fleur, les ailes refermées.
 - La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,

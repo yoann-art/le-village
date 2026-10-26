@@ -68,7 +68,7 @@ const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} 
 const mat = (c, o) => toon(Object.assign({color: c}, o || {}));
 function modele(k){
   const fait = MODELES_INSECTES[k];                    // refait d'après l'image de Yo (insectes3d.js)
-  if(fait){ const g = fait.fabrique(); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return g; }
+  if(fait){ const g = fait.fabrique({saison: saisonDe(new Date())}); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return g; }   // la saison : la punaise brunit
   const p = INSECTES[k], g = new THREE.Group(), c = p.couleur, d = p.c2 !== undefined ? p.c2 : 0x2A2A2A, ailes = [];
   /* une aile, sur un pivot qui la fait battre ; tache : une tache de couleur au milieu (les papillons) */
   const aile = (w, h, x, z, col, op, tache) => { const pivot = new THREE.Group();
@@ -405,6 +405,14 @@ function vivre(b, dt){
     const ouvert = b.compte || b.etat === "vole" || b.etat === "fuit";
     for(const e of cpt.eventails) e.scale.setScalar(e.scale.x + ((ouvert ? 1.15 : .8) - e.scale.x) * Math.min(1, dt * 8));
     b.mesh.rotation.z = (b.etat === "vole" || b.etat === "fuit") && !b.compte ? Math.sin(b.t * 5) * .18 : 0;
+  }
+  /* La bouffée d'odeur de la punaise dérangée : elle grossit et s'efface en moins d'une seconde */
+  const odeur = b.mesh.userData.odeur;
+  if(odeur){
+    const derangee = b.etat === "vole" || b.etat === "fuit";
+    b.od = derangee ? (b.od || 0) + dt : 0;
+    odeur.visible = derangee && b.od < .9;
+    if(odeur.visible) odeur.scale.setScalar(.6 + b.od * 2.6);
   }
   /* Le chant du grillon mâle : arrêté, il relève ses ailes et les fait vibrer ; il se tait quand on approche (le carnet) */
   const chant = b.mesh.userData.chant;

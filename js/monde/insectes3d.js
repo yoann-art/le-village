@@ -770,6 +770,88 @@ export function hannetonModele(){
   return g;
 }
 
+/* ---------- La punaise verte des bois ----------
+   D'après l'image de Yo (26 octobre 2026 : « La punaise verte »), comme une vraie (Yo : « La vraie forme plate en écusson,
+   avec le triangle sur le dos », « Sa couleur qui brunit avec la saison, oui », « Oui la petite bouffée d'odeur ») : plate,
+   en écusson vu de dessus ; le corselet large aux angles pointus, le grand triangle au milieu du dos, le bout des ailes
+   brun, de petits points noirs sur les bords ; une petite tête plate, des antennes en cinq articles aux bouts roux ; six
+   pattes vertes qui marchent en deux trépieds. Verte au début de l'automne, elle brunit, et passe l'hiver bronze
+   (fabrique({saison}) : la teinte de ses matières). Dérangée, elle lâche une bouffée d'odeur verdâtre (userData.odeur). */
+const ECHELLE_PUNAISE = 1.9;
+const ECUSSON = [[0, -.058], [.016, -.057], [.028, -.044], [.05, -.026], [.049, -.016], [.047, .02], [.04, .062], [.022, .09], [0, .098],
+  [-.022, .09], [-.04, .062], [-.047, .02], [-.049, -.016], [-.05, -.026], [-.028, -.044], [-.016, -.057]];
+const BE = [-.055, -.062, .11, .165];                                           // la boîte de sa peinture (x, z)
+function texEcusson(){
+  const S = 256, cv = document.createElement("canvas"); cv.width = cv.height = S;
+  const c = cv.getContext("2d");
+  c.setTransform(S / BE[2], 0, 0, S / BE[3], -BE[0] * S / BE[2], -BE[1] * S / BE[3]);
+  const forme = pts => { c.beginPath(); pts.forEach(([x, z], k) => k ? c.lineTo(x, z) : c.moveTo(x, z)); c.closePath(); };
+  forme(ECUSSON); c.fillStyle = "#72A83C"; c.fill();
+  c.save(); forme(ECUSSON); c.clip();
+  c.fillStyle = "#83B848"; c.fillRect(-.06, -.07, .12, .045);                               // le corselet, plus clair devant
+  c.fillStyle = "#5E9032"; c.fillRect(-.06, -.026, .12, .004);                              // son bord arrière
+  forme([[-.028, -.022], [.028, -.022], [0, .056]]); c.fillStyle = "#7CB244"; c.fill();     // le grand triangle (l'écusson)
+  c.strokeStyle = "#5A8A30"; c.lineWidth = .0022; c.stroke();
+  c.beginPath(); c.arc(0, .052, .004, 0, Math.PI * 2); c.fillStyle = "#B8D070"; c.fill();     // sa pointe pâle
+  c.strokeStyle = "#5E9032"; c.lineWidth = .0018;                                           // les nervures des ailes
+  for(const s of [-1, 1]){ c.beginPath(); c.moveTo(s * .03, -.02); c.quadraticCurveTo(s * .04, .03, s * .022, .066); c.stroke(); }
+  c.beginPath(); c.moveTo(-.05, .066); c.quadraticCurveTo(0, .058, .05, .066); c.lineTo(.05, .12); c.lineTo(-.05, .12); c.closePath();
+  c.fillStyle = "#6A4A2E"; c.fill();                                                        // le bout des ailes, brun (la membrane)
+  c.strokeStyle = "rgba(40,24,12,.5)"; c.lineWidth = .0012;
+  for(let k = -3; k <= 3; k++){ c.beginPath(); c.moveTo(k * .005, .066); c.lineTo(k * .008, .095); c.stroke(); }
+  c.fillStyle = "rgba(30,40,20,.55)";                                                        // les petits points noirs des bords
+  for(const s of [-1, 1]) for(let k = 0; k < 6; k++){ c.beginPath(); c.arc(s * (.045 - k * .0012), -.01 + k * .013, .0018, 0, Math.PI * 2); c.fill(); }
+  c.fillStyle = "rgba(60,90,30,.25)";                                                        // de fines piqûres partout
+  for(let k = 0; k < 140; k++){ const a = k * 2.39996, r = Math.sqrt(k / 140) * .05; c.fillRect(Math.cos(a) * r, Math.sin(a) * r * 1.5 + .01, .0012, .0012); }
+  c.restore();
+  forme(ECUSSON); c.strokeStyle = "#4E7A2A"; c.lineWidth = .0025; c.stroke();               // le bord
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4;
+  return t;
+}
+let PUNAISE = null;
+function punaiseGeos(){
+  if(PUNAISE) return PUNAISE;
+  const M = [], T = [[], []], vert = 0x72A83C, pale = 0xA8C060, patte = 0x7AB040, pied = 0x7A5030;
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .015) / .03));
+  boule(M, pale, 0, .03, .016, .038, .009, .066, ROND); M[M.length - 1].ombre = dessous;        // le dessous, plat
+  boule(M, vert, 0, .033, -.066, .016, .008, .015, ROND); M[M.length - 1].ombre = dessous;     // la petite tête plate
+  for(const s of [-1, 1]){
+    boule(M, 0x4A2A1A, s * .013, .036, -.066, .006, .007, .006);                              // un oeil
+    boule(M, 0xFFFFFF, s * .016, .04, -.07, .0018, .002, .0018, BOULE_P);                     // son reflet
+    let a = V(s * .006, .036, -.078);                                                          // l'antenne : cinq articles, les bouts roux
+    [[.01, .006, -.014, vert], [.022, .014, -.026, vert], [.032, .022, -.036, vert], [.042, .028, -.046, 0x8A4A2A], [.05, .032, -.056, 0x7A3A22]].forEach(([dx, dy, dz, col], k) => {
+      const b = V(s * (.006 + dx), .036 + dy, -.078 + dz); pilule(M, col, a, b, .0021 - k * .0002); a = b; });
+    for(const [k, [h, g, p, f]] of [
+      [V(s * .012, .022, -.04), V(s * .036, .026, -.054), V(s * .046, .004, -.068), V(s * .048, .003, -.074)],
+      [V(s * .016, .02, -.016), V(s * .046, .025, -.012), V(s * .058, .004, -.002), V(s * .06, .003, .004)],
+      [V(s * .016, .02, .008), V(s * .046, .025, .03), V(s * .056, .004, .055), V(s * .058, .003, .061)]].entries())
+      patteEn(T[(k + (s > 0 ? 1 : 0)) % 2], h, g, p, f, .0036, patte, pied);
+  }
+  /* le bouclier : l'écusson extrudé, plat, sa peinture sur le dessus */
+  const forme = new THREE.Shape(ECUSSON.map(([x, z]) => new THREE.Vector2(x, z)));
+  const dos = new THREE.ExtrudeGeometry(forme, {depth: .006, bevelEnabled: true, bevelThickness: .004, bevelSize: .003, bevelSegments: 2});
+  dos.rotateX(Math.PI / 2); dos.translate(0, .044, 0);
+  const uv = dos.attributes.uv, P = dos.attributes.position;
+  for(let i = 0; i < uv.count; i++) uv.setXY(i, (P.getX(i) - BE[0]) / BE[2], 1 - (P.getZ(i) - BE[1]) / BE[3]);
+  /* la bouffée d'odeur : quelques boules verdâtres, autour du corps */
+  const O = []; for(let k = 0; k < 7; k++){ const a = k * 2.39996; boule(O, 0xB8C890, Math.cos(a) * .03, .03 + (k % 3) * .008, Math.sin(a) * .03, .016, .013, .016, BOULE_P); }
+  return PUNAISE = {corps: fusionner(M), trepieds: T.map(fusionner), nb: T.map(t => t.nb), dos, tex: texEcusson(), odeur: fusionner(O)};
+}
+export function punaiseModele(opt = {}){
+  const G = punaiseGeos(), g = new THREE.Group(), mat = corpsMat(), matDos = toon({map: G.tex});
+  /* sa teinte : verte au début de l'automne, brunissante, bronze l'hiver (chacune un peu différente) */
+  const t = opt.saison === "hiver" ? .85 + Math.random() * .15 : opt.saison === "automne" || !opt.saison ? .15 + Math.random() * .55 : 0;
+  for(const m of [mat, matDos]) m.color.setRGB(1 + .1 * t, 1 - .45 * t, 1 - .6 * t);   // vers l'olive, puis le bronze
+  g.add(new THREE.Mesh(G.corps, mat), new THREE.Mesh(G.dos, matDos));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .006, leve: .005, foulee: .035};
+  const odeur = new THREE.Mesh(G.odeur, toon({vertexColors: true, transparent: true, opacity: .45})); odeur.visible = false; g.add(odeur);
+  g.userData.odeur = odeur;
+  g.userData.bronze = t;
+  g.userData.ailes = [];
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -777,4 +859,5 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
   sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
   bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
-  grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON}};
+  grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
+  punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}};
