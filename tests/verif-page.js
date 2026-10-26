@@ -1427,7 +1427,14 @@ export async function verifier(){
     if(ailes.length !== 2 || ailes.some(a => a.pivot.children.length !== 2 || !a.pivot.children.every(m => m.material.map)))
       throw new Error("la piéride n'a pas ses ailes peintes");
     essaiRate(pi); frames(40);
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes`;
+    /* la fourmi noire des jardins d'après l'image de Yo : un seul morceau, sans ailes, les pieds au sol */
+    const fo = lacherInsecte("fourmi", player.position.x - 1.5, player.position.z, .03); frames(2);
+    fo.mesh.updateMatrixWorld(true);
+    const bas = new THREE.Box3().setFromObject(fo.mesh).min.y;
+    if(fo.mesh.children.length !== 1 || (fo.mesh.userData.ailes || [1]).length || Math.abs(bas) > .02)
+      throw new Error(`la fourmi n'est pas d'un seul morceau, sans ailes, les pieds au sol (${fo.mesh.children.length} morceaux, pieds à ${bas.toFixed(3)})`);
+    essaiRate(fo); frames(40);
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire a les pieds au sol`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

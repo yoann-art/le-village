@@ -145,5 +145,70 @@ export function pierideModele(){
   return g;
 }
 
+/* ---------- La fourmi noire des jardins ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici la fourmi »), mais noire comme la vraie fourmi des jardins (décision de
+   Yo) : une grosse tête ronde aux grands yeux brillants et aux mandibules en crochet, deux antennes coudées à massue ;
+   le thorax rond, le petit nœud, le gros abdomen penché vers l'arrière, en anneaux plus sombres ; six pattes en
+   pilules (cuisse, jambe, tarse) aux pieds ronds. Pas d'ailes : userData.ailes reste vide. Les pieds sont au sol
+   (insectes.js la pose 0,03 P au-dessus). */
+const ECHELLE_FOURMI = 1.8, ROND = new THREE.SphereGeometry(1, 14, 10), BOUT = new THREE.SphereGeometry(1, 6, 4);
+/* une pilule : un bâton aux deux bouts arrondis */
+function pilule(M, c, a, b, r){ baton(M, c, a, b, r); boule(M, c, a.x, a.y, a.z, r, r, r, BOUT); boule(M, c, b.x, b.y, b.z, r, r, r, BOUT); }
+/* une boule allongée le long d'une direction (le pied, la massue de l'antenne) */
+function ovale(M, c, p, dir, long, larg, haut, opt){
+  const q = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), dir.clone().normalize());
+  M.push(Object.assign({geo: opt && opt.geo || BOULE_P, m: new THREE.Matrix4().compose(p, q, V(larg, haut, long)), c}, opt));
+}
+let FOURMI = null;
+function fourmiGeos(){
+  if(FOURMI) return FOURMI;
+  const M = [], noir = 0x48403B, tete = 0x4E4540, sombre = 0x2C2724, patte = 0x433B37, pied = 0x2E2926;
+  const dessous = (x, y, z) => .78 + .22 * Math.min(1, Math.max(0, (y - .036) / .07));   // l'ombre peinte, sous le ventre
+  /* l'abdomen, penché vers l'arrière, et ses anneaux plus sombres */
+  const axe = V(0, -.26, 1).normalize(), centre = V(0, .064, .07);
+  const anneaux = (x, y, z) => { const t = (z - centre.z) * axe.z + (y - centre.y) * axe.y;
+    return [[-.05, -.034], [-.014, .002], [.022, .036]].some(([a, b]) => t > a && t < b) ? sombre : noir; };
+  ovale(M, noir, centre, axe, .068, .047, .046, {couleur: anneaux, ombre: dessous, geo: ROND});
+  boule(M, sombre, 0, .049, .124, .016, .015, .012);                               // le bout de l'abdomen
+  M[M.length - 1].ombre = dessous;
+  boule(M, noir, 0, .072, .011, .007, .01, .007);                                   // le nœud
+  boule(M, noir, 0, .072, 0, .015, .015, .016);                                     // le thorax : derrière
+  boule(M, noir, 0, .081, -.021, .022, .025, .028, ROND);                           // devant, rond
+  M[M.length - 1].ombre = dessous;
+  boule(M, noir, 0, .088, -.05, .011, .011, .011, BOULE_P);                         // le cou
+  boule(M, tete, 0, .099, -.091, .034, .033, .039, ROND);                           // la tête
+  M[M.length - 1].ombre = dessous;
+  for(const s of [-1, 1]){
+    boule(M, 0x0E0B0A, s * .026, .09, -.101, .007, .013, .0095);                    // un grand oeil brillant
+    boule(M, 0xFFFFFF, s * .031, .098, -.104, .0028, .0034, .0028, BOULE_P);         // son reflet
+    const m1 = V(s * .013, .081, -.124), m2 = V(s * .011, .071, -.136), m3 = V(s * .005, .064, -.131);   // la mandibule en crochet
+    pilule(M, sombre, m1, m2, .0062); pilule(M, sombre, m2, m3, .0042);
+    const a = V(s * .012, .122, -.096), c = V(s * .04, .17, -.12), b = V(s * .075, .152, -.168);   // l'antenne coudée
+    pilule(M, noir, a, c, .0046);
+    pilule(M, noir, c, b, .0042);
+    ovale(M, noir, b.clone().add(c.clone().sub(b).setLength(.006)), b.clone().sub(c), .015, .0085, .0085);   // sa massue
+    /* les pattes : attache, genou, cheville, pied */
+    for(const [h, g, p, f] of [
+      [V(s * .012, .064, -.032), V(s * .042, .066, -.07), V(s * .058, .018, -.098), V(s * .063, .005, -.106)],   // devant
+      [V(s * .016, .06, -.015), V(s * .056, .058, -.014), V(s * .078, .016, -.006), V(s * .084, .005, -.003)], // milieu
+      [V(s * .014, .061, .002), V(s * .05, .062, .044), V(s * .07, .016, .088), V(s * .074, .005, .095)]         // derrière
+    ]){
+      pilule(M, patte, h, g, .0082);                                                // la cuisse
+      const t = g.clone().lerp(p, .62);
+      pilule(M, patte, g, t, .0068);                                                // la jambe
+      pilule(M, patte, t, p, .0058);                                                // le tarse
+      ovale(M, pied, f, f.clone().sub(p).setY(0), .015, .0095, .0058);              // le pied rond
+    }
+  }
+  const corps = fusionner(M); corps.translate(0, -.03 / ECHELLE_FOURMI, 0);
+  return FOURMI = corps;
+}
+export function fourmiModele(){
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(fourmiGeos(), corpsMat()));
+  g.userData.ailes = [];
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js) */
-export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.9}};
+export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.9}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI}};
