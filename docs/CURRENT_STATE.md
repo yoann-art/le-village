@@ -44,4 +44,4 @@
 - Deux doublons signalés à Yo, sans y toucher : l'épeire des jardins et l'araignée tisserande ; l'Entrepôt de la bible
   ferait le travail des coffres.
 - Le lit de la Chaumière demande la Scierie au niveau 3 : les niveaux requis des recettes seront revus (Boîte à idées).
-- `CLAUDE.md` et ces documents ne sont **pas encore enregistrés dans git** (en attente de l'accord de Yo).
+- `CLAUDE.md` et ces documents sont enregistrés et envoyés (commit `01d7f70`, 26 octobre 2026).

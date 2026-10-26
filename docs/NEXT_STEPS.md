@@ -40,4 +40,3 @@ Ce que Yo a demandé est marqué **(Yo)** ; ce que Claude propose est marqué *(
 - *(proposition)* La piéride au repos, ailes refermées.
 - Plus tard : l'étape 2.6 (web ou Godot) ; les deux essais proposés pour « aussi beau que Genshin » (contour et lumière
   sur les bords ; un modèle Meshy) ; les doublons signalés (épeire / araignée tisserande, Entrepôt / coffres).
-- L'enregistrement dans git de la nouvelle documentation (CLAUDE.md allégé et `docs/`).

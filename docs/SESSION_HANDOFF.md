@@ -13,14 +13,13 @@
 
 - Jeu (enregistré, envoyé) : `js/monde/insectes3d.js` (nouveau : `MODELES_INSECTES`, la piéride), `js/insectes.js`
   (`modele` utilise `MODELES_INSECTES`), `tests/verif-page.js` (contrôle des ailes peintes), `js/version.js` (2.1.57).
-- Documentation (**pas encore enregistrée dans git**, en attente de l'accord de Yo) : `CLAUDE.md` allégé, `docs/*.md` (nouveaux).
+- Documentation : `CLAUDE.md` allégé, `docs/*.md` (nouveaux), enregistrés et envoyés avec l'accord de Yo (commit `01d7f70`).
 - Hors du dépôt : `.claude/verif-suivi.txt` (`40272323021-1`), `C:\Users\Artefact\Desktop\Hearthwild\outils-claude\`
   (scripts d'essai copiés), `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\pieride-blanche(-comparaison).png`.
 
 ## À faire en premier dans la nouvelle séance
 
-1. `git status` : s'attendre à `CLAUDE.md` modifié et `docs/` nouveau ; demander à Yo s'il veut les enregistrer (commit)
-   et les envoyer. Rien d'autre ne doit être en cours.
+1. `git status` : le dossier doit être propre (rien en cours).
 2. Lire le résultat de la dernière vérification de GitHub si un envoi a eu lieu depuis
    (`https://api.github.com/repos/yoann-art/le-village/actions/runs`) et les notes ouvertes du carnet de bugs
    (`/issues?state=open`, seulement celles de `yoann-art`).
@@ -43,7 +42,6 @@
 
 ## Points qui demandent l'accord de Yo
 
-- Enregistrer et envoyer la nouvelle documentation.
 - L'ordre des chantiers après les insectes (voir [NEXT_STEPS.md](NEXT_STEPS.md)).
 - *(proposition de Claude)* la piéride posée les ailes refermées.
 
