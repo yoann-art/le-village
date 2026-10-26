@@ -1,29 +1,33 @@
-# Passation de séance (26 octobre 2026)
+# Passation de séance (26 octobre 2026, fin de journée)
 
 ## Où on en est
 
-- Version en ligne : **v2.1.57** (commit `303947d`), envoyée sur GitHub avec l'accord de Yo ; vérification de GitHub verte.
-- Dernière tâche : **la piéride blanche d'après l'image de Yo**, premier des 23 insectes de l'île (étape « les insectes »,
-  décidée avec Yo le 25 octobre 2026). Elle est terminée ; Yo ne l'a pas encore validée sur son téléphone.
-- Avant elle, dans la même séance : les règles des insectes (v2.1.55, v2.1.56), le muguet, la violette, le perce-neige
-  (v2.1.51 à v2.1.54), la Scierie niveau 2 (v2.1.48 à v2.1.50), le doc des musiques Suno.
-- Ensuite, Yo a demandé de préparer la passation (cette documentation) : **aucune modification du jeu** depuis la v2.1.57.
+- Version en ligne : **v2.1.59** (commit `165e3ac`), envoyée sur GitHub avec l'accord de Yo le 26 octobre 2026
+  (run de vérification `40277249010`, noté dans `.claude/verif-suivi.txt`).
+- Dernière tâche : **la fourmi d'après l'image de Yo**, deuxième des 23 insectes de l'île. Son image était rousse ;
+  Claude a signalé que la fourmi du jeu (« Elle marche en file indienne ») est la fourmi noire des jardins ; Yo :
+  « Garde la fourmi noire des jardins (même forme que mon image, mais noire) » (v2.1.58). Puis, à sa demande, elle
+  marche en deux trépieds qui se relaient (v2.1.59). Yo n'a validé ni la fourmi ni la piéride sur son téléphone.
+- Comparaison et animation : `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\fourmi-comparaison.png` et
+  `fourmi-marche.gif`.
 
 ## Les derniers fichiers modifiés
 
-- Jeu (enregistré, envoyé) : `js/monde/insectes3d.js` (nouveau : `MODELES_INSECTES`, la piéride), `js/insectes.js`
-  (`modele` utilise `MODELES_INSECTES`), `tests/verif-page.js` (contrôle des ailes peintes), `js/version.js` (2.1.57).
-- Documentation : `CLAUDE.md` allégé, `docs/*.md` (nouveaux), enregistrés et envoyés avec l'accord de Yo (commit `01d7f70`).
-- Hors du dépôt : `.claude/verif-suivi.txt` (`40272323021-1`), `C:\Users\Artefact\Desktop\Hearthwild\outils-claude\`
-  (scripts d'essai copiés), `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\pieride-blanche(-comparaison).png`.
+- Jeu (enregistré, envoyé) : `js/monde/insectes3d.js` (`fourmiModele` : le corps et deux trépieds, `userData.pattes`,
+  `userData.pas`), `js/insectes.js` (dans `vivre` : les pattes qui marchent, `b.foule`, `b.marche`),
+  `tests/verif-page.js` (la fourmi : six pattes, deux trépieds qui marchent), `js/version.js` (2.1.59).
+- Hors du dépôt : `outils-claude\insecte.mjs` accepte maintenant `OUT`, `ADRESSE` (un autre port) et `VUES` (les caméras,
+  en JSON).
 
 ## À faire en premier dans la nouvelle séance
 
 1. `git status` : le dossier doit être propre (rien en cours).
-2. Lire le résultat de la dernière vérification de GitHub si un envoi a eu lieu depuis
-   (`https://api.github.com/repos/yoann-art/le-village/actions/runs`) et les notes ouvertes du carnet de bugs
-   (`/issues?state=open`, seulement celles de `yoann-art`).
-3. Attendre Yo : il dira si la piéride lui convient et enverra l'image de l'insecte suivant (« Voici le … »).
+2. Le port 8000 : le 26 octobre, deux anciens `serveur.py` d'anciennes séances le gardaient et montraient l'ancien jeu ;
+   Claude n'a pas eu le droit de les arrêter et a travaillé sur une copie servie au port 8002 (configuration temporaire,
+   retirée ensuite de `launch.json`). Yo redémarre l'ordinateur : vérifier que le port 8000 montre bien ce dossier.
+3. Lire le résultat de la dernière vérification de GitHub (`https://api.github.com/repos/yoann-art/le-village/actions/runs`)
+   et les notes ouvertes du carnet de bugs (`/issues?state=open`, seulement celles de `yoann-art`).
+4. Attendre Yo : son avis sur la piéride et la fourmi, puis l'image de l'insecte suivant (« Voici le … »).
 
 ## Pour refaire un insecte (la méthode qui a marché)
 
@@ -44,6 +48,7 @@
 
 - L'ordre des chantiers après les insectes (voir [NEXT_STEPS.md](NEXT_STEPS.md)).
 - *(proposition de Claude)* la piéride posée les ailes refermées.
+- *(proposition de Claude, pas encore faite à Yo)* les pattes qui marchent pour les autres insectes qui marchent.
 
 ## Fichiers à lire selon la tâche
 
