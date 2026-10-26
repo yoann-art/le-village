@@ -450,9 +450,77 @@ export function sauterelleModele(){
   return g;
 }
 
+/* ---------- L'anax empereur (la libellule) ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici la libellule »), aux couleurs de l'anax empereur (Yo : « Les couleurs
+   de l'anax empereur », « Oui elle se perche sur les massettes ») : d'énormes yeux bleu-vert qui se touchent sur le dessus
+   de la tête ; le thorax vert pomme ; le long abdomen bleu ciel, renflé à la base, une ligne noire sur le dessus ; quatre
+   ailes transparentes, finement nervurées, une petite tache sombre près du bout (celles de derrière plus larges à la
+   base), ouvertes à plat au repos, qui battent en décalé (userData.ailes : {pivot, cote, phase}) ; six pattes sombres
+   ramenées sous la tête ; des antennes minuscules. Les pattes sont au point de pose (le bout d'une massette). */
+const ECHELLE_LIBELLULE = 1.83, PRISE = .045;                                     // PRISE : là où ses pattes se referment, ramené au point de pose
+const AILE_LAV = lisse([[0, -.006], [.06, -.014], [.14, -.012], [.19, -.004], [.188, .011], [.13, .015], [.05, .012], [0, .006]]);
+const AILE_LAR = lisse([[0, -.004], [.05, -.007], [.13, -.006], [.18, .002], [.176, .018], [.11, .027], [.04, .033], [0, .012]]);
+const BLAV = [-.01, -.02, .21, .04], BLAR = [-.01, -.012, .2, .05];
+function aileLibellule(B, contour, tache){
+  return peinture(B, c => {
+    trace(c, contour); c.fillStyle = "rgba(226,232,226,.26)"; c.fill();
+    c.save(); trace(c, contour); c.clip(); c.lineCap = "round";
+    c.strokeStyle = "rgba(70,72,64,.28)"; c.lineWidth = .001;
+    const xs = contour.map(p => p[0]), zs = contour.map(p => p[1]), z0 = Math.min(...zs), z1 = Math.max(...zs);
+    for(let k = 1; k < 5; k++){ const z = z0 + (z1 - z0) * k / 5; c.beginPath(); c.moveTo(0, z * .4); c.quadraticCurveTo(.08, z, .19, z * .7); c.stroke(); }   // les nervures en long
+    for(let x = .016; x < Math.max(...xs); x += .019){ c.beginPath(); c.moveTo(x, z0); c.lineTo(x + .003, z1); c.stroke(); }                     // et en travers
+    c.fillStyle = "rgba(60,44,30,.9)"; c.fillRect(tache[0], tache[1], .016, .005);                                                          // la tache près du bout
+    c.restore();
+    c.save(); trace(c, contour); c.strokeStyle = "rgba(70,72,64,.55)"; c.lineWidth = .0018; c.stroke(); c.restore();
+  });
+}
+let LIBELLULE = null;
+function libelluleGeos(){
+  if(LIBELLULE) return LIBELLULE;
+  const M = [], oeil = 0x3FA4B4, vert = 0x7CC24A, bleu = 0x5AB8E6, noir = 0x1E2228, patte = 0x2A2C2E;
+  const dessous = (x, y, z) => .82 + .18 * Math.min(1, Math.max(0, (y - .02) / .04));
+  /* la tête : deux énormes yeux qui se touchent sur le dessus, la face vert jaune */
+  for(const s of [-1, 1]){
+    boule(M, oeil, s * .015, .046, -.061, .019, .021, .019, ROND); M[M.length - 1].ombre = dessous;
+    boule(M, 0xFFFFFF, s * .024, .06, -.071, .0035, .004, .0035, BOULE_P);            // le reflet
+  }
+  boule(M, 0xB8D45A, 0, .03, -.076, .013, .012, .008);                                // la face
+  for(const s of [-1, 1]) baton(M, noir, V(s * .004, .044, -.079), V(s * .007, .05, -.086), .0009);   // les antennes minuscules
+  /* le thorax vert pomme, deux bandes sombres sur les côtés */
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(0, .042, -.024), q0, V(.022, .027, .03)), c: vert, ombre: dessous,
+    couleur: (x, y, z) => Math.abs(x) > .016 && (Math.abs(z + .03 + (y - .04) * .5) < .003 || Math.abs(z + .014 + (y - .04) * .5) < .003) ? noir : vert});
+  /* le long abdomen bleu, renflé à la base, étranglé, puis fin ; une ligne noire sur le dessus, un trait à chaque anneau */
+  for(let k = 0; k < 10; k++){
+    const z = .012 + k * .0215, r = k < 2 ? .0115 - k * .001 : k === 2 ? .0072 : .0078 + Math.max(0, k - 6) * .0004, y = .037 - k * .0007;
+    boule(M, bleu, 0, y, z, r, r * 1.08, .0175, ROND);                                // des anneaux qui se chevauchent : un tube lisse
+    M[M.length - 1].couleur = (px, py, pz) => Math.abs(px) < .0026 && py > y + r * .55 ? noir : Math.abs(pz - z - .0105) < .0012 ? 0x3A86B4 : bleu;
+    M[M.length - 1].ombre = dessous;
+  }
+  for(const s of [-1, 1]) baton(M, noir, V(s * .002, .03, .222), V(s * .004, .03, .236), .0012);   // les petits appendices du bout
+  /* six pattes sombres, ramenées vers l'avant sous la tête */
+  for(const s of [-1, 1]) for(const [h, g, p] of [
+    [V(s * .008, .024, -.036), V(s * .02, .014, -.05), V(s * .022, .0, -.066)],
+    [V(s * .01, .022, -.026), V(s * .025, .013, -.032), V(s * .028, .0, -.044)],
+    [V(s * .01, .022, -.014), V(s * .028, .013, -.012), V(s * .033, .0, -.02)]]){ pilule(M, patte, h, g, .0022); pilule(M, patte, g, p, .0018); }
+  const corps = fusionner(M); corps.translate(0, 0, PRISE);                          // ses pattes agrippent le point de pose
+  return LIBELLULE = {corps, av: aileLibellule(BLAV, AILE_LAV, [.158, -.012]), ar: aileLibellule(BLAR, AILE_LAR, [.148, -.005]),
+    ailes: [1, -1].map(cote => [aileGeo(AILE_LAV, cote, BLAV, 3), aileGeo(AILE_LAR, cote, BLAR, 3)])};
+}
+export function libelluleModele(){
+  const G = libelluleGeos(), g = new THREE.Group(), ailes = [];
+  g.add(new THREE.Mesh(G.corps, corpsMat()));
+  [1, -1].forEach((cote, k) => [[G.ailes[k][0], G.av, -.036, .14, 0], [G.ailes[k][1], G.ar, -.016, -.1, 1.6]].forEach(([geo, tex, z, vers, phase]) => {
+    const pivot = new THREE.Group(); pivot.add(new THREE.Mesh(geo, aileMat(tex)));
+    pivot.position.set(cote * .006, .062, z + PRISE); pivot.rotation.y = cote * vers;           // ouvertes à plat ; devant un peu vers l'avant, derrière vers l'arrière
+    g.add(pivot); ailes.push({pivot, cote, phase});
+  }));
+  g.userData.ailes = ailes;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
 export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
-  sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}};
+  sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE}};

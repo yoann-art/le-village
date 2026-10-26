@@ -21,7 +21,7 @@ import { G, part, toon } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, porte } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau, fleurie } from "./monde/ile.js";
+import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau, fleurie, PERCHOIRS } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
@@ -273,6 +273,28 @@ function butiner(b, dt){
   }
   b.posee = u.etat === "pose";
 }
+/* La libellule se perche (Yo, 26 octobre 2026 : « elle se perche sur les massettes ») : parfois, au lieu de faire du
+   sur-place, elle file au bout d'une massette proche et s'y pose, ailes ouvertes à plat, quelques secondes */
+function percher(b, dt){
+  if(!b.perch){
+    if(b.pause <= 0 || b.cible || Math.random() > dt * .15) return false;
+    const pl = PERCHOIRS.filter(q => Math.hypot(q.x - b.x, q.z - b.z) < 3);
+    if(!pl.length) return false;
+    const q = pl[Math.floor(Math.random() * pl.length)];
+    b.perch = {etat: "va", de: {x: b.x, y: b.y, z: b.z}, vers: q, k: 0, T: Math.max(.4, Math.hypot(q.x - b.x, q.z - b.z) / 2)};
+  }
+  const u = b.perch;
+  if(u.etat === "va"){
+    u.k = Math.min(1, u.k + dt / u.T);
+    b.x = u.de.x + (u.vers.x - u.de.x) * u.k; b.z = u.de.z + (u.vers.z - u.de.z) * u.k; b.y = u.de.y + (u.vers.y - u.de.y) * u.k;
+    if(Math.hypot(u.vers.x - u.de.x, u.vers.z - u.de.z) > .01) b.ang = Math.atan2(u.vers.z - u.de.z, u.vers.x - u.de.x);
+    if(u.k >= 1){ u.etat = "pose"; u.t = 3 + Math.random() * 4; }
+  } else {
+    b.x = u.vers.x; b.y = u.vers.y; b.z = u.vers.z; b.posee = true;
+    if((u.t -= dt) <= 0){ b.perch = null; b.pause = 0; }
+  }
+  return true;
+}
 function vivre(b, dt){
   b.t += dt; b.age += dt; b.posee = false;
   const p = INSECTES[b.k], f = p.forme, base = b.base;
@@ -289,7 +311,7 @@ function vivre(b, dt){
     b.x = v.x0 + (v.q.x - v.x0) * u; b.z = v.z0 + (v.q.z - v.z0) * u;
     b.y = v.y0 + (v.q.y - v.y0) * u + (VOLE[f] || f === "sauteur" ? Math.sin(u * Math.PI) * .7 : 0);
     b.ang = Math.atan2(v.q.z - v.z0, v.q.x - v.x0);
-    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.butin = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
+    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.butin = null; b.perch = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
   } else {
     b.alpha = Math.min(1, b.alpha + dt);
     if(b.age > b.vie) b.etat = "part";
@@ -307,6 +329,7 @@ function vivre(b, dt){
     } else if(p.flotte){                              // la luciole des brumes flotte doucement dans l'air
       const nx = base.x + Math.sin(b.t * .45) * .6, nz = base.z + Math.cos(b.t * .35) * .5;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + Math.sin(b.t * .9) * .2;
+    } else if(p.perche && percher(b, dt)){             // la libellule perchée sur une massette
     } else if(f === "libellule" || p.nage || p.gerris){   // elle file d'un point à l'autre, puis fait du sur-place (sur l'eau : le dytique, l'araignée d'eau)
       if(b.pause > 0) b.pause -= dt;
       else {
@@ -316,7 +339,7 @@ function vivre(b, dt){
         if(d < .05){ b.cible = null; b.pause = .6 + Math.random() * 1.5; }
         else { const v = Math.min(d, (f === "libellule" ? 2.4 : 1.6) * dt); b.x += dx / d * v; b.z += dz / d * v; b.ang = Math.atan2(dz, dx); }
       }
-      b.y = f === "libellule" ? base.y + Math.sin(b.t * 6) * .03 : base.y;
+      b.y = f === "libellule" ? b.y + (base.y + Math.sin(b.t * 6) * .03 - b.y) * Math.min(1, dt * 3) : base.y;   // redescend en douceur d'une massette
     } else if(f === "sauteur"){                       // posé dans l'herbe, il fait un bond de temps en temps
       if(b.saut){
         b.saut.t += dt; const u = Math.min(1, b.saut.t / .4);
@@ -340,8 +363,8 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] && !b.posee || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres ? (f === "papillon" ? 9 : 28) : 0;
-  for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite) * .7 : .1);
+  const vite = VOLE[f] && !b.posee || b.etat === "vole" && !b.posee && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres ? (f === "papillon" ? 9 : 28) : 0;
+  for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite + (a.phase || 0)) * .7 : b.posee && b.mesh.userData.ailes.length > 2 ? 0 : .1);   // la libellule : en décalé ; posée, à plat
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
   if(pattes){

@@ -458,6 +458,8 @@ const GALETS_ETANG = new THREE.Group(), GALETS_ETANG_MAX = 16, GALETS_ETANG_ECAR
 scene.add(GALETS_ETANG);
 /* les plantes du bord (morceau 3) : chaque sorte et chaque nuance dessinée en série */
 const SERIES_BERGE = {m: [], p: [], n: []};
+/* le bout de l'épi le plus haut de chaque touffe de massettes (l'été et l'automne) : là où la libellule se perche */
+export const PERCHOIRS = [];
 function serieBerge(cle, geo, mat, max, ombre){
   for(let v = 0; v < NUANCES; v++){
     const im = new THREE.InstancedMesh(geo(v), mat, max);
@@ -480,11 +482,20 @@ function plantesBerge(places, neige){
   };
   /* les massettes : des touffes sur la ligne de l'eau, écartées, pas sur les galets */
   const touffes = [];
+  PERCHOIRS.length = 0;
   for(const [qq, x1, z1, sx, sz] of [...BORD].sort((a, b) => tirM(a[0] * 31 + 11) - tirM(b[0] * 31 + 11))){
     if(touffes.length >= 24) break;
     const dl = Math.hypot(sx - x1, sz - z1) || 1, x = x1 - (sx - x1) / dl * .3, z = z1 - (sz - z1) / dl * .3;   // les pieds dans l'eau
     if(touffes.some(([px, pz]) => Math.hypot(px - x, pz - z) < 2.6) || places.some(([px, pz]) => Math.hypot(px - x, pz - z) < 1.1)) continue;
-    if(met("m", Math.floor(tirM(qq * 43) * NUANCES), x, -.22, z, tirM(qq * 47) * 6.28, .85 + tirM(qq * 53) * .3)) touffes.push([x, z]);
+    const rot = tirM(qq * 47) * 6.28, sc = .85 + tirM(qq * 53) * .3, v = Math.floor(tirM(qq * 43) * NUANCES);
+    if(met("m", v, x, -.22, z, rot, sc)){
+      touffes.push([x, z]);
+      if(ss === "ete" || ss === "automne"){             // la grande tige (berge.js : au pied .02, .01 ; penchée de .06 vers +z) ; son bout, le plus haut de la touffe
+        const g = SERIES_BERGE.m[v].geometry; if(!g.boundingBox) g.computeBoundingBox();
+        const haut = g.boundingBox.max.y, lx = .02, lz = .01 + haut * .06;
+        PERCHOIRS.push({x: x + (lx * Math.cos(rot) + lz * Math.sin(rot)) * sc, y: -.22 + haut * sc, z: z + (-lx * Math.sin(rot) + lz * Math.cos(rot)) * sc});
+      }
+    }
   }
   /* les petites plantes : sur la berge, côté terre, un peu en retrait de l'eau (pas sous la neige) */
   const petites = [];
