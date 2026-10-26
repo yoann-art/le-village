@@ -1448,12 +1448,21 @@ export async function verifier(){
     essaiRate(co); frames(6);
     if(!(co.envol > .5) || !co.mesh.userData.ailes.every(a => a.pivot.visible)) throw new Error(`la coccinelle ratée ne s'envole pas (${co.etat}, envol ${co.envol})`);
     frames(40);
+    /* l'abeille à miel : posée sur sa fleur, elle replie ses ailes à plat sur le dos ; en l'air, elles battent */
+    const ab = lacherInsecte("abeille", player.position.x + 1.5, player.position.z + 1.5, .55);
+    ab.butin = {etat: "pose", t: 2}; frames(10);
+    const ai = ab.mesh.userData.ailes, rep = ab.mesh.userData.replie || 0;
+    if(!ab.posee || ai.length !== 2 || !ai.every(a => Math.abs(a.pivot.rotation.y + a.cote * rep) < .05 && Math.abs(a.pivot.rotation.z - a.cote * .1) < .01))
+      throw new Error(`l'abeille posée n'a pas les ailes repliées (posée ${ab.posee}, ${ai.length} paires)`);
+    frames(60);
+    if(ab.posee || ab.pli > .1) throw new Error(`l'abeille ne repart pas butiner ailleurs (${ab.butin && ab.butin.etat})`);
+    ab.etat = "part"; frames(30);                                     // elle s'en va : elle ne doit pas gêner les essais suivants
     /* le cloporte et l'épeire (pas des insectes) sont en réserve : ils ne naissent sur l'île en aucune saison, à aucune heure */
     for(const mois of [0, 3, 6, 9]) for(const h of [2, 8, 14, 20]){
       const vu = insectesPresents("ile", new Date(2026, mois, 15, h)).filter(k => INSECTES[k].reserve);
       if(vu.length) throw new Error(`en réserve, mais sur l'île : ${vu.join(", ")}`);
     }
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; le cloporte et l'épeire, en réserve, ne naissent plus`;
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le cloporte et l'épeire, en réserve, ne naissent plus`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);
@@ -1484,6 +1493,7 @@ export async function verifier(){
     const i = map.obj.findIndex((o, j) => libre(j) && libre(j + N) && libre(j - N) && libre(j + 1) && libre(j - 1) && libre(j - 2 * N));
     if(i < 0) throw new Error("pas de place libre");
     placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1);
+    pauseInsectes(true); pauseInsectes(false);                       // pas d'insecte sauvage tout près (une abeille posée, depuis la v2.1.64)
     lacherInsecte("fourmi", player.position.x, player.position.z + 1.6, .03); frames(2);
     if(!$("#btn-act").hidden && $("#btn-act").dataset.action.includes("Attraper")) throw new Error("le filet en bois attrape déjà à 1,6 P");
     sacAdd("filetCuivre", 1); enMain("filetCuivre"); frames(2);

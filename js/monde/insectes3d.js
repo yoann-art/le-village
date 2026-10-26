@@ -316,8 +316,83 @@ export function coccinelleModele(){
   return g;
 }
 
+/* ---------- L'abeille à miel ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici l'abeille »), mais comme une vraie abeille à miel (Yo : « Une vraie
+   abeille à miel », « pas de pelotes de pollen », « elle se pose ») : plus fine que l'image (qui ressemble à un bourdon),
+   la tête sombre aux grands yeux, des antennes coudées et sombres ; le thorax brun au duvet doré ; l'abdomen doré,
+   allongé, à bandes brun foncé, plus sombre vers le bout, un petit dard ; six pattes brun sombre, celles de derrière
+   élargies (là où une vraie range son pollen) ; deux paires d'ailes transparentes, nervurées, qui battent en vol et se
+   replient à plat sur le dos quand elle se pose (userData.replie : l'angle, qu'insectes.js applique). Les pieds sont à
+   son point de pose (la fleur). */
+const ECHELLE_ABEILLE = 2.2, HA = .06;                                         // HA : les pieds à y = 0
+const ABDO = new THREE.SphereGeometry(1, 14, 24).rotateX(Math.PI / 2);         // ses pôles le long du corps : des bandes nettes
+const AILE_AV = lisse([[0, 0], [.05, -.013], [.11, -.009], [.142, .012], [.122, .035], [.06, .03], [.015, .012]]);
+const AILE_AR = lisse([[0, .004], [.05, .01], [.086, .028], [.077, .047], [.036, .04], [.01, .02]]);
+const BAV = [-.01, -.02, .16, .065], BAR = [-.01, -.005, .105, .06];
+function aileAbeille(B, contour, cellules){
+  return peinture(B, c => {
+    trace(c, contour); c.fillStyle = "rgba(232,226,214,.3)"; c.fill();
+    c.save(); trace(c, contour); c.clip(); c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = "rgba(150,108,58,.42)"; c.lineWidth = .0016;
+    for(const l of cellules){ c.beginPath(); l.forEach(([x, z], k) => k ? c.lineTo(x, z) : c.moveTo(x, z)); c.stroke(); }
+    c.restore();
+    c.save(); trace(c, contour); c.strokeStyle = "rgba(160,118,64,.7)"; c.lineWidth = .003; c.stroke(); c.restore();
+  });
+}
+let ABEILLE = null;
+function abeilleGeos(){
+  if(ABEILLE) return ABEILLE;
+  const M = [], tete = 0x33261C, brun = 0x5A3E24, dore = 0xD9A13A, fonce = 0x3E2A1A, clair = 0xEBC57A, patte = 0x2C1F16, oeil = 0x140E0B;
+  const P = (x, y, z) => V(x, y + HA, z);
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - HA + .03) / .06));
+  /* l'abdomen, un peu penché, ses bandes : doré devant, bordé de brun foncé et d'une frange de poils clairs, sombre au bout */
+  const axe = V(0, -.18, 1).normalize(), centre = P(0, -.006, .045), L = .058;
+  const bandes = (x, y, z) => { const t = ((z - centre.z) * axe.z + (y - centre.y) * axe.y) / L;
+    return t < -.5 ? dore : t < -.38 ? fonce : t < -.32 ? clair : t < -.08 ? dore : t < .06 ? fonce : t < .12 ? clair : t < .3 ? 0xC08A30
+      : t < .46 ? fonce : t < .52 ? 0xB48A4A : fonce; };
+  ovale(M, dore, centre, axe, L, .031, .029, {geo: ABDO, couleur: bandes, ombre: dessous});
+  boule(M, fonce, 0, -.013 + HA, .104, .004, .004, .006, BOULE_P);                    // le dard
+  boule(M, brun, 0, HA, -.03, .029, .029, .031, ROND);                                // le thorax
+  M[M.length - 1].ombre = dessous;
+  for(let k = 0; k < 26; k++){                                                    // son duvet doré
+    const a = k * 2.39996, h = (k / 26) * 1.6 - .6, r = Math.sqrt(1 - h * h);
+    boule(M, k % 3 ? 0x9C7440 : 0x7E5A32, Math.cos(a) * r * .027, h * .027 + HA + .002, -.03 + Math.sin(a) * r * .029, .0065, .005, .0065, POIL);
+  }
+  boule(M, tete, 0, -.002 + HA, -.072, .026, .027, .02, ROND);                       // la tête, sombre
+  M[M.length - 1].ombre = dessous;
+  boule(M, 0x8A6A44, 0, -.008 + HA, -.088, .012, .01, .006);                          // le front velu
+  for(const s of [-1, 1]){
+    boule(M, oeil, s * .02, .001 + HA, -.075, .011, .019, .014);                     // un grand oeil sur le côté
+    boule(M, 0xFFFFFF, s * .027, .01 + HA, -.081, .003, .0036, .003, BOULE_P);        // son reflet
+    const a = P(s * .007, .012, -.088), c = P(s * .011, .038, -.1), b = P(s * .03, .046, -.13);   // l'antenne coudée
+    pilule(M, tete, a, c, .0026);
+    pilule(M, tete, c, b, .0023);
+    for(const [h, g, p, f, ar] of [
+      [P(s * .012, -.02, -.042), P(s * .035, -.028, -.06), P(s * .045, -.056, -.072), P(s * .047, -.058, -.078), false],   // devant
+      [P(s * .016, -.022, -.028), P(s * .05, -.028, -.025), P(s * .066, -.056, -.022), P(s * .068, -.058, -.018), false],  // milieu
+      [P(s * .015, -.022, -.016), P(s * .05, -.026, .02), P(s * .064, -.056, .05), P(s * .067, -.058, .057), true]         // derrière
+    ]){
+      patteEn(M, h, g, p, f, .0045, patte, patte);
+      if(ar) ovale(M, patte, g.clone().lerp(p, .45), p.clone().sub(g), .016, .0035, .008);   // la patte de derrière, élargie
+    }
+  }
+  const nerv = {av: [[[0, 0], [.13, .005]], [[.02, .002], [.06, .028], [.1, .026], [.13, .012]], [[.06, .006], [.07, .028]], [[.09, .004], [.1, .026]], [[.04, -.008], [.11, -.004]]],
+                ar: [[[0, .004], [.075, .035]], [[.03, .012], [.035, .038]], [[.05, .02], [.065, .044]]]};
+  return ABEILLE = {corps: fusionner(M), av: aileAbeille(BAV, AILE_AV, nerv.av), ar: aileAbeille(BAR, AILE_AR, nerv.ar),
+    ailes: [1, -1].map(cote => { const ar = aileGeo(AILE_AR, cote, BAR, 3); ar.translate(0, -.003, .012); return [aileGeo(AILE_AV, cote, BAV, 3), ar]; })};   // des ailes plates : 3 rangs suffisent
+}
+export function abeilleModele(){
+  const G = abeilleGeos(), g = new THREE.Group();
+  g.add(new THREE.Mesh(G.corps, corpsMat()));
+  g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k][0], aileMat(G.av)), new THREE.Mesh(G.ailes[k][1], aileMat(G.ar)));
+    pivot.position.set(cote * .012, .028 + HA, -.035); g.add(pivot); return {pivot, cote}; });
+  g.userData.replie = 1.38;                                                      // posée, les ailes à plat sur le dos
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
 export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
-  coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}};
+  coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE}};

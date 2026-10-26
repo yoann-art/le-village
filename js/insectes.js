@@ -249,8 +249,32 @@ function fuir(b, vite){
     toast(`💨 Trop vite : ${leNom(b.k)} s'est enfui${INSECTES[b.k].une ? "e" : ""} ! Approche à pas de loup, en poussant le joystick doucement`, 3600); }
 }
 /* Ce que fait chacune, à chaque image */
+/* L'abeille butine, comme une vraie (Yo, 26 octobre 2026 : « elle se pose ») : quelques boucles en l'air, puis elle vole
+   vers une fleur proche et s'y pose, les ailes repliées, quelques secondes, avant de repartir */
+function butiner(b, dt){
+  const u = b.butin || (b.butin = {etat: "tourne", t: 1 + Math.random() * 2}), base = b.base, doux = Math.min(1, dt * 5);
+  u.t -= dt;
+  if(u.etat === "tourne"){
+    const nx = base.x + Math.cos(b.t * 2.6) * .35, nz = base.z + Math.sin(b.t * 3.3) * .3, ny = base.y + .15 + Math.sin(b.t * 5) * .06;
+    b.ang = Math.atan2(nz - b.z, nx - b.x); b.x += (nx - b.x) * doux; b.z += (nz - b.z) * doux; b.y += (ny - b.y) * doux;
+    if(u.t <= 0){
+      const pl = places("fleurs").filter(q => Math.hypot(q.x - b.x, q.z - b.z) < 4), q = pl.length ? pl[Math.floor(Math.random() * pl.length)] : base;
+      Object.assign(u, {etat: "va", de: {x: b.x, y: b.y, z: b.z}, vers: q, k: 0, T: Math.max(.6, Math.hypot(q.x - b.x, q.z - b.z) / 1.2)});
+    }
+  } else if(u.etat === "va"){
+    u.k = Math.min(1, u.k + dt / u.T);
+    const {de, vers} = u;
+    b.x = de.x + (vers.x - de.x) * u.k; b.z = de.z + (vers.z - de.z) * u.k; b.y = de.y + (vers.y - de.y) * u.k + Math.sin(u.k * Math.PI) * .25;
+    if(Math.hypot(vers.x - de.x, vers.z - de.z) > .01) b.ang = Math.atan2(vers.z - de.z, vers.x - de.x);
+    if(u.k >= 1){ b.base = vers; u.etat = "pose"; u.t = 3 + Math.random() * 4; }
+  } else {                                                              // posée, elle butine
+    b.x = base.x; b.z = base.z; b.y = base.y;
+    if(u.t <= 0){ u.etat = "tourne"; u.t = 2 + Math.random() * 3; }
+  }
+  b.posee = u.etat === "pose";
+}
 function vivre(b, dt){
-  b.t += dt; b.age += dt;
+  b.t += dt; b.age += dt; b.posee = false;
   const p = INSECTES[b.k], f = p.forme, base = b.base;
   if(b.etat === "fuit"){
     b.alpha -= dt / .6;
@@ -265,7 +289,7 @@ function vivre(b, dt){
     b.x = v.x0 + (v.q.x - v.x0) * u; b.z = v.z0 + (v.q.z - v.z0) * u;
     b.y = v.y0 + (v.q.y - v.y0) * u + (VOLE[f] || f === "sauteur" ? Math.sin(u * Math.PI) * .7 : 0);
     b.ang = Math.atan2(v.q.z - v.z0, v.q.x - v.x0);
-    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
+    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.butin = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
   } else {
     b.alpha = Math.min(1, b.alpha + dt);
     if(b.age > b.vie) b.etat = "part";
@@ -275,6 +299,8 @@ function vivre(b, dt){
     } else if(f === "papillon"){                      // il volette autour de sa fleur
       const nx = base.x + Math.sin(b.t * .8) * .6 + Math.sin(b.t * 2.1) * .15, nz = base.z + Math.cos(b.t * .6) * .6;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + .35 + Math.sin(b.t * 2.4) * .15;
+    } else if(p.butine){                               // l'abeille : elle se pose pour butiner
+      butiner(b, dt);
     } else if(f === "bourdon"){                       // petites boucles autour des fleurs
       const nx = base.x + Math.cos(b.t * 2.6) * .35, nz = base.z + Math.sin(b.t * 3.3) * .3;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + .15 + Math.sin(b.t * 5) * .06;
@@ -314,7 +340,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = VOLE[f] && !b.posee || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite) * .7 : .1);
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
@@ -324,6 +350,12 @@ function vivre(b, dt){
     b.marche = Math.max(0, Math.min(1, (b.marche || 0) + (d > .02 * dt ? 6 : -6) * dt));
     for(const pa of pattes){ const u = b.foule + pa.phase;
       pa.mesh.position.set(0, pas.leve * Math.max(0, Math.sin(u)) * b.marche, pas.avance * Math.cos(u) * b.marche); }
+  }
+  /* Les ailes repliées à plat sur le dos quand elle est posée (l'abeille) */
+  const rep = b.mesh.userData.replie;
+  if(rep){
+    b.pli = Math.max(0, Math.min(1, (b.pli || 0) + (b.posee ? 4 : -4) * dt));
+    for(const a of b.mesh.userData.ailes) a.pivot.rotation.y = -a.cote * rep * b.pli;
   }
   /* Les élytres (la coccinelle) : levés pour s'envoler, les fines ailes dépliées dessous ; refermés au repos, ailes cachées */
   const ely = b.mesh.userData.elytres;
