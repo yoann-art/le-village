@@ -1439,7 +1439,16 @@ export async function verifier(){
     const ecart = Math.abs(tri[0].mesh.position.z - tri[1].mesh.position.z), leve = Math.max(...tri.map(t => t.mesh.position.y));
     if(!repos || ecart < .001 || leve <= 0) throw new Error(`les pattes de la fourmi ne marchent pas (repos ${repos}, écart ${ecart.toFixed(4)}, levée ${leve.toFixed(4)})`);
     essaiRate(fo); frames(40);
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds`;
+    /* la coccinelle à sept points : deux élytres peints, six pattes ; les ailes cachées au repos ; ratée, elle lève ses
+       élytres et déplie ses ailes pour s'envoler */
+    const co = lacherInsecte("coccinelle", player.position.x, player.position.z - 1.5, .55); frames(2);
+    const el = co.mesh.userData.elytres || [], cp = co.mesh.userData.pattes || [];
+    if(el.length !== 2 || !el.every(e => e.pivot.children[0].material.map) || cp.reduce((n, t) => n + t.nb, 0) !== 6 || co.mesh.userData.ailes.some(a => a.pivot.visible))
+      throw new Error(`la coccinelle : ${el.length} élytres, ${cp.reduce((n, t) => n + t.nb, 0)} pattes, ailes visibles au repos`);
+    essaiRate(co); frames(6);
+    if(!(co.envol > .5) || !co.mesh.userData.ailes.every(a => a.pivot.visible)) throw new Error(`la coccinelle ratée ne s'envole pas (${co.etat}, envol ${co.envol})`);
+    frames(40);
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

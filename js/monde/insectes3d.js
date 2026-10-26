@@ -217,5 +217,105 @@ export function fourmiModele(){
   return g;
 }
 
+/* ---------- La coccinelle à sept points ----------
+   D'après l'image de Yo (26 octobre 2026 : « La coccinelle »), mais comme une vraie (décisions de Yo : « 7 comme une
+   vraie », « les antennes comme une vraie », « Pour chaque insectes tu dois faire comme un vrai ») : deux élytres rouges
+   bombés, fendus au milieu, sept points noirs (trois sur chacun, un à cheval sur la fente derrière le corselet) ; le
+   corselet noir aux deux taches crème ; la tête noire aux grands yeux brillants ; des antennes courtes et noires à
+   petite massue ; six pattes noires en deux trépieds qui marchent (comme la fourmi). Pour s'envoler (accord de Yo), elle
+   lève ses élytres (userData.elytres : {pivot, cote}) et déplie ses fines ailes cachées dessous, qui battent
+   (userData.ailes, invisibles au repos). Les pieds sont à son point de pose (la fleur, l'écorce). */
+const ECHELLE_COCCINELLE = 2.5;
+const ROUGE = [222, 58, 40], POINT = [36, 29, 27];
+/* les sept points, en directions sur la demi-boule (avant vers −z) et leur rayon (en angle) */
+const POINTS_COCCI = [[0, .8, -.6, .17]];
+for(const s of [-1, 1]) POINTS_COCCI.push([s * .6, .55, -.58, .15], [s * .62, .72, .1, .22], [s * .42, .5, .75, .17]);
+/* la peinture d'un élytre, pixel par pixel : chaque pixel retrouve son point de la demi-boule (comme SphereGeometry) */
+function texElytre(cote, W = 128, H = 64){
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const c = cv.getContext("2d"), im = c.createImageData(W, H);
+  const n = POINTS_COCCI.map(([x, y, z, r]) => [V(x, y, z).normalize(), r]);
+  for(let py = 0; py < H; py++) for(let px = 0; px < W; px++){
+    const phi = (cote > 0 ? Math.PI / 2 : Math.PI * 1.5) + (px + .5) / W * Math.PI, th = (py + .5) / H * Math.PI / 2;
+    const d = V(-Math.cos(phi) * Math.sin(th), Math.cos(th), Math.sin(phi) * Math.sin(th));
+    let k = 0;
+    for(const [m, r] of n) k = Math.max(k, Math.min(1, Math.max(0, (r - Math.acos(Math.min(1, d.dot(m)))) / .025)));
+    const fente = Math.abs(d.x) < .025 ? .55 : 1;                               // la fente entre les élytres, plus sombre
+    const o = (py * W + px) * 4;
+    for(let j = 0; j < 3; j++) im.data[o + j] = (ROUGE[j] + (POINT[j] - ROUGE[j]) * k) * (k > .5 ? 1 : fente);
+    im.data[o + 3] = 255;
+  }
+  c.putImageData(im, 0, 0);
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4;
+  return t;
+}
+/* une patte en trois pilules et son pied rond, rangée dans son trépied P */
+function patteEn(P, h, g, p, f, r, cPatte, cPied){
+  pilule(P, cPatte, h, g, r);
+  const t = g.clone().lerp(p, .62);
+  pilule(P, cPatte, g, t, r * .83);
+  pilule(P, cPatte, t, p, r * .7);
+  ovale(P, cPied, f, f.clone().sub(p).setY(0), r * 1.8, r * 1.15, r * .7);
+  P.nb = (P.nb || 0) + 1;
+}
+/* les fines ailes de vol : brun clair transparent, nervurées */
+const AILE_COCCI = lisse([[0, 0], [.06, -.018], [.13, -.008], [.175, .03], [.145, .062], [.07, .05], [.02, .022]]);
+const BC = [-.01, -.03, .2, .1];
+let COCCI = null;
+function coccinelleGeos(){
+  if(COCCI) return COCCI;
+  const M = [], T = [[], []], noir = 0x2B2523, creme = 0xEFE2C2, oeil = 0x161010;
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .02) / .06));
+  boule(M, 0x231E1C, 0, .036, .03, .068, .024, .078);                              // le ventre, sous les élytres
+  boule(M, noir, 0, .064, -.05, .058, .038, .03, ROND);                             // le corselet
+  M[M.length - 1].ombre = dessous;
+  boule(M, noir, 0, .055, -.077, .034, .031, .028, ROND);                           // la tête
+  M[M.length - 1].ombre = dessous;
+  for(const s of [-1, 1]){
+    boule(M, creme, s * .037, .07, -.06, .022, .024, .015);                          // la tache crème du corselet
+    boule(M, oeil, s * .026, .058, -.091, .016, .02, .016);                          // un grand oeil brillant
+    boule(M, 0xFFFFFF, s * .033, .069, -.101, .0036, .0044, .0036, BOULE_P);         // son reflet
+    const a = V(s * .013, .074, -.096), b = V(s * .025, .086, -.113);                // l'antenne courte, à petite massue
+    pilule(M, noir, a, b, .0026);
+    ovale(M, noir, b.clone().add(b.clone().sub(a).setLength(.003)), b.clone().sub(a), .007, .0042, .0042);
+    for(const [k, [h, g, p, f]] of [
+      [V(s * .025, .03, -.04), V(s * .062, .034, -.062), V(s * .066, .008, -.084), V(s * .069, .005, -.092)],   // devant
+      [V(s * .03, .028, 0), V(s * .078, .032, .002), V(s * .088, .008, .004), V(s * .092, .005, .006)],          // milieu
+      [V(s * .03, .028, .035), V(s * .07, .032, .052), V(s * .08, .008, .068), V(s * .084, .005, .075)]        // derrière
+    ].entries()) patteEn(T[(k + (s > 0 ? 1 : 0)) % 2], h, g, p, f, .0098, noir, 0x1E1A18);
+  }
+  const [corps, ...trepieds] = [M, ...T].map(fusionner);                           // les pieds sont à y = 0
+  /* les élytres : une demi-boule de chaque côté, autour du pivot de la charnière (devant, en haut de la fente) */
+  const elytre = cote => { const g = new THREE.SphereGeometry(1, 18, 9, cote > 0 ? Math.PI / 2 : Math.PI * 1.5, Math.PI, 0, Math.PI / 2);
+    g.scale(.086, .118, .094); g.translate(cote * .0008, .031 - .12, .03 + .045); return g; };
+  COCCI = {corps, trepieds, nb: T.map(t => t.nb), elytres: [elytre(1), elytre(-1)], tex: [texElytre(1), texElytre(-1)],
+    ailes: [aileGeo(AILE_COCCI, 1, BC), aileGeo(AILE_COCCI, -1, BC)],
+    aileTex: peinture(BC, c => {
+      trace(c, AILE_COCCI); c.fillStyle = "rgba(226,206,168,.5)"; c.fill();
+      c.save(); trace(c, AILE_COCCI); c.clip(); c.lineCap = "round";
+      for(let k = 3; k < AILE_COCCI.length; k += 7){ const [x, z] = AILE_COCCI[k];
+        c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(x * .5, z * .3, x * .95, z * .95);
+        c.strokeStyle = "rgba(120,88,60,.55)"; c.lineWidth = .003; c.stroke(); }
+      c.restore();
+      c.save(); trace(c, AILE_COCCI); c.strokeStyle = "rgba(120,88,60,.6)"; c.lineWidth = .003; c.stroke(); c.restore();
+    })};
+  return COCCI;
+}
+export function coccinelleModele(){
+  const G = coccinelleGeos(), g = new THREE.Group(), mat = corpsMat();
+  g.add(new THREE.Mesh(G.corps, mat));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .007, leve: .006, foulee: .08};
+  g.userData.elytres = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.elytres[k], toon({map: G.tex[k], side: THREE.DoubleSide})));
+    pivot.position.set(0, .12, -.045); g.add(pivot); return {pivot, cote}; });
+  g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k], aileMat(G.aileTex)));
+    pivot.position.set(cote * .012, .1, -.03); pivot.rotation.y = -cote * .2; pivot.visible = false;   // tournées vers l'arrière
+    g.add(pivot); return {pivot, cote}; });
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js) */
-export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.9}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI}};
+export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.9}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
+  coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}};

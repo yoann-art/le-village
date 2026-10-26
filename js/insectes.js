@@ -254,7 +254,7 @@ function vivre(b, dt){
   const p = INSECTES[b.k], f = p.forme, base = b.base;
   if(b.etat === "fuit"){
     b.alpha -= dt / .6;
-    if(VOLE[f] || f === "sauteur"){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }
+    if(VOLE[f] || f === "sauteur" || b.mesh.userData.elytres){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }   // la coccinelle s'envole aussi
     if(b.alpha <= 0){ retirer(b); return; }
   } else if(b.etat === "part"){
     b.alpha -= dt; if(VOLE[f]) b.y += .5 * dt;
@@ -314,16 +314,23 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = VOLE[f] || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite) * .7 : .1);
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
   if(pattes){
-    const pas = b.mesh.userData.pas, d = Math.min(.05, Math.hypot(b.x - b.mesh.position.x, b.z - b.mesh.position.z));
+    const pas = b.mesh.userData.pas, d = vite ? 0 : Math.min(.05, Math.hypot(b.x - b.mesh.position.x, b.z - b.mesh.position.z));   // en vol, elles se reposent
     b.foule = (b.foule || 0) + d / pas.foulee * Math.PI * 2;
     b.marche = Math.max(0, Math.min(1, (b.marche || 0) + (d > .02 * dt ? 6 : -6) * dt));
     for(const pa of pattes){ const u = b.foule + pa.phase;
       pa.mesh.position.set(0, pas.leve * Math.max(0, Math.sin(u)) * b.marche, pas.avance * Math.cos(u) * b.marche); }
+  }
+  /* Les élytres (la coccinelle) : levés pour s'envoler, les fines ailes dépliées dessous ; refermés au repos, ailes cachées */
+  const ely = b.mesh.userData.elytres;
+  if(ely){
+    b.envol = Math.max(0, Math.min(1, (b.envol || 0) + (vite ? 5 : -5) * dt));
+    for(const e of ely) e.pivot.rotation.set(-.45 * b.envol, 0, e.cote * .95 * b.envol);
+    for(const a of b.mesh.userData.ailes) a.pivot.visible = b.envol > .5;
   }
   b.mesh.position.set(b.x, b.y, b.z);
   if(f !== "mante" && f !== "cigale") b.mesh.rotation.y = -b.ang - Math.PI/2;
