@@ -852,6 +852,64 @@ export function punaiseModele(opt = {}){
   return g;
 }
 
+/* ---------- La luciole d'Italie ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici la luciole »), comme la vraie luciole d'Italie (Yo : « La luciole
+   d'Italie », « Oui le petit Halo lumineux », « Elle vole au ras des herbes ») : la tête noire aux grands yeux, le
+   corselet orange-rouge, les ailes de dessus brun très foncé, des antennes fines, six pattes sombres ; les derniers
+   anneaux du ventre, jaune pâle, sont sa lanterne : elle seule s'allume et s'éteint, à peu près une fois par seconde,
+   avec un petit halo (userData.lanterne : {mesh, halo, phase}). Elle vole au ras des herbes, élytres levés et ailes
+   battantes (comme la coccinelle : userData.elytres, userData.ailes), et se pose parfois sur un brin. */
+const ECHELLE_LUCIOLE = 1.5;
+let LUCIOLE = null;
+function halo(){                                                               // une tache de lumière douce, toujours tournée vers nous
+  const S = 64, cv = document.createElement("canvas"); cv.width = cv.height = S;
+  const c = cv.getContext("2d"), g = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  g.addColorStop(0, "rgba(230,255,140,1)"); g.addColorStop(.35, "rgba(200,240,90,.45)"); g.addColorStop(1, "rgba(180,230,60,0)");
+  c.fillStyle = g; c.fillRect(0, 0, S, S);
+  return new THREE.CanvasTexture(cv);
+}
+function lucioleGeos(){
+  if(LUCIOLE) return LUCIOLE;
+  const M = [], T = [[], []], noir = 0x1A1614, brun = 0x2E241E, orange = 0xD0582A, patte = 0x2A221E;
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .01) / .03));
+  boule(M, noir, 0, .03, -.066, .015, .014, .014, ROND); M[M.length - 1].ombre = dessous;          // la tête noire
+  boule(M, orange, 0, .037, -.046, .021, .011, .016, ROND); M[M.length - 1].ombre = dessous;       // le corselet orange-rouge
+  M.push({geo: ABDO, m: new THREE.Matrix4().compose(V(0, .024, .016), q0, V(.019, .012, .052)), c: 0x3A2E24, ombre: dessous});   // le ventre
+  for(const s of [-1, 1]){
+    boule(M, 0x120E0C, s * .012, .033, -.071, .008, .01, .008);                                   // un grand oeil
+    boule(M, 0xFFFFFF, s * .015, .038, -.076, .0024, .0028, .0024, BOULE_P);                     // son reflet
+    let a = V(s * .005, .036, -.078);                                                             // l'antenne, fine
+    for(let k = 1; k <= 7; k++){ const t = k / 7, b = V(s * (.005 + .03 * t), .036 + .05 * t - .015 * t * t, -.078 - .05 * t); baton(M, noir, a, b, .0013); a = b; }
+    for(const [k, [h, g, p, f]] of [
+      [V(s * .01, .02, -.048), V(s * .028, .022, -.06), V(s * .036, .003, -.072), V(s * .038, .002, -.077)],
+      [V(s * .012, .019, -.03), V(s * .036, .021, -.028), V(s * .046, .003, -.02), V(s * .048, .002, -.016)],
+      [V(s * .012, .019, -.014), V(s * .036, .021, .006), V(s * .046, .003, .026), V(s * .048, .002, .031)]].entries())
+      patteEn(T[(k + (s > 0 ? 1 : 0)) % 2], h, g, p, f, .003, patte, patte);
+  }
+  const L = []; boule(L, 0xECE6A4, 0, .021, .062, .016, .01, .018, ROND);                          // la lanterne, au bout du ventre
+  const elytre = cote => { const g = new THREE.SphereGeometry(1, 14, 7, cote > 0 ? Math.PI / 2 : Math.PI * 1.5, Math.PI, 0, Math.PI / 2);
+    g.scale(.022, .018, .056); g.translate(cote * .0008, -.006, .052); return g; };
+  return LUCIOLE = {corps: fusionner(M), trepieds: T.map(fusionner), nb: T.map(t => t.nb), lanterne: fusionner(L), halo: halo(),
+    elytres: [elytre(1), elytre(-1)]};
+}
+export function lucioleModele(){
+  const G = lucioleGeos(), C = coccinelleGeos(), g = new THREE.Group(), mat = corpsMat();
+  g.add(new THREE.Mesh(G.corps, mat));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .005, leve: .004, foulee: .03};
+  const lampe = new THREE.Mesh(G.lanterne, toon({vertexColors: true, emissive: 0xB8F040, emissiveIntensity: 0})); g.add(lampe);
+  const lueur = new THREE.Sprite(new THREE.SpriteMaterial({map: G.halo, color: 0xD8FF80, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true}));
+  lueur.position.set(0, .022, .066); lueur.scale.setScalar(0); g.add(lueur);
+  g.userData.lanterne = {mesh: lampe, halo: lueur, phase: Math.random()};
+  g.userData.elytres = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.elytres[k], toon({color: 0x2E241E, side: THREE.DoubleSide})));
+    pivot.position.set(0, .04, -.036); g.add(pivot); return {pivot, cote}; });
+  g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(C.ailes[k], aileMat(C.aileTex)));
+    pivot.position.set(cote * .008, .036, -.03); pivot.rotation.y = -cote * .2; pivot.scale.setScalar(.6); pivot.visible = false; g.add(pivot); return {pivot, cote}; });
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -860,4 +918,4 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
   bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
   grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
-  punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}};
+  punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE}};

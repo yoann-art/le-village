@@ -1524,12 +1524,20 @@ export async function verifier(){
     essaiRate(pu); frames(4);
     if(!pu.mesh.userData.odeur.visible) throw new Error(`la punaise dérangée ne lâche pas sa bouffée d'odeur (${pu.etat})`);
     frames(40);
+    /* la luciole d'Italie : elle vole au ras des herbes, et seule sa lanterne clignote, avec son halo */
+    const lu = lacherInsecte("luciole", player.position.x + 1.5, player.position.z - 1.5, .15);
+    lu.ras = {etat: "vol", t: 9, cap: 0};
+    let lmin = 9, lmax = 0, hmax = 0;
+    for(let k = 0; k < 24; k++){ frames(1); const e = lu.mesh.userData.lanterne.mesh.material.emissiveIntensity; lmin = Math.min(lmin, e); lmax = Math.max(lmax, e); hmax = Math.max(hmax, lu.mesh.userData.lanterne.halo.scale.x); }
+    if(lmax < 1 || lmin > .5 || hmax <= 0) throw new Error(`la lanterne de la luciole ne clignote pas (${lmin.toFixed(2)} à ${lmax.toFixed(2)})`);
+    if(lu.y - lu.base.y < .15 || !(lu.envol > .5)) throw new Error(`la luciole ne vole pas au ras des herbes (${(lu.y - lu.base.y).toFixed(2)} P)`);
+    lu.etat = "part"; frames(30);
     /* le cloporte et l'épeire (pas des insectes) sont en réserve : ils ne naissent sur l'île en aucune saison, à aucune heure */
     for(const mois of [0, 3, 6, 9]) for(const h of [2, 8, 14, 20]){
       const vu = insectesPresents("ile", new Date(2026, mois, 15, h)).filter(k => INSECTES[k].reserve);
       if(vu.length) throw new Error(`en réserve, mais sur l'île : ${vu.join(", ")}`);
     }
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; la punaise brunit l'hiver et sent quand on la dérange ; le cloporte et l'épeire, en réserve, ne naissent plus`;
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; la punaise brunit l'hiver et sent quand on la dérange ; la luciole vole, sa lanterne clignote ; le cloporte et l'épeire, en réserve, ne naissent plus`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

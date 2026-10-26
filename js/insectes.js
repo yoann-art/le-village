@@ -306,6 +306,23 @@ function percher(b, dt){
   }
   return true;
 }
+/* La luciole vole au ras des herbes (Yo, 26 octobre 2026 : « Elle vole au ras des herbes ») : elle erre doucement autour
+   de sa place, à un tiers de pas au-dessus de l'herbe, et se pose parfois quelques secondes sur un brin */
+function voleter(b, dt){
+  const base = b.base, u = b.ras || (b.ras = {etat: "vol", t: 3 + Math.random() * 4, cap: Math.random() * 6.28}), doux = Math.min(1, dt * 3);
+  u.t -= dt;
+  if(u.etat === "vol"){
+    u.cap += (Math.sin(b.t * .7) * .9 + Math.sin(b.t * 1.9) * .4) * dt;
+    const dx = b.x - base.x, dz = b.z - base.z;
+    if(Math.hypot(dx, dz) > 1.2) u.cap = Math.atan2(-dz, -dx);                     // elle revient vers sa place
+    b.x += Math.cos(u.cap) * .35 * dt; b.z += Math.sin(u.cap) * .35 * dt; b.ang = u.cap;
+    b.y += (base.y + .3 + Math.sin(b.t * 1.3) * .08 - b.y) * doux;
+    if(u.t <= 0){ u.etat = "pose"; u.t = 2 + Math.random() * 3; }
+  } else {
+    b.y += (base.y - b.y) * doux; b.posee = b.y - base.y < .03;
+    if(u.t <= 0){ u.etat = "vol"; u.t = 4 + Math.random() * 5; }
+  }
+}
 function vivre(b, dt){
   b.t += dt; b.age += dt; b.posee = false;
   /* le hanneton « compte ses sous » une seconde avant de s'envoler (Yo, 26 octobre 2026 : « Oui pour l'envol ») */
@@ -338,6 +355,8 @@ function vivre(b, dt){
     } else if(f === "papillon"){                      // il volette autour de sa fleur
       const nx = base.x + Math.sin(b.t * .8) * .6 + Math.sin(b.t * 2.1) * .15, nz = base.z + Math.cos(b.t * .6) * .6;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + .35 + Math.sin(b.t * 2.4) * .15;
+    } else if(p.ras){                                  // la luciole vole au ras des herbes
+      voleter(b, dt);
     } else if(p.butine){                               // l'abeille : elle se pose pour butiner
       butiner(b, dt);
     } else if(f === "bourdon"){                       // petites boucles autour des fleurs
@@ -380,7 +399,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite + (a.phase || 0)) * .7 : b.posee && b.mesh.userData.ailes.length > 2 ? 0 : .1);   // la libellule : en décalé ; posée, à plat
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
@@ -414,6 +433,13 @@ function vivre(b, dt){
     odeur.visible = derangee && b.od < .9;
     if(odeur.visible) odeur.scale.setScalar(.6 + b.od * 2.6);
   }
+  /* La lanterne de la luciole : un éclair d'un tiers de seconde, à peu près chaque seconde, avec son halo */
+  const lan = b.mesh.userData.lanterne;
+  if(lan){
+    const e = Math.pow(Math.max(0, Math.sin((b.t * 1.05 + lan.phase) * Math.PI * 2)), 3);
+    lan.mesh.material.emissiveIntensity = .15 + 1.6 * e;
+    lan.halo.scale.setScalar(.16 * e);
+  }
   /* Le chant du grillon mâle : arrêté, il relève ses ailes et les fait vibrer ; il se tait quand on approche (le carnet) */
   const chant = b.mesh.userData.chant;
   if(chant){
@@ -444,7 +470,7 @@ function vivre(b, dt){
   }
   b.mesh.position.set(b.x, b.y, b.z);
   if(f !== "mante" && f !== "cigale") b.mesh.rotation.y = -b.ang - Math.PI/2;
-  const al = Math.max(0, b.alpha) * (p.bocal && Math.sin(b.t * 2.5) < -.3 ? .35 : 1);
+  const al = Math.max(0, b.alpha) * (p.bocal && !b.mesh.userData.lanterne && Math.sin(b.t * 2.5) < -.3 ? .35 : 1);   // la luciole d'Italie : seule sa lanterne clignote
   for(const m of b.mats) m.m.opacity = m.op * al;
 }
 
