@@ -352,7 +352,7 @@ function vivre(b, dt){
         else { const v = Math.min(d, (f === "libellule" ? 2.4 : 1.6) * dt); b.x += dx / d * v; b.z += dz / d * v; b.ang = Math.atan2(dz, dx); }
       }
       b.y = f === "libellule" ? b.y + (base.y + Math.sin(b.t * 6) * .03 - b.y) * Math.min(1, dt * 3) : base.y;   // redescend en douceur d'une massette
-    } else if(f === "sauteur"){                       // posé dans l'herbe, il fait un bond de temps en temps
+    } else if(f === "sauteur" && !p.marche){          // posé dans l'herbe, il fait un bond de temps en temps (le grillon, lui, marche)
       if(b.saut){
         b.saut.t += dt; const u = Math.min(1, b.saut.t / .4);
         b.x = b.saut.x0 + (b.saut.x1 - b.saut.x0) * u; b.z = b.saut.z0 + (b.saut.z1 - b.saut.z0) * u; b.y = base.y + Math.sin(u * Math.PI) * .35;
@@ -393,6 +393,13 @@ function vivre(b, dt){
     const vise = u >= 0 ? (u < .2 ? u / .2 : Math.max(0, 1 - (u - .2) / .5)) : b.etat === "vole" || b.etat === "fuit" ? 1 : 0;
     b.det = (b.det || 0) + (vise - (b.det || 0)) * Math.min(1, dt * 25);
     for(const d of det) d.pivot.rotation.x = -d.angle * b.det;
+  }
+  /* Le chant du grillon mâle : arrêté, il relève ses ailes et les fait vibrer ; il se tait quand on approche (le carnet) */
+  const chant = b.mesh.userData.chant;
+  if(chant){
+    const vise = b.etat === "vit" && !b.cible && Math.hypot(b.x - player.position.x, b.z - player.position.z) > 3.2 ? 1 : 0;
+    b.ch = (b.ch || 0) + (vise - (b.ch || 0)) * Math.min(1, dt * 6);
+    for(const c of chant){ c.pivot.rotation.x = -.6 * b.ch; c.pivot.rotation.z = c.cote * (.12 + Math.sin(b.t * 45) * .05) * b.ch; }
   }
   /* La menace du perce-oreille : dérangé, il relève le bout du ventre et ouvre ses pinces, puis file */
   const men = b.mesh.userData.menace;

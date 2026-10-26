@@ -631,10 +631,71 @@ export function perceModele(){
   return g;
 }
 
+/* ---------- Le grillon champêtre ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici le grillon »), aux couleurs du vrai grillon champêtre (Yo : « Les
+   couleurs du vrai grillon champêtre », « Oui au hasard », « Oui il marche et oui il chante ailes relevées ») : noir
+   brillant, la grosse tête ronde, de longues antennes fines, une bande jaune à la base des ailes, le dessous des cuisses
+   arrière rouge orangé, deux pointes au bout du ventre (les cerques) ; la femelle porte entre elles son sabre de ponte,
+   le mâle non (au hasard). Six pattes qui marchent en deux trépieds. Le mâle chante : il relève ses ailes et les fait
+   vibrer (userData.chant : chaque aile sur un pivot). Les pieds au point de pose. */
+const ECHELLE_GRILLON = 1.85;
+let GRILLON = null;
+function grillonGeos(){
+  if(GRILLON) return GRILLON;
+  const M = [], T = [[], []], noir = 0x1C1917, brun = 0x2E2622, rouge = 0xC8502A, jaune = 0xE0B840, patte = 0x231E1B;
+  const dessous = (x, y, z) => .78 + .22 * Math.min(1, Math.max(0, (y - .02) / .05));
+  boule(M, noir, 0, .05, -.072, .028, .028, .026, ROND); M[M.length - 1].ombre = dessous;          // la grosse tête ronde
+  boule(M, 0x3A2E26, 0, .03, -.094, .012, .008, .007);                                            // la bouche
+  boule(M, noir, 0, .053, -.04, .025, .021, .017, ROND); M[M.length - 1].ombre = dessous;          // le corselet
+  M.push({geo: ABDO, m: new THREE.Matrix4().compose(V(0, .04, .018), q0, V(.024, .023, .05)), c: noir,
+    couleur: (x, y, z) => y < .033 ? brun : noir, ombre: dessous});                                 // l'abdomen, le dessous brun
+  for(const s of [-1, 1]){
+    boule(M, 0x3A2A20, s * .022, .058, -.082, .009, .011, .009);                                   // un oeil
+    boule(M, 0xFFFFFF, s * .026, .064, -.088, .0028, .0034, .0028, BOULE_P);                      // son reflet
+    let a = V(s * .008, .07, -.094);                                                                // l'antenne, longue et fine
+    for(let k = 1; k <= 9; k++){ const t = k / 9, b = V(s * (.008 + .06 * t), .07 + .1 * t - .06 * t * t, -.094 - .15 * t + .03 * t * t);
+      baton(M, 0x3A2A20, a, b, .0016 - .0006 * t); a = b; }
+    baton(M, noir, V(s * .006, .036, .066), V(s * .016, .042, .108), .002);                          // un cerque
+    /* les pattes : devant et milieu, puis l'arrière, la cuisse épaisse, rouge dessous */
+    for(const [k, [h, g, p, f, r]] of [
+      [V(s * .012, .03, -.05), V(s * .036, .04, -.064), V(s * .046, .006, -.08), V(s * .048, .004, -.086), .0042],
+      [V(s * .015, .03, -.026), V(s * .044, .038, -.022), V(s * .058, .006, -.014), V(s * .06, .004, -.009), .0042]].entries())
+      patteEn(T[(k + (s > 0 ? 1 : 0)) % 2], h, g, p, f, r, patte, patte);
+    const P = T[(2 + (s > 0 ? 1 : 0)) % 2], hanche = V(s * .018, .032, -.004), genou = V(s * .038, .07, .05);
+    ovale(P, noir, hanche.clone().lerp(genou, .5), genou.clone().sub(hanche), .04, .009, .013,
+      {geo: ROND, couleur: (x, y, z) => y < hanche.y + (genou.y - hanche.y) * ((z - hanche.z) / (genou.z - hanche.z)) - .004 ? rouge : noir});
+    const ch = V(s * .045, .006, .088);
+    pilule(P, patte, genou, ch, .0038); ovale(P, patte, V(s * .047, .004, .096), V(0, 0, 1), .009, .005, .0035);
+    for(let j = 1; j <= 4; j++){ const m = genou.clone().lerp(ch, j / 5); baton(P, 0x4A3A2E, m, m.clone().add(V(s * .002, .003, .007)), .001); }   // les épines
+    P.nb = (P.nb || 0) + 1;
+  }
+  /* une aile de dessus, à plat sur le dos, sur son pivot : brun noir, la bande jaune à sa base */
+  const aile = cote => { const A = [];
+    A.push({geo: ROND, m: new THREE.Matrix4().compose(V(cote * .011, 0, .036), q0, V(.015, .004, .044)), c: brun,
+      couleur: (x, y, z) => z < .006 ? jaune : Math.abs(x - cote * .011) > .012 ? 0x3A302A : brun});
+    return fusionner(A); };
+  const S = []; baton(S, 0x3A2A20, V(0, .034, .064), V(0, .03, .13), .0024);                         // le sabre de la femelle
+  return GRILLON = {corps: fusionner(M), trepieds: T.map(fusionner), nb: T.map(t => t.nb), ailes: [aile(1), aile(-1)], sabre: fusionner(S)};
+}
+export function grillonModele(){
+  const G = grillonGeos(), g = new THREE.Group(), mat = corpsMat(), male = Math.random() < .5;
+  g.add(new THREE.Mesh(G.corps, mat));
+  if(!male) g.add(new THREE.Mesh(G.sabre, mat));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .006, leve: .005, foulee: .04};
+  const chant = [1, -1].map((cote, k) => { const pivot = new THREE.Group(); pivot.position.set(0, .062, -.03);
+    pivot.add(new THREE.Mesh(G.ailes[k], mat)); g.add(pivot); return {pivot, cote}; });
+  if(male) g.userData.chant = chant;                                                       // seul le mâle chante
+  g.userData.male = male;
+  g.userData.ailes = [];
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
 export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
   sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
-  bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE}};
+  bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
+  grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}};
