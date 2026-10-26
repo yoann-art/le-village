@@ -1421,7 +1421,13 @@ export async function verifier(){
     essaiRate(rare);
     if(rare.etat !== "fuit") throw new Error(`le Grand Paon de nuit raté ne s'envole pas (${rare.etat})`);
     frames(40);
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé`;
+    /* la piéride blanche d'après l'image de Yo (insectes3d.js) : ses quatre ailes peintes, sur deux pivots qui battent */
+    const pi = lacherInsecte("pieride", player.position.x + 1.5, player.position.z, .5); frames(2);
+    const ailes = pi.mesh.userData.ailes || [];
+    if(ailes.length !== 2 || ailes.some(a => a.pivot.children.length !== 2 || !a.pivot.children.every(m => m.material.map)))
+      throw new Error("la piéride n'a pas ses ailes peintes");
+    essaiRate(pi); frames(40);
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

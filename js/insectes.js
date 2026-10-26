@@ -28,6 +28,7 @@ import { lanternes } from "./monde/ponton.js";
 import { lumieresIle } from "./lumieres.js";
 import { player, pencheMain, allure, ALLURE_DOUCE, placePlayer } from "./monde/personnage.js";
 import { gesteOutil } from "./monde/mains.js";
+import { MODELES_INSECTES } from "./monde/insectes3d.js";
 import { saisonDe, pleineLune } from "./peche.js";
 import { meteo, brouillard } from "./monde/meteo.js";
 import { marais, maraisObj, plante, mcx, mcz, W as WM } from "./monde/marais.js";
@@ -64,6 +65,8 @@ const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} 
 /* ----- Les modèles, en formes simples, à la taille d'un jouet ----- */
 const mat = (c, o) => toon(Object.assign({color: c}, o || {}));
 function modele(k){
+  const fait = MODELES_INSECTES[k];                    // refait d'après l'image de Yo (insectes3d.js)
+  if(fait){ const g = fait.fabrique(); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return g; }
   const p = INSECTES[k], g = new THREE.Group(), c = p.couleur, d = p.c2 !== undefined ? p.c2 : 0x2A2A2A, ailes = [];
   /* une aile, sur un pivot qui la fait battre ; tache : une tache de couleur au milieu (les papillons) */
   const aile = (w, h, x, z, col, op, tache) => { const pivot = new THREE.Group();
