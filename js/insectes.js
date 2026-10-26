@@ -304,6 +304,7 @@ function vivre(b, dt){
   if(b.etat === "fuit"){
     b.alpha -= dt / .6;
     if(VOLE[f] || f === "sauteur" || b.mesh.userData.elytres){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }   // la coccinelle s'envole aussi
+    else if(b.mesh.userData.menace && b.age - (b.fuite0 ?? (b.fuite0 = b.age)) > .35){ b.x += Math.cos(b.ang) * .9 * dt; b.z += Math.sin(b.ang) * .9 * dt; }   // le perce-oreille menace, puis file au sol
     if(b.alpha <= 0){ retirer(b); return; }
   } else if(b.etat === "part"){
     b.alpha -= dt; if(VOLE[f]) b.y += .5 * dt;
@@ -384,6 +385,14 @@ function vivre(b, dt){
     const vise = u >= 0 ? (u < .2 ? u / .2 : Math.max(0, 1 - (u - .2) / .5)) : b.etat === "vole" || b.etat === "fuit" ? 1 : 0;
     b.det = (b.det || 0) + (vise - (b.det || 0)) * Math.min(1, dt * 25);
     for(const d of det) d.pivot.rotation.x = -d.angle * b.det;
+  }
+  /* La menace du perce-oreille : dérangé, il relève le bout du ventre et ouvre ses pinces, puis file */
+  const men = b.mesh.userData.menace;
+  if(men){
+    const vise = b.etat === "fuit" || b.etat === "vole" && b.vol && b.vol.t < .8 ? 1 : 0;
+    b.men = (b.men || 0) + (vise - (b.men || 0)) * Math.min(1, dt * 8);
+    men.ventre.rotation.x = -.75 * b.men;
+    for(const pi of men.pinces) pi.pivot.rotation.y = pi.cote * .45 * b.men;
   }
   /* Les ailes repliées à plat sur le dos quand elle est posée (l'abeille) */
   const rep = b.mesh.userData.replie;

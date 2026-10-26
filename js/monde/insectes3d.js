@@ -571,10 +571,70 @@ export function bourdonModele(){
   return g;
 }
 
+/* ---------- Le perce-oreille commun ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici le Perce-oreille »), comme un vrai (Yo : « Mâle et femelle au hasard »,
+   « La menace : oui ») : la tête roussâtre, des antennes en perles ; le corselet et les courtes ailes de dessus brun
+   clair bordés de pâle ; l'abdomen en anneaux brun-roux ; les pinces à plat, qui se referment l'une vers l'autre : très
+   courbées chez le mâle, presque droites chez la femelle (au hasard, à chaque perce-oreille) ; six pattes jaune-brun qui
+   marchent en deux trépieds (comme la fourmi). Menacé, il relève le bout du ventre et ouvre ses pinces (userData.menace :
+   le ventre sur un pivot, chaque pince sur le sien). Les pieds au sol (insectes.js le pose 0,03 P au-dessus). */
+const ECHELLE_PERCE = 1.4;
+let PERCE = null;
+function perceGeos(){
+  if(PERCE) return PERCE;
+  const M = [], T = [[], []], roux = 0xA0452A, brun = 0x8A5A32, pale = 0xD2A15E, patte = 0xD49A50, pied = 0x8A5530;
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .02) / .04));
+  boule(M, roux, 0, .04, -.07, .023, .02, .024, ROND); M[M.length - 1].ombre = dessous;              // la tête
+  boule(M, 0x8A4A28, 0, .032, -.09, .009, .006, .006);                                              // les pièces de la bouche
+  /* le corselet et les courtes ailes de dessus, brun clair bordés de pâle */
+  const bord = (cx, cz, lx, lz) => (x, y, z) => Math.abs(x - cx) > lx * .72 || Math.abs(z - cz) > lz * .75 ? pale : brun;
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(0, .048, -.042), q0, V(.022, .008, .018)), c: brun, couleur: bord(0, -.042, .022, .018), ombre: dessous});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(0, .049, -.012), q0, V(.025, .009, .024)), c: brun, couleur: (x, y, z) => Math.abs(x) < .0012 ? 0x5A3A22 : bord(0, -.012, .025, .024)(x, y, z), ombre: dessous});
+  boule(M, 0x6A3A22, 0, .036, -.028, .021, .018, .032);                                              // le thorax, dessous
+  for(const s of [-1, 1]){
+    boule(M, 0x1E1410, s * .015, .046, -.075, .0075, .0095, .0075);                                // un oeil
+    boule(M, 0xFFFFFF, s * .019, .051, -.08, .0022, .0026, .0022, BOULE_P);                       // son reflet
+    /* l'antenne en perles */
+    let a = V(s * .008, .05, -.086);
+    for(let k = 1; k <= 12; k++){ const t = k / 12, b = V(s * (.008 + .05 * t), .05 + .085 * t - .02 * t * t, -.086 - .1 * t);
+      ovale(M, 0xB06A38, a.clone().lerp(b, .5), b.clone().sub(a), .0058, .0033, .0033, {geo: BOUT}); a = b; }
+    for(const [k, [h, g, p, f]] of [
+      [V(s * .014, .03, -.05), V(s * .036, .04, -.062), V(s * .046, .006, -.078), V(s * .048, .004, -.084)],
+      [V(s * .016, .03, -.03), V(s * .044, .038, -.026), V(s * .058, .006, -.018), V(s * .06, .004, -.013)],
+      [V(s * .016, .03, -.012), V(s * .046, .038, .012), V(s * .06, .006, .032), V(s * .062, .004, .038)]].entries())
+      patteEn(T[(k + (s > 0 ? 1 : 0)) % 2], h, g, p, f, .006, patte, pied);
+  }
+  /* l'abdomen en anneaux, autour de son pivot (sa base) */
+  const A = [];
+  for(let k = 0; k < 7; k++){ const z = .008 + k * .013, r = .025 - k * .0009;
+    boule(A, k % 2 ? 0x7A2E1A : 0x8A3820, 0, -.002 - k * .0006, z, r, r * .72, .0105, ROND); A[A.length - 1].ombre = dessous; }
+  /* une pince à plat, d'un côté : courbée (mâle) ou presque droite (femelle) */
+  const pince = (cote, male) => { const P = [], pts = male ? [[0, 0], [.013, .016], [.024, .042], [.02, .064], [.006, .078]] : [[0, 0], [.004, .028], [.004, .052], [.0, .07]];
+    for(let k = 1; k < pts.length; k++){ const t = k / (pts.length - 1), a = V(cote * pts[k - 1][0], 0, pts[k - 1][1]), b = V(cote * pts[k][0], 0, pts[k][1]);
+      pilule(P, t < .5 ? 0xC88A40 : t < .8 ? 0x8A4A24 : 0x4A1E10, a, b, .0068 - .0045 * t); }
+    return fusionner(P); };
+  return PERCE = {corps: fusionner(M), trepieds: T.map(fusionner), nb: T.map(t => t.nb), ventre: fusionner(A),
+    pinces: {male: [pince(1, true), pince(-1, true)], femelle: [pince(1, false), pince(-1, false)]}};
+}
+export function perceModele(){
+  const G = perceGeos(), g = new THREE.Group(), r = new THREE.Group(), mat = corpsMat(), male = Math.random() < .5;
+  r.position.y = -.03 / ECHELLE_PERCE; g.add(r);                                             // les pieds au sol
+  r.add(new THREE.Mesh(G.corps, mat));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); r.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .007, leve: .006, foulee: .03};
+  const ventre = new THREE.Group(); ventre.position.set(0, .036, .002); ventre.add(new THREE.Mesh(G.ventre, mat)); r.add(ventre);
+  const pinces = [1, -1].map((cote, k) => { const pivot = new THREE.Group(); pivot.position.set(cote * .006, -.006, .094);
+    pivot.add(new THREE.Mesh(G.pinces[male ? "male" : "femelle"][k], mat)); ventre.add(pivot); return {pivot, cote}; });
+  g.userData.menace = {ventre, pinces};
+  g.userData.male = male;
+  g.userData.ailes = [];
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
 export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
   sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
-  bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}};
+  bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE}};
