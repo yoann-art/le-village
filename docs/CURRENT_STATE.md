@@ -17,7 +17,7 @@
 
 - Les insectes d'après images : 3 sur 23, tous faits comme des vrais (décision de Yo) : la piéride ; la fourmi, noire
   comme la fourmi des jardins, qui marche en deux trépieds ; la coccinelle à sept points, qui lève ses élytres pour
-  s'envoler (v2.1.60, pas encore envoyée). Les 20 autres de l'île gardent leur forme simple
+  s'envoler (v2.1.60, envoyée ; la vérification de GitHub a 15 minutes depuis la v2.1.61). Les 20 autres de l'île gardent leur forme simple
   (`modele` dans `js/insectes.js`) ; les 7 de la forêt et les 4 du Marais aussi. Proposition de Claude, non codée : la piéride
   posée sur une fleur, les ailes refermées.
 - La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,

@@ -16,7 +16,7 @@ permissions:
 jobs:
   verifier:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15   # 10 minutes ne suffisaient plus à la machine de GitHub (26 octobre 2026, v2.1.60)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
