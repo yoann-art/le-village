@@ -250,12 +250,14 @@ function fuir(b, vite){
 }
 /* Ce que fait chacune, à chaque image */
 /* L'abeille butine, comme une vraie (Yo, 26 octobre 2026 : « elle se pose ») : quelques boucles en l'air, puis elle vole
-   vers une fleur proche et s'y pose, les ailes repliées, quelques secondes, avant de repartir */
+   vers une fleur proche et s'y pose, les ailes repliées, quelques secondes, avant de repartir. Le bourdon aussi (« il se pose
+   sur les fleurs »), d'un vol plus lourd et balancé (donnée lourd) */
 function butiner(b, dt){
   const u = b.butin || (b.butin = {etat: "tourne", t: 1 + Math.random() * 2}), base = b.base, doux = Math.min(1, dt * 5);
   u.t -= dt;
   if(u.etat === "tourne"){
-    const nx = base.x + Math.cos(b.t * 2.6) * .35, nz = base.z + Math.sin(b.t * 3.3) * .3, ny = base.y + .15 + Math.sin(b.t * 5) * .06;
+    const lourd = INSECTES[b.k].lourd, nx = base.x + Math.cos(b.t * 2.6) * .35, nz = base.z + Math.sin(b.t * 3.3) * .3;
+    const ny = base.y + .15 + (lourd ? Math.sin(b.t * 3) * .1 + Math.sin(b.t * 7.3) * .025 : Math.sin(b.t * 5) * .06);
     b.ang = Math.atan2(nz - b.z, nx - b.x); b.x += (nx - b.x) * doux; b.z += (nz - b.z) * doux; b.y += (ny - b.y) * doux;
     if(u.t <= 0){
       const pl = places("fleurs").filter(q => Math.hypot(q.x - b.x, q.z - b.z) < 4), q = pl.length ? pl[Math.floor(Math.random() * pl.length)] : base;
@@ -272,6 +274,7 @@ function butiner(b, dt){
     if(u.t <= 0){ u.etat = "tourne"; u.t = 2 + Math.random() * 3; }
   }
   b.posee = u.etat === "pose";
+  if(INSECTES[b.k].lourd) b.mesh.rotation.z = b.posee ? 0 : Math.sin(b.t * 4) * .14;   // le bourdon se balance en volant
 }
 /* La libellule se perche (Yo, 26 octobre 2026 : « elle se perche sur les massettes ») : parfois, au lieu de faire du
    sur-place, elle file au bout d'une massette proche et s'y pose, ailes ouvertes à plat, quelques secondes */

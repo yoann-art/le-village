@@ -329,9 +329,9 @@ const ABDO = new THREE.SphereGeometry(1, 14, 24).rotateX(Math.PI / 2);         /
 const AILE_AV = lisse([[0, 0], [.05, -.013], [.11, -.009], [.142, .012], [.122, .035], [.06, .03], [.015, .012]]);
 const AILE_AR = lisse([[0, .004], [.05, .01], [.086, .028], [.077, .047], [.036, .04], [.01, .02]]);
 const BAV = [-.01, -.02, .16, .065], BAR = [-.01, -.005, .105, .06];
-function aileAbeille(B, contour, cellules){
+function aileAbeille(B, contour, cellules, voile = "rgba(232,226,214,.3)"){   // voile : la teinte de l'aile (le bourdon : fumée)
   return peinture(B, c => {
-    trace(c, contour); c.fillStyle = "rgba(232,226,214,.3)"; c.fill();
+    trace(c, contour); c.fillStyle = voile; c.fill();
     c.save(); trace(c, contour); c.clip(); c.lineCap = "round"; c.lineJoin = "round";
     c.strokeStyle = "rgba(150,108,58,.42)"; c.lineWidth = .0016;
     for(const l of cellules){ c.beginPath(); l.forEach(([x, z], k) => k ? c.lineTo(x, z) : c.moveTo(x, z)); c.stroke(); }
@@ -339,6 +339,8 @@ function aileAbeille(B, contour, cellules){
     c.save(); trace(c, contour); c.strokeStyle = "rgba(160,118,64,.7)"; c.lineWidth = .003; c.stroke(); c.restore();
   });
 }
+const NERV = {av: [[[0, 0], [.13, .005]], [[.02, .002], [.06, .028], [.1, .026], [.13, .012]], [[.06, .006], [.07, .028]], [[.09, .004], [.1, .026]], [[.04, -.008], [.11, -.004]]],
+              ar: [[[0, .004], [.075, .035]], [[.03, .012], [.035, .038]], [[.05, .02], [.065, .044]]]};   // les nervures des ailes (abeille, bourdon)
 let ABEILLE = null;
 function abeilleGeos(){
   if(ABEILLE) return ABEILLE;
@@ -376,9 +378,7 @@ function abeilleGeos(){
       if(ar) ovale(M, patte, g.clone().lerp(p, .45), p.clone().sub(g), .016, .0035, .008);   // la patte de derrière, élargie
     }
   }
-  const nerv = {av: [[[0, 0], [.13, .005]], [[.02, .002], [.06, .028], [.1, .026], [.13, .012]], [[.06, .006], [.07, .028]], [[.09, .004], [.1, .026]], [[.04, -.008], [.11, -.004]]],
-                ar: [[[0, .004], [.075, .035]], [[.03, .012], [.035, .038]], [[.05, .02], [.065, .044]]]};
-  return ABEILLE = {corps: fusionner(M), av: aileAbeille(BAV, AILE_AV, nerv.av), ar: aileAbeille(BAR, AILE_AR, nerv.ar),
+  return ABEILLE = {corps: fusionner(M), av: aileAbeille(BAV, AILE_AV, NERV.av), ar: aileAbeille(BAR, AILE_AR, NERV.ar),
     ailes: [1, -1].map(cote => { const ar = aileGeo(AILE_AR, cote, BAR, 3); ar.translate(0, -.003, .012); return [aileGeo(AILE_AV, cote, BAV, 3), ar]; })};   // des ailes plates : 3 rangs suffisent
 }
 export function abeilleModele(){
@@ -518,9 +518,63 @@ export function libelluleModele(){
   return g;
 }
 
+/* ---------- Le bourdon terrestre ----------
+   D'après l'image de Yo (26 octobre 2026 : « Le bourdon »), déjà proche du vrai bourdon terrestre ; comme un vrai (Yo :
+   « Les bandes noires du vrai bourdon », « Oui il se pose sur les fleurs ») : rond, tout velu ; la tête noire aux grands
+   yeux, des antennes coudées toutes noires ; le collier jaune à l'avant du thorax, puis noir ; sur l'abdomen une bande
+   jaune, du noir, et le bout blanc ; six pattes noires, celles de derrière élargies ; quatre ailes un peu fumées, qui
+   battent en vol et se replient sur le dos quand il se pose (comme l'abeille : userData.replie). Les pieds au point de pose. */
+const ECHELLE_BOURDON = 2, HB = .062;
+let BOURDON = null;
+function bourdonGeos(){
+  if(BOURDON) return BOURDON;
+  const M = [], noir = 0x1E1A18, jaune = 0xF0BE2C, blanc = 0xF1EADB, oeil = 0x120E0C;
+  const P = (x, y, z) => V(x, y + HB, z);
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - HB + .035) / .07));
+  const th = P(0, .004, -.028), ab = P(0, -.002, .045), axe = V(0, -.12, 1).normalize(), L = .054;
+  const robeThorax = (x, y, z) => z < th.z - .012 ? jaune : noir;                                   // le collier jaune devant
+  const robeAbdo = (x, y, z) => { const t = ((z - ab.z) * axe.z + (y - ab.y) * axe.y) / L; return t < -.38 ? jaune : t < .3 ? noir : blanc; };
+  boule(M, noir, th.x, th.y, th.z, .035, .034, .034, ROND); Object.assign(M[M.length - 1], {couleur: robeThorax, ombre: dessous});
+  ovale(M, noir, ab, axe, L, .043, .04, {geo: ABDO, couleur: robeAbdo, ombre: dessous});
+  /* le duvet : des touffes sur tout le corps, de la couleur de la bande où elles poussent */
+  const touffes = (c, r, n, robe, sx, sy, sz, rot) => { for(let k = 0; k < n; k++){
+    const a = k * 2.39996, h = (k / n) * 1.7 - .75, q = Math.sqrt(1 - h * h), d = V(Math.cos(a) * q * sx, h * sy, Math.sin(a) * q * sz);
+    if(rot) d.applyQuaternion(rot);
+    const p = c.clone().add(d); M.push({geo: POIL, m: new THREE.Matrix4().compose(p, q0, V(r, r * .8, r)), c: robe(p.x, p.y, p.z), ombre: dessous}); } };
+  touffes(th, .0055, 44, robeThorax, .033, .032, .032);
+  touffes(ab, .006, 64, robeAbdo, .041, .038, .052, new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), axe));
+  boule(M, noir, 0, -.002 + HB, -.07, .024, .026, .02, ROND); M[M.length - 1].ombre = dessous;   // la tête
+  for(const s of [-1, 1]){
+    boule(M, oeil, s * .019, .004 + HB, -.074, .011, .018, .013);                           // un grand oeil
+    boule(M, 0xFFFFFF, s * .025, .013 + HB, -.081, .003, .0036, .003, BOULE_P);             // son reflet
+    const a = P(s * .007, .014, -.087), c = P(s * .012, .042, -.098), b = P(s * .032, .05, -.128);   // l'antenne coudée, noire
+    pilule(M, noir, a, c, .0028); pilule(M, noir, c, b, .0025);
+    for(const [h, g, p, f, ar] of [
+      [P(s * .015, -.025, -.045), P(s * .04, -.03, -.062), P(s * .05, -.06, -.072), P(s * .052, -.062, -.078), false],
+      [P(s * .02, -.028, -.03), P(s * .055, -.032, -.026), P(s * .07, -.06, -.02), P(s * .072, -.062, -.016), false],
+      [P(s * .02, -.028, -.016), P(s * .055, -.03, .022), P(s * .07, -.06, .052), P(s * .072, -.062, .058), true]]){
+      patteEn(M, h, g, p, f, .0055, noir, noir);
+      if(ar) ovale(M, noir, g.clone().lerp(p, .45), p.clone().sub(g), .018, .004, .009);    // la patte de derrière, élargie
+    }
+  }
+  const fumee = "rgba(190,180,160,.2)";
+  return BOURDON = {corps: fusionner(M), av: aileAbeille(BAV, AILE_AV, NERV.av, fumee), ar: aileAbeille(BAR, AILE_AR, NERV.ar, fumee),
+    ailes: [1, -1].map(cote => { const ar = aileGeo(AILE_AR, cote, BAR, 3); ar.translate(0, -.003, .012); return [aileGeo(AILE_AV, cote, BAV, 3), ar]; })};
+}
+export function bourdonModele(){
+  const G = bourdonGeos(), g = new THREE.Group();
+  g.add(new THREE.Mesh(G.corps, corpsMat()));
+  g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k][0], aileMat(G.av)), new THREE.Mesh(G.ailes[k][1], aileMat(G.ar)));
+    pivot.position.set(cote * .014, .036 + HB, -.035); g.add(pivot); return {pivot, cote}; });
+  g.userData.replie = 1.3;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
 export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
-  sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE}};
+  sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
+  bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}};
