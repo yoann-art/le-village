@@ -154,7 +154,7 @@ export function pierideModele(){
    Elle marche comme une vraie fourmi (accord de Yo, 26 octobre 2026) : ses pattes vont en deux trépieds qui se relaient
    (devant et derrière d'un côté, le milieu de l'autre) ; chaque trépied est d'un seul morceau (userData.pattes :
    {mesh, phase, nb}), qu'insectes.js balance d'avant en arrière en le soulevant quand il avance (userData.pas). */
-const ECHELLE_FOURMI = 1.8, ROND = new THREE.SphereGeometry(1, 14, 10), BOUT = new THREE.SphereGeometry(1, 6, 4);
+const ECHELLE_FOURMI = .96, ROND = new THREE.SphereGeometry(1, 14, 10), BOUT = new THREE.SphereGeometry(1, 6, 4);
 /* une pilule : un bâton aux deux bouts arrondis */
 function pilule(M, c, a, b, r){ baton(M, c, a, b, r); boule(M, c, a.x, a.y, a.z, r, r, r, BOUT); boule(M, c, b.x, b.y, b.z, r, r, r, BOUT); }
 /* une boule allongée le long d'une direction (le pied, la massue de l'antenne) */
@@ -212,7 +212,7 @@ export function fourmiModele(){
   const G = fourmiGeos(), g = new THREE.Group(), mat = corpsMat();
   g.add(new THREE.Mesh(G.corps, mat));
   g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
-  g.userData.pas = {avance: .009, leve: .007, foulee: .07};   // le balancement, la hauteur du pas (mesures du modèle) ; la foulée (en P)
+  g.userData.pas = {avance: .009, leve: .007, foulee: .037};   // le balancement, la hauteur du pas (mesures du modèle) ; la foulée (en P)
   g.userData.ailes = [];
   return g;
 }
@@ -225,7 +225,7 @@ export function fourmiModele(){
    petite massue ; six pattes noires en deux trépieds qui marchent (comme la fourmi). Pour s'envoler (accord de Yo), elle
    lève ses élytres (userData.elytres : {pivot, cote}) et déplie ses fines ailes cachées dessous, qui battent
    (userData.ailes, invisibles au repos). Les pieds sont à son point de pose (la fleur, l'écorce). */
-const ECHELLE_COCCINELLE = 2.5;
+const ECHELLE_COCCINELLE = 1.36;
 const ROUGE = [222, 58, 40], POINT = [36, 29, 27];
 /* les sept points, en directions sur la demi-boule (avant vers −z) et leur rayon (en angle) */
 const POINTS_COCCI = [[0, .8, -.6, .17]];
@@ -305,7 +305,7 @@ export function coccinelleModele(){
   const G = coccinelleGeos(), g = new THREE.Group(), mat = corpsMat();
   g.add(new THREE.Mesh(G.corps, mat));
   g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
-  g.userData.pas = {avance: .007, leve: .006, foulee: .08};
+  g.userData.pas = {avance: .007, leve: .006, foulee: .044};
   g.userData.elytres = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
     pivot.add(new THREE.Mesh(G.elytres[k], toon({map: G.tex[k], side: THREE.DoubleSide})));
     pivot.position.set(0, .12, -.045); g.add(pivot); return {pivot, cote}; });
@@ -316,6 +316,8 @@ export function coccinelleModele(){
   return g;
 }
 
-/* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js) */
-export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.9}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
+/* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
+   Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
+   la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
+export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}};
