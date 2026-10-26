@@ -1507,12 +1507,21 @@ export async function verifier(){
     const gx = gr.x; gr.cible = {x: gr.x + .3, z: gr.z}; gr.pause = 0; frames(4);
     if(gr.saut || gr.x - gx < .01) throw new Error("le grillon ne marche pas (il bondit ou reste sur place)");
     gr.etat = "part"; frames(30);
+    /* le hanneton : mâles et femelles au hasard ; raté, il compte ses sous (le ventre qui se gonfle), puis s'envole */
+    const hm = Array.from({length: 24}, () => MODELES_INSECTES.hanneton.fabrique().userData.male).filter(Boolean).length;
+    if(hm === 0 || hm === 24) throw new Error(`les hannetons ne sont pas mâles et femelles (${hm} mâles sur 24)`);
+    const ha = lacherInsecte("hanneton", player.position.x - 1.5, player.position.z - 1.5, .45); frames(2);
+    essaiRate(ha); frames(4);
+    if(!ha.compte || (ha.envol || 0) > .1) throw new Error(`le hanneton raté ne compte pas ses sous avant de partir (${ha.etat})`);
+    frames(24);
+    if(ha.compte || !(ha.envol > .5)) throw new Error(`le hanneton ne s'envole pas après avoir compté (${ha.etat}, envol ${ha.envol})`);
+    frames(40);
     /* le cloporte et l'épeire (pas des insectes) sont en réserve : ils ne naissent sur l'île en aucune saison, à aucune heure */
     for(const mois of [0, 3, 6, 9]) for(const h of [2, 8, 14, 20]){
       const vu = insectesPresents("ile", new Date(2026, mois, 15, h)).filter(k => INSECTES[k].reserve);
       if(vu.length) throw new Error(`en réserve, mais sur l'île : ${vu.join(", ")}`);
     }
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le cloporte et l'épeire, en réserve, ne naissent plus`;
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; le cloporte et l'épeire, en réserve, ne naissent plus`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

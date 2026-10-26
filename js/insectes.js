@@ -308,20 +308,25 @@ function percher(b, dt){
 }
 function vivre(b, dt){
   b.t += dt; b.age += dt; b.posee = false;
+  /* le hanneton « compte ses sous » une seconde avant de s'envoler (Yo, 26 octobre 2026 : « Oui pour l'envol ») */
+  const cpt = b.mesh.userData.compte; b.compte = false;
+  if(cpt){ if(b.etat === "vole" || b.etat === "fuit"){ b.cpt = (b.cpt || 0) + dt; b.compte = b.cpt < 1; } else b.cpt = 0; }
   const p = INSECTES[b.k], f = p.forme, base = b.base;
   if(b.etat === "fuit"){
-    b.alpha -= dt / .6;
-    if(VOLE[f] || f === "sauteur" || b.mesh.userData.elytres){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }   // la coccinelle s'envole aussi
+    if(!b.compte) b.alpha -= dt / .6;
+    if(b.compte){}
+    else if(VOLE[f] || f === "sauteur" || b.mesh.userData.elytres){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }   // la coccinelle s'envole aussi
     else if(b.mesh.userData.menace && b.age - (b.fuite0 ?? (b.fuite0 = b.age)) > .35){ b.x += Math.cos(b.ang) * .9 * dt; b.z += Math.sin(b.ang) * .9 * dt; }   // le perce-oreille menace, puis file au sol
     if(b.alpha <= 0){ retirer(b); return; }
   } else if(b.etat === "part"){
     b.alpha -= dt; if(VOLE[f]) b.y += .5 * dt;
     if(b.alpha <= 0){ retirer(b); return; }
+  } else if(b.etat === "vole" && b.compte){            // le hanneton compte ses sous, sur place, avant de partir
   } else if(b.etat === "vole"){                       // ratée : elle va se poser un peu plus loin
     const v = b.vol, T = VOLE[f] || f === "sauteur" ? 1 : 1.6;
     v.t += dt; const u = Math.min(1, v.t / T);
     b.x = v.x0 + (v.q.x - v.x0) * u; b.z = v.z0 + (v.q.z - v.z0) * u;
-    b.y = v.y0 + (v.q.y - v.y0) * u + (VOLE[f] || f === "sauteur" ? Math.sin(u * Math.PI) * .7 : 0);
+    b.y = v.y0 + (v.q.y - v.y0) * u + (VOLE[f] || f === "sauteur" || b.mesh.userData.elytres ? Math.sin(u * Math.PI) * .7 : 0);   // en arc (la coccinelle, le hanneton volent)
     b.ang = Math.atan2(v.q.z - v.z0, v.q.x - v.x0);
     if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.butin = null; b.perch = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
   } else {
@@ -375,7 +380,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] && !b.posee || b.etat === "vole" && !b.posee && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = VOLE[f] && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite + (a.phase || 0)) * .7 : b.posee && b.mesh.userData.ailes.length > 2 ? 0 : .1);   // la libellule : en décalé ; posée, à plat
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
@@ -393,6 +398,13 @@ function vivre(b, dt){
     const vise = u >= 0 ? (u < .2 ? u / .2 : Math.max(0, 1 - (u - .2) / .5)) : b.etat === "vole" || b.etat === "fuit" ? 1 : 0;
     b.det = (b.det || 0) + (vise - (b.det || 0)) * Math.min(1, dt * 25);
     for(const d of det) d.pivot.rotation.x = -d.angle * b.det;
+  }
+  /* Le hanneton compte ses sous (le ventre qui se gonfle, les éventails ouverts), puis vole lourdement, en se balançant */
+  if(cpt){
+    cpt.ventre.scale.y = 1 + (b.compte ? .16 * Math.max(0, Math.sin(b.cpt * 16)) : 0);
+    const ouvert = b.compte || b.etat === "vole" || b.etat === "fuit";
+    for(const e of cpt.eventails) e.scale.setScalar(e.scale.x + ((ouvert ? 1.15 : .8) - e.scale.x) * Math.min(1, dt * 8));
+    b.mesh.rotation.z = (b.etat === "vole" || b.etat === "fuit") && !b.compte ? Math.sin(b.t * 5) * .18 : 0;
   }
   /* Le chant du grillon mâle : arrêté, il relève ses ailes et les fait vibrer ; il se tait quand on approche (le carnet) */
   const chant = b.mesh.userData.chant;

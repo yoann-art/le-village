@@ -691,6 +691,85 @@ export function grillonModele(){
   return g;
 }
 
+/* ---------- Le hanneton commun ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici le hanneton »), comme un vrai (Yo : « Les couleurs du vrai hanneton »,
+   « Oui au hasard », « Oui pour l'envol ») : la tête et le corselet noirs au fin duvet gris ; les ailes de dessus
+   (élytres) brun-roux à côtes en long ; les flancs noirs à petits triangles blancs ; le bout du ventre qui dépasse en
+   pointe ; les antennes en éventail : 7 grandes lamelles chez le mâle, 6 petites chez la femelle (au hasard) ; six pattes
+   brun-roux qui marchent en deux trépieds. Avant de s'envoler, il « compte ses sous » : il ouvre ses éventails et gonfle
+   son ventre (userData.compte : {ventre, eventails}) ; puis il lève ses élytres et déplie ses ailes, comme la
+   coccinelle (userData.elytres, userData.ailes), et part d'un vol lourd et balancé. Les pieds au point de pose. */
+const ECHELLE_HANNETON = 2;
+function texHanneton(cote, W = 128, H = 64){
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const c = cv.getContext("2d"), im = c.createImageData(W, H);
+  for(let py = 0; py < H; py++) for(let px = 0; px < W; px++){
+    const phi = (cote > 0 ? Math.PI / 2 : Math.PI * 1.5) + (px + .5) / W * Math.PI, th = (py + .5) / H * Math.PI / 2;
+    const dx = -Math.cos(phi) * Math.sin(th), dy = Math.cos(th);
+    const cote4 = Math.abs(dx) * 4.5 % 1, cote_ = cote4 < .12 ? 1.18 : cote4 > .88 ? .86 : 1;   // les côtes en long, claires d'un côté, ombrées de l'autre
+    const bord = Math.abs(dx) < .02 ? .6 : 1, poil = dy < .1 ? 1.12 : 1;                         // la fente sombre ; un bord plus pâle, duveté
+    const o = (py * W + px) * 4, k = cote_ * bord * poil;
+    im.data[o] = Math.min(255, 154 * k); im.data[o + 1] = Math.min(255, 74 * k); im.data[o + 2] = Math.min(255, 34 * k); im.data[o + 3] = 255;
+  }
+  c.putImageData(im, 0, 0);
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4;
+  return t;
+}
+let HANNETON = null;
+function hannetonGeos(){
+  if(HANNETON) return HANNETON;
+  const M = [], T = [[], []], noir = 0x1E1A18, roux = 0x8A3E1E, gris = 0x8A8580, oeil = 0x140E0C;
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .02) / .05));
+  boule(M, noir, 0, .045, -.078, .022, .021, .02, ROND); M[M.length - 1].ombre = dessous;          // la tête noire
+  boule(M, noir, 0, .05, -.05, .033, .026, .02, ROND); M[M.length - 1].ombre = dessous;            // le corselet noir
+  for(let k = 0; k < 22; k++){ const a = k * 2.39996, h = (k / 22) * 1.4 - .4, q = Math.sqrt(1 - h * h);   // son fin duvet gris
+    boule(M, k % 2 ? 0x4A4642 : 0x3A3634, Math.cos(a) * q * .032, .05 + h * .025, -.05 + Math.sin(a) * q * .019, .003, .0022, .003, POIL); }
+  for(const s of [-1, 1]){
+    boule(M, oeil, s * .018, .05, -.086, .009, .012, .009);                                       // un oeil
+    boule(M, 0xFFFFFF, s * .022, .056, -.092, .0026, .003, .0026, BOULE_P);                       // son reflet
+    pilule(M, roux, V(s * .01, .05, -.096), V(s * .016, .062, -.104), .0018);                     // le pied de l'antenne
+    for(const [k, [h, g, p, f]] of [
+      [V(s * .014, .028, -.058), V(s * .038, .03, -.074), V(s * .05, .005, -.09), V(s * .052, .003, -.097)],
+      [V(s * .018, .026, -.03), V(s * .052, .03, -.024), V(s * .066, .005, -.012), V(s * .068, .003, -.006)],
+      [V(s * .018, .026, -.006), V(s * .05, .03, .03), V(s * .064, .005, .06), V(s * .066, .003, .066)]].entries())
+      patteEn(T[(k + (s > 0 ? 1 : 0)) % 2], h, g, p, f, .0055, roux, 0x4A1E10);
+  }
+  /* l'éventail d'une antenne, autour de son pivot : 7 grandes lamelles (le mâle) ou 6 petites (la femelle) */
+  const eventail = (cote, male) => { const E = [], n = male ? 7 : 6, l = male ? .034 : .016;
+    for(let k = 0; k < n; k++){ const a = -.9 + k * 1.8 / (n - 1), d = V(cote * Math.sin(a) * .4, Math.cos(a), -.35).normalize();
+      ovale(E, 0xB06A30, d.clone().multiplyScalar(l * .55), d, l * .55, .0035, .0022, {geo: BOUT}); }
+    return fusionner(E); };
+  /* le ventre, sous les élytres, autour de son pivot : les flancs noirs à triangles blancs, la pointe qui dépasse */
+  const A = [];
+  A.push({geo: ABDO, m: new THREE.Matrix4().compose(V(0, 0, .03), q0, V(.044, .026, .07)), c: noir, ombre: dessous});
+  for(const s of [-1, 1]) for(let k = 0; k < 5; k++) boule(A, 0xEDEAE2, s * .042, -.004, -.005 + k * .017, .0025, .0048, .0034, BOULE_P);   // les triangles blancs
+  ovale(A, 0x2A2220, V(0, -.004, .108), V(0, -.45, 1), .02, .011, .008, {geo: ROND});                 // la pointe du ventre
+  const corps = fusionner(M);
+  const elytre = cote => { const g = new THREE.SphereGeometry(1, 16, 9, cote > 0 ? Math.PI / 2 : Math.PI * 1.5, Math.PI, 0, Math.PI / 2);
+    g.scale(.05, .062, .076); g.translate(cote * .0008, -.018, .072); return g; };
+  return HANNETON = {corps, trepieds: T.map(fusionner), nb: T.map(t => t.nb), ventre: fusionner(A),
+    eventails: {male: [eventail(1, true), eventail(-1, true)], femelle: [eventail(1, false), eventail(-1, false)]},
+    elytres: [elytre(1), elytre(-1)], tex: [texHanneton(1), texHanneton(-1)], ailes: [aileGeo(AILE_COCCI, 1, BC), aileGeo(AILE_COCCI, -1, BC)]};
+}
+export function hannetonModele(){
+  const G = hannetonGeos(), C = coccinelleGeos(), g = new THREE.Group(), mat = corpsMat(), male = Math.random() < .5;
+  g.add(new THREE.Mesh(G.corps, mat));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .007, leve: .006, foulee: .04};
+  const ventre = new THREE.Group(); ventre.position.set(0, .036, 0); ventre.add(new THREE.Mesh(G.ventre, mat)); g.add(ventre);
+  const eventails = [1, -1].map((cote, k) => { const pivot = new THREE.Group(); pivot.position.set(cote * .016, .062, -.104);
+    pivot.add(new THREE.Mesh(G.eventails[male ? "male" : "femelle"][k], mat)); pivot.scale.setScalar(.8); g.add(pivot); return pivot; });
+  g.userData.compte = {ventre, eventails};
+  g.userData.elytres = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.elytres[k], toon({map: G.tex[k], side: THREE.DoubleSide})));
+    pivot.position.set(0, .064, -.036); g.add(pivot); return {pivot, cote}; });
+  g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k], aileMat(C.aileTex)));
+    pivot.position.set(cote * .012, .056, -.03); pivot.rotation.y = -cote * .2; pivot.scale.setScalar(1.25); pivot.visible = false; g.add(pivot); return {pivot, cote}; });
+  g.userData.male = male;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -698,4 +777,4 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
   sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
   bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
-  grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}};
+  grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON}};
