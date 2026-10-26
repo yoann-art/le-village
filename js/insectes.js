@@ -29,6 +29,7 @@ import { lumieresIle } from "./lumieres.js";
 import { player, pencheMain, allure, ALLURE_DOUCE, placePlayer } from "./monde/personnage.js";
 import { gesteOutil } from "./monde/mains.js";
 import { MODELES_INSECTES } from "./monde/insectes3d.js";
+import { oiseauxIci } from "./oiseaux.js";
 import { saisonDe, pleineLune } from "./peche.js";
 import { meteo, brouillard } from "./monde/meteo.js";
 import { marais, maraisObj, plante, mcx, mcz, W as WM } from "./monde/marais.js";
@@ -48,6 +49,7 @@ const maxIci = () => INSECTES_SAISON[saisonDe(new Date())] || INSECTE.max;
    commune ou peu commune va se poser un peu plus loin, plus méfiante (elle fuit de plus loin) ; une rare, ou une bête
    ratée trois fois, s'envole et disparaît. */
 export const COUP = {duree: .4, touche: .2, zone: .32, esquive: {commun: 0, peuCommun: .12, rare: .3}, mefiance: .15, loin: [2.5, 6]};
+const PEUR_OISEAU = 1.2;                              // à moins de 1,2 P d'un oiseau, l'insecte s'enfuit
 const PEUR = {papillon: 2.6, libellule: 3, bourdon: 2.2, sauteur: 2.6, coleo: 1.8, fourmi: 1.6, cloporte: 1.6, araignee: 1.8, mante: 2, cigale: 2.4, phasme: 1.4, lucane: 1.8};
 const VOLE = {papillon: true, libellule: true, bourdon: true};
 
@@ -234,8 +236,14 @@ export const essaiRate = b => rater(b);
 /* … et une bête surprise parce qu'on arrive trop vite */
 export const essaiFuite = b => fuir(b, true);
 let conseil = -1e9;
-function fuir(b, vite){
+function fuir(b, vite, oiseau){
   if(b.etat !== "vit") return;
+  /* un oiseau approche (Yo, 26 octobre 2026 : « Dès qu'un oiseau s'approche d'un insecte, il faudrait que l'insecte s'enfuit ») :
+     une commune ou peu commune va se poser plus loin, sans devenir plus méfiante envers le joueur ; la rare s'en va */
+  if(oiseau){
+    if(INSECTES[b.k].rarete !== "rare" && seReposer(b)) return;
+    b.etat = "fuit"; b.ang = Math.atan2(b.z - oiseau.z, b.x - oiseau.x); return;
+  }
   /* surprise parce qu'on arrive trop vite (Yo, 25 octobre 2026 : « la libellule disparaît et ne va pas se poser plus loin ») :
      une commune ou peu commune va se poser plus loin, plus méfiante, comme après un coup de filet raté ; la rare s'en va */
   if(vite && INSECTES[b.k].rarete !== "rare" && b.mefiance < 2){
@@ -516,6 +524,10 @@ export function updateInsectes(dt, actif, ou){
     const d = Math.hypot(b.x - p.x, b.z - p.z);
     if(d > INSECTE.rayon + 4){ retirer(b); continue; }
     if(vite && d < PEUR[INSECTES[b.k].forme] * (1 + .35 * b.mefiance)) fuir(b, true);   // méfiante, elle fuit de plus loin
+    else if(b.etat === "vit" && !b.essai){                                              // un oiseau tout près : elle s'enfuit
+      const o = oiseauxIci().find(o => o.alpha > .3 && o.etat !== "part" && Math.hypot(o.x - b.x, o.z - b.z) < PEUR_OISEAU && Math.abs(o.y - b.y) < 1.5);
+      if(o) fuir(b, false, o);
+    }
     vivre(b, dt);
   }
   ponte -= dt;

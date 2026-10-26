@@ -1586,6 +1586,12 @@ export async function verifier(){
     if(!owned("filet")) sacAdd("filet", 1);
     enMain("filet");
     keys.u = keys.d = keys.l = keys.r = 0; updatePlayer(.016);
+    pauseInsectes(true); pauseInsectes(false);                       // pas d'insecte sauvage tout près (une libellule perchée, depuis la v2.1.66)
+    /* un insecte s'enfuit quand un oiseau s'approche (v2.1.69) */
+    const proie = lacherInsecte("coccinelle", player.position.x + 2.5, player.position.z + 2.5, .55); proie.essai = false;
+    lacherOiseau("moineau", proie.x + .5, proie.z, .55); frames(2);
+    if(proie.etat === "vit") throw new Error("la coccinelle ne fuit pas le moineau posé tout près d'elle");
+    pauseOiseaux(true); pauseOiseaux(false); pauseInsectes(true); pauseInsectes(false);
     lacherOiseau("moineau", player.position.x, player.position.z + 1.4);
     frames(2);
     if(!$("#btn-act").dataset.action.includes("Lancer le filet")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
@@ -1594,7 +1600,7 @@ export async function verifier(){
     if(owned("moineau") <= avant) throw new Error("pas de moineau dans le sac");
     if(!state.carnet.oiseaux.moineau) throw new Error("le moineau n'est pas au carnet");
     frames(40);
-    return "un moineau, inscrit au carnet";
+    return "un moineau, inscrit au carnet ; une coccinelle a fui le moineau posé tout près";
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

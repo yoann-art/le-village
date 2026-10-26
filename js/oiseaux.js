@@ -301,6 +301,7 @@ export function oiseauAction(){
 /* À chaque image (recolte.js) ; ou : le milieu, « ile » ou « foret » (null dans un bâtiment ou la mine) */
 let ponte = 0, enPause = false;
 /* Pour la vérification automatique : plus de nouveaux oiseaux, et ceux qui sont là s'en vont */
+export const oiseauxIci = () => oiseaux;                    // les insectes s'en méfient (insectes.js)
 export function pauseOiseaux(oui){ enPause = oui; if(oui) for(const o of [...oiseaux]) retirer(o); }
 export function updateOiseaux(dt, actif, ou){
   changer(ou);
