@@ -351,6 +351,14 @@ function vivre(b, dt){
     for(const pa of pattes){ const u = b.foule + pa.phase;
       pa.mesh.position.set(0, pas.leve * Math.max(0, Math.sin(u)) * b.marche, pas.avance * Math.cos(u) * b.marche); }
   }
+  /* Les jambes arrière qui se détendent d'un coup pour sauter, puis se replient (la sauterelle) */
+  const det = b.mesh.userData.detente;
+  if(det){
+    const u = b.saut ? Math.min(1, b.saut.t / .4) : -1;
+    const vise = u >= 0 ? (u < .2 ? u / .2 : Math.max(0, 1 - (u - .2) / .5)) : b.etat === "vole" || b.etat === "fuit" ? 1 : 0;
+    b.det = (b.det || 0) + (vise - (b.det || 0)) * Math.min(1, dt * 25);
+    for(const d of det) d.pivot.rotation.x = -d.angle * b.det;
+  }
   /* Les ailes repliées à plat sur le dos quand elle est posée (l'abeille) */
   const rep = b.mesh.userData.replie;
   if(rep){

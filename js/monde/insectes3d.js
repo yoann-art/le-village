@@ -391,8 +391,68 @@ export function abeilleModele(){
   return g;
 }
 
+/* ---------- La grande sauterelle verte ----------
+   D'après l'image de Yo (26 octobre 2026 : « Voici la sauterelle »), comme une vraie (Yo : « Les antennes comme une
+   vraie », « Mélange mâle et femelle. Aléatoire dans le jeu mais aucune conséquence sur le carnet », « Oui les pattes
+   arrière qui se détendent ») : tout le corps vert, le dessous jaune pâle, une fine bande brune sur le dessus du corselet
+   et le long de la fente des ailes ; les ailes vertes en toit, plus longues que le corps ; des antennes en fil, plus
+   longues que tout le corps ; les pattes de devant et du milieu fines ; les grandes pattes arrière, cuisses épaisses et
+   jambes épineuses, dont la jambe se détend quand elle saute (userData.detente : {pivot, angle}, au genou). La femelle
+   porte au bout du corps son long sabre de ponte ; le mâle non (au hasard, à chaque sauterelle). Les pieds sont au sol. */
+const ECHELLE_SAUTERELLE = 1.9;
+let SAUTERELLE = null;
+function sauterelleGeos(){
+  if(SAUTERELLE) return SAUTERELLE;
+  const vert = 0x76AE3E, fonce = 0x5E9432, pale = 0xD9D98A, brun = 0x9A8448, pied = 0x7A7A34, M = [];
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .03) / .06));
+  const dos = (c, h) => (x, y, z) => Math.abs(x) < .008 && y > h ? brun : c;                 // la bande brune du dos
+  boule(M, vert, 0, .072, -.088, .024, .03, .024, ROND);                                    // la tête, haute
+  M[M.length - 1].ombre = dessous;
+  boule(M, 0xB8C95A, 0, .052, -.1, .012, .01, .008);                                         // la bouche, plus claire
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(0, .076, -.055), q0, V(.025, .026, .033)), c: vert, couleur: dos(vert, .096), ombre: dessous});   // le corselet en selle
+  const ventre = V(0, .056, .03);                                                            // le corps : vert, le dessous pâle
+  M.push({geo: ABDO, m: new THREE.Matrix4().compose(ventre, q0, V(.021, .024, .066)), c: vert,
+    couleur: (x, y, z) => y < ventre.y - .006 ? pale : vert, ombre: dessous});
+  for(const s of [-1, 1]){
+    boule(M, 0x2E2014, s * .019, .083, -.093, .01, .013, .01);                             // un oeil
+    boule(M, 0xFFFFFF, s * .024, .09, -.1, .0028, .0034, .0028, BOULE_P);                   // son reflet
+    /* l'aile verte, en toit sur le dos, plus longue que le corps */
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(V(s * .011, .077, .05), new THREE.Quaternion().setFromEuler(new THREE.Euler(-.08, 0, -s * .62)), V(.004, .02, .09)),
+      c: fonce, couleur: (x, y, z) => Math.abs(x) < .009 && y > .084 ? brun : fonce});
+    /* l'antenne en fil, plus longue que tout le corps : une courbe en petits bâtons */
+    let a = V(s * .006, .094, -.099);
+    for(let k = 1; k <= 9; k++){ const t = k / 9, b = V(s * (.006 + .085 * t), .094 + .3 * t - .13 * t * t, -.099 - .17 * t + .02 * t * t);
+      baton(M, 0x6E9A36, a, b, .0014 - .0005 * t); a = b; }
+    /* les pattes de devant et du milieu, fines */
+    patteEn(M, V(s * .01, .05, -.06), V(s * .03, .062, -.078), V(s * .044, .006, -.092), V(s * .046, .004, -.098), .0034, vert, pied);
+    patteEn(M, V(s * .012, .048, -.032), V(s * .04, .058, -.032), V(s * .054, .006, -.024), V(s * .056, .004, -.018), .0034, vert, pied);
+    /* la cuisse arrière, épaisse, vers le haut et l'arrière */
+    const hanche = V(s * .017, .054, .004), genou = V(s * .032, .128, .082);
+    ovale(M, vert, hanche.clone().lerp(genou, .45), genou.clone().sub(hanche), .056, .012, .018, {geo: ROND, couleur: (x, y, z) => y < hanche.y + (genou.y - hanche.y) * ((z - hanche.z) / (genou.z - hanche.z)) - .006 ? pale : vert});
+  }
+  const corps = fusionner(M);
+  /* la jambe arrière, épineuse, autour du genou (le pivot) : pliée vers le sol au repos */
+  const jambe = cote => { const J = [], g = V(0, 0, 0), ch = V(cote * .006, -.122, .036), pd = V(cote * .008, -.124, .046);
+    pilule(J, vert, g, ch, .0038); ovale(J, pied, pd, pd.clone().sub(ch).setY(0), .009, .005, .0035);
+    for(let k = 1; k <= 5; k++){ const m = g.clone().lerp(ch, k / 6.5); baton(J, 0xC9B860, m.clone().add(V(0, 0, .002)), m.clone().add(V(cote * .002, .004, .008)), .0012); }   // les épines
+    return fusionner(J); };
+  /* le sabre de ponte de la femelle, long et droit, à peine courbé */
+  const S = []; baton(S, 0x8C8C3E, V(0, .05, .088), V(0, .046, .13), .0028); baton(S, 0x8C8C3E, V(0, .046, .13), V(0, .05, .168), .0022);
+  return SAUTERELLE = {corps, jambes: [jambe(1), jambe(-1)], sabre: fusionner(S)};
+}
+export function sauterelleModele(){
+  const G = sauterelleGeos(), g = new THREE.Group(), mat = corpsMat();
+  g.add(new THREE.Mesh(G.corps, mat));
+  if(Math.random() < .5) g.add(new THREE.Mesh(G.sabre, mat));                              // une femelle
+  g.userData.detente = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.jambes[k], mat)); pivot.position.set(cote * .032, .128, .082); g.add(pivot); return {pivot, angle: 1.7}; });
+  g.userData.ailes = [];
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
 export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.52}, fourmi: {fabrique: fourmiModele, echelle: ECHELLE_FOURMI},
-  coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE}};
+  coccinelle: {fabrique: coccinelleModele, echelle: ECHELLE_COCCINELLE}, abeille: {fabrique: abeilleModele, echelle: ECHELLE_ABEILLE},
+  sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}};
