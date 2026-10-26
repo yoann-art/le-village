@@ -150,7 +150,10 @@ export function pierideModele(){
    Yo) : une grosse tête ronde aux grands yeux brillants et aux mandibules en crochet, deux antennes coudées à massue ;
    le thorax rond, le petit nœud, le gros abdomen penché vers l'arrière, en anneaux plus sombres ; six pattes en
    pilules (cuisse, jambe, tarse) aux pieds ronds. Pas d'ailes : userData.ailes reste vide. Les pieds sont au sol
-   (insectes.js la pose 0,03 P au-dessus). */
+   (insectes.js la pose 0,03 P au-dessus).
+   Elle marche comme une vraie fourmi (accord de Yo, 26 octobre 2026) : ses pattes vont en deux trépieds qui se relaient
+   (devant et derrière d'un côté, le milieu de l'autre) ; chaque trépied est d'un seul morceau (userData.pattes :
+   {mesh, phase, nb}), qu'insectes.js balance d'avant en arrière en le soulevant quand il avance (userData.pas). */
 const ECHELLE_FOURMI = 1.8, ROND = new THREE.SphereGeometry(1, 14, 10), BOUT = new THREE.SphereGeometry(1, 6, 4);
 /* une pilule : un bâton aux deux bouts arrondis */
 function pilule(M, c, a, b, r){ baton(M, c, a, b, r); boule(M, c, a.x, a.y, a.z, r, r, r, BOUT); boule(M, c, b.x, b.y, b.z, r, r, r, BOUT); }
@@ -162,7 +165,7 @@ function ovale(M, c, p, dir, long, larg, haut, opt){
 let FOURMI = null;
 function fourmiGeos(){
   if(FOURMI) return FOURMI;
-  const M = [], noir = 0x48403B, tete = 0x4E4540, sombre = 0x2C2724, patte = 0x433B37, pied = 0x2E2926;
+  const M = [], T = [[], []], noir = 0x48403B, tete = 0x4E4540, sombre = 0x2C2724, patte = 0x433B37, pied = 0x2E2926;
   const dessous = (x, y, z) => .78 + .22 * Math.min(1, Math.max(0, (y - .036) / .07));   // l'ombre peinte, sous le ventre
   /* l'abdomen, penché vers l'arrière, et ses anneaux plus sombres */
   const axe = V(0, -.26, 1).normalize(), centre = V(0, .064, .07);
@@ -187,25 +190,29 @@ function fourmiGeos(){
     pilule(M, noir, a, c, .0046);
     pilule(M, noir, c, b, .0042);
     ovale(M, noir, b.clone().add(c.clone().sub(b).setLength(.006)), b.clone().sub(c), .015, .0085, .0085);   // sa massue
-    /* les pattes : attache, genou, cheville, pied */
-    for(const [h, g, p, f] of [
+    /* les pattes : attache, genou, cheville, pied ; le trépied : devant et derrière d'un côté, le milieu de l'autre */
+    for(const [k, [h, g, p, f]] of [
       [V(s * .012, .064, -.032), V(s * .042, .066, -.07), V(s * .058, .018, -.098), V(s * .063, .005, -.106)],   // devant
       [V(s * .016, .06, -.015), V(s * .056, .058, -.014), V(s * .078, .016, -.006), V(s * .084, .005, -.003)], // milieu
       [V(s * .014, .061, .002), V(s * .05, .062, .044), V(s * .07, .016, .088), V(s * .074, .005, .095)]         // derrière
-    ]){
-      pilule(M, patte, h, g, .0082);                                                // la cuisse
+    ].entries()){
+      const P = T[(k + (s > 0 ? 1 : 0)) % 2];
+      pilule(P, patte, h, g, .0082);                                                // la cuisse
       const t = g.clone().lerp(p, .62);
-      pilule(M, patte, g, t, .0068);                                                // la jambe
-      pilule(M, patte, t, p, .0058);                                                // le tarse
-      ovale(M, pied, f, f.clone().sub(p).setY(0), .015, .0095, .0058);              // le pied rond
+      pilule(P, patte, g, t, .0068);                                                // la jambe
+      pilule(P, patte, t, p, .0058);                                                // le tarse
+      ovale(P, pied, f, f.clone().sub(p).setY(0), .015, .0095, .0058);              // le pied rond
+      P.nb = (P.nb || 0) + 1;
     }
   }
-  const corps = fusionner(M); corps.translate(0, -.03 / ECHELLE_FOURMI, 0);
-  return FOURMI = corps;
+  const [corps, ...trepieds] = [M, ...T].map(m => { const g = fusionner(m); g.translate(0, -.03 / ECHELLE_FOURMI, 0); return g; });
+  return FOURMI = {corps, trepieds, nb: T.map(t => t.nb)};
 }
 export function fourmiModele(){
-  const g = new THREE.Group();
-  g.add(new THREE.Mesh(fourmiGeos(), corpsMat()));
+  const G = fourmiGeos(), g = new THREE.Group(), mat = corpsMat();
+  g.add(new THREE.Mesh(G.corps, mat));
+  g.userData.pattes = G.trepieds.map((geo, k) => { const mesh = new THREE.Mesh(geo, mat); g.add(mesh); return {mesh, phase: k * Math.PI, nb: G.nb[k]}; });
+  g.userData.pas = {avance: .009, leve: .007, foulee: .07};   // le balancement, la hauteur du pas (mesures du modèle) ; la foulée (en P)
   g.userData.ailes = [];
   return g;
 }

@@ -15,8 +15,8 @@
 
 ## En partie fait
 
-- Les insectes d'après images : 2 sur 23 (la piéride ; la fourmi, noire comme la fourmi des jardins sur décision de Yo,
-  v2.1.58, pas encore envoyée). Les 21 autres de l'île gardent leur forme simple
+- Les insectes d'après images : 2 sur 23 (la piéride ; la fourmi, noire comme la fourmi des jardins sur décision de Yo, qui marche en deux trépieds,
+  v2.1.58 et v2.1.59, pas encore envoyées). Les 21 autres de l'île gardent leur forme simple
   (`modele` dans `js/insectes.js`) ; les 7 de la forêt et les 4 du Marais aussi. Proposition de Claude, non codée : la piéride
   posée sur une fleur, les ailes refermées.
 - La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,

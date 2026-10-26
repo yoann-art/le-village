@@ -316,6 +316,15 @@ function vivre(b, dt){
   /* Les ailes battent ; la luciole clignote */
   const vite = VOLE[f] || b.etat === "vole" && f !== "fourmi" && f !== "cloporte" ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite) * .7 : .1);
+  /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
+  const pattes = b.mesh.userData.pattes;
+  if(pattes){
+    const pas = b.mesh.userData.pas, d = Math.min(.05, Math.hypot(b.x - b.mesh.position.x, b.z - b.mesh.position.z));
+    b.foule = (b.foule || 0) + d / pas.foulee * Math.PI * 2;
+    b.marche = Math.max(0, Math.min(1, (b.marche || 0) + (d > .02 * dt ? 6 : -6) * dt));
+    for(const pa of pattes){ const u = b.foule + pa.phase;
+      pa.mesh.position.set(0, pas.leve * Math.max(0, Math.sin(u)) * b.marche, pas.avance * Math.cos(u) * b.marche); }
+  }
   b.mesh.position.set(b.x, b.y, b.z);
   if(f !== "mante" && f !== "cigale") b.mesh.rotation.y = -b.ang - Math.PI/2;
   const al = Math.max(0, b.alpha) * (p.bocal && Math.sin(b.t * 2.5) < -.3 ? .35 : 1);

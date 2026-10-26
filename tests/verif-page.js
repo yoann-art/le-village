@@ -1427,14 +1427,19 @@ export async function verifier(){
     if(ailes.length !== 2 || ailes.some(a => a.pivot.children.length !== 2 || !a.pivot.children.every(m => m.material.map)))
       throw new Error("la piéride n'a pas ses ailes peintes");
     essaiRate(pi); frames(40);
-    /* la fourmi noire des jardins d'après l'image de Yo : un seul morceau, sans ailes, les pieds au sol */
+    /* la fourmi noire des jardins d'après l'image de Yo : sans ailes, les pieds au sol, six pattes en deux trépieds
+       qui se relaient quand elle marche (et se reposent à l'arrêt) */
     const fo = lacherInsecte("fourmi", player.position.x - 1.5, player.position.z, .03); frames(2);
     fo.mesh.updateMatrixWorld(true);
-    const bas = new THREE.Box3().setFromObject(fo.mesh).min.y;
-    if(fo.mesh.children.length !== 1 || (fo.mesh.userData.ailes || [1]).length || Math.abs(bas) > .02)
-      throw new Error(`la fourmi n'est pas d'un seul morceau, sans ailes, les pieds au sol (${fo.mesh.children.length} morceaux, pieds à ${bas.toFixed(3)})`);
+    const bas = new THREE.Box3().setFromObject(fo.mesh).min.y, tri = fo.mesh.userData.pattes || [];
+    if((fo.mesh.userData.ailes || [1]).length || Math.abs(bas) > .02 || tri.length !== 2 || tri[0].nb + tri[1].nb !== 6)
+      throw new Error(`la fourmi : ${tri.length} trépieds, ${tri.reduce((n, t) => n + t.nb, 0)} pattes, pieds à ${bas.toFixed(3)}`);
+    const repos = tri.every(t => t.mesh.position.lengthSq() === 0);
+    fo.pause = 0; fo.cible = {x: fo.x - .3, z: fo.z}; frames(6, .02);
+    const ecart = Math.abs(tri[0].mesh.position.z - tri[1].mesh.position.z), leve = Math.max(...tri.map(t => t.mesh.position.y));
+    if(!repos || ecart < .001 || leve <= 0) throw new Error(`les pattes de la fourmi ne marchent pas (repos ${repos}, écart ${ecart.toFixed(4)}, levée ${leve.toFixed(4)})`);
     essaiRate(fo); frames(40);
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire a les pieds au sol`;
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);
