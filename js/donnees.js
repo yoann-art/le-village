@@ -488,7 +488,7 @@ export const INSECTES = {
   bourdon:  {nom:"Bourdon", pluriel:"bourdons", ou:["fleurs"], saisons:["printemps", "ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"bourdon", couleur:0x2E2A26, c2:0xF0C83A, note:"Gros et velu, il bourdonne de fleur en fleur"},
   coccinelle:{nom:"Coccinelle", pluriel:"coccinelles", une:true, ou:["fleurs", "arbres"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:1, forme:"coleo", couleur:0xD8392B, c2:0x1C1C1C, note:"Lente, facile à attraper ; l'hiver, blottie sous l'écorce"},
   fourmi:   {nom:"Fourmi", pluriel:"fourmis", une:true, ou:["sol"], saisons:TOUTE, heures:"toujours", rarete:"commun", prix:1, forme:"fourmi", couleur:0x3A2A22, note:"Elle marche en file indienne"},
-  cloporte: {nom:"Cloporte", pluriel:"cloportes", ou:["pierres"], saisons:TOUTE, heures:"toujours", rarete:"commun", prix:1, forme:"cloporte", couleur:0x7A7F86, note:"Il se roule en boule quand on le touche"},
+  cloporte: {nom:"Cloporte", pluriel:"cloportes", ou:["pierres"], saisons:TOUTE, heures:"toujours", rarete:"commun", prix:1, forme:"cloporte", couleur:0x7A7F86, reserve:"une mise à jour", note:"Il se roule en boule quand on le touche"},
   perceOreille:{nom:"Perce-oreille", pluriel:"perce-oreilles", ou:["pierres", "arbres"], saisons:TOUTE, heures:"nuit", rarete:"commun", prix:1, forme:"cloporte", couleur:0x6B3A22, note:"Deux pinces au bout du ventre"},
   sauterelle:{nom:"Sauterelle", pluriel:"sauterelles", une:true, ou:["herbes"], saisons:["ete", "automne"], heures:"jour", rarete:"commun", prix:1, forme:"sauteur", couleur:0x6FB04A, note:"Elle saute quand on approche"},
   grillon:  {nom:"Grillon", pluriel:"grillons", ou:["herbes"], saisons:["ete", "automne"], heures:"soir", rarete:"commun", prix:1, forme:"sauteur", couleur:0x3A2A1A, note:"Il chante, et se tait si on approche"},
@@ -504,7 +504,7 @@ export const INSECTES = {
   phalene:  {nom:"Phalène d'hiver", pluriel:"phalènes d'hiver", une:true, ou:["lanternes"], saisons:["hiver"], heures:"nuit", rarete:"peuCommun", prix:3, forme:"papillon", couleur:0xB8B0A0, c2:0x8A8270, note:"Papillon de nuit qui vole même quand il gèle"},
   cigale:   {nom:"Cigale", pluriel:"cigales", une:true, ou:["arbres"], saisons:["ete"], heures:"apresMidi", rarete:"peuCommun", prix:3, forme:"cigale", couleur:0x6A6A4A, note:"Elle chante fort et se cache dans l'écorce"},
   mante:    {nom:"Mante religieuse", pluriel:"mantes religieuses", une:true, ou:["herbes"], saisons:["ete", "automne"], heures:"jour", rarete:"peuCommun", prix:3, forme:"mante", couleur:0x7FC05A, note:"Immobile, les pattes jointes"},
-  epeire:   {nom:"Épeire des jardins", pluriel:"épeires des jardins", une:true, ou:["arbres"], saisons:["ete", "automne"], heures:"matin", rarete:"peuCommun", prix:3, forme:"araignee", couleur:0xB0803A, c2:0xFFFFFF, note:"Une croix blanche sur le dos ; sa toile brille de rosée"},
+  epeire:   {nom:"Épeire des jardins", pluriel:"épeires des jardins", une:true, ou:["arbres"], saisons:["ete", "automne"], heures:"matin", rarete:"peuCommun", prix:3, forme:"araignee", couleur:0xB0803A, c2:0xFFFFFF, reserve:"une mise à jour", note:"Une croix blanche sur le dos ; sa toile brille de rosée"},
   /* La Forêt profonde */
   tisserande:{nom:"Araignée tisserande", pluriel:"araignées tisserandes", une:true, zone:"foret", ou:["arbres"], saisons:["automne"], heures:"matin", rarete:"commun", prix:1, forme:"araignee", couleur:0x8A6A3A, c2:0xE8D8A0, note:"Sa toile, entre deux branches, brille de rosée"},
   phasme:   {nom:"Phasme", pluriel:"phasmes", zone:"foret", ou:["arbres"], saisons:["ete"], heures:"toujours", rarete:"peuCommun", prix:3, forme:"phasme", couleur:0x8A7A4A, note:"On le prend pour une brindille"},
@@ -554,6 +554,9 @@ for(const [k, p] of Object.entries(INSECTES)){
   const r = RARETES[p.rarete];
   p.usage = `${p.note}. ${r[0].toUpperCase() + r.slice(1)}, ${DANS_ZONE[p.zone] || ""}${p.ou.map(o => OU_INSECTE[o]).join(" ou ")} : ${quandPoisson(p)}.` +
     (p.bocal ? ` ${p.une ? "Elle" : "Il"} se prend au bocal, pas au filet.` : "");
+  /* en réserve (le cloporte, un crustacé, et l'épeire, une araignée : ce ne sont pas des insectes ; Yo, 26 octobre 2026 :
+     « Retire les et garde les pour une future mise à jour ») : il ne naît plus, mais reste au sac et au carnet de qui l'a */
+  if(p.reserve) p.usage = `${p.note}. ${p.une ? "Elle reviendra" : "Il reviendra"} avec ${p.reserve}.`;
   p.emoji = k === "coccinelle" ? "🐞" : EMOJI_INSECTE[p.forme];
   const c = hex(p.couleur), d = p.c2 !== undefined ? hex(p.c2) : null;
   p.icone = DESSIN[p.corne ? "corne" : p.forme](c, p.forme === "coleo" ? d : d || NOIR, p.bocal);

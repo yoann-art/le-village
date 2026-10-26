@@ -1448,7 +1448,12 @@ export async function verifier(){
     essaiRate(co); frames(6);
     if(!(co.envol > .5) || !co.mesh.userData.ailes.every(a => a.pivot.visible)) throw new Error(`la coccinelle ratée ne s'envole pas (${co.etat}, envol ${co.envol})`);
     frames(40);
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole`;
+    /* le cloporte et l'épeire (pas des insectes) sont en réserve : ils ne naissent sur l'île en aucune saison, à aucune heure */
+    for(const mois of [0, 3, 6, 9]) for(const h of [2, 8, 14, 20]){
+      const vu = insectesPresents("ile", new Date(2026, mois, 15, h)).filter(k => INSECTES[k].reserve);
+      if(vu.length) throw new Error(`en réserve, mais sur l'île : ${vu.join(", ")}`);
+    }
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; le cloporte et l'épeire, en réserve, ne naissent plus`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

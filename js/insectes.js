@@ -56,7 +56,7 @@ const VOLE = {papillon: true, libellule: true, bourdon: true};
 export function insectesPresents(zone = "ile", d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d), abri = meteo() !== "beau" && meteo() !== "nuages";
   return Object.keys(INSECTES).filter(k => { const p = INSECTES[k];
-    return (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.lune || lune)
+    return !p.reserve && (p.zone || "ile") === zone && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b) && (!p.lune || lune)
       && !(abri && p.forme === "papillon") && (!p.brouillard || brouillard()); });
 }
 const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`;

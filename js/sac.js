@@ -94,7 +94,7 @@ const COINS = [
   ["Au Marais brumeux", p => p.zone === "marais"]
 ];
 function insectesHTML(){
-  const c = state.carnet.insectes, ks = Object.keys(INSECTES), pris = k => c[k] && c[k].n > 0;
+  const c = state.carnet.insectes, pris = k => c[k] && c[k].n > 0, ks = Object.keys(INSECTES).filter(k => !INSECTES[k].reserve || pris(k));   // en réserve : seulement s'il est déjà pris
   const tuile = k => { const p = INSECTES[k], on = fiche === k ? " on" : "";
     return pris(k)
       ? `<button class="tile${on}" data-carnet="${k}"><div class="te" aria-hidden="true">${icone(k)}</div><div class="tl">${p.nom}</div></button>`
