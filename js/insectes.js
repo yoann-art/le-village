@@ -21,7 +21,7 @@ import { G, part, toon } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, porte } from "./regles.js";
-import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau, fleurie, PERCHOIRS } from "./monde/ile.js";
+import { map, idx, inb, tileOf, centerOf, growth, thymLeft, lieuEau, fleurie, PERCHOIRS, objMesh } from "./monde/ile.js";
 import { occ } from "./monde/batiments.js";
 import { ARBRES } from "./monde/essences.js";
 import { lanternes } from "./monde/ponton.js";
@@ -197,8 +197,21 @@ function changer(ou){
   for(const b of [...betes]) retirer(b);
   ici = ou; sceneIci().add(groupe);
 }
+/* Sur l'écorce même (la cigale, la phalène femelle, dressées contre le tronc) : on cherche le bord du tronc, à sa hauteur,
+   depuis le dehors vers le centre de l'arbre ; elle s'y pose, juste devant */
+const RAYON = new THREE.Raycaster();
+function surEcorce(pl){
+  const tx = tileOf(pl.x), tz = tileOf(pl.z), m = objMesh(idx(tx, tz));
+  if(!m) return pl;
+  const cx = centerOf(tx), cz = centerOf(tz), dx = pl.x - cx, dz = pl.z - cz, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d;
+  m.updateMatrixWorld(true);
+  RAYON.set(new THREE.Vector3(cx + ux * 2, pl.y, cz + uz * 2), new THREE.Vector3(-ux, 0, -uz)); RAYON.far = 2.2;
+  const t = RAYON.intersectObject(m, true)[0];
+  return t ? Object.assign({}, pl, {x: t.point.x + ux * .03, z: t.point.z + uz * .03, cx, cz}) : pl;
+}
 function ajouter(k, pl){
   const mesh = modele(k, pl), mats = [], lueur = INSECTES[k].lueur;
+  if(pl.tronc && mesh.userData.dresse) pl = surEcorce(pl);
   mesh.traverse(m => { if(m.material){ m.material = m.material.clone(); m.material.transparent = true; mats.push({m: m.material, op: m.material.opacity}); m.material.opacity = 0;
     if(lueur && m.material.emissive){ m.material.emissive.setHex(lueur); m.material.emissiveIntensity = .7; } } });   // la phalène de lune luit
   mesh.position.set(pl.x, pl.y, pl.z);
@@ -378,7 +391,7 @@ function vivre(b, dt){
     b.alpha = Math.min(1, b.alpha + dt);
     if(b.age > b.vie) b.etat = "part";
     if(b.mesh.userData.femelle){                       // la phalène femelle, sans ailes, grimpe lentement le long du tronc
-      const cx = centerOf(tileOf(base.x)), cz = centerOf(tileOf(base.z));
+      const cx = base.cx ?? centerOf(tileOf(base.x)), cz = base.cz ?? centerOf(tileOf(base.z));
       b.ang = Math.atan2(cz - b.z, cx - b.x);                           // le ventre contre l'écorce
       b.y = base.y + Math.sin(b.t * .3) * .12 + .12;
     } else if(p.nectar && (b.nec || Math.random() < dt * .08) && nectar(b, dt)){   // le sphinx boit en sur-place devant une fleur
@@ -419,6 +432,9 @@ function vivre(b, dt){
         const a = Math.random() * 6.28, r = .3 + Math.random() * .4;
         b.saut = {t: 0, x0: b.x, z0: b.z, x1: base.x + Math.cos(a) * r, z1: base.z + Math.sin(a) * r}; b.ang = Math.atan2(b.saut.z1 - b.z, b.saut.x1 - b.x);
       }
+    } else if(f === "cigale" && b.mesh.userData.male !== undefined){   // la cigale grise (refaite), tête en haut contre l'écorce
+      const cx = base.cx ?? centerOf(tileOf(base.x)), cz = base.cz ?? centerOf(tileOf(base.z));
+      b.mesh.rotation.y = -Math.atan2(cz - b.z, cx - b.x) - Math.PI/2;   // le ventre contre le tronc
     } else if(f === "mante" || f === "cigale"){       // immobile, à peine un balancement
       b.mesh.rotation.z = Math.sin(b.t * 1.3) * .05;
     } else {                                          // elle marche doucement, près de sa place
@@ -485,6 +501,13 @@ function vivre(b, dt){
     const e = Math.pow(Math.max(0, Math.sin((b.t * 1.05 + lan.phase) * Math.PI * 2)), 3);
     lan.mesh.material.emissiveIntensity = .15 + 1.6 * e;
     lan.halo.scale.setScalar(.16 * e);
+  }
+  /* Le chant de la cigale mâle : son ventre vibre très vite ; elle se tait quand on approche */
+  const cym = b.mesh.userData.cymbale;
+  if(cym){
+    const chante = b.etat === "vit" && Math.hypot(b.x - player.position.x, b.z - player.position.z) > 3.2;
+    cym.scale.set(1, 1, chante ? 1 + Math.abs(Math.sin(b.t * 60)) * .35 : 1);
+    b.chante = chante;
   }
   /* Le chant du grillon mâle : arrêté, il relève ses ailes et les fait vibrer ; il se tait quand on approche (le carnet) */
   const chant = b.mesh.userData.chant;

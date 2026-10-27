@@ -1347,13 +1347,71 @@ export function phaleneModele(opt = {}){
   const G = phaleneGeos(), g = new THREE.Group(), mat = corpsMat();
   if(opt.tronc){                                                                                   // la femelle, sans ailes, dressée contre l'écorce
     const dresse = new THREE.Group(); dresse.rotation.x = Math.PI / 2; dresse.add(new THREE.Mesh(G.femelle, mat)); g.add(dresse);
-    g.userData.femelle = true; g.userData.ailes = [];
+    g.userData.femelle = true; g.userData.dresse = true; g.userData.ailes = [];
     return g;
   }
   g.add(new THREE.Mesh(G.male, mat));
   g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
     pivot.add(new THREE.Mesh(G.ailes[k][0], toon({map: G.av, side: THREE.DoubleSide, transparent: true})), new THREE.Mesh(G.ailes[k][1], toon({map: G.ar, side: THREE.DoubleSide, transparent: true})));
     pivot.position.set(cote * .016, .012, -.01); g.add(pivot); return {pivot, cote}; });
+  return g;
+}
+
+/* ---------- La cigale grise ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici la cigale. »), comme la vraie cigale grise de Provence (Yo : « La cigale
+   grise (gris-brun comme l'écorce) », « Posée sur un tronc, tête en haut, et le mâle qui chante en faisant vibrer son
+   ventre, oui », « Mâle et femelle au hasard ») : gris-brun tacheté comme l'écorce ; la tête large aux grands yeux
+   écartés et aux trois ocelles du front, des antennes courtes ; le gros thorax ; les ailes transparentes aux nervures
+   dorées, tachées de sombre, en toit sur le dos et plus longues que le corps ; six pattes. Posée sur un tronc, tête en
+   haut, dressée contre l'écorce (comme la phalène femelle). Le mâle porte les plaques claires du chant sous le ventre et
+   chante en le faisant vibrer (userData.cymbale) ; la femelle, un petit sabre de ponte (au hasard). */
+const CIG_AV = lisse([[0, 0], [.03, .01], [.062, .08], [.07, .17], [.056, .232], [.03, .252], [.008, .2], [-.006, .08]]);
+const CIG_AR = lisse([[0, .02], [.028, .04], [.05, .1], [.042, .14], [.016, .13], [0, .08]]);
+const BCG = [-.01, -.01, .09, .27];
+function cigaleAile(c, contour, avant){
+  trace(c, contour); c.fillStyle = "rgba(226,222,206,.22)"; c.fill();
+  c.save(); trace(c, contour); c.clip(); c.lineCap = "round";
+  c.strokeStyle = "rgba(170,130,60,.85)"; c.lineWidth = .0022;                                    // les nervures dorées
+  for(const t of [.2, .45, .7, .9]){ c.beginPath(); c.moveTo(.0, .02); c.quadraticCurveTo(.02 + .03 * t, .1, .015 + .03 * t, .25); c.stroke(); }
+  for(let z = .12; z < .26; z += .022){ c.beginPath(); c.moveTo(0, z); c.lineTo(.06, z + .008); c.stroke(); }   // les cellules du bout
+  if(avant){ c.fillStyle = "rgba(50,40,32,.7)"; for(const [x, z] of [[.03, .12], [.038, .17], [.024, .2]]){ c.beginPath(); c.arc(x, z, .004, 0, Math.PI * 2); c.fill(); } }   // les taches sombres
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "rgba(150,110,50,.9)"; c.lineWidth = .003; c.stroke(); c.restore();
+}
+let CIGALE = null;
+function cigaleGeos(){
+  if(CIGALE) return CIGALE;
+  const M = [], gris = 0x7A7266, pale = 0xA89E8C, fonce = 0x3E3832;
+  const tache = (x, y, z) => { const n = Math.sin(x * 210) * Math.sin(y * 170) * Math.sin(z * 190); return n > .25 ? fonce : n < -.45 ? pale : gris; };
+  boule(M, gris, 0, .012, -.006, .032, .028, .03, ROND); Object.assign(M[M.length - 1], {couleur: tache});   // le gros thorax
+  M.push({geo: ABDO, m: new THREE.Matrix4().compose(V(0, .006, .038), q0, V(.026, .022, .036)), c: gris, couleur: tache});   // l'abdomen
+  boule(M, gris, 0, .012, -.04, .034, .016, .014, ROND); Object.assign(M[M.length - 1], {couleur: tache});   // la tête large
+  for(const s of [-1, 1]){
+    boule(M, 0x2A2420, s * .032, .016, -.044, .009, .011, .01);                                    // un grand oeil, écarté
+    boule(M, 0xFFFFFF, s * .035, .022, -.05, .0024, .0028, .0024, BOULE_P);
+    baton(M, fonce, V(s * .012, .014, -.054), V(s * .022, .02, -.068), .0012);                     // l'antenne courte
+    for(const [h, g, p] of [[V(s * .012, -.008, -.026), V(s * .03, -.012, -.04), V(s * .036, -.026, -.05)],
+                            [V(s * .014, -.008, -.01), V(s * .036, -.014, -.008), V(s * .042, -.026, .002)],
+                            [V(s * .014, -.008, .006), V(s * .034, -.014, .02), V(s * .04, -.026, .034)]]){ pilule(M, 0x5A5046, h, g, .0026); pilule(M, 0x5A5046, g, p, .0021); }
+  }
+  for(const [x, z] of [[0, -.05], [-.006, -.046], [.006, -.046]]) boule(M, 0xB84A2A, x, .026, z, .0022, .0022, .0022, BOULE_P);   // les trois ocelles
+  const C = []; for(const s of [-1, 1]) ovale(C, 0xD8CCB0, V(s * .009, -.012, .022), V(0, 0, 1), .014, .009, .003);   // les plaques claires du chant (le mâle)
+  const S = []; baton(S, fonce, V(0, .0, .07), V(0, -.002, .088), .0018);                           // le sabre de ponte (la femelle)
+  return CIGALE = {corps: fusionner(M), cymbale: fusionner(C), sabre: fusionner(S), av: peinture(BCG, c => cigaleAile(c, CIG_AV, true)), ar: peinture(BCG, c => cigaleAile(c, CIG_AR, false)),
+    ailes: [1, -1].map(cote => [aileGeo(CIG_AV, cote, BCG, 3), aileGeo(CIG_AR, cote, BCG, 3)])};
+}
+export function cigaleModele(){
+  const G = cigaleGeos(), g = new THREE.Group(), dresse = new THREE.Group(), mat = corpsMat(), male = Math.random() < .5;
+  dresse.rotation.x = Math.PI / 2; g.add(dresse);                                                // tête en haut, le ventre contre l'écorce
+  dresse.add(new THREE.Mesh(G.corps, mat));
+  if(male){ const c = new THREE.Mesh(G.cymbale, mat); dresse.add(c); g.userData.cymbale = c; } else dresse.add(new THREE.Mesh(G.sabre, mat));
+  for(const [cote, k] of [[1, 0], [-1, 1]]){                                                     // les ailes en toit, plus longues que le corps
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k][0], toon({map: G.av, side: THREE.DoubleSide, transparent: true})), new THREE.Mesh(G.ailes[k][1], toon({map: G.ar, side: THREE.DoubleSide, transparent: true})));
+    pivot.position.set(cote * .01, .032, -.012); pivot.rotation.z = -cote * .42; pivot.scale.z = .66; dresse.add(pivot);   // un peu plus longues que le corps
+  }
+  g.userData.male = male; g.userData.dresse = true;
+  g.userData.ailes = [];
   return g;
 }
 
@@ -1368,4 +1426,5 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
   paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
   vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4},
-  sphinx: {fabrique: sphinxModele, echelle: 1.5}, phalene: {fabrique: phaleneModele, echelle: 1.45}};
+  sphinx: {fabrique: sphinxModele, echelle: 1.5}, phalene: {fabrique: phaleneModele, echelle: 1.45},
+  cigale: {fabrique: cigaleModele, echelle: 1.55}};
