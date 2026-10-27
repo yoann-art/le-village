@@ -1590,12 +1590,20 @@ export async function verifier(){
     cigB.x = player.position.x + 1; cigB.z = player.position.z; frames(2);
     if(cigB.chante) throw new Error("la cigale mâle ne se tait pas quand on approche");
     cigB.etat = "part"; frames(30);
+    /* la mante religieuse : vertes et brunes, mâles et femelles au hasard ; elle tourne la tête vers nous ; menacée, ouvre ses pattes */
+    const manM = Array.from({length: 30}, () => MODELES_INSECTES.mante.fabrique().userData), manB = manM.filter(u => u.brune).length, manH = manM.filter(u => u.male).length;
+    if(!manB || manB === 30 || !manH || manH === 30) throw new Error(`les mantes ne sont pas variées (${manB} brunes, ${manH} mâles sur 30)`);
+    const manT = lacherInsecte("mante", player.position.x + 1.5, player.position.z, .15); manT.ang = Math.PI / 2; frames(30);
+    if(Math.abs(manT.mesh.userData.tete.rotation.y) < .3) throw new Error("la mante ne tourne pas la tête vers nous");
+    essaiFuite(manT); frames(8);
+    if(manT.mesh.userData.menaceMante.rav.rotation.x > -.6) throw new Error(`la mante menacée n'ouvre pas ses pattes (${manT.etat})`);
+    frames(40);
     /* le cloporte et l'épeire (pas des insectes) sont en réserve : ils ne naissent sur l'île en aucune saison, à aucune heure */
     for(const mois of [0, 3, 6, 9]) for(const h of [2, 8, 14, 20]){
       const vu = insectesPresents("ile", new Date(2026, mois, 15, h)).filter(k => INSECTES[k].reserve);
       if(vu.length) throw new Error(`en réserve, mais sur l'île : ${vu.join(", ")}`);
     }
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; la punaise brunit l'hiver et sent quand on la dérange ; la luciole vole, sa lanterne clignote ; le paon-du-jour posé ferme ses ailes, surpris montre ses yeux ; le machaon posé fait frémir ses ailes ; le vulcain posé ferme ses ailes ; le citron (${cm} mâles sur 24) posé ne les ouvre jamais ; le sphinx boit en sur-place, la trompe déroulée ; la phalène femelle, sans ailes, ne vole pas ; la cigale (${cigM} mâles sur 24) chante et se tait ; le cloporte et l'épeire, en réserve, ne naissent plus`;
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; la punaise brunit l'hiver et sent quand on la dérange ; la luciole vole, sa lanterne clignote ; le paon-du-jour posé ferme ses ailes, surpris montre ses yeux ; le machaon posé fait frémir ses ailes ; le vulcain posé ferme ses ailes ; le citron (${cm} mâles sur 24) posé ne les ouvre jamais ; le sphinx boit en sur-place, la trompe déroulée ; la phalène femelle, sans ailes, ne vole pas ; la cigale (${cigM} mâles sur 24) chante et se tait ; la mante tourne la tête et menace ; le cloporte et l'épeire, en réserve, ne naissent plus`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

@@ -1415,6 +1415,70 @@ export function cigaleModele(){
   return g;
 }
 
+/* ---------- La mante religieuse ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici la mante religieuse »), comme une vraie (Yo : « La tache noire sur les
+   pattes de devant, comme une vraie, oui », « Vertes et Brunes, mâles et femelles au hasard, oui », « Qu'elle tourne la
+   tête vers toi, et la menace ailes dressées, oui ») : la tête en triangle aux grands yeux sur les côtés, les trois
+   ocelles, des antennes fines ; le long cou (le prothorax), dressé ; les pattes de devant ravisseuses, repliées, à épines,
+   la tache noire cerclée de blanc à l'intérieur ; quatre pattes fines pour marcher ; les ailes à plat sur le dos. Verte
+   ou brune ; la femelle grosse, aux ailes courtes sur un large ventre ; le mâle fin, aux ailes plus longues que le ventre
+   (au hasard). La tête pivote (userData.tete) ; menacée, elle ouvre ses pattes et dresse ses ailes (userData.menaceMante). */
+let MANTE = {};
+function manteGeos(brune, male){
+  const cle = (brune ? "b" : "v") + (male ? "m" : "f");
+  if(MANTE[cle]) return MANTE[cle];
+  const c = brune ? {corps: 0xA8885A, clair: 0xC8AC7C, fonce: 0x7A5E3A, patte: 0x9A7C50, pied: 0x6A4E30}
+                  : {corps: 0x8CC452, clair: 0xB4D87A, fonce: 0x5E9432, patte: 0x80B84A, pied: 0x8A6A38};
+  const M = [], T = [], A = [];
+  const dessous = (x, y, z) => .8 + .2 * Math.min(1, Math.max(0, (y - .04) / .06));
+  /* le long cou dressé, le thorax, le ventre (large chez la femelle, fin chez le mâle) */
+  pilule(M, c.corps, V(0, .1, -.05), V(0, .062, .0), .009);
+  M.push({geo: ABDO, m: new THREE.Matrix4().compose(V(0, .055, male ? .052 : .056), new THREE.Quaternion().setFromEuler(new THREE.Euler(.12, 0, 0)), V(male ? .014 : .021, male ? .013 : .019, male ? .058 : .062)),
+    c: c.corps, couleur: (x, y, z) => y < .05 ? c.clair : c.corps, ombre: dessous});
+  /* les pattes de marche : quatre, fines */
+  for(const s of [-1, 1]) for(const [h, g, p] of [[V(s * .008, .058, .004), V(s * .045, .08, -.01), V(s * .062, .004, -.03)],
+                                                [V(s * .008, .056, .016), V(s * .05, .078, .04), V(s * .07, .004, .066)]]){ pilule(M, c.patte, h, g, .0028); pilule(M, c.patte, g, p, .0022);
+    ovale(M, c.pied, p, p.clone().sub(g).setY(0), .006, .003, .002); }
+  /* la tête en triangle, sur son pivot (au bout du cou) */
+  const H = [];
+  boule(H, c.corps, 0, 0, -.006, .016, .014, .01, ROND);
+  ovale(H, c.clair, V(0, -.012, -.012), V(0, -1, -.2), .009, .007, .005, {geo: ROND});              // le bas de la tête, en pointe
+  for(const s of [-1, 1]){
+    boule(H, brune ? 0x4A3A28 : 0x4A5A2A, s * .016, .002, -.006, .009, .011, .009);                   // un grand oeil sur le côté
+    boule(H, 0xFFFFFF, s * .019, .007, -.012, .0022, .0026, .0022, BOULE_P);
+    let a = V(s * .004, .01, -.012);                                                                     // l'antenne fine
+    for(let k = 1; k <= 6; k++){ const t = k / 6, b = V(s * (.004 + .03 * t), .01 + .05 * t, -.012 - .04 * t + .02 * t * t); baton(H, c.fonce, a, b, .0009); a = b; }
+  }
+  for(const [x, y] of [[0, .012], [-.004, .009], [.004, .009]]) boule(H, c.fonce, x, y, -.011, .0016, .0016, .0016, BOULE_P);   // les ocelles
+  /* les pattes ravisseuses, sur leur pivot (à l'épaule) : cuisse épineuse, la tache noire cerclée de blanc, la jambe repliée */
+  for(const s of [-1, 1]){
+    const ep = V(s * .006, 0, 0), ge = V(s * .009, -.026, -.03), bout = V(s * .007, .004, -.014);   // repliées, comme en prière
+    pilule(A, c.corps, ep, ge, .0058);
+    boule(A, 0xF4F0E6, s * .0035, -.011, -.014, .0046, .0046, .003, BOULE_P);                            // la tache noire, cerclée de blanc, côté intérieur
+    boule(A, 0x141210, s * .0025, -.011, -.014, .0032, .0032, .002, BOULE_P);
+    pilule(A, c.clair, ge, bout, .0036);
+    for(let k = 1; k <= 4; k++){ const m = ep.clone().lerp(ge, k / 5); baton(A, 0xC8A050, m, m.clone().add(V(0, .002, .006)), .0009); }    // les épines, vers l'arrière
+    baton(A, c.fonce, bout, bout.clone().add(V(0, -.004, .006)), .0012);                               // le crochet du bout
+  }
+  /* les ailes à plat sur le dos : courtes chez la femelle, plus longues que le ventre chez le mâle */
+  const L = male ? .13 : .085;
+  const ailes = [1, -1].map(s => { const Q = []; ovale(Q, brune ? 0xB89A68 : 0x9ACC62, V(s * .006, 0, L / 2), V(0, 0, 1), L / 2, .011, .0018,
+    {geo: ROND, couleur: (x, y, z) => Math.abs(x) < .003 ? c.fonce : brune ? 0xB89A68 : 0x9ACC62}); return fusionner(Q); });
+  return MANTE[cle] = {corps: fusionner(M), tete: fusionner(H), ravisseuses: fusionner(A), ailes};
+}
+export function manteModele(){
+  const brune = Math.random() < .35, male = Math.random() < .5, G = manteGeos(brune, male), g = new THREE.Group(), mat = corpsMat();
+  g.add(new THREE.Mesh(G.corps, mat));
+  const tete = new THREE.Group(); tete.position.set(0, .11, -.058); tete.add(new THREE.Mesh(G.tete, mat)); g.add(tete);
+  const rav = new THREE.Group(); rav.position.set(0, .09, -.04); rav.add(new THREE.Mesh(G.ravisseuses, mat)); g.add(rav);
+  const ailes = G.ailes.map((geo, k) => { const pivot = new THREE.Group(); pivot.position.set(0, .071, .008); pivot.add(new THREE.Mesh(geo, mat)); g.add(pivot); return {pivot, cote: k ? -1 : 1}; });
+  g.userData.tete = tete;
+  g.userData.menaceMante = {rav, ailes};
+  g.userData.male = male; g.userData.brune = brune;
+  g.userData.ailes = [];
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1427,4 +1491,4 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
   vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4},
   sphinx: {fabrique: sphinxModele, echelle: 1.5}, phalene: {fabrique: phaleneModele, echelle: 1.45},
-  cigale: {fabrique: cigaleModele, echelle: 1.55}};
+  cigale: {fabrique: cigaleModele, echelle: 1.55}, mante: {fabrique: manteModele, echelle: 1.75}};

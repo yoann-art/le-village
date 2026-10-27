@@ -370,7 +370,8 @@ function vivre(b, dt){
   if(cpt){ if(b.etat === "vole" || b.etat === "fuit"){ b.cpt = (b.cpt || 0) + dt; b.compte = b.cpt < 1; } else b.cpt = 0; }
   const p = INSECTES[b.k], f = p.forme, base = b.base;
   if(b.etat === "fuit"){
-    if(!b.compte) b.alpha -= dt / .6;
+    if(b.mesh.userData.tete && b.age - (b.fuite0 ?? (b.fuite0 = b.age)) < .8){}   // la mante menace un instant, puis s'en va
+    else if(!b.compte) b.alpha -= dt / .6;
     if(b.compte){}
     else if(b.mesh.userData.femelle){ b.y = Math.max(.03, b.y - 1.5 * dt); }   // la phalène femelle se laisse tomber
     else if(VOLE[f] || f === "sauteur" || b.mesh.userData.elytres){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }   // la coccinelle s'envole aussi
@@ -435,6 +436,8 @@ function vivre(b, dt){
     } else if(f === "cigale" && b.mesh.userData.male !== undefined){   // la cigale grise (refaite), tête en haut contre l'écorce
       const cx = base.cx ?? centerOf(tileOf(base.x)), cz = base.cz ?? centerOf(tileOf(base.z));
       b.mesh.rotation.y = -Math.atan2(cz - b.z, cx - b.x) - Math.PI/2;   // le ventre contre le tronc
+    } else if(b.mesh.userData.tete){                   // la mante religieuse : immobile, elle se balance comme une herbe au vent
+      b.mesh.rotation.y = -b.ang - Math.PI/2; b.mesh.rotation.z = Math.sin(b.t * 1.3) * .06;
     } else if(f === "mante" || f === "cigale"){       // immobile, à peine un balancement
       b.mesh.rotation.z = Math.sin(b.t * 1.3) * .05;
     } else {                                          // elle marche doucement, près de sa place
@@ -508,6 +511,18 @@ function vivre(b, dt){
     const chante = b.etat === "vit" && Math.hypot(b.x - player.position.x, b.z - player.position.z) > 3.2;
     cym.scale.set(1, 1, chante ? 1 + Math.abs(Math.sin(b.t * 60)) * .35 : 1);
     b.chante = chante;
+  }
+  /* La mante tourne la tête vers le joueur quand il passe près d'elle ; menacée, elle ouvre ses pattes et dresse ses ailes */
+  const tete = b.mesh.userData.tete;
+  if(tete){
+    const dx = player.position.x - b.x, dz = player.position.z - b.z, d = Math.hypot(dx, dz);
+    let vise = 0;
+    if(d < 3 && b.etat === "vit"){ const a = -Math.atan2(dz, dx) - Math.PI/2 - b.mesh.rotation.y; vise = Math.max(-1.1, Math.min(1.1, Math.atan2(Math.sin(a), Math.cos(a)))); }
+    tete.rotation.y += (vise - tete.rotation.y) * Math.min(1, dt * 4);
+    const mm = b.mesh.userData.menaceMante, menace = b.etat === "fuit" || b.etat === "vole" && b.vol && b.vol.t < .9;
+    b.mm = (b.mm || 0) + ((menace ? 1 : 0) - (b.mm || 0)) * Math.min(1, dt * 7);
+    mm.rav.rotation.x = -1.1 * b.mm;                                   // les pattes ravisseuses s'ouvrent
+    for(const a of mm.ailes) a.pivot.rotation.set(-.9 * b.mm, 0, a.cote * .5 * b.mm);   // les ailes dressées, écartées
   }
   /* Le chant du grillon mâle : arrêté, il relève ses ailes et les fait vibrer ; il se tait quand on approche (le carnet) */
   const chant = b.mesh.userData.chant;
