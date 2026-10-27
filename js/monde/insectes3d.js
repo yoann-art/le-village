@@ -1283,6 +1283,80 @@ export function sphinxModele(){
   return g;
 }
 
+/* ---------- La phalène d'hiver ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici la phalène »), comme une vraie (Yo : « Oui comme une vraie », « La femelle
+   sans ailes qui grimpe sur les troncs, oui ») : le mâle, petit et frêle, des ailes fines gris-beige un peu transparentes,
+   aux fines lignes ondulées brun-gris et au petit point sombre, le bord lisse à frange fine ; le corps mince, des antennes
+   en plumes, une trompe minuscule ; il vole lentement, en flottant, autour des lumières. La femelle n'a que de tout petits
+   moignons d'ailes et des antennes en fil : elle ne vole pas, elle grimpe le long des troncs (fabrique({tronc}) : posée
+   sur un tronc, c'est une femelle ; userData.femelle, le corps dressé contre l'écorce). */
+const PHA_AV = lisse([[0, -.004], [.05, -.06], [.12, -.14], [.18, -.18], [.214, -.16], [.21, -.1], [.17, -.04], [.09, .01], [.03, .02]]);
+const PHA_AR = lisse([[0, .004], [.07, -.005], [.14, .02], [.165, .07], [.13, .11], [.07, .11], [.02, .06]]);
+const BHAV = [-.01, -.2, .24, .23], BHAR = [-.01, -.01, .19, .13];
+function phaleneAile(c, contour, avant){
+  trace(c, contour); c.fillStyle = "rgba(168,160,146,.62)"; c.fill();                              // gris-beige, un peu transparente
+  c.save(); trace(c, contour); c.clip(); c.lineCap = "round"; c.lineJoin = "round";
+  c.strokeStyle = "rgba(96,84,70,.6)"; c.lineWidth = .0028;                                       // les fines lignes ondulées
+  for(const r of avant ? [.07, .13, .18] : [.07, .12]){ c.beginPath();
+    for(let k = 0; k <= 14; k++){ const a = -1.45 + k / 14 * (avant ? 1.6 : 2.4), rr = r + Math.sin(k * 1.7) * .006;
+      const x = Math.cos(a) * rr, z = Math.sin(a) * rr; k ? c.lineTo(x, z) : c.moveTo(x, z); } c.stroke(); }
+  c.fillStyle = "rgba(70,58,48,.85)"; c.beginPath(); c.arc(avant ? .1 : .075, avant ? -.08 : .045, .006, 0, Math.PI * 2); c.fill();   // le petit point sombre
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "rgba(200,192,176,.75)"; c.lineWidth = .004; c.stroke(); c.restore();   // la frange fine
+}
+let PHALENE = null;
+function phaleneGeos(){
+  if(PHALENE) return PHALENE;
+  const beige = 0xB8AE9C, gris = 0x8A8274, M = [], F = [];
+  /* le mâle, mince */
+  boule(M, beige, 0, 0, 0, .022, .02, .03, ROND);
+  for(let k = 0; k < 10; k++){ const a = k * 2.39996, h = (k / 10) * 2 - 1, r = Math.sqrt(1 - h * h);
+    boule(M, k % 2 ? 0xC8BEAC : gris, Math.cos(a) * r * .02, h * .018 + .003, Math.sin(a) * r * .026, .007, .006, .007, POIL); }
+  for(let k = 0; k < 6; k++) boule(M, k % 2 ? beige : 0xA49A88, 0, -.004 - k * .0012, .03 + k * .014, .014 - k * .0016, .013 - k * .0016, .009, BOULE);
+  boule(M, beige, 0, .002, -.036, .016, .015, .015, ROND);
+  pilule(M, 0x8A6A4A, V(0, -.01, -.046), V(0, -.016, -.05), .0016);                              // la trompe, minuscule
+  for(const s of [-1, 1]){
+    boule(M, 0x1E1612, s * .012, .005, -.04, .008, .01, .009);
+    boule(M, 0xFFFFFF, s * .016, .01, -.046, .0022, .0026, .0022, BOULE_P);
+    const p0 = V(s * .006, .014, -.046), p1 = V(s * .04, .06, -.1);                                // l'antenne en plume
+    baton(M, 0x6A5A48, p0, p1, .0014);
+    for(let k = 1; k < 9; k++){ const m = p0.clone().lerp(p1, k / 9), l = .012 * (1 - k / 11);
+      for(const c of [-1, 1]) baton(M, 0x8A7A64, m, m.clone().add(V(c * l * .5, l * .5, l * .55)), .0007); }
+    for(const [h, g, p] of [[V(s * .01, -.016, -.022), V(s * .024, -.03, -.03), V(s * .03, -.05, -.036)],
+                            [V(s * .011, -.016, -.01), V(s * .028, -.032, -.008), V(s * .034, -.05, -.002)],
+                            [V(s * .011, -.016, .002), V(s * .028, -.032, .012), V(s * .032, -.05, .022)]]){ pilule(M, 0x8A7A64, h, g, .0022); pilule(M, 0x8A7A64, g, p, .0018); }
+  }
+  /* la femelle : un corps plus dodu, gris tacheté, de tout petits moignons d'ailes, des antennes en fil ; posée à plat */
+  const P = (x, y, z) => V(x, y + .03, z);
+  boule(F, gris, 0, .03, -.012, .02, .018, .024, ROND);
+  for(let k = 0; k < 7; k++) boule(F, k % 2 ? 0x9A9282 : 0x7A7264, 0, .028 - k * .001, .014 + k * .012, .019 - k * .0015, .017 - k * .0015, .009, BOULE);
+  boule(F, gris, 0, .032, -.04, .014, .013, .013, ROND);
+  for(const s of [-1, 1]){
+    boule(F, 0x1E1612, s * .01, .036, -.044, .006, .008, .007);
+    boule(F, 0xFFFFFF, s * .013, .04, -.049, .0018, .002, .0018, BOULE_P);
+    baton(F, 0x5A5044, P(s * .005, .012, -.05), P(s * .026, .03, -.09), .0012);                       // l'antenne en fil
+    ovale(F, 0xA89E8C, P(s * .016, .012, -.006), V(s, .4, .6), .01, .004, .002);                      // le moignon d'aile
+    for(const [h, g, p] of [[P(s * .01, -.008, -.03), P(s * .024, -.012, -.04), P(s * .032, -.03, -.05)],
+                            [P(s * .012, -.008, -.012), P(s * .03, -.014, -.01), P(s * .038, -.03, -.006)],
+                            [P(s * .012, -.008, .004), P(s * .028, -.014, .016), P(s * .034, -.03, .03)]]){ pilule(F, 0x6A6054, h, g, .0024); pilule(F, 0x6A6054, g, p, .002); }
+  }
+  return PHALENE = {male: fusionner(M), femelle: fusionner(F), av: peinture(BHAV, c => phaleneAile(c, PHA_AV, true)), ar: peinture(BHAR, c => phaleneAile(c, PHA_AR, false)),
+    ailes: [1, -1].map(cote => { const av = aileGeo(PHA_AV, cote, BHAV, 3), ar = aileGeo(PHA_AR, cote, BHAR, 3); ar.translate(0, -.003, 0); return [av, ar]; })};
+}
+export function phaleneModele(opt = {}){
+  const G = phaleneGeos(), g = new THREE.Group(), mat = corpsMat();
+  if(opt.tronc){                                                                                   // la femelle, sans ailes, dressée contre l'écorce
+    const dresse = new THREE.Group(); dresse.rotation.x = Math.PI / 2; dresse.add(new THREE.Mesh(G.femelle, mat)); g.add(dresse);
+    g.userData.femelle = true; g.userData.ailes = [];
+    return g;
+  }
+  g.add(new THREE.Mesh(G.male, mat));
+  g.userData.ailes = [1, -1].map((cote, k) => { const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k][0], toon({map: G.av, side: THREE.DoubleSide, transparent: true})), new THREE.Mesh(G.ailes[k][1], toon({map: G.ar, side: THREE.DoubleSide, transparent: true})));
+    pivot.position.set(cote * .016, .012, -.01); g.add(pivot); return {pivot, cote}; });
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1294,4 +1368,4 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
   paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
   vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4},
-  sphinx: {fabrique: sphinxModele, echelle: 1.5}};
+  sphinx: {fabrique: sphinxModele, echelle: 1.5}, phalene: {fabrique: phaleneModele, echelle: 1.45}};

@@ -66,9 +66,9 @@ const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} 
 
 /* ----- Les modèles, en formes simples, à la taille d'un jouet ----- */
 const mat = (c, o) => toon(Object.assign({color: c}, o || {}));
-function modele(k){
-  const fait = MODELES_INSECTES[k];                    // refait d'après l'image de Yo (insectes3d.js)
-  if(fait){ const g = fait.fabrique({saison: saisonDe(new Date())}); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return g; }   // la saison : la punaise brunit
+function modele(k, pl){
+  const fait = MODELES_INSECTES[k];                    // refait d'après l'image de Yo (insectes3d.js) ; la saison (la punaise brunit), un tronc (la phalène femelle)
+  if(fait){ const g = fait.fabrique({saison: saisonDe(new Date()), tronc: !!(pl && pl.tronc)}); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return g; }   // la saison : la punaise brunit
   const p = INSECTES[k], g = new THREE.Group(), c = p.couleur, d = p.c2 !== undefined ? p.c2 : 0x2A2A2A, ailes = [];
   /* une aile, sur un pivot qui la fait battre ; tache : une tache de couleur au milieu (les papillons) */
   const aile = (w, h, x, z, col, op, tache) => { const pivot = new THREE.Group();
@@ -198,7 +198,7 @@ function changer(ou){
   ici = ou; sceneIci().add(groupe);
 }
 function ajouter(k, pl){
-  const mesh = modele(k), mats = [], lueur = INSECTES[k].lueur;
+  const mesh = modele(k, pl), mats = [], lueur = INSECTES[k].lueur;
   mesh.traverse(m => { if(m.material){ m.material = m.material.clone(); m.material.transparent = true; mats.push({m: m.material, op: m.material.opacity}); m.material.opacity = 0;
     if(lueur && m.material.emissive){ m.material.emissive.setHex(lueur); m.material.emissiveIntensity = .7; } } });   // la phalène de lune luit
   mesh.position.set(pl.x, pl.y, pl.z);
@@ -230,7 +230,7 @@ function pondre(){
 }
 let tinte = -1e9;
 /* Pour la vérification automatique : une bête à un endroit précis */
-export function lacherInsecte(k, x, z, y = .3){ const b = ajouter(k, {x, y, z}); b.alpha = 1; b.pause = 99; b.essai = true; return b; }   // elle attend, sans esquiver
+export function lacherInsecte(k, x, z, y = .3, tronc){ const b = ajouter(k, tronc ? {x, y, z, tronc} : {x, y, z}); b.alpha = 1; b.pause = 99; b.essai = true; return b; }   // elle attend, sans esquiver
 /* Pour la vérification automatique : un coup de filet raté sur cette bête */
 export const essaiRate = b => rater(b);
 /* … et une bête surprise parce qu'on arrive trop vite */
@@ -359,6 +359,7 @@ function vivre(b, dt){
   if(b.etat === "fuit"){
     if(!b.compte) b.alpha -= dt / .6;
     if(b.compte){}
+    else if(b.mesh.userData.femelle){ b.y = Math.max(.03, b.y - 1.5 * dt); }   // la phalène femelle se laisse tomber
     else if(VOLE[f] || f === "sauteur" || b.mesh.userData.elytres){ b.x += Math.cos(b.ang) * 3 * dt; b.z += Math.sin(b.ang) * 3 * dt; b.y += 1.4 * dt; }   // la coccinelle s'envole aussi
     else if(b.mesh.userData.menace && b.age - (b.fuite0 ?? (b.fuite0 = b.age)) > .35){ b.x += Math.cos(b.ang) * .9 * dt; b.z += Math.sin(b.ang) * .9 * dt; }   // le perce-oreille menace, puis file au sol
     if(b.alpha <= 0){ retirer(b); return; }
@@ -376,10 +377,15 @@ function vivre(b, dt){
   } else {
     b.alpha = Math.min(1, b.alpha + dt);
     if(b.age > b.vie) b.etat = "part";
-    if(p.nectar && (b.nec || Math.random() < dt * .08) && nectar(b, dt)){   // le sphinx boit en sur-place devant une fleur
+    if(b.mesh.userData.femelle){                       // la phalène femelle, sans ailes, grimpe lentement le long du tronc
+      const cx = centerOf(tileOf(base.x)), cz = centerOf(tileOf(base.z));
+      b.ang = Math.atan2(cz - b.z, cx - b.x);                           // le ventre contre l'écorce
+      b.y = base.y + Math.sin(b.t * .3) * .12 + .12;
+    } else if(p.nectar && (b.nec || Math.random() < dt * .08) && nectar(b, dt)){   // le sphinx boit en sur-place devant une fleur
     } else if(p.ou[0] === "lanternes" && base.y > .5){       // les papillons de nuit tournent autour de la lumière
-      b.x = base.x + Math.cos(b.t * 2.2) * .35; b.z = base.z + Math.sin(b.t * 2.2) * .35; b.y = base.y + Math.sin(b.t * 3.1) * .12;
-      b.ang = b.t * 2.2 + Math.PI/2;
+      const w = p.flotte ? 1.1 : 2.2;                                    // la phalène d'hiver, d'un vol lent et flottant
+      b.x = base.x + Math.cos(b.t * w) * .35; b.z = base.z + Math.sin(b.t * w) * .35; b.y = base.y + Math.sin(b.t * w * 1.4) * (p.flotte ? .2 : .12);
+      b.ang = b.t * w + Math.PI/2;
     } else if(f === "papillon" && !p.butine){       // il volette autour de sa fleur (le paon-du-jour, lui, se pose : plus bas)
       const nx = base.x + Math.sin(b.t * .8) * .6 + Math.sin(b.t * 2.1) * .15, nz = base.z + Math.cos(b.t * .6) * .6;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + .35 + Math.sin(b.t * 2.4) * .15;
@@ -427,7 +433,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = p.nectar ? 40 : VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = p.nectar ? 40 : p.flotte && !b.mesh.userData.femelle ? 7 : VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite + (a.phase || 0)) * .7 : b.posee && b.mesh.userData.ailes.length > 2 ? 0 : .1);   // la libellule : en décalé ; posée, à plat
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
@@ -552,12 +558,13 @@ function finirCoup(){
 function rater(b){
   const p = INSECTES[b.k], e = p.une ? "e" : "";
   b.mefiance++;
-  const pourDeBon = () => { fuir(b); toast(`💨 Raté ! ${leNom(b.k, true)} s'est envolé${e} pour de bon`, 3000); };
+  const pourDeBon = () => { fuir(b); toast(b.mesh.userData.femelle ? `💨 Raté ! ${leNom(b.k, true)} s'est laissée tomber dans l'herbe` : `💨 Raté ! ${leNom(b.k, true)} s'est envolé${e} pour de bon`, 3000); };
   if(p.rarete === "rare" || b.mefiance >= 3 || !seReposer(b)) return pourDeBon();
   toast(`💨 Raté ! ${leNom(b.k, true)} s'est posé${e} un peu plus loin, plus méfiant${e}`, 3000);
 }
 /* Elle va se poser un peu plus loin : une place de sa sorte, à COUP.loin du personnage (rend faux s'il n'y en a pas) */
 function seReposer(b){
+  if(b.mesh.userData.femelle) return false;                             // la phalène femelle ne vole pas
   const P = player.position, [a, z] = COUP.loin;
   const pl = INSECTES[b.k].ou.flatMap(o => places(o)).filter(q => { const d = Math.hypot(q.x - P.x, q.z - P.z);
     return d > a && d < z && !betes.some(o => o !== b && Math.hypot(o.base.x - q.x, o.base.z - q.z) < .8); });
@@ -573,7 +580,7 @@ function attraper(b, k){
   const nouveau = !e.n; e.n++;
   save();
   retirer(b);
-  montre = {mesh: modele(b.k), t: 0}; montre.mesh.scale.multiplyScalar(1.8); sceneIci().add(montre.mesh);
+  montre = {mesh: modele(b.k, b.base), t: 0}; montre.mesh.scale.multiplyScalar(1.8); sceneIci().add(montre.mesh);
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(b.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
   user(k);                                            // une prise use le filet ou le bocal (usure.js)
 }
