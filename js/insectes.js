@@ -238,6 +238,8 @@ export const essaiFuite = b => fuir(b, true);
 let conseil = -1e9;
 function fuir(b, vite, oiseau){
   if(b.etat !== "vit") return;
+  /* le paon-du-jour posé, surpris : il ouvre d'un coup ses ailes et montre ses yeux, puis s'envole (Yo, 27 octobre 2026) */
+  if(vite && b.posee && b.mesh.userData.yeux && !b.flashFait){ if(!b.flash) b.flash = .7; return; }
   /* un oiseau approche (Yo, 26 octobre 2026 : « Dès qu'un oiseau s'approche d'un insecte, il faudrait que l'insecte s'enfuit ») :
      une commune ou peu commune va se poser plus loin, sans devenir plus méfiante envers le joueur ; la rare s'en va */
   if(oiseau){
@@ -264,8 +266,10 @@ function butiner(b, dt){
   const u = b.butin || (b.butin = {etat: "tourne", t: 1 + Math.random() * 2}), base = b.base, doux = Math.min(1, dt * 5);
   u.t -= dt;
   if(u.etat === "tourne"){
-    const lourd = INSECTES[b.k].lourd, nx = base.x + Math.cos(b.t * 2.6) * .35, nz = base.z + Math.sin(b.t * 3.3) * .3;
-    const ny = base.y + .15 + (lourd ? Math.sin(b.t * 3) * .1 + Math.sin(b.t * 7.3) * .025 : Math.sin(b.t * 5) * .06);
+    const lourd = INSECTES[b.k].lourd, papillon = INSECTES[b.k].forme === "papillon";
+    const nx = papillon ? base.x + Math.sin(b.t * .8) * .6 + Math.sin(b.t * 2.1) * .15 : base.x + Math.cos(b.t * 2.6) * .35;   // le papillon volette plus large et plus haut
+    const nz = papillon ? base.z + Math.cos(b.t * .6) * .6 : base.z + Math.sin(b.t * 3.3) * .3;
+    const ny = papillon ? base.y + .35 + Math.sin(b.t * 2.4) * .15 : base.y + .15 + (lourd ? Math.sin(b.t * 3) * .1 + Math.sin(b.t * 7.3) * .025 : Math.sin(b.t * 5) * .06);
     b.ang = Math.atan2(nz - b.z, nx - b.x); b.x += (nx - b.x) * doux; b.z += (nz - b.z) * doux; b.y += (ny - b.y) * doux;
     if(u.t <= 0){
       const pl = places("fleurs").filter(q => Math.hypot(q.x - b.x, q.z - b.z) < 4), q = pl.length ? pl[Math.floor(Math.random() * pl.length)] : base;
@@ -276,10 +280,11 @@ function butiner(b, dt){
     const {de, vers} = u;
     b.x = de.x + (vers.x - de.x) * u.k; b.z = de.z + (vers.z - de.z) * u.k; b.y = de.y + (vers.y - de.y) * u.k + Math.sin(u.k * Math.PI) * .25;
     if(Math.hypot(vers.x - de.x, vers.z - de.z) > .01) b.ang = Math.atan2(vers.z - de.z, vers.x - de.x);
-    if(u.k >= 1){ b.base = vers; u.etat = "pose"; u.t = 3 + Math.random() * 4; }
+    if(u.k >= 1){ b.base = vers; u.etat = "pose"; u.t = 3 + Math.random() * 4; b.soleil = false; b.flashFait = false; }
   } else {                                                              // posée, elle butine
     b.x = base.x; b.z = base.z; b.y = base.y;
-    if(u.t <= 0){ u.etat = "tourne"; u.t = 2 + Math.random() * 3; }
+    if(Math.random() < dt * .12) b.soleil = !b.soleil;                       // le paon-du-jour ouvre parfois ses ailes au soleil
+    if(u.t <= 0){ u.etat = "tourne"; u.t = 2 + Math.random() * 3; b.soleil = false; }
   }
   b.posee = u.etat === "pose";
   if(INSECTES[b.k].lourd) b.mesh.rotation.z = b.posee ? 0 : Math.sin(b.t * 4) * .14;   // le bourdon se balance en volant
@@ -352,7 +357,7 @@ function vivre(b, dt){
     if(p.ou[0] === "lanternes" && base.y > .5){       // les papillons de nuit tournent autour de la lumière
       b.x = base.x + Math.cos(b.t * 2.2) * .35; b.z = base.z + Math.sin(b.t * 2.2) * .35; b.y = base.y + Math.sin(b.t * 3.1) * .12;
       b.ang = b.t * 2.2 + Math.PI/2;
-    } else if(f === "papillon"){                      // il volette autour de sa fleur
+    } else if(f === "papillon" && !p.butine){       // il volette autour de sa fleur (le paon-du-jour, lui, se pose : plus bas)
       const nx = base.x + Math.sin(b.t * .8) * .6 + Math.sin(b.t * 2.1) * .15, nz = base.z + Math.cos(b.t * .6) * .6;
       b.ang = Math.atan2(nz - b.z, nx - b.x); b.x = nx; b.z = nz; b.y = base.y + .35 + Math.sin(b.t * 2.4) * .15;
     } else if(p.ras){                                  // la luciole vole au ras des herbes
@@ -409,6 +414,13 @@ function vivre(b, dt){
     b.marche = Math.max(0, Math.min(1, (b.marche || 0) + (d > .02 * dt ? 6 : -6) * dt));
     for(const pa of pattes){ const u = b.foule + pa.phase;
       pa.mesh.position.set(0, pas.leve * Math.max(0, Math.sin(u)) * b.marche, pas.avance * Math.cos(u) * b.marche); }
+  }
+  /* Les ailes fermées, dressées, quand il est posé (le paon-du-jour) ; ouvertes au soleil ou pour montrer ses yeux */
+  const ferme = b.mesh.userData.ferme;
+  if(ferme){
+    if(b.flash > 0 && (b.flash -= dt) <= 0){ b.flash = 0; b.flashFait = true; if(b.etat === "vit") fuir(b, true); }
+    b.fe = (b.fe || 0) + ((b.posee && !(b.flash > 0) && !b.soleil ? 1 : 0) - (b.fe || 0)) * Math.min(1, dt * (b.flash > 0 ? 25 : 6));
+    if(!vite) for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (ferme * b.fe + .05);
   }
   /* Les jambes arrière qui se détendent d'un coup pour sauter, puis se replient (la sauterelle) */
   const det = b.mesh.userData.detente;

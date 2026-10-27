@@ -910,6 +910,94 @@ export function lucioleModele(){
   return g;
 }
 
+/* ---------- Le paon-du-jour ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici le Paon-du-jour »), comme un vrai (Yo : « Comme un vrai oui », « il se
+   pose sur les fleurs, ailes fermées », « Oui la menace des yeux ») : le dessus des ailes rouge-brun aux quatre grands
+   yeux (devant : bleu-violet cerclé de jaune ; derrière : noir taché de bleu dans un anneau clair), les bords bruns
+   festonnés, les taches claires du bord avant ; le dessous presque noir, en feuille morte ; le corps sombre au duvet roux,
+   la trompe enroulée, des antennes fines à massue pâle ; quatre pattes pour se tenir, les deux de devant toutes petites
+   et repliées. Posé, il ferme ses ailes (userData.ferme : l'angle) et parfois les ouvre au soleil ; dérangé posé, il
+   les ouvre d'un coup et montre ses yeux avant de s'envoler (userData.yeux). */
+const festonne = pts => { const L = lisse(pts), rmax = Math.max(...L.map(([x, z]) => Math.hypot(x, z)));
+  return L.map(([x, z]) => { const r = Math.hypot(x, z), a = Math.atan2(z, x), k = r > rmax * .72 ? 1 + .028 * Math.cos(a * 34) : 1; return [x * k, z * k]; }); };
+const PAON_AV = festonne([[0, -.006], [.05, -.11], [.12, -.245], [.19, -.29], [.25, -.235], [.255, -.15], [.21, -.06], [.12, .02], [.05, .03]]);
+const PAON_AR = festonne([[0, .006], [.09, -.012], [.18, .03], [.215, .11], [.19, .19], [.12, .22], [.05, .17], [.015, .08]]);
+const BPAV = [-.01, -.32, .29, .37], BPAR = [-.01, -.03, .25, .28];
+function oeil(c, x, z, anneaux){ for(const [r, col] of anneaux){ c.beginPath(); c.arc(x, z, r, 0, Math.PI * 2); c.fillStyle = col; c.fill(); } }
+function dessusPaon(c, contour, avant){
+  trace(c, contour); c.fillStyle = "#B63A22"; c.fill();
+  c.save(); trace(c, contour); c.clip();
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, .13); g.addColorStop(0, "rgba(70,34,22,1)"); g.addColorStop(1, "rgba(150,50,30,0)");
+  c.fillStyle = g; c.fillRect(-.05, -.35, .4, .65);                                                 // brun près du corps
+  c.strokeStyle = "rgba(120,40,24,.6)"; c.lineWidth = .003;                                          // les nervures
+  for(let k = 2; k < contour.length; k += Math.round(contour.length / 8)){ const [x, z] = contour[k]; c.beginPath(); c.moveTo(0, 0); c.lineTo(x * .9, z * .9); c.stroke(); }
+  if(avant){
+    c.fillStyle = "#2A1A14"; c.beginPath(); c.moveTo(.02, -.02); c.lineTo(.13, -.25); c.lineTo(.2, -.29); c.lineTo(.12, -.2); c.lineTo(.04, -.06); c.closePath(); c.fill();   // le bord avant sombre
+    for(const [x, z] of [[.08, -.14], [.105, -.19]]){ c.fillStyle = "#E8D8B0"; c.fillRect(x - .012, z - .008, .024, .014); }        // ses barres crème
+    for(const [x, z, r] of [[.16, -.1, .009], [.19, -.07, .007]]){ c.beginPath(); c.arc(x, z, r, 0, Math.PI * 2); c.fillStyle = "#F2E2D0"; c.fill(); }   // les taches claires
+    oeil(c, .19, -.215, [[.05, "#E8C070"], [.04, "#C87A3A"], [.033, "#1E1414"], [.025, "#3A44B8"], [.012, "#7A86E8"]]);          // l'oeil bleu-violet cerclé de jaune
+  } else {
+    oeil(c, .15, .12, [[.055, "#D8C8A8"], [.046, "#1A1414"], [.03, "#2E4AB0"], [.016, "#1A1414"]]);                              // l'oeil noir taché de bleu, anneau clair
+    c.beginPath(); c.arc(.132, .108, .007, 0, Math.PI * 2); c.fillStyle = "#8A9CE8"; c.fill();
+  }
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "#5A3420"; c.lineWidth = .02; c.stroke(); c.restore();                         // le bord brun festonné
+}
+function dessousPaon(c, contour){                                                                    // presque noir, en feuille morte
+  trace(c, contour); c.fillStyle = "#2E2420"; c.fill();
+  c.save(); trace(c, contour); c.clip(); c.lineWidth = .006;
+  for(let k = 0; k < 9; k++){ c.beginPath(); c.moveTo(0, 0); const a = -1.4 + k * .32; c.quadraticCurveTo(Math.cos(a) * .1 + .02, Math.sin(a) * .1, Math.cos(a) * .3, Math.sin(a) * .3);
+    c.strokeStyle = k % 2 ? "rgba(20,14,12,.7)" : "rgba(70,56,48,.5)"; c.stroke(); }
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "#1E1612"; c.lineWidth = .01; c.stroke(); c.restore();
+}
+const retourne = geo => { const g = geo.clone(), I = g.index.array.slice(); for(let k = 0; k < I.length; k += 3){ const t = I[k + 1]; I[k + 1] = I[k + 2]; I[k + 2] = t; }
+  g.setIndex(Array.from(I)); g.translate(0, -.0012, 0); g.computeVertexNormals(); return g; };   // la même aile vue de dessous
+let PAON = null;
+function paonGeos(){
+  if(PAON) return PAON;
+  const M = [], noir = 0x2A1E1A, roux = 0x8A4A2A, brun = 0x3A2A22;
+  boule(M, noir, 0, 0, 0, .036, .034, .046, ROND);                                                  // le thorax
+  for(let k = 0; k < 16; k++){ const a = k * 2.39996, h = (k / 16) * 2 - 1, r = Math.sqrt(1 - h * h);   // son duvet roux
+    boule(M, k % 2 ? roux : 0x6A3A24, Math.cos(a) * r * .032, h * .03 + .004, Math.sin(a) * r * .04, .012, .01, .012, POIL); }
+  for(let k = 0; k < 6; k++) boule(M, k % 2 ? brun : 0x2E221C, 0, -.006 - k * .002, .046 + k * .02, .024 - k * .003, .022 - k * .003, .014);   // l'abdomen sombre
+  boule(M, noir, 0, .004, -.058, .028, .027, .026, ROND);                                           // la tête
+  /* la trompe enroulée, sous la tête */
+  let a = V(0, -.016, -.072);
+  for(let k = 1; k <= 12; k++){ const t = k / 12 * Math.PI * 3.2, r = .012 * (1 - k / 14), b = V(0, -.028 + Math.sin(t) * r, -.078 - Math.cos(t) * r * .9 + .006);
+    baton(M, 0x6A4A30, a, b, .0022); a = b; }
+  for(const s of [-1, 1]){
+    boule(M, 0x1A1210, s * .02, .008, -.064, .014, .017, .015);                                     // un grand oeil
+    boule(M, 0xFFFFFF, s * .026, .016, -.074, .0036, .0042, .0036, BOULE_P);                       // son reflet
+    const p0 = V(s * .008, .026, -.076), p1 = V(s * .05, .1, -.15);                                // l'antenne fine, à massue pâle
+    baton(M, 0x2A1E1A, p0, p1, .0022);
+    ovale(M, 0xD8C8B0, p1, p1.clone().sub(p0), .01, .005, .005);
+    pilule(M, 0x3A2A22, V(s * .012, -.02, -.05), V(s * .016, -.03, -.058), .003);                 // la petite patte de devant, repliée
+    for(const [h, g, p] of [[V(s * .016, -.024, -.03), V(s * .04, -.045, -.04), V(s * .05, -.075, -.05)],
+                            [V(s * .016, -.024, -.01), V(s * .045, -.045, .0), V(s * .056, -.075, .014)]]){ pilule(M, 0x3A2A22, h, g, .004); pilule(M, 0x3A2A22, g, p, .0032); }
+  }
+  const tex = {av: peinture(BPAV, c => dessusPaon(c, PAON_AV, true)), ar: peinture(BPAR, c => dessusPaon(c, PAON_AR, false)),
+               avD: peinture(BPAV, c => dessousPaon(c, PAON_AV)), arD: peinture(BPAR, c => dessousPaon(c, PAON_AR))};
+  const ailes = cote => { const av = aileGeo(PAON_AV, cote, BPAV, 4), ar = aileGeo(PAON_AR, cote, BPAR, 4); ar.translate(0, -.004, 0);
+    return {av, ar, avD: retourne(av), arD: retourne(ar)}; };
+  return PAON = {corps: fusionner(M), tex, droite: ailes(1), gauche: ailes(-1)};
+}
+export function paonModele(){
+  const G = paonGeos(), g = new THREE.Group(), ailes = [], cote1 = THREE.FrontSide;
+  const corps = new THREE.Mesh(G.corps, corpsMat()); corps.position.y = .075; g.add(corps);       // les pattes au point de pose
+  for(const [A, cote] of [[G.droite, 1], [G.gauche, -1]]){
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(A.av, toon({map: G.tex.avD, side: cote1})), new THREE.Mesh(A.ar, toon({map: G.tex.arD, side: cote1})),   // (aileGeo regarde vers le bas : le dessous)
+              new THREE.Mesh(A.avD, toon({map: G.tex.av, side: cote1})), new THREE.Mesh(A.arD, toon({map: G.tex.ar, side: cote1})));
+    pivot.position.set(cote * .03, .093, -.01); g.add(pivot);
+    ailes.push({pivot, cote});
+  }
+  g.userData.ailes = ailes;
+  g.userData.ferme = 1.55;                                                                     // posé : les ailes fermées, dressées
+  g.userData.yeux = true;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -918,4 +1006,5 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   sauterelle: {fabrique: sauterelleModele, echelle: ECHELLE_SAUTERELLE}, libellule: {fabrique: libelluleModele, echelle: ECHELLE_LIBELLULE},
   bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
   grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
-  punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE}};
+  punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
+  paonDuJour: {fabrique: paonModele, echelle: 1.52}};
