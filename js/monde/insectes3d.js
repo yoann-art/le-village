@@ -1214,6 +1214,75 @@ export function citronModele(){
   return g;
 }
 
+/* ---------- Le sphinx du liseron ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici le Sphinx »), comme un vrai sphinx du liseron (Yo : « Le sphinx du
+   liseron comme un vrai », « Le sur-place devant une fleur, la trompe déroulée, oui ») : des ailes longues, étroites et
+   pointues ; devant, gris-brun marbré comme une écorce ; derrière, petites, grises à bandes noires ; le gros abdomen à
+   bandes roses et noires ; le thorax marbré ; des antennes en fuseau à petit crochet ; une trompe roulée, qu'il déroule
+   pour boire en sur-place devant une fleur (userData.trompe : {roulee, deroulee}). Il vole à toute allure (battement
+   rapide). Six pattes, repliées sous lui en vol. */
+const SPH_AV = lisse([[0, -.004], [.05, -.03], [.12, -.075], [.19, -.115], [.235, -.135], [.232, -.095], [.18, -.04], [.11, .0], [.04, .02]]);
+const SPH_AR = lisse([[0, .004], [.06, .0], [.13, .012], [.165, .04], [.14, .068], [.08, .07], [.025, .045]]);
+const BSAV = [-.01, -.15, .26, .18], BSAR = [-.01, -.01, .18, .09];
+function sphinxAile(c, contour, avant){
+  trace(c, contour); c.fillStyle = avant ? "#8A7E70" : "#9A948C"; c.fill();
+  c.save(); trace(c, contour); c.clip(); c.lineCap = "round";
+  if(avant){
+    for(let k = 0; k < 70; k++){ const a = k * 2.39996, r = Math.sqrt(k / 70), x = .02 + r * .21 + Math.cos(a) * .01, z = -.02 - r * .09 + Math.sin(a) * .022;   // marbré, comme une écorce
+      c.fillStyle = k % 3 === 0 ? "rgba(60,52,46,.45)" : k % 3 === 1 ? "rgba(190,180,164,.45)" : "rgba(110,98,86,.4)";
+      c.beginPath(); c.ellipse(x, z, .016, .005, -.35, 0, Math.PI * 2); c.fill(); }
+    c.strokeStyle = "rgba(40,34,30,.75)"; c.lineWidth = .004;                                        // les fines lignes sombres en long
+    for(const z0 of [-.02, -.05]){ c.beginPath(); c.moveTo(.03, z0 * .3); c.quadraticCurveTo(.12, z0 - .02, .22, -.115); c.stroke(); }
+  } else {
+    c.strokeStyle = "#2A2420"; c.lineWidth = .012;                                                   // les bandes noires
+    for(const r of [.07, .12]){ c.beginPath(); c.arc(0, .02, r, -.4, 1.3); c.stroke(); }
+  }
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "rgba(60,52,46,.8)"; c.lineWidth = .003; c.stroke(); c.restore();
+}
+let SPHINX = null;
+function sphinxGeos(){
+  if(SPHINX) return SPHINX;
+  const M = [], gris = 0x8A8076, fonce = 0x4A423C;
+  boule(M, gris, 0, 0, 0, .034, .03, .045, ROND);                                                   // le thorax marbré
+  for(let k = 0; k < 16; k++){ const a = k * 2.39996, h = (k / 16) * 2 - 1, r = Math.sqrt(1 - h * h);
+    boule(M, k % 3 ? 0x9A9086 : fonce, Math.cos(a) * r * .031, h * .027 + .004, Math.sin(a) * r * .04, .01, .008, .01, POIL); }
+  for(let k = 0; k < 8; k++){ const z = .044 + k * .017, r = .033 - k * .0028;                      // le gros abdomen : bandes roses et noires
+    M.push({geo: BOULE, m: new THREE.Matrix4().compose(V(0, -.006 - k * .0015, z), q0, V(r, r * .95, .0115)), c: gris,
+      couleur: (x, y, zz) => Math.abs(x) > r * .32 || y < -.006 - k * .0015 ? (k % 2 ? 0xE0607A : 0x1E1A18) : gris}); }
+  boule(M, gris, 0, .002, -.054, .024, .023, .022, ROND);                                           // la tête
+  for(const s of [-1, 1]){
+    boule(M, 0x1A1412, s * .018, .006, -.058, .013, .016, .014);
+    boule(M, 0xFFFFFF, s * .024, .014, -.068, .0034, .004, .0034, BOULE_P);
+    const p0 = V(s * .008, .02, -.068), p1 = V(s * .03, .06, -.118), p2 = V(s * .038, .066, -.13);   // l'antenne en fuseau, son crochet
+    ovale(M, 0x6A5E54, p0.clone().lerp(p1, .55), p1.clone().sub(p0), .03, .0045, .0045, {geo: ROND}); baton(M, 0x6A5E54, p1, p2, .0016);
+    for(const [h, g, p] of [[V(s * .014, -.022, -.036), V(s * .03, -.036, -.046), V(s * .036, -.05, -.03)],
+                            [V(s * .015, -.022, -.018), V(s * .034, -.038, -.014), V(s * .04, -.05, .004)],
+                            [V(s * .015, -.022, 0), V(s * .034, -.038, .016), V(s * .038, -.05, .034)]]){ pilule(M, fonce, h, g, .0032); pilule(M, fonce, g, p, .0026); }   // repliées sous lui
+  }
+  /* la trompe : roulée sous la tête, ou déroulée, longue, pour boire */
+  const R = []; let a = V(0, -.014, -.066);
+  for(let k = 1; k <= 12; k++){ const t = k / 12 * Math.PI * 3.2, r = .011 * (1 - k / 14), b = V(0, -.025 + Math.sin(t) * r, -.072 - Math.cos(t) * r * .9 + .006); baton(R, 0x6A4A30, a, b, .002); a = b; }
+  const D = []; baton(D, 0x6A4A30, V(0, -.014, -.066), V(0, -.03, -.13), .0022); baton(D, 0x6A4A30, V(0, -.03, -.13), V(0, -.05, -.19), .0018);
+  return SPHINX = {corps: fusionner(M), roulee: fusionner(R), deroulee: fusionner(D),
+    av: peinture(BSAV, c => sphinxAile(c, SPH_AV, true)), ar: peinture(BSAR, c => sphinxAile(c, SPH_AR, false)),
+    ailes: [1, -1].map(cote => { const av = aileGeo(SPH_AV, cote, BSAV, 3), ar = aileGeo(SPH_AR, cote, BSAR, 3); ar.translate(0, -.003, .004); return [av, ar]; })};
+}
+export function sphinxModele(){
+  const G = sphinxGeos(), g = new THREE.Group(), mat = corpsMat(), ailes = [];
+  g.add(new THREE.Mesh(G.corps, mat));
+  const roulee = new THREE.Mesh(G.roulee, mat), deroulee = new THREE.Mesh(G.deroulee, mat); deroulee.visible = false; g.add(roulee, deroulee);
+  g.userData.trompe = {roulee, deroulee};
+  for(const [cote, k] of [[1, 0], [-1, 1]]){
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(G.ailes[k][0], toon({map: G.av, side: THREE.DoubleSide})), new THREE.Mesh(G.ailes[k][1], toon({map: G.ar, side: THREE.DoubleSide})));
+    pivot.position.set(cote * .028, .018, -.02); pivot.rotation.y = -cote * .35; g.add(pivot);   // les ailes en flèche, vers l'arrière
+    ailes.push({pivot, cote});
+  }
+  g.userData.ailes = ailes;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1224,4 +1293,5 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
   punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
   paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
-  vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4}};
+  vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4},
+  sphinx: {fabrique: sphinxModele, echelle: 1.5}};

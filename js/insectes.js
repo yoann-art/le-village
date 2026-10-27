@@ -328,6 +328,28 @@ function voleter(b, dt){
     if(u.t <= 0){ u.etat = "vol"; u.t = 4 + Math.random() * 5; }
   }
 }
+/* Le sphinx du liseron boit comme un colibri (Yo, 27 octobre 2026 : « Le sur-place devant une fleur, la trompe déroulée,
+   oui ») : parfois, il quitte sa lumière, file vers une fleur proche, y fait du sur-place la trompe déroulée, puis revient */
+function nectar(b, dt){
+  if(!b.nec){
+    const pl = places("fleurs").filter(q => Math.hypot(q.x - b.x, q.z - b.z) < 5);
+    if(!pl.length) return false;
+    const q = pl[Math.floor(Math.random() * pl.length)], devant = {x: q.x - .22, y: q.y + .16, z: q.z};
+    b.nec = {etat: "va", de: {x: b.x, y: b.y, z: b.z}, vers: devant, fleur: q, k: 0, T: Math.max(.5, Math.hypot(devant.x - b.x, devant.z - b.z) / 2.5), t: 0};
+  }
+  const u = b.nec;
+  if(u.etat === "va" || u.etat === "rentre"){
+    u.k = Math.min(1, u.k + dt / u.T);
+    b.x = u.de.x + (u.vers.x - u.de.x) * u.k; b.z = u.de.z + (u.vers.z - u.de.z) * u.k; b.y = u.de.y + (u.vers.y - u.de.y) * u.k;
+    if(Math.hypot(u.vers.x - u.de.x, u.vers.z - u.de.z) > .01) b.ang = Math.atan2(u.vers.z - u.de.z, u.vers.x - u.de.x);
+    if(u.k >= 1){ if(u.etat === "rentre"){ b.nec = null; return false; } u.etat = "boit"; u.t = 3 + Math.random() * 3; }
+  } else {                                                           // sur-place, tourné vers la fleur, la trompe déroulée
+    b.x = u.vers.x + Math.sin(b.t * 9) * .008; b.y = u.vers.y + Math.sin(b.t * 7) * .01; b.z = u.vers.z;
+    b.ang = Math.atan2(u.fleur.z - b.z, u.fleur.x - b.x);
+    if((u.t -= dt) <= 0) Object.assign(u, {etat: "rentre", de: {x: b.x, y: b.y, z: b.z}, vers: {x: b.base.x, y: b.base.y, z: b.base.z}, k: 0});
+  }
+  return true;
+}
 function vivre(b, dt){
   b.t += dt; b.age += dt; b.posee = false;
   /* le hanneton « compte ses sous » une seconde avant de s'envoler (Yo, 26 octobre 2026 : « Oui pour l'envol ») */
@@ -350,11 +372,12 @@ function vivre(b, dt){
     b.x = v.x0 + (v.q.x - v.x0) * u; b.z = v.z0 + (v.q.z - v.z0) * u;
     b.y = v.y0 + (v.q.y - v.y0) * u + (VOLE[f] || f === "sauteur" || b.mesh.userData.elytres ? Math.sin(u * Math.PI) * .7 : 0);   // en arc (la coccinelle, le hanneton volent)
     b.ang = Math.atan2(v.q.z - v.z0, v.q.x - v.x0);
-    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.butin = null; b.perch = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
+    if(u >= 1){ b.base = v.q; b.etat = "vit"; b.cible = null; b.saut = null; b.butin = null; b.perch = null; b.nec = null; b.pause = 1 + Math.random() * 2; b.vie = Math.max(b.vie, b.age + 30); }
   } else {
     b.alpha = Math.min(1, b.alpha + dt);
     if(b.age > b.vie) b.etat = "part";
-    if(p.ou[0] === "lanternes" && base.y > .5){       // les papillons de nuit tournent autour de la lumière
+    if(p.nectar && (b.nec || Math.random() < dt * .08) && nectar(b, dt)){   // le sphinx boit en sur-place devant une fleur
+    } else if(p.ou[0] === "lanternes" && base.y > .5){       // les papillons de nuit tournent autour de la lumière
       b.x = base.x + Math.cos(b.t * 2.2) * .35; b.z = base.z + Math.sin(b.t * 2.2) * .35; b.y = base.y + Math.sin(b.t * 3.1) * .12;
       b.ang = b.t * 2.2 + Math.PI/2;
     } else if(f === "papillon" && !p.butine){       // il volette autour de sa fleur (le paon-du-jour, lui, se pose : plus bas)
@@ -404,7 +427,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = p.nectar ? 40 : VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite + (a.phase || 0)) * .7 : b.posee && b.mesh.userData.ailes.length > 2 ? 0 : .1);   // la libellule : en décalé ; posée, à plat
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
@@ -424,6 +447,9 @@ function vivre(b, dt){
     const fremit = b.mesh.userData.fremit && b.posee && !soleil;                       // le machaon, posé, fait frémir ses ailes en buvant
     if(!vite) for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (fremit ? .75 + Math.sin(b.t * 18) * .3 : ferme * b.fe + .05);
   }
+  /* La trompe du sphinx : déroulée quand il boit */
+  const tr = b.mesh.userData.trompe;
+  if(tr){ const boit = !!(b.nec && b.nec.etat === "boit"); tr.deroulee.visible = boit; tr.roulee.visible = !boit; }
   /* Les jambes arrière qui se détendent d'un coup pour sauter, puis se replient (la sauterelle) */
   const det = b.mesh.userData.detente;
   if(det){
