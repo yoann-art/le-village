@@ -1077,6 +1077,70 @@ export function machaonModele(){
   return g;
 }
 
+/* ---------- Le vulcain ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici le Vulcain »), comme un vrai (Yo : « Comme un vrai, oui ») : le dessus
+   brun-noir ; devant, une seule bande rouge-orangé en travers et les taches blanches du bout ; derrière, la bande
+   rouge-orangé du bord à points noirs et une seule petite tache bleue près du coin ; le dessous de devant reprend le
+   rouge, le blanc et un peu de bleu, celui de derrière est marbré de brun et de gris, comme une écorce. Il est de la
+   famille du paon-du-jour : le même corps sombre (quatre pattes, la trompe enroulée, les antennes à bout pâle), la même
+   forme d'ailes, et posé, ailes fermées (userData.ferme), parfois ouvertes au soleil. */
+function vulcainDessus(c, contour, avant){
+  trace(c, contour); c.fillStyle = "#2A1E1A"; c.fill();
+  c.save(); trace(c, contour); c.clip(); c.lineCap = "round";
+  c.strokeStyle = "rgba(60,40,32,.7)"; c.lineWidth = .003;
+  for(let k = 2; k < contour.length; k += Math.round(contour.length / 8)){ const [x, z] = contour[k]; c.beginPath(); c.moveTo(0, 0); c.lineTo(x * .9, z * .9); c.stroke(); }
+  if(avant){
+    c.strokeStyle = "#E8541E"; c.lineWidth = .045;                                                   // la bande rouge-orangé, en travers
+    c.beginPath(); c.moveTo(.085, -.215); c.quadraticCurveTo(.15, -.14, .225, -.07); c.stroke();
+    c.fillStyle = "#F2E8D8";                                                                         // les taches blanches du bout
+    for(const [x, z, r] of [[.17, -.27, .014], [.198, -.245, .018], [.225, -.205, .013], [.24, -.165, .01], [.15, -.225, .011]]){ c.beginPath(); c.arc(x, z, r, 0, Math.PI * 2); c.fill(); }
+  } else {
+    c.save(); trace(c, contour); c.strokeStyle = "#E8541E"; c.lineWidth = .066; c.stroke(); c.restore();   // la bande rouge-orangé du bord
+    c.fillStyle = "#1E1614";
+    for(let k = 0; k < contour.length; k += Math.round(contour.length / 7)){ const [x, z] = contour[k]; if(Math.hypot(x, z) < .15) continue;
+      c.beginPath(); c.arc(x * .9, z * .9, .006, 0, Math.PI * 2); c.fill(); }                        // ses points noirs
+    c.fillStyle = "#4A6AD8"; c.beginPath(); c.arc(.06, .175, .01, 0, Math.PI * 2); c.fill();          // la petite tache bleue, près du coin
+  }
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "#E8DCC8"; c.lineWidth = .006; c.stroke(); c.restore();   // la frange claire
+}
+function vulcainDessous(c, contour, avant){
+  if(avant){
+    trace(c, contour); c.fillStyle = "#3A2C26"; c.fill();
+    c.save(); trace(c, contour); c.clip();
+    c.strokeStyle = "#D86A5A"; c.lineWidth = .05; c.beginPath(); c.moveTo(.06, -.18); c.quadraticCurveTo(.14, -.12, .22, -.06); c.stroke();
+    c.strokeStyle = "#6A86D8"; c.lineWidth = .006; c.beginPath(); c.moveTo(.08, -.08); c.lineTo(.12, -.06); c.stroke();
+    c.fillStyle = "#EDE2D2"; for(const [x, z, r] of [[.19, -.25, .014], [.22, -.21, .012], [.165, -.27, .01]]){ c.beginPath(); c.arc(x, z, r, 0, Math.PI * 2); c.fill(); }
+    c.restore();
+  } else {
+    trace(c, contour); c.fillStyle = "#5A4A3E"; c.fill();                                            // marbré, comme une écorce
+    c.save(); trace(c, contour); c.clip();
+    for(let k = 0; k < 60; k++){ const a = k * 2.39996, r = Math.sqrt(k / 60) * .21, x = Math.cos(a) * r * .9 + .1, z = Math.sin(a) * r * .9 + .1;
+      c.fillStyle = k % 3 === 0 ? "rgba(140,128,112,.55)" : k % 3 === 1 ? "rgba(36,26,22,.55)" : "rgba(96,78,64,.5)";
+      c.beginPath(); c.ellipse(x, z, .016 + (k % 4) * .004, .007, a, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = "rgba(220,206,186,.7)"; c.beginPath(); c.ellipse(.08, .02, .02, .01, .3, 0, Math.PI * 2); c.fill();   // la tache pâle du bord avant
+    c.restore();
+  }
+  c.save(); trace(c, contour); c.strokeStyle = "#2A201C"; c.lineWidth = .008; c.stroke(); c.restore();
+}
+let VULCAIN = null;
+export function vulcainModele(){
+  const P = paonGeos(), g = new THREE.Group(), ailes = [], f = THREE.FrontSide;
+  const T = VULCAIN || (VULCAIN = {av: peinture(BPAV, c => vulcainDessus(c, PAON_AV, true)), ar: peinture(BPAR, c => vulcainDessus(c, PAON_AR, false)),
+    avD: peinture(BPAV, c => vulcainDessous(c, PAON_AV, true)), arD: peinture(BPAR, c => vulcainDessous(c, PAON_AR, false))});
+  const corps = new THREE.Mesh(P.corps, corpsMat()); corps.position.y = .075; g.add(corps);    // le corps du paon-du-jour, de sa famille
+  for(const [A, cote] of [[P.droite, 1], [P.gauche, -1]]){
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(A.av, toon({map: T.avD, side: f})), new THREE.Mesh(A.ar, toon({map: T.arD, side: f})),   // (aileGeo regarde vers le bas : le dessous)
+              new THREE.Mesh(A.avD, toon({map: T.av, side: f})), new THREE.Mesh(A.arD, toon({map: T.ar, side: f})));
+    pivot.position.set(cote * .03, .093, -.01); g.add(pivot);
+    ailes.push({pivot, cote});
+  }
+  g.userData.ailes = ailes;
+  g.userData.ferme = 1.55;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1086,4 +1150,5 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
   grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
   punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
-  paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4}};
+  paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
+  vulcain: {fabrique: vulcainModele, echelle: 1.52}};
