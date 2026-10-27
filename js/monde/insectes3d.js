@@ -998,6 +998,85 @@ export function paonModele(){
   return g;
 }
 
+/* ---------- Le machaon ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici le Machaon »), comme un vrai (Yo : « Comme un vrai oui », « Il se pose
+   sur les fleurs en faisant frémir ses ailes ») : jaune pâle aux nervures et bandes noires, la base des ailes de devant
+   poudrée de noir, le bord noir à lunules jaunes ; derrière, la bande de taches bleues, l'oeil rouge près du corps, les
+   queues ; le dessous du même dessin, plus pâle ; le corps noir dessus aux lignes jaunes sur les côtés, la trompe
+   enroulée, des antennes noires à massue, six pattes (sa famille marche sur six). Posé sur une fleur, il fait frémir ses
+   ailes en buvant (userData.fremit) ; le reste comme le paon-du-jour (userData.ferme, butiner). */
+const MACH_AV = lisse([[0, -.006], [.05, -.12], [.13, -.27], [.2, -.32], [.262, -.262], [.272, -.17], [.225, -.07], [.12, .015], [.05, .03]]);
+const MACH_AR = festonne([[0, .006], [.08, -.012], [.17, .02], [.212, .09], [.2, .16], [.172, .208], [.146, .232], [.142, .31], [.12, .332], [.108, .25], [.07, .218], [.03, .168], [.012, .08]]);
+const BMAV = [-.01, -.34, .3, .39], BMAR = [-.01, -.03, .24, .38];
+function machaonAile(c, contour, avant, pale){
+  const J = pale ? "#F2E6B2" : "#F2D05A", N = pale ? "#6E5E3E" : "#1E1814";
+  trace(c, contour); c.fillStyle = J; c.fill();
+  c.save(); trace(c, contour); c.clip();
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, avant ? .1 : .07); g.addColorStop(0, N); g.addColorStop(1, "rgba(30,24,20,0)");
+  c.fillStyle = g; c.fillRect(-.05, -.4, .45, .8);                                                     // la base poudrée de noir
+  c.strokeStyle = N; c.lineWidth = .005;                                                               // les nervures noires
+  for(let k = 1; k < contour.length; k += Math.round(contour.length / 10)){ const [x, z] = contour[k]; c.beginPath(); c.moveTo(0, 0); c.lineTo(x * .95, z * .95); c.stroke(); }
+  c.lineWidth = .05; c.strokeStyle = N; trace(c, contour); c.stroke();                                // la large bordure noire
+  c.fillStyle = J;                                                                                     // ses lunules jaunes
+  for(let k = 0; k < contour.length; k += Math.round(contour.length / 14)){ const [x, z] = contour[k], r = Math.hypot(x, z);
+    if(r < .12) continue; c.beginPath(); c.ellipse(x * .9, z * .9, .009, .006, Math.atan2(z, x), 0, Math.PI * 2); c.fill(); }
+  if(avant){
+    c.fillStyle = N;                                                                                   // les barres noires, depuis le bord avant
+    for(const t of [.35, .55, .75]){ const x = .13 * t / .8, z = -.27 * t / .8, dx = .085, dz = .05;
+      const l = Math.hypot(dx, dz), px = -dz / l * .011, pz = dx / l * .011;
+      c.beginPath(); c.moveTo(x - px, z - pz); c.lineTo(x + dx - px * .7, z + dz - pz * .7); c.lineTo(x + dx + px * .7, z + dz + pz * .7); c.lineTo(x + px, z + pz); c.closePath(); c.fill(); }
+  } else {
+    c.fillStyle = pale ? "#8AA6D8" : "#3A62C8";                                                        // la bande de taches bleues
+    for(let k = 0; k < 5; k++){ const a = -.15 + k * .3, x = .05 + Math.cos(a) * .12, z = .1 + Math.sin(a) * .1; c.beginPath(); c.arc(x + .02, z + .02, .011, 0, Math.PI * 2); c.fill(); }
+    oeil(c, .08, .2, [[.024, N], [.018, pale ? "#9AB0E0" : "#3A62C8"], [.013, pale ? "#E89070" : "#D8402A"]]);   // l'oeil rouge, près du corps
+    c.fillStyle = N; c.fillRect(.105, .25, .04, .09);                                                  // la queue, noire
+  }
+  c.restore();
+}
+let MACHAON = null;
+function machaonGeos(){
+  if(MACHAON) return MACHAON;
+  const M = [], noir = 0x1E1814, jaune = 0xE8C850;
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(0, 0, 0), q0, V(.034, .032, .045)), c: noir, couleur: (x, y, z) => Math.abs(x) > .022 && y < .012 ? jaune : noir});   // le thorax noir, ses lignes jaunes
+  for(let k = 0; k < 14; k++){ const a = k * 2.39996, h = (k / 14) * 2 - 1, r = Math.sqrt(1 - h * h);
+    const p = V(Math.cos(a) * r * .03, h * .028 + .004, Math.sin(a) * r * .04); boule(M, Math.abs(p.x) > .02 ? 0xC8A840 : 0x2A2420, p.x, p.y, p.z, .011, .009, .011, POIL); }
+  for(let k = 0; k < 7; k++){ const z = .046 + k * .019, r = .021 - k * .0025, y = -.006 - k * .002;   // l'abdomen noir dessus, jaune sur les côtés
+    M.push({geo: BOULE, m: new THREE.Matrix4().compose(V(0, y, z), q0, V(r, r * .95, .013)), c: noir, couleur: (px, py, pz) => py < y - r * .25 || Math.abs(px) > r * .8 ? jaune : noir}); }
+  boule(M, noir, 0, .004, -.058, .027, .026, .025, ROND);
+  let a = V(0, -.016, -.07);
+  for(let k = 1; k <= 12; k++){ const t = k / 12 * Math.PI * 3.2, r = .012 * (1 - k / 14), b = V(0, -.028 + Math.sin(t) * r, -.076 - Math.cos(t) * r * .9 + .006);
+    baton(M, 0x5A4428, a, b, .0022); a = b; }                                                                   // la trompe enroulée
+  for(const s of [-1, 1]){
+    boule(M, 0x1A1210, s * .02, .008, -.062, .014, .017, .015);
+    boule(M, 0xFFFFFF, s * .026, .016, -.072, .0036, .0042, .0036, BOULE_P);
+    const p0 = V(s * .008, .026, -.074), p1 = V(s * .052, .105, -.15);                                         // l'antenne noire à massue noire
+    baton(M, noir, p0, p1, .0022); ovale(M, noir, p1, p1.clone().sub(p0), .011, .0055, .0055);
+    for(const [h, g, p] of [[V(s * .014, -.024, -.042), V(s * .036, -.042, -.056), V(s * .044, -.075, -.066)],
+                            [V(s * .016, -.024, -.024), V(s * .042, -.045, -.022), V(s * .054, -.075, -.016)],
+                            [V(s * .016, -.024, -.006), V(s * .044, -.045, .012), V(s * .056, -.075, .03)]]){ pilule(M, noir, h, g, .004); pilule(M, 0x2E2620, g, p, .0032); }
+  }
+  const tex = {av: peinture(BMAV, c => machaonAile(c, MACH_AV, true, false)), ar: peinture(BMAR, c => machaonAile(c, MACH_AR, false, false)),
+               avD: peinture(BMAV, c => machaonAile(c, MACH_AV, true, true)), arD: peinture(BMAR, c => machaonAile(c, MACH_AR, false, true))};
+  const ailes = cote => { const av = aileGeo(MACH_AV, cote, BMAV, 3), ar = aileGeo(MACH_AR, cote, BMAR, 3);   // 3 rangs : des ailes plates, plus légères ar.translate(0, -.004, 0);
+    return {av, ar, avD: retourne(av), arD: retourne(ar)}; };
+  return MACHAON = {corps: fusionner(M), tex, droite: ailes(1), gauche: ailes(-1)};
+}
+export function machaonModele(){
+  const G = machaonGeos(), g = new THREE.Group(), ailes = [], f = THREE.FrontSide;
+  const corps = new THREE.Mesh(G.corps, corpsMat()); corps.position.y = .075; g.add(corps);
+  for(const [A, cote] of [[G.droite, 1], [G.gauche, -1]]){
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(A.av, toon({map: G.tex.avD, side: f})), new THREE.Mesh(A.ar, toon({map: G.tex.arD, side: f})),   // (aileGeo regarde vers le bas : le dessous)
+              new THREE.Mesh(A.avD, toon({map: G.tex.av, side: f})), new THREE.Mesh(A.arD, toon({map: G.tex.ar, side: f})));
+    pivot.position.set(cote * .03, .093, -.01); g.add(pivot);
+    ailes.push({pivot, cote});
+  }
+  g.userData.ailes = ailes;
+  g.userData.ferme = 1.55;
+  g.userData.fremit = true;                                                                    // posé, il fait frémir ses ailes en buvant
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1007,4 +1086,4 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   bourdon: {fabrique: bourdonModele, echelle: ECHELLE_BOURDON}, perceOreille: {fabrique: perceModele, echelle: ECHELLE_PERCE},
   grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
   punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
-  paonDuJour: {fabrique: paonModele, echelle: 1.52}};
+  paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4}};

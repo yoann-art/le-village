@@ -420,7 +420,8 @@ function vivre(b, dt){
   if(ferme){
     if(b.flash > 0 && (b.flash -= dt) <= 0){ b.flash = 0; b.flashFait = true; if(b.etat === "vit") fuir(b, true); }
     b.fe = (b.fe || 0) + ((b.posee && !(b.flash > 0) && !b.soleil ? 1 : 0) - (b.fe || 0)) * Math.min(1, dt * (b.flash > 0 ? 25 : 6));
-    if(!vite) for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (ferme * b.fe + .05);
+    const fremit = b.mesh.userData.fremit && b.posee && !b.soleil;                       // le machaon, posé, fait frémir ses ailes en buvant
+    if(!vite) for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (fremit ? .75 + Math.sin(b.t * 18) * .3 : ferme * b.fe + .05);
   }
   /* Les jambes arrière qui se détendent d'un coup pour sauter, puis se replient (la sauterelle) */
   const det = b.mesh.userData.detente;
