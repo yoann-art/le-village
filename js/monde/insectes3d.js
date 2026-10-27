@@ -1141,6 +1141,79 @@ export function vulcainModele(){
   return g;
 }
 
+/* ---------- Le citron ----------
+   D'après l'image de Yo (27 octobre 2026 : « Voici le Citron »), comme un vrai (Yo : « Le bord lisse, le dessous en feuille
+   et toujours ailes fermées, comme un vrai, oui », « Oui au hasard ») : des ailes en feuille, à pointe, au bord lisse
+   piqué de minuscules points roux au bout des nervures, une petite tache orange au milieu de chacune ; jaune citron chez
+   le mâle, blanc verdâtre chez la femelle (au hasard) ; le dessous vert-jaune pâle aux nervures en relief, comme une
+   feuille ; le corps pâle et duveteux, la trompe enroulée, des antennes roses à massue, six pattes (sa famille marche
+   sur six, comme la piéride). Posé, toujours ailes fermées (userData.toujoursFerme) : il ressemble alors à une feuille. */
+const CIT_AV = lisse([[0, -.006], [.05, -.11], [.12, -.23], [.2, -.29], [.252, -.304], [.236, -.24], [.236, -.15], [.2, -.07], [.11, .015], [.04, .03]]);
+const CIT_AR = lisse([[0, .006], [.08, -.01], [.16, .02], [.2, .07], [.218, .132], [.19, .17], [.12, .2], [.05, .16], [.012, .08]]);
+const BCAV = [-.01, -.33, .28, .37], BCAR = [-.01, -.03, .24, .25];
+function citronAile(c, contour, avant, male, dessous){
+  const fond = dessous ? (male ? "#D8E08A" : "#E2E8C4") : (male ? "#F2DE3E" : "#EEF2D6");
+  trace(c, contour); c.fillStyle = fond; c.fill();
+  c.save(); trace(c, contour); c.clip();
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, .12); g.addColorStop(0, dessous ? "rgba(150,170,80,.45)" : "rgba(190,200,90,.35)"); g.addColorStop(1, "rgba(0,0,0,0)");
+  c.fillStyle = g; c.fillRect(-.05, -.4, .4, .7);                                                   // plus vert près du corps
+  c.lineCap = "round";
+  for(let k = 1; k < contour.length; k += Math.round(contour.length / 9)){ const [x, z] = contour[k];   // les nervures (en relief dessous)
+    c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(x * .5 + z * .05, z * .5 - x * .05, x * .96, z * .96);
+    c.strokeStyle = dessous ? "rgba(120,140,60,.6)" : "rgba(190,170,40,.45)"; c.lineWidth = dessous ? .004 : .0025; c.stroke();
+    if(dessous){ c.strokeStyle = "rgba(250,255,220,.6)"; c.lineWidth = .0016; c.translate(.002, .002); c.stroke(); c.translate(-.002, -.002); }
+    c.beginPath(); c.arc(x * .98, z * .98, .0028, 0, Math.PI * 2); c.fillStyle = "#A8502A"; c.fill();   // le point roux au bout
+  }
+  const [ox, oz] = avant ? [.13, -.14] : [.12, .09];                                               // la petite tache orange
+  c.beginPath(); c.arc(ox, oz, dessous ? .008 : .011, 0, Math.PI * 2); c.fillStyle = "#E8742E"; c.fill();
+  c.beginPath(); c.arc(ox, oz, .003, 0, Math.PI * 2); c.fillStyle = "#F8D8A0"; c.fill();
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = dessous ? "rgba(150,160,90,.8)" : "rgba(210,180,60,.8)"; c.lineWidth = .004; c.stroke(); c.restore();
+}
+let CITRON = null;
+function citronGeos(){
+  if(CITRON) return CITRON;
+  const M = [], pale = 0xE4E6C2, rose = 0xC86A5A;
+  boule(M, pale, 0, 0, 0, .033, .031, .043, ROND);                                                  // le thorax, pâle et duveteux
+  for(let k = 0; k < 14; k++){ const a = k * 2.39996, h = (k / 14) * 2 - 1, r = Math.sqrt(1 - h * h);
+    boule(M, k % 2 ? 0xEEF0D4 : 0xCED4A4, Math.cos(a) * r * .03, h * .028 + .004, Math.sin(a) * r * .038, .011, .009, .011, POIL); }
+  for(let k = 0; k < 6; k++) boule(M, k % 2 ? 0xD8DCB0 : 0xC8CC98, 0, -.006 - k * .002, .044 + k * .019, .02 - k * .0025, .019 - k * .0025, .013, BOULE);   // l'abdomen pâle
+  boule(M, pale, 0, .004, -.056, .025, .024, .023, ROND);                                           // la tête
+  let a = V(0, -.016, -.068);
+  for(let k = 1; k <= 12; k++){ const t = k / 12 * Math.PI * 3.2, r = .011 * (1 - k / 14), b = V(0, -.027 + Math.sin(t) * r, -.074 - Math.cos(t) * r * .9 + .006);
+    baton(M, 0x8A5A3A, a, b, .002); a = b; }                                                        // la trompe enroulée
+  for(const s of [-1, 1]){
+    boule(M, 0x2A1A14, s * .019, .008, -.06, .013, .016, .014);
+    boule(M, 0xFFFFFF, s * .025, .016, -.07, .0034, .004, .0034, BOULE_P);
+    const p0 = V(s * .008, .024, -.072), p1 = V(s * .05, .1, -.145);                                // l'antenne rose à massue
+    baton(M, rose, p0, p1, .002); ovale(M, rose, p1, p1.clone().sub(p0), .01, .005, .005);
+    for(const [h, g, p] of [[V(s * .014, -.022, -.04), V(s * .034, -.04, -.054), V(s * .042, -.075, -.064)],
+                            [V(s * .015, -.022, -.022), V(s * .04, -.043, -.02), V(s * .052, -.075, -.014)],
+                            [V(s * .015, -.022, -.004), V(s * .042, -.043, .012), V(s * .054, -.075, .03)]]){ pilule(M, 0xC8C49A, h, g, .0036); pilule(M, rose, g, p, .003); }
+  }
+  const tex = male => ({av: peinture(BCAV, c => citronAile(c, CIT_AV, true, male, false)), ar: peinture(BCAR, c => citronAile(c, CIT_AR, false, male, false)),
+    avD: peinture(BCAV, c => citronAile(c, CIT_AV, true, male, true)), arD: peinture(BCAR, c => citronAile(c, CIT_AR, false, male, true))});
+  const ailes = cote => { const av = aileGeo(CIT_AV, cote, BCAV, 3), ar = aileGeo(CIT_AR, cote, BCAR, 3); ar.translate(0, -.004, 0);
+    return {av, ar, avD: retourne(av), arD: retourne(ar)}; };
+  return CITRON = {corps: fusionner(M), male: tex(true), femelle: tex(false), droite: ailes(1), gauche: ailes(-1)};
+}
+export function citronModele(){
+  const G = citronGeos(), g = new THREE.Group(), ailes = [], f = THREE.FrontSide, male = Math.random() < .5, T = male ? G.male : G.femelle;
+  const corps = new THREE.Mesh(G.corps, corpsMat()); corps.position.y = .075; g.add(corps);
+  for(const [A, cote] of [[G.droite, 1], [G.gauche, -1]]){
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(A.av, toon({map: T.avD, side: f})), new THREE.Mesh(A.ar, toon({map: T.arD, side: f})),   // (aileGeo regarde vers le bas : le dessous)
+              new THREE.Mesh(A.avD, toon({map: T.av, side: f})), new THREE.Mesh(A.arD, toon({map: T.ar, side: f})));
+    pivot.position.set(cote * .03, .093, -.01); g.add(pivot);
+    ailes.push({pivot, cote});
+  }
+  g.userData.ailes = ailes;
+  g.userData.ferme = 1.55;
+  g.userData.toujoursFerme = true;                                                             // il n'ouvre jamais ses ailes au soleil
+  g.userData.male = male;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1151,4 +1224,4 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   grillon: {fabrique: grillonModele, echelle: ECHELLE_GRILLON}, hanneton: {fabrique: hannetonModele, echelle: ECHELLE_HANNETON},
   punaise: {fabrique: punaiseModele, echelle: ECHELLE_PUNAISE}, luciole: {fabrique: lucioleModele, echelle: ECHELLE_LUCIOLE},
   paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
-  vulcain: {fabrique: vulcainModele, echelle: 1.52}};
+  vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4}};
