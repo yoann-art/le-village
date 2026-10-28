@@ -26,7 +26,7 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, OISEAUX, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet } from "../js/donnees.js";
 import { state, agrandirIle } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
@@ -43,7 +43,7 @@ import { footOf } from "../js/monde/meubles.js";
 import { updateVitrine } from "../js/vitrine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
 import { lacherInsecte, pauseInsectes, insectesPresents, essaiRate, essaiFuite, attrapeEnCours } from "../js/insectes.js";
-import { lacherOiseau, pauseOiseaux, oiseauEnCours } from "../js/oiseaux.js";
+import { lacherOiseau, pauseOiseaux, oiseauEnCours, oiseauxAPondre, OISEAUX_SAISON, essaiEnvol, oiseauxIci } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci, hydreIci, pochesIci, eclaterPoche } from "../js/monstres.js";
 import { antre } from "../js/monde/grotte.js";
@@ -1713,7 +1713,25 @@ export async function verifier(){
     if(owned("moineau") <= avant) throw new Error("pas de moineau dans le sac");
     if(!state.carnet.oiseaux.moineau) throw new Error("le moineau n'est pas au carnet");
     frames(40);
-    return "un moineau, inscrit au carnet ; une coccinelle a fui le moineau posé tout près";
+    /* 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début d'une partie, seuls les communs */
+    if(OISEAUX_SAISON.printemps !== 4 || OISEAUX_SAISON.ete !== 4 || OISEAUX_SAISON.automne !== 3 || OISEAUX_SAISON.hiver !== 3) throw new Error("le nombre d'oiseaux par saison a changé");
+    const carnetO = state.carnet.oiseaux, matin = new Date(2026, 4, 15, 10);
+    state.carnet.oiseaux = {};
+    const neuf = oiseauxAPondre("ile", matin);
+    state.carnet.oiseaux = {moineau: {n: 3}};
+    const apres = oiseauxAPondre("ile", matin);
+    state.carnet.oiseaux = carnetO;
+    if(!neuf.length || neuf.some(k => OISEAUX[k].rarete !== "commun")) throw new Error(`au début d'une partie, viennent : ${neuf.join(", ")}`);
+    if(!apres.some(k => OISEAUX[k].rarete !== "commun")) throw new Error("après 3 oiseaux attrapés, seuls les communs viennent encore");
+    /* les moineaux en groupe : chacun compte, ils s'envolent ensemble */
+    pauseOiseaux(true); pauseOiseaux(false);
+    const chefM = lacherOiseau("moineau", player.position.x + 4, player.position.z + 4, 0, 3); frames(2);
+    const groupeM = Object.values(oiseauxIci()).filter(o => o.bande && o.bande === chefM.bande);
+    if(groupeM.length !== 3) throw new Error(`le groupe de moineaux compte ${groupeM.length} oiseaux`);
+    essaiEnvol(chefM); frames(1);
+    if(groupeM.some(o => o.etat === "pose")) throw new Error("les moineaux ne s'envolent pas ensemble");
+    pauseOiseaux(true); pauseOiseaux(false); frames(2);
+    return `un moineau, inscrit au carnet ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; un groupe de 3 moineaux qui s'envolent ensemble`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

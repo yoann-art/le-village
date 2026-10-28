@@ -36,6 +36,17 @@ import { user } from "./usure.js";
 
 /* Combien, où, combien de temps, la peur (à régler en jouant) */
 export const OISEAU = {max: 4, rayon: 10, vie: [60, 150], portee: 1.8, peur: 3.5, tropPres: .8, revient: .7};
+/* Combien à la fois autour du personnage, selon la saison (Yo, 28 octobre 2026 : « Ça me va ») : 4 quand ils chantent et
+   nichent, 3 en automne et en hiver ; DEBUT : tant que le carnet compte moins de 3 oiseaux attrapés, seuls les communs
+   viennent (une nouvelle partie en montre tout de suite) */
+export const OISEAUX_SAISON = {printemps: 4, ete: 4, automne: 3, hiver: 3}, DEBUT = 3;
+const maxIci = () => OISEAUX_SAISON[saisonDe(new Date())] || OISEAU.max;
+/* Ceux qui peuvent venir maintenant : au début d'une partie, les communs seulement (s'il y en a à cette heure) */
+export function oiseauxAPondre(zone = "ile", d = new Date()){
+  const ks = oiseauxPresents(zone, d), pris = Object.values(state.carnet.oiseaux).reduce((n, e) => n + (e.n || 0), 0);
+  const communs = ks.filter(k => OISEAUX[k].rarete === "commun");
+  return pris < DEBUT && communs.length ? communs : ks;
+}
 
 export function oiseauxPresents(zone = "ile", d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60;
@@ -180,7 +191,7 @@ function ajouter(k, pl){
 function retirer(o){ groupe.remove(o.mesh); oiseaux.splice(oiseaux.indexOf(o), 1); }
 let chant = -1e9;
 function pondre(){
-  const ks = oiseauxPresents(ici);
+  const ks = oiseauxAPondre(ici), libres = maxIci() - oiseaux.filter(o => o.etat !== "part").length;
   if(!ks.length) return;
   for(let essai = 0; essai < 6; essai++){
     const par = {};
@@ -189,11 +200,13 @@ function pondre(){
     let x = Math.random() * rangs.reduce((n, r) => n + PECHE.poids[r], 0);
     const r = rangs.find(r => (x -= PECHE.poids[r]) < 0) || rangs[0];
     const k = par[r][Math.floor(Math.random() * par[r].length)], p = OISEAUX[k];
+    const n = p.groupe ? Math.min(libres, 2 + (Math.random() < .5 ? 1 : 0)) : 1;   // les moineaux : 2 ou 3, selon la place qui reste
+    if(p.groupe && n < 2) continue;
     const pl = places(p.ou[Math.floor(Math.random() * p.ou.length)]).filter(q => !oiseaux.some(o => Math.hypot(o.pl.x - q.x, o.pl.z - q.z) < 1.2));
     if(!pl.length) continue;
-    const o = ajouter(k, pl[Math.floor(Math.random() * pl.length)]);
-    /* il arrive en volant, de haut */
-    o.vol = {x0: o.x + 3, y0: o.y + 3, z0: o.z - 2, t: 0, d: 1.4}; o.etat = "vol";
+    const o = bande(k, pl[Math.floor(Math.random() * pl.length)], n);
+    /* il arrive en volant, de haut (le groupe ensemble) */
+    for(const a of membres(o)){ a.vol = {x0: a.x + 3, y0: a.y + 3, z0: a.z - 2, t: 0, d: 1.4 + Math.random() * .2}; a.etat = "vol"; }
     /* le corbeau des brumes répète des mots entendus ailleurs (carnet) */
     if(p.mots && performance.now() - chant > 90000){ chant = performance.now();
       toast(`🐦 ${["« Bonjour ! »", "« Ferrer ! »", "« Coucou ! Coucou ! »", "« Couic ! »", "« Grrr… »", "« Planches ! »"][Math.floor(Math.random() * 6)]} … Un corbeau des brumes répète des mots entendus ailleurs, sur un arbre mort`, 3800); }
@@ -203,9 +216,19 @@ function pondre(){
   }
 }
 /* Pour la vérification automatique : un oiseau posé à un endroit précis */
-export function lacherOiseau(k, x, z, y = 0){ const o = ajouter(k, {x, y, z}); o.alpha = 1; return o; }
+export function lacherOiseau(k, x, z, y = 0, n = 1){ const o = bande(k, {x, y, z}, n); for(const a of membres(o)) a.alpha = 1; return o; }
+/* Les moineaux vont en petits groupes de 2 ou 3, comme les vrais (Yo, 28 octobre 2026 : « En groupe de 2, 3 mais considéré
+   comme 2, 3 oiseaux », « Seulement les moineaux ») : chacun compte, ils se posent les uns près des autres, picorent
+   chacun de leur côté et s'envolent ensemble (o.bande, la même pour tout le groupe) */
+function bande(k, pl, n){
+  const chef = ajouter(k, pl);
+  if(n > 1){ chef.bande = {}; for(let j = 1; j < n; j++){ const a = j * 2.4 + Math.random(), r = .35 + Math.random() * .2;
+    ajouter(k, Object.assign({}, pl, {x: pl.x + Math.cos(a) * r, z: pl.z + Math.sin(a) * r})).bande = chef.bande; } }
+  return chef;
+}
+const membres = o => o.bande ? oiseaux.filter(a => a.bande === o.bande) : [o];
 /* S'envoler vers une autre place (loin du personnage s'il fuit) ; pas de place : il s'en va */
-function envoler(o, fuite){
+function envoler(o, fuite, partir){
   const p = OISEAUX[o.k], pp = player.position;
   let cand = [];
   if(!fuite || Math.random() < OISEAU.revient)
@@ -216,7 +239,14 @@ function envoler(o, fuite){
   o.etat = pl ? "vol" : "part";
   if(pl) o.pl = pl;
   else { const a = Math.atan2(o.z - pp.z, o.x - pp.x); o.pl = {x: o.x + Math.cos(a) * 6, y: o.y + 5, z: o.z + Math.sin(a) * 6}; }
+  if(partir) o.etat = "part";
+  for(const a of membres(o)) if(a !== o && a.etat === "pose"){         // le groupe s'envole ensemble, et se repose ensemble
+    a.pl = Object.assign({}, o.pl, {x: o.pl.x + a.x - o.x, z: o.pl.z + a.z - o.z});
+    a.vol = {x0: a.x, y0: a.y, z0: a.z, t: 0, d: o.vol.d + Math.random() * .15}; a.etat = o.etat;
+  }
 }
+/* Pour la vérification automatique : cet oiseau surpris s'envole */
+export const essaiEnvol = o => envoler(o, true);
 let conseil = -1e9;
 function vivre(o, dt){
   o.t += dt; o.age += dt;
@@ -233,7 +263,7 @@ function vivre(o, dt){
       if(o.pl.face !== undefined) o.ang = o.pl.face; }
   } else {                                            // posé : il sautille, picore, tourne la tête
     o.alpha = Math.min(1, o.alpha + dt);
-    if(o.age > o.vie){ envoler(o, true); o.etat = "part"; }
+    if(o.age > o.vie) envoler(o, true, true);
     if(o.saut){
       o.saut.t += dt; const u = Math.min(1, o.saut.t / .25);
       o.x = o.saut.x0 + (o.saut.x1 - o.saut.x0) * u; o.z = o.saut.z0 + (o.saut.z1 - o.saut.z0) * u; o.y = o.pl.y + Math.sin(u * Math.PI) * .1;
@@ -283,6 +313,8 @@ function lancerFilet(o){
   const nouveau = !e.n; e.n++;
   save();
   retirer(o);
+  const reste = o.bande && oiseaux.find(a => a.bande === o.bande && a.etat === "pose");
+  if(reste) envoler(reste, true);                   // les autres du groupe s'envolent
   montre = {mesh: modele(o.k), t: 0}; sceneIci().add(montre.mesh);
   const p = OISEAUX[o.k];
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(o.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
@@ -327,5 +359,5 @@ export function updateOiseaux(dt, actif, ou){
     vivre(o, dt);
   }
   ponte -= dt;
-  if(ponte <= 0){ ponte = 2.5; if(!enPause && oiseaux.filter(o => o.etat !== "part").length < OISEAU.max) pondre(); }
+  if(ponte <= 0){ ponte = 2.5; if(!enPause && oiseaux.filter(o => o.etat !== "part").length < maxIci()) pondre(); }
 }
