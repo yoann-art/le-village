@@ -253,15 +253,20 @@ function vivre(o, dt){
       o.saut.t += dt; const u = Math.min(1, o.saut.t / (o.saut.d || .25));
       o.x = o.saut.x0 + (o.saut.x1 - o.saut.x0) * u; o.z = o.saut.z0 + (o.saut.z1 - o.saut.z0) * u; o.y = o.pl.y + Math.sin(u * Math.PI) * (o.saut.d ? .02 : .1);
       if(u >= 1){ o.saut = null;
-        if(o.course > 0 && --o.course > 0){ const d = .14;                 // le merle court : un pas encore, tout droit
-          o.saut = {t: 0, d: .11, x0: o.x, z0: o.z, x1: o.x + Math.cos(o.ang) * d, z1: o.z + Math.sin(o.ang) * d}; } }
+        if(o.course > 0 && --o.course > 0){ const P = o.pas || {d: .11, l: .14};   // le merle court, la pie marche : un pas encore, tout droit
+          o.saut = {t: 0, d: P.d, x0: o.x, z0: o.z, x1: o.x + Math.cos(o.ang) * P.l, z1: o.z + Math.sin(o.ang) * P.l}; } }
     } else if(o.pl.face !== undefined){               // agrippé au tronc : le pic vert tambourine
       if((o.geste -= dt) <= 0){ o.geste = OISEAUX[o.k].pic ? .18 + (Math.random() < .2 ? 1.5 : 0) : 1 + Math.random() * 2; o.pique = .16; }
     } else if((o.geste -= dt) <= 0){
       o.geste = 1 + Math.random() * 2.5;
       const r = Math.random();
-      if(OISEAUX[o.k].ecoute && !o.pl.perche && r < .8){                 // le merle : il court quelques pas, s'arrête net, penche la tête…
-        if(r < .4){ const a = Math.atan2(o.pl.z - o.z, o.pl.x - o.x) + (Math.random() - .5) * 2.4; o.ang = a; o.course = 3 + Math.floor(Math.random() * 3);
+      if(OISEAUX[o.k].marche && !o.pl.perche && r < .65){               // la pie : elle marche à grands pas en se dandinant, ou saute de côté
+        if(r < .45){ const a = Math.atan2(o.pl.z - o.z, o.pl.x - o.x) + (Math.random() - .5) * 2.4; o.ang = a; o.course = 2 + Math.floor(Math.random() * 3);
+          o.pas = {d: .28, l: .13}; o.saut = {t: 0, d: .28, x0: o.x, z0: o.z, x1: o.x + Math.cos(a) * .13, z1: o.z + Math.sin(a) * .13}; }
+        else { const c = Math.random() < .5 ? 1 : -1, a = o.ang + c * Math.PI / 2;
+          o.saut = {t: 0, x0: o.x, z0: o.z, x1: o.x + Math.cos(a) * .2, z1: o.z + Math.sin(a) * .2}; } }
+      else if(OISEAUX[o.k].ecoute && !o.pl.perche && r < .8){                 // le merle : il court quelques pas, s'arrête net, penche la tête…
+        if(r < .4){ const a = Math.atan2(o.pl.z - o.z, o.pl.x - o.x) + (Math.random() - .5) * 2.4; o.ang = a; o.course = 3 + Math.floor(Math.random() * 3); o.pas = null;
           o.saut = {t: 0, d: .11, x0: o.x, z0: o.z, x1: o.x + Math.cos(a) * .14, z1: o.z + Math.sin(a) * .14}; }
         else { o.penche = .9; o.geste = 2.2; } }
       else if(r < .35 && !o.pl.perche){ const a = Math.random() * 6.28; o.ang = a;
@@ -292,7 +297,10 @@ function vivre(o, dt){
   /* la tête en bas, accrochée à sa branche par les pieds, puis elle se remet droite */
   if(o.envers > 0 && (o.etat !== "pose" || (o.envers -= dt) <= 0)) o.envers = 0;
   o.inv = (o.inv || 0) + ((o.envers > 0 ? 1 : 0) - (o.inv || 0)) * Math.min(1, dt * 8);
-  o.mesh.rotation.z = o.inv * Math.PI;
+  const pas = OISEAUX[o.k].marche && o.saut && o.saut.d ? Math.sin(o.saut.t / o.saut.d * Math.PI) : 0;   // la pie se dandine à chaque pas
+  o.mesh.rotation.z = o.inv * Math.PI + pas * (o.course % 2 ? .12 : -.12);
+  const vol = o.mesh.userData.vol;
+  if(vol) for(const m of vol) m.visible = bat;                          // le blanc des ailes, en vol seulement
   o.mesh.rotation.y = -o.ang - Math.PI/2;
   o.mesh.rotation.x = o.pique > 0 ? Math.sin(o.pique / (o.pl.face !== undefined ? .16 : .4) * Math.PI) * .5 : 0;
   if(o.tire > 0) o.mesh.rotation.x = o.tire > .55 ? Math.sin((.8 - o.tire) / .25 * Math.PI / 2) * .6 : .6 * o.tire / .55 - Math.sin((.55 - o.tire) / .55 * Math.PI) * .15;   // le bec dans la terre, puis il tire en arrière
@@ -307,7 +315,7 @@ function vivre(o, dt){
     const c = o.courbe > 0 ? Math.sin((1 - (o.courbe = Math.max(0, o.courbe - dt)) / .45) * Math.PI) : 0;
     const q = o.coup > 0 ? Math.sin((1 - (o.coup = Math.max(0, o.coup - dt)) / .18) * Math.PI) : 0;
     o.mesh.rotation.x += c * .3;                                         // il plonge un peu en avant…
-    queue.rotation.x = -(c * .8 + q * .45 + (o.pose > 0 ? Math.sin(o.pose / .5 * Math.PI) * .9 : 0));   // … et relève la queue (et en se posant)
+    queue.rotation.x = -(c * .8 + q * .45 + (o.pose > 0 ? Math.sin(o.pose / .5 * Math.PI) * .9 : 0) + pas * .3);   // … et relève la queue (en se posant ; la pie à chaque pas)
   }
   const al = Math.max(0, o.alpha) * (OISEAUX[o.k].brume ? .78 : 1);   // le corbeau des brumes se fond dans la brume
   for(const m of o.mats) m.opacity = al;

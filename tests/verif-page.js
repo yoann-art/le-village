@@ -1758,8 +1758,16 @@ export async function verifier(){
     if(!me.mesh.userData.ver.visible) throw new Error("le merle ne tire pas de ver");
     me.tire = 0; me.pose = .5; frames(4);
     if(me.mesh.userData.queue.rotation.x > -.4) throw new Error("le merle posé ne relève pas la queue");
+    /* la pie : elle marche à grands pas, la queue qui bouge ; le blanc des ailes en vol seulement */
+    pauseOiseaux(true); pauseOiseaux(false);
+    const pi2 = lacherOiseau("pie", player.position.x - 3, player.position.z - 4); frames(2);
+    if(!pi2.mesh.userData.vol || pi2.mesh.userData.vol.some(m => m.visible)) throw new Error("la pie posée montre le blanc de ses ailes");
+    const r2 = Math.random; Math.random = () => .2; pi2.geste = 0; frames(1); Math.random = r2;
+    if(!pi2.saut || pi2.saut.d !== .28) throw new Error("la pie ne marche pas à grands pas");
+    pi2.vol = {x0: pi2.x, y0: pi2.y, z0: pi2.z, t: 0, d: 2}; pi2.etat = "vol"; frames(1);
+    if(!pi2.mesh.userData.vol.every(m => m.visible)) throw new Error("la pie en vol ne montre pas le blanc de ses ailes");
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

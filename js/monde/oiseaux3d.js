@@ -83,8 +83,12 @@ function assembler(G, male){
   const g = new THREE.Group(), mat = corpsMat();
   g.add(new THREE.Mesh(G.corps, mat));
   const tete = new THREE.Group(); tete.position.set(0, .3, -.06); tete.add(new THREE.Mesh(G.tete, mat)); g.add(tete);
-  g.userData.ailes = [[G.droite, 1], [G.gauche, -1]].map(([geo, cote]) => { const pivot = new THREE.Group();
-    pivot.position.set(cote * .092, .26, 0); pivot.add(new THREE.Mesh(geo, mat)); g.add(pivot); return {pivot, cote}; });
+  const vol = [];                                                                                     // ce qu'on ne voit qu'en vol (le blanc des ailes de la pie)
+  g.userData.ailes = [[G.droite, 1, G.volD], [G.gauche, -1, G.volG]].map(([geo, cote, v]) => { const pivot = new THREE.Group();
+    pivot.position.set(cote * .092, .26, 0); pivot.add(new THREE.Mesh(geo, mat));
+    if(v){ const m = new THREE.Mesh(v, mat); m.visible = false; pivot.add(m); vol.push(m); }
+    g.add(pivot); return {pivot, cote}; });
+  if(vol.length) g.userData.vol = vol;
   if(G.ver){ const v = new THREE.Mesh(G.ver, mat); v.visible = false; tete.add(v); g.userData.ver = v; }   // le ver au bout du bec (le merle)
   if(G.queue){ const q = new THREE.Group(); q.position.set(0, .2, .15); q.add(new THREE.Mesh(G.queue, mat)); g.add(q); g.userData.queue = q; }   // la queue sur son pivot (le rouge-gorge la relève)
   g.userData.tete = tete; g.userData.male = male;
@@ -219,7 +223,44 @@ export function merleModele(opt = {}){
   return assembler(merleGeos(male), male);
 }
 
+/* ---------- La pie bavarde ----------
+   D'après l'image de Yo (28 octobre 2026 : « Voici la pie »), comme une vraie (Yo : « Comme une vraie, avec la longue
+   queue », « La marche, les sauts de côté et la queue qui bouge », « Le blanc des ailes en vol : d'accord », pas de
+   caillou brillant) : ronde comme l'image ; la tête, la poitrine et le dos noirs, le ventre et les flancs blancs, les
+   épaules blanches ; les ailes noires aux reflets bleus, le bout blanc qu'on ne voit qu'en vol (userData.vol) ; la très
+   longue queue noire aux reflets verts et violets, sur son pivot ; le bec fort et les pattes noirs. Mâle et femelle sont
+   pareils. */
+let PIE = null;
+function pieGeos(){
+  if(PIE) return PIE;
+  const noir = 0x18181C, blanc = 0xF2F0EA, bleu = 0x2A3488, vert = 0x2A5A4C, violet = 0x3A2A5A, M = [];
+  boule(M, blanc, 0, .19, .01, .155, .155, .17);                                                      // le ventre et les flancs blancs
+  boule(M, noir, 0, .275, -.035, .13, .1, .14);                                                       // la poitrine noire, en pointe
+  boule(M, noir, 0, .245, .065, .132, .115, .14);                                                     // le dos noir
+  for(const s of [-1, 1]) patte(M, s, 0x222226, 0x101012);
+  const Q = [];                                                                                      // la très longue queue, de plus en plus étroite
+  bouleT(Q, noir, 0, 0, .17, .05, .014, .21);
+  bouleT(Q, violet, 0, .004, .15, .034, .012, .14, 0, 0, 0, BOULE_P);                                    // les reflets violets…
+  bouleT(Q, vert, 0, .004, .3, .028, .012, .075, 0, 0, 0, BOULE_P);                                      // … et verts, vers le bout
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(noir, 0, .36, -.07, .13, .125, .127);
+  for(const s of [-1, 1]){
+    t(0x2A1E18, s * .05, .378, -.18, .026, .028, .02);                                                // un grand oeil brun sombre
+    t(0xFFFFFF, s * .056, .388, -.197, .0065, .0075, .004, BOULE_P);
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .35 - y0, -.19 - z0), q0, V(.028, .025, .065)), c: 0x202024});   // le bec fort
+  const aile = (s, vol) => { const A = [];
+    if(vol){ bouleT(A, blanc, s * .02, -.06, .15, .028, .055, .07, -.25, 0, s * .15, BOULE_P); return fusionner(A); }   // le bout blanc, en vol
+    bouleT(A, noir, s * .03, -.04, .07, .035, .085, .16, -.25, 0, s * .15);
+    bouleT(A, bleu, s * .05, -.055, .08, .018, .05, .09, -.25, 0, s * .15);                                // les reflets bleus
+    bouleT(A, blanc, s * .036, -.002, -.01, .03, .045, .065, -.25, 0, s * .15);                             // l'épaule blanche
+    return fusionner(A); };
+  return PIE = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), droite: aile(1), gauche: aile(-1), volD: aile(1, true), volG: aile(-1, true)};
+}
+export const pieModele = () => assembler(pieGeos(), undefined);
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
-  rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92}};
+  rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
+  pie: {fabrique: pieModele, echelle: .85}};
