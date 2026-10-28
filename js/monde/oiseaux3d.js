@@ -85,6 +85,7 @@ function assembler(G, male){
   const tete = new THREE.Group(); tete.position.set(0, .3, -.06); tete.add(new THREE.Mesh(G.tete, mat)); g.add(tete);
   g.userData.ailes = [[G.droite, 1], [G.gauche, -1]].map(([geo, cote]) => { const pivot = new THREE.Group();
     pivot.position.set(cote * .092, .26, 0); pivot.add(new THREE.Mesh(geo, mat)); g.add(pivot); return {pivot, cote}; });
+  if(G.queue){ const q = new THREE.Group(); q.position.set(0, .2, .15); q.add(new THREE.Mesh(G.queue, mat)); g.add(q); g.userData.queue = q; }   // la queue sur son pivot (le rouge-gorge la relève)
   g.userData.tete = tete; g.userData.male = male;
   return g;
 }
@@ -142,6 +143,43 @@ export function mesangeModele(opt = {}){
   return assembler(mesangeGeos(male), male);
 }
 
+/* ---------- Le rouge-gorge ----------
+   D'après l'image de Yo (28 octobre 2026 : « Voici le rouge-gorge »), comme un vrai (Yo : « Comme un vrai », « Les
+   courbettes et les coups de queue, d'accord ») : rond comme l'image ; la face et la poitrine orange, bordées de gris-bleu
+   sur les côtés de la tête et du cou ; le dos, les ailes et la queue brun olive ; le ventre blanc, les flancs chamois ; le
+   bec fin et sombre ; les pattes fines, brun-rose. Mâle et femelle sont pareils. La queue est sur son pivot (userData.queue) :
+   il fait de petites courbettes en la relevant d'un coup. */
+let ROUGE = null;
+function rougeGorgeGeos(){
+  if(ROUGE) return ROUGE;
+  const brun = 0x7E6A4A, orange = 0xE8682A, gris = 0x98A2AE, blanc = 0xF2EEE6, chamois = 0xD8C6A8, patteC = 0xA87A62, griffe = 0x4A3A30;
+  const M = [];
+  boule(M, blanc, 0, .19, .01, .155, .155, .17);                                                      // le ventre blanc
+  boule(M, chamois, 0, .2, .03, .158, .13, .15);                                                      // les flancs chamois
+  boule(M, gris, 0, .262, .012, .1418, .088, .12);                                                       // la bordure gris-bleu
+  boule(M, orange, 0, .24, -.045, .14, .115, .135);                                                   // la poitrine orange
+  boule(M, brun, 0, .245, .07, .133, .112, .14);                                                      // le dos brun olive
+  for(const s of [-1, 1]) patte(M, s, patteC, griffe);
+  const Q = []; bouleT(Q, brun, 0, 0, .06, .042, .011, .085, -.3); bouleT(Q, 0x6A5638, 0, -.004, .11, .036, .008, .04, -.3, 0, 0, BOULE_P);   // la queue, sur son pivot
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(brun, 0, .365, -.065, .13, .125, .127);                                                           // la tête brune
+  t(gris, 0, .345, -.072, .1315, .1, .118);                                                           // le gris-bleu, en bordure sur les côtés
+  t(orange, 0, .352, -.082, .128, .118, .122);                                                        // la face orange, jusqu'au-dessus des yeux
+  for(const s of [-1, 1]){
+    t(0x1A1210, s * .05, .378, -.182, .025, .027, .02);                                               // un grand oeil brillant
+    t(0xFFFFFF, s * .056, .388, -.199, .0065, .0075, .004, BOULE_P);                                 // son reflet
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .352 - y0, -.2 - z0), q0, V(.018, .016, .045)), c: 0x3A2E26});   // le bec fin, sombre
+  const aile = s => { const A = [];
+    bouleT(A, brun, s * .03, -.04, .06, .035, .085, .15, -.25, 0, s * .15);
+    for(let k = 0; k < 3; k++) bouleT(A, 0xB8A07A, s * .058, -.03 - k * .016, .03 + k * .045, .005, .02, .035, -.25, 0, s * .15, BOULE_P);   // le bord clair des plumes
+    bouleT(A, 0x5E4C32, s * .035, -.075, .18, .026, .022, .055, -.3, 0, s * .12, BOULE_P);
+    return fusionner(A); };
+  return ROUGE = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), droite: aile(1), gauche: aile(-1)};
+}
+export const rougeGorgeModele = () => assembler(rougeGorgeGeos(), undefined);
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
-export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95}};
+export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
+  rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}};

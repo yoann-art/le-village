@@ -1741,8 +1741,14 @@ export async function verifier(){
     const r1 = Math.random; Math.random = () => .4; mes.geste = 0; frames(1); Math.random = r1;
     frames(10);
     if(!(mes.envers > 0) || mes.mesh.rotation.z < 2.5) throw new Error(`la mésange perchée ne se met pas la tête en bas (${mes.envers}, ${mes.mesh.rotation.z.toFixed(2)})`);
+    /* le rouge-gorge fait des courbettes en relevant la queue */
+    pauseOiseaux(true); pauseOiseaux(false);
+    const rg = lacherOiseau("rougeGorge", player.position.x - 4, player.position.z + 3); frames(2);
+    if(!rg.mesh.userData.queue) throw new Error("le rouge-gorge n'a pas sa queue sur un pivot");
+    rg.courbe = .45; frames(4);
+    if(rg.mesh.userData.queue.rotation.x > -.3) throw new Error(`le rouge-gorge ne relève pas la queue (${rg.mesh.userData.queue.rotation.x.toFixed(2)})`);
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

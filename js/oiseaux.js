@@ -284,6 +284,17 @@ function vivre(o, dt){
   o.mesh.rotation.z = o.inv * Math.PI;
   o.mesh.rotation.y = -o.ang - Math.PI/2;
   o.mesh.rotation.x = o.pique > 0 ? Math.sin(o.pique / (o.pl.face !== undefined ? .16 : .4) * Math.PI) * .5 : 0;
+  /* le rouge-gorge fait de petites courbettes en relevant la queue d'un coup, et l'agite par petits coups (Yo, 28 octobre
+     2026 : « Les courbettes et les coups de queue, d'accord ») */
+  const queue = o.mesh.userData.queue;
+  if(queue){
+    if(o.etat === "pose" && !(o.courbe > 0) && Math.random() < dt * .5) o.courbe = .45;
+    if(o.etat === "pose" && !(o.coup > 0) && Math.random() < dt * .9) o.coup = .18;
+    const c = o.courbe > 0 ? Math.sin((1 - (o.courbe = Math.max(0, o.courbe - dt)) / .45) * Math.PI) : 0;
+    const q = o.coup > 0 ? Math.sin((1 - (o.coup = Math.max(0, o.coup - dt)) / .18) * Math.PI) : 0;
+    o.mesh.rotation.x += c * .3;                                         // il plonge un peu en avant…
+    queue.rotation.x = -(c * .8 + q * .45);                              // … et relève la queue
+  }
   const al = Math.max(0, o.alpha) * (OISEAUX[o.k].brume ? .78 : 1);   // le corbeau des brumes se fond dans la brume
   for(const m of o.mats) m.opacity = al;
 }
