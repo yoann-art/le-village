@@ -78,9 +78,9 @@ function moineauGeos(male, becNoir){
     return fusionner(A); };
   return MOINEAU[cle] = {corps: fusionner(M), tete: fusionner(T), droite: aile(1), gauche: aile(-1)};
 }
-export function moineauModele(opt = {}){
-  const male = opt.male ?? Math.random() < .5, becNoir = male && (opt.saison === "printemps" || opt.saison === "ete");
-  const G = moineauGeos(male, becNoir), g = new THREE.Group(), mat = corpsMat();
+/* un petit oiseau rond : le corps, la tête sur son pivot au cou, les deux ailes sur leurs pivots aux épaules */
+function assembler(G, male){
+  const g = new THREE.Group(), mat = corpsMat();
   g.add(new THREE.Mesh(G.corps, mat));
   const tete = new THREE.Group(); tete.position.set(0, .3, -.06); tete.add(new THREE.Mesh(G.tete, mat)); g.add(tete);
   g.userData.ailes = [[G.droite, 1], [G.gauche, -1]].map(([geo, cote]) => { const pivot = new THREE.Group();
@@ -88,7 +88,60 @@ export function moineauModele(opt = {}){
   g.userData.tete = tete; g.userData.male = male;
   return g;
 }
+export function moineauModele(opt = {}){
+  const male = opt.male ?? Math.random() < .5, becNoir = male && (opt.saison === "printemps" || opt.saison === "ete");
+  return assembler(moineauGeos(male, becNoir), male);
+}
+
+/* ---------- La mésange charbonnière ----------
+   D'après l'image de Yo (28 octobre 2026 : « La mésange charbonnière »), comme une vraie (Yo : « Comme une vraie, avec la
+   tache de la nuque et la queue bordée de blanc », « Mâles et femelles au hasard, oui ») : ronde comme l'image ; la tête
+   noire aux reflets bleus, les grandes joues blanches, la petite tache blanche de la nuque ; le ventre jaune et sa bande
+   noire, large et qui s'élargit entre les pattes chez le mâle, fine et qui s'arrête avant le bas du ventre chez la femelle
+   (au hasard) ; le dos vert olive ; les ailes gris-bleu à barre blanche ; la queue gris-bleu bordée de blanc ; le bec noir,
+   les pattes gris-bleu. */
+const MESANGE = {};
+function mesangeGeos(male){
+  if(MESANGE[male]) return MESANGE[male];
+  const noir = 0x1C222C, blanc = 0xF4F2EA, jaune = 0xF2D23A, olive = 0x7E8C3A, bleu = 0x5A6A82, patteC = 0x6A7484, griffe = 0x3A3E46;
+  const M = [];
+  boule(M, jaune, 0, .19, .01, .155, .155, .17);
+  boule(M, jaune, 0, .205, -.05, .138, .135, .12);
+  boule(M, olive, 0, .24, .065, .128, .11, .135);                                                      // le dos vert olive
+  /* la bande noire, du cou au bas du ventre : une boule étroite qui ne dépasse que devant (chez le mâle, une deuxième
+     l'élargit entre les pattes) */
+  if(male){ boule(M, noir, 0, .19, -.012, .034, .152, .175); boule(M, noir, 0, .11, -.006, .046, .085, .158); }
+  else boule(M, noir, 0, .235, -.012, .019, .125, .172);
+  /* la queue gris-bleu, bordée de blanc */
+  bouleT(M, bleu, 0, .205, .205, .042, .011, .095, -.3);
+  for(const s of [-1, 1]) bouleT(M, blanc, s * .036, .204, .215, .008, .01, .08, -.3, s * .08, 0, BOULE_P);
+  for(const s of [-1, 1]) patte(M, s, patteC, griffe);
+  /* la tête noire, sur son pivot au cou (0, .3, −.06) */
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(noir, 0, .36, -.07, .13, .125, .127);
+  t(0x2C3A52, -.03, .43, -.1, .05, .025, .05, BOULE_P);                                               // un reflet bleu sur le noir
+  t(blanc, 0, .38, .054, .03, .03, .014, BOULE_P);                                                    // la tache blanche de la nuque
+  for(const s of [-1, 1]){
+    t(blanc, s * .036, .334, -.092, .1, .088, .102);                                                 // la grande joue blanche
+    t(0x1A1210, s * .05, .378, -.176, .025, .027, .02);                                               // un grand oeil brillant
+    t(0xFFFFFF, s * .056, .388, -.193, .0065, .0075, .004, BOULE_P);                                 // son reflet
+  }
+  t(noir, 0, .292, -.158, .058, .042, .03);                                                             // la gorge noire, jusqu'à la bande
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .35 - y0, -.188 - z0), q0, V(.021, .019, .045)), c: 0x26282C});   // le bec noir, fin
+  /* une aile repliée : l'épaule vert olive, le gris-bleu, la barre blanche, le bout sombre */
+  const aile = s => { const A = [];
+    bouleT(A, bleu, s * .03, -.04, .06, .035, .085, .15, -.25, 0, s * .15);
+    bouleT(A, olive, s * .04, -.008, -.005, .022, .036, .06, -.25, 0, s * .15);
+    bouleT(A, blanc, s * .062, -.03, .04, .005, .01, .05, -.25, 0, s * .15, BOULE_P);                    // la barre blanche
+    bouleT(A, 0x3A4456, s * .035, -.075, .18, .026, .022, .055, -.3, 0, s * .12, BOULE_P);                 // le bout des grandes plumes
+    return fusionner(A); };
+  return MESANGE[male] = {corps: fusionner(M), tete: fusionner(T), droite: aile(1), gauche: aile(-1)};
+}
+export function mesangeModele(opt = {}){
+  const male = opt.male ?? Math.random() < .5;
+  return assembler(mesangeGeos(male), male);
+}
 
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
-export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}};
+export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95}};

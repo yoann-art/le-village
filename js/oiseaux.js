@@ -278,7 +278,8 @@ function vivre(o, dt){
       const r = Math.random();
       if(r < .35 && !o.pl.perche){ const a = Math.random() * 6.28; o.ang = a;
         o.saut = {t: 0, x0: o.x, z0: o.z, x1: o.pl.x + Math.cos(a) * .25, z1: o.pl.z + Math.sin(a) * .25}; }
-      else if(r < .7) o.pique = .4;
+      else if(r < .7){ o.pique = .4;
+        if(o.pl.perche && OISEAUX[o.k].acrobate && Math.random() < .5) o.envers = 2 + Math.random() * 2; }   // la mésange se suspend la tête en bas pour picorer
       else if(o.mesh.userData.tete && Math.random() < .7) o.regard = Math.random() < .25 ? 0 : (Math.random() - .5) * 2;   // le moineau tourne la tête, d'un coup, puis ailleurs
       else o.ang += (Math.random() - .5) * 2;
     }
@@ -289,10 +290,16 @@ function vivre(o, dt){
     }
     if((o.bouge -= dt) <= 0) envoler(o, false);       // de temps en temps, il change de place
   }
-  for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (bat ? Math.sin(o.t * 22) * .9 : .05);
+  /* le vol ondulé (la mésange) : quelques battements, puis les ailes fermées, en glissant un peu plus bas */
+  const plie = bat && OISEAUX[o.k].ondule && (o.t * 2.2) % 1 > .55;
+  for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (bat && !plie ? Math.sin(o.t * 22) * .9 : .05);
   const tete = o.mesh.userData.tete;
   if(tete){ const r = bat ? 0 : o.regard || 0; tete.rotation.y += (r - tete.rotation.y) * Math.min(1, dt * 14); }   // de petits coups de tête vifs
-  o.mesh.position.set(o.x, o.y, o.z);
+  o.mesh.position.set(o.x, o.y + (bat && OISEAUX[o.k].ondule ? Math.cos(o.t * 2.2 * Math.PI * 2) * .08 : 0), o.z);
+  /* la tête en bas, accrochée à sa branche par les pieds, puis elle se remet droite */
+  if(o.envers > 0 && (o.etat !== "pose" || (o.envers -= dt) <= 0)) o.envers = 0;
+  o.inv = (o.inv || 0) + ((o.envers > 0 ? 1 : 0) - (o.inv || 0)) * Math.min(1, dt * 8);
+  o.mesh.rotation.z = o.inv * Math.PI;
   o.mesh.rotation.y = -o.ang - Math.PI/2;
   o.mesh.rotation.x = o.pique > 0 ? Math.sin(o.pique / (o.pl.face !== undefined ? .16 : .4) * Math.PI) * .5 : 0;
   const al = Math.max(0, o.alpha) * (OISEAUX[o.k].brume ? .78 : 1);   // le corbeau des brumes se fond dans la brume

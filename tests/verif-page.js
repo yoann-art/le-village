@@ -1735,8 +1735,16 @@ export async function verifier(){
     const moiM = Array.from({length: 24}, () => MODELES_OISEAUX.moineau.fabrique().userData).filter(u => u.male).length;
     if(!moiM || moiM === 24) throw new Error(`les moineaux ne sont pas variés (${moiM} mâles sur 24)`);
     if(!groupeM.every(o => o.mesh.userData.tete && o.mesh.userData.ailes.length === 2)) throw new Error("le moineau n'a pas sa tête qui tourne, ou ses deux ailes");
+    /* la mésange charbonnière : mâles et femelles au hasard (la bande large ou fine) ; perchée, elle se suspend la tête en bas */
+    const mesM = Array.from({length: 24}, () => MODELES_OISEAUX.mesange.fabrique().userData).filter(u => u.male).length;
+    if(!mesM || mesM === 24) throw new Error(`les mésanges ne sont pas variées (${mesM} mâles sur 24)`);
+    pauseOiseaux(true); pauseOiseaux(false);
+    const mes = lacherOiseau("mesange", player.position.x + 4, player.position.z - 3, 1.08); mes.pl.perche = true; frames(2);
+    const r1 = Math.random; Math.random = () => .4; mes.geste = 0; frames(1); Math.random = r1;
+    frames(10);
+    if(!(mes.envers > 0) || mes.mesh.rotation.z < 2.5) throw new Error(`la mésange perchée ne se met pas la tête en bas (${mes.envers}, ${mes.mesh.rotation.z.toFixed(2)})`);
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; un groupe de 3 moineaux qui s'envolent ensemble`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; un groupe de 3 moineaux qui s'envolent ensemble`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);
