@@ -1747,8 +1747,19 @@ export async function verifier(){
     if(!rg.mesh.userData.queue) throw new Error("le rouge-gorge n'a pas sa queue sur un pivot");
     rg.courbe = .45; frames(4);
     if(rg.mesh.userData.queue.rotation.x > -.3) throw new Error(`le rouge-gorge ne relève pas la queue (${rg.mesh.userData.queue.rotation.x.toFixed(2)})`);
+    /* le merle : mâles et femelles au hasard ; il penche la tête, puis tire un ver ; posé, il relève la queue */
+    const merM = Array.from({length: 24}, () => MODELES_OISEAUX.merle.fabrique().userData).filter(u => u.male).length;
+    if(!merM || merM === 24) throw new Error(`les merles ne sont pas variés (${merM} mâles sur 24)`);
+    pauseOiseaux(true); pauseOiseaux(false);
+    const me = lacherOiseau("merle", player.position.x + 3, player.position.z - 4); frames(2);
+    me.geste = 99; me.penche = .6; frames(4);
+    if(me.mesh.userData.tete.rotation.z < .3) throw new Error("le merle ne penche pas la tête");
+    me.penche = 0; me.tire = .5; frames(1);
+    if(!me.mesh.userData.ver.visible) throw new Error("le merle ne tire pas de ver");
+    me.tire = 0; me.pose = .5; frames(4);
+    if(me.mesh.userData.queue.rotation.x > -.4) throw new Error("le merle posé ne relève pas la queue");
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

@@ -85,6 +85,7 @@ function assembler(G, male){
   const tete = new THREE.Group(); tete.position.set(0, .3, -.06); tete.add(new THREE.Mesh(G.tete, mat)); g.add(tete);
   g.userData.ailes = [[G.droite, 1], [G.gauche, -1]].map(([geo, cote]) => { const pivot = new THREE.Group();
     pivot.position.set(cote * .092, .26, 0); pivot.add(new THREE.Mesh(geo, mat)); g.add(pivot); return {pivot, cote}; });
+  if(G.ver){ const v = new THREE.Mesh(G.ver, mat); v.visible = false; tete.add(v); g.userData.ver = v; }   // le ver au bout du bec (le merle)
   if(G.queue){ const q = new THREE.Group(); q.position.set(0, .2, .15); q.add(new THREE.Mesh(G.queue, mat)); g.add(q); g.userData.queue = q; }   // la queue sur son pivot (le rouge-gorge la relève)
   g.userData.tete = tete; g.userData.male = male;
   return g;
@@ -179,7 +180,46 @@ function rougeGorgeGeos(){
 }
 export const rougeGorgeModele = () => assembler(rougeGorgeGeos(), undefined);
 
+/* ---------- Le merle noir ----------
+   D'après l'image de Yo (28 octobre 2026 : « Voici le merle »), comme un vrai (Yo : « Comme un vrai, avec les pattes
+   sombres », « Mâles et femelles au hasard », « La course, la tête penchée et le ver », « La queue relevée quand il se
+   pose ») : rond comme l'image, la queue plus longue que celle du moineau ; le mâle tout noir, le bec et le tour de l'oeil
+   jaune-orange ; la femelle brun sombre, la gorge plus claire et tachetée, le bec brunâtre, sans tour de l'oeil ; les pattes
+   brun très sombre. Un ver rose, caché, au bout du bec (userData.ver) : il le tire de la terre. */
+const MERLE = {};
+function merleGeos(male){
+  if(MERLE[male]) return MERLE[male];
+  const C = male ? {corps: 0x1E1A1A, dos: 0x161212, ventre: 0x2A2424, aile: 0x221C1C, bec: 0xF2A22E}
+                 : {corps: 0x4A3A2E, dos: 0x3E3026, ventre: 0x5E4A3A, aile: 0x46362A, bec: 0x8A6A40};
+  const patteC = 0x2A2220, griffe = 0x161210, M = [];
+  boule(M, C.ventre, 0, .19, .01, .155, .155, .17);
+  boule(M, C.corps, 0, .205, -.05, .138, .135, .12);
+  boule(M, C.dos, 0, .24, .065, .13, .112, .14);
+  for(const s of [-1, 1]) patte(M, s, patteC, griffe);
+  const Q = []; bouleT(Q, C.dos, 0, 0, .08, .045, .012, .12, -.3); bouleT(Q, C.aile, 0, -.006, .15, .04, .009, .05, -.3, 0, 0, BOULE_P);   // la longue queue
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(C.corps, 0, .36, -.07, .13, .125, .127);
+  if(!male){ t(0x7A6450, 0, .3, -.15, .06, .05, .03);                                                // la gorge claire, tachetée
+    for(const [x, y] of [[-.02, .31], [.02, .3], [0, .285], [-.03, .29], [.03, .285]]) t(0x4A3A2E, x, y, -.178, .007, .009, .004, BOULE_P); }
+  for(const s of [-1, 1]){
+    if(male) t(C.bec, s * .05, .378, -.176, .031, .033, .022);                                        // le tour de l'oeil jaune-orange
+    t(0x1A1210, s * .05, .378, -.182, .025, .027, .02);                                               // un grand oeil brillant
+    t(0xFFFFFF, s * .056, .388, -.199, .0065, .0075, .004, BOULE_P);                                 // son reflet
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .35 - y0, -.19 - z0), q0, V(.024, .021, .055)), c: C.bec});   // le bec
+  const W = []; for(let k = 0; k < 5; k++){ const a = k / 4; pilule(W, 0xD88A8A, V(Math.sin(a * 6) * .006, .34 - y0 - a * .05, -.24 - z0 + a * .004), V(Math.sin((a + .25) * 6) * .006, .34 - y0 - (a + .25) * .05, -.24 - z0 + (a + .25) * .004), .0045); }
+  const aile = s => { const A = [];
+    bouleT(A, C.aile, s * .03, -.04, .07, .035, .085, .16, -.25, 0, s * .15);
+    bouleT(A, C.dos, s * .035, -.075, .19, .026, .022, .06, -.3, 0, s * .12, BOULE_P);
+    return fusionner(A); };
+  return MERLE[male] = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), ver: fusionner(W), droite: aile(1), gauche: aile(-1)};
+}
+export function merleModele(opt = {}){
+  const male = opt.male ?? Math.random() < .5;
+  return assembler(merleGeos(male), male);
+}
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
-  rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}};
+  rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92}};
