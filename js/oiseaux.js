@@ -32,6 +32,7 @@ import { brouillard } from "./monde/meteo.js";
 import { marais, maraisObj, plante, mcx, mcz, W as WM, CHICOTS } from "./monde/marais.js";
 import { toast } from "./interface.js";
 import { tenu } from "./barre.js";
+import { MODELES_OISEAUX } from "./monde/oiseaux3d.js";
 import { user } from "./usure.js";
 
 /* Combien, où, combien de temps, la peur (à régler en jouant) */
@@ -56,7 +57,9 @@ export function oiseauxPresents(zone = "ile", d = new Date()){
 const leNom = k => { const p = OISEAUX[k]; return `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`; };
 
 /* ----- Le modèle : formes simples, la tête vers -z ----- */
-function modele(k){
+function modele(k, opt = {}){
+  const fait = MODELES_OISEAUX[k];                    // refait d'après l'image de Yo (oiseaux3d.js) ; la saison (le bec du moineau mâle)
+  if(fait){ const g = fait.fabrique(Object.assign({saison: saisonDe(new Date())}, opt)); g.scale.setScalar((OISEAUX[k].taille || 1) * fait.echelle); return g; }
   const p = OISEAUX[k], g = new THREE.Group(), ailes = [], c = p.couleur, ailesC = p.ailes !== undefined ? p.ailes : c;
   const aile = (x, y, z, w, h) => { const pivot = new THREE.Group(); pivot.position.set(x, y, z);
     pivot.add(part(G.head, ailesC, w, .12, h, Math.sign(x) * w * .2, 0, 0)); g.add(pivot); ailes.push({pivot, cote: Math.sign(x)}); };
@@ -276,6 +279,7 @@ function vivre(o, dt){
       if(r < .35 && !o.pl.perche){ const a = Math.random() * 6.28; o.ang = a;
         o.saut = {t: 0, x0: o.x, z0: o.z, x1: o.pl.x + Math.cos(a) * .25, z1: o.pl.z + Math.sin(a) * .25}; }
       else if(r < .7) o.pique = .4;
+      else if(o.mesh.userData.tete && Math.random() < .7) o.regard = Math.random() < .25 ? 0 : (Math.random() - .5) * 2;   // le moineau tourne la tête, d'un coup, puis ailleurs
       else o.ang += (Math.random() - .5) * 2;
     }
     if(o.pique > 0) o.pique = Math.max(0, o.pique - dt);
@@ -286,6 +290,8 @@ function vivre(o, dt){
     if((o.bouge -= dt) <= 0) envoler(o, false);       // de temps en temps, il change de place
   }
   for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (bat ? Math.sin(o.t * 22) * .9 : .05);
+  const tete = o.mesh.userData.tete;
+  if(tete){ const r = bat ? 0 : o.regard || 0; tete.rotation.y += (r - tete.rotation.y) * Math.min(1, dt * 14); }   // de petits coups de tête vifs
   o.mesh.position.set(o.x, o.y, o.z);
   o.mesh.rotation.y = -o.ang - Math.PI/2;
   o.mesh.rotation.x = o.pique > 0 ? Math.sin(o.pique / (o.pl.face !== undefined ? .16 : .4) * Math.PI) * .5 : 0;
@@ -315,7 +321,7 @@ function lancerFilet(o){
   retirer(o);
   const reste = o.bande && oiseaux.find(a => a.bande === o.bande && a.etat === "pose");
   if(reste) envoler(reste, true);                   // les autres du groupe s'envolent
-  montre = {mesh: modele(o.k), t: 0}; sceneIci().add(montre.mesh);
+  montre = {mesh: modele(o.k, {male: o.mesh.userData.male}), t: 0}; sceneIci().add(montre.mesh);   // le même (mâle ou femelle)
   const p = OISEAUX[o.k];
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(o.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
   user(k);                                            // une prise use le filet (usure.js)

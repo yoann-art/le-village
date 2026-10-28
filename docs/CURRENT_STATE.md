@@ -22,7 +22,7 @@
   posée sur une fleur, les ailes refermées.
 - Les oiseaux de l'île (12) : les règles d'abord (v2.1.83 : 4 à la fois au printemps et en été, 3 en automne et en hiver ;
   seuls les communs tant que le carnet compte moins de 3 oiseaux ; les moineaux par 2 ou 3, qui comptent chacun et
-  s'envolent ensemble) ; puis les modèles un par un d'après les images de Yo, comme des vrais (aucun encore fait).
+  s'envolent ensemble) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 1 sur 12 (le moineau domestique, mâles et femelles, v2.1.84).
 - La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.
 - Les bâtiments agrandis : les 6 autres gardent l'ancien modèle agrandi (`ANCIEN` dans `batiments.js`) en attendant leurs images.

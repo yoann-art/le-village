@@ -1730,8 +1730,13 @@ export async function verifier(){
     if(groupeM.length !== 3) throw new Error(`le groupe de moineaux compte ${groupeM.length} oiseaux`);
     essaiEnvol(chefM); frames(1);
     if(groupeM.some(o => o.etat === "pose")) throw new Error("les moineaux ne s'envolent pas ensemble");
+    /* le moineau domestique d'après l'image de Yo : mâles et femelles au hasard ; la tête qui tourne ; le bec noir du mâle au printemps */
+    const {MODELES_OISEAUX} = await import("../js/monde/oiseaux3d.js");
+    const moiM = Array.from({length: 24}, () => MODELES_OISEAUX.moineau.fabrique().userData).filter(u => u.male).length;
+    if(!moiM || moiM === 24) throw new Error(`les moineaux ne sont pas variés (${moiM} mâles sur 24)`);
+    if(!groupeM.every(o => o.mesh.userData.tete && o.mesh.userData.ailes.length === 2)) throw new Error("le moineau n'a pas sa tête qui tourne, ou ses deux ailes");
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau, inscrit au carnet ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; un groupe de 3 moineaux qui s'envolent ensemble`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; un groupe de 3 moineaux qui s'envolent ensemble`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);
