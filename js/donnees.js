@@ -513,7 +513,7 @@ export const INSECTES = {
   lucane:   {nom:"Lucane cerf-volant", pluriel:"lucanes cerfs-volants", zone:"foret", ou:["chenes"], saisons:["ete"], heures:"soir", rarete:"rare", prix:8, forme:"lucane", couleur:0x4A2A1A, c2:0x8A3A22, taille:1.4, note:"Des mandibules comme des bois de cerf"},
   grandMars:{nom:"Grand Mars changeant", pluriel:"Grands Mars changeants", zone:"foret", ou:["clairieres"], saisons:["ete"], heures:"jour", rarete:"rare", prix:8, forme:"papillon", couleur:0x6A4A8A, c2:0xE8D8A0, taille:1.3, note:"Des ailes aux reflets violets"},
   phaleneLune:{nom:"Phalène de lune", pluriel:"phalènes de lune", une:true, zone:"foret", ou:["clairieres"], saisons:TOUTE, heures:"nuit", lune:"pleine", rarete:"rare", prix:8, forme:"papillon", couleur:0xD8DCE8, c2:0xA8B8D8, taille:1.3, lueur:0x8A9AC8, note:"Des ailes d'argent, les nuits de pleine lune"},
-  grandPaon:{nom:"Grand Paon de nuit", pluriel:"Grands Paons de nuit", ou:["lanternes"], saisons:["printemps"], heures:"nuit", rarete:"rare", prix:8, forme:"papillon", couleur:0x9A8A7A, c2:0x3A2A2A, taille:1.6, note:"Le plus grand papillon d'Europe"},
+  grandPaon:{nom:"Grand Paon de nuit", pluriel:"Grands Paons de nuit", lourd:true, ou:["lanternes", "arbres"], saisons:["printemps"], heures:"nuit", rarete:"rare", prix:8, forme:"papillon", couleur:0x9A8A7A, c2:0x3A2A2A, taille:1.6, note:"Le plus grand papillon d'Europe"},
   /* Le Marais brumeux (étape 1.13, morceau 5 ; Grand Carnet : « sur l'eau, sous l'eau, et dans la brume ») : surface, mares
      (sur l'eau, près du bord), brume (au-dessus des îlots et de l'eau), roseaux (au bord des îlots) ; gerris : l'araignée
      d'eau (ses longues pattes posées sur l'eau) ; nage : il file sur l'eau ; flotte : elle flotte dans l'air ; verre : un

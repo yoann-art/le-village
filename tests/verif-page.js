@@ -1598,12 +1598,23 @@ export async function verifier(){
     essaiFuite(manT); frames(8);
     if(manT.mesh.userData.menaceMante.rav.rotation.x > -.6) throw new Error(`la mante menacée n'ouvre pas ses pattes (${manT.etat})`);
     frames(40);
+    /* le Grand Paon de nuit : sans trompe, mâles et femelles au hasard ; posé sur un tronc, ailes à plat, il montre ses yeux
+       quand on approche ; surpris, il bat fort des ailes, puis s'envole */
+    const gpM = Array.from({length: 24}, () => MODELES_INSECTES.grandPaon.fabrique().userData).filter(u => u.male).length;
+    if(!gpM || gpM === 24) throw new Error(`les Grands Paons ne sont pas variés (${gpM} mâles sur 24)`);
+    const gpT = lacherInsecte("grandPaon", player.position.x + 1.2, player.position.z, .7, true); frames(30);
+    if(!gpT.mesh.userData.dresse || gpT.mesh.userData.trompe) throw new Error("le Grand Paon n'est pas posé sur l'écorce, ou a une trompe");
+    if(!(gpT.montre > .5)) throw new Error("le Grand Paon ne montre pas ses yeux quand on approche");
+    essaiFuite(gpT); frames(2);
+    if(!(gpT.flash > 0)) throw new Error("le Grand Paon surpris ne bat pas des ailes");
+    frames(80);
+    if(gpT.etat !== "fuit") throw new Error(`le Grand Paon surpris ne s'envole pas (${gpT.etat})`);
     /* le cloporte et l'épeire (pas des insectes) sont en réserve : ils ne naissent sur l'île en aucune saison, à aucune heure */
     for(const mois of [0, 3, 6, 9]) for(const h of [2, 8, 14, 20]){
       const vu = insectesPresents("ile", new Date(2026, mois, 15, h)).filter(k => INSECTES[k].reserve);
       if(vu.length) throw new Error(`en réserve, mais sur l'île : ${vu.join(", ")}`);
     }
-    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; la punaise brunit l'hiver et sent quand on la dérange ; la luciole vole, sa lanterne clignote ; le paon-du-jour posé ferme ses ailes, surpris montre ses yeux ; le machaon posé fait frémir ses ailes ; le vulcain posé ferme ses ailes ; le citron (${cm} mâles sur 24) posé ne les ouvre jamais ; le sphinx boit en sur-place, la trompe déroulée ; la phalène femelle, sans ailes, ne vole pas ; la cigale (${cigM} mâles sur 24) chante et se tait ; la mante tourne la tête et menace ; le cloporte et l'épeire, en réserve, ne naissent plus`;
+    return `une fourmi, inscrite au carnet ; ratée, une autre s'est posée à ${loin.toFixed(1)} P ; le Grand Paon de nuit raté s'est envolé ; la piéride a ses ailes peintes ; la fourmi noire marche sur ses six pattes, en deux trépieds ; la coccinelle ratée lève ses élytres et s'envole ; l'abeille posée replie ses ailes, puis repart ; le bourdon aussi, et se balance en volant ; la sauterelle (${sabres} femelles sur 24) détend ses jambes pour sauter ; la libellule ${perchee} ; le perce-oreille (${males} mâles sur 24) menace, ventre relevé ; le grillon (${gm} mâles sur 24) marche et chante ; le hanneton (${hm} mâles sur 24) compte ses sous, puis s'envole ; la punaise brunit l'hiver et sent quand on la dérange ; la luciole vole, sa lanterne clignote ; le paon-du-jour posé ferme ses ailes, surpris montre ses yeux ; le machaon posé fait frémir ses ailes ; le vulcain posé ferme ses ailes ; le citron (${cm} mâles sur 24) posé ne les ouvre jamais ; le sphinx boit en sur-place, la trompe déroulée ; la phalène femelle, sans ailes, ne vole pas ; la cigale (${cigM} mâles sur 24) chante et se tait ; la mante tourne la tête et menace ; le Grand Paon (${gpM} mâles sur 24) posé sur un tronc montre ses yeux, surpris s'envole ; le cloporte et l'épeire, en réserve, ne naissent plus`;
   });
   await etape("Attraper une luciole au bocal (le verre de la mine)", async () => {
     place(2);

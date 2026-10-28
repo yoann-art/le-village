@@ -253,6 +253,8 @@ function fuir(b, vite, oiseau){
   if(b.etat !== "vit") return;
   /* le paon-du-jour posé, surpris : il ouvre d'un coup ses ailes et montre ses yeux, puis s'envole (Yo, 27 octobre 2026) */
   if(vite && b.posee && b.mesh.userData.yeux && !b.flashFait){ if(!b.flash) b.flash = .7; return; }
+  /* le Grand Paon posé sur l'écorce, surpris : il bat fort des ailes, ses quatre yeux grands ouverts, puis s'envole (Yo, 28 octobre 2026) */
+  if(vite && b.posee && b.mesh.userData.grandPaon && !b.flashFait){ if(!b.flash) b.flash = 1; return; }
   /* un oiseau approche (Yo, 26 octobre 2026 : « Dès qu'un oiseau s'approche d'un insecte, il faudrait que l'insecte s'enfuit ») :
      une commune ou peu commune va se poser plus loin, sans devenir plus méfiante envers le joueur ; la rare s'en va */
   if(oiseau){
@@ -396,9 +398,13 @@ function vivre(b, dt){
       b.ang = Math.atan2(cz - b.z, cx - b.x);                           // le ventre contre l'écorce
       b.y = base.y + Math.sin(b.t * .3) * .12 + .12;
     } else if(p.nectar && (b.nec || Math.random() < dt * .08) && nectar(b, dt)){   // le sphinx boit en sur-place devant une fleur
-    } else if(p.ou[0] === "lanternes" && base.y > .5){       // les papillons de nuit tournent autour de la lumière
-      const w = p.flotte ? 1.1 : 2.2;                                    // la phalène d'hiver, d'un vol lent et flottant
-      b.x = base.x + Math.cos(b.t * w) * .35; b.z = base.z + Math.sin(b.t * w) * .35; b.y = base.y + Math.sin(b.t * w * 1.4) * (p.flotte ? .2 : .12);
+    } else if(b.mesh.userData.grandPaon && b.mesh.userData.dresse){   // le Grand Paon posé sur un tronc, ailes à plat
+      const cx = base.cx ?? centerOf(tileOf(base.x)), cz = base.cz ?? centerOf(tileOf(base.z));
+      b.mesh.rotation.y = -Math.atan2(cz - b.z, cx - b.x) - Math.PI/2;   // le ventre contre l'écorce
+      b.posee = true;
+    } else if(p.ou[0] === "lanternes" && base.y > .5 && !base.tronc){   // les papillons de nuit tournent autour de la lumière
+      const w = p.flotte ? 1.1 : p.lourd ? 1.3 : 2.2, R = p.lourd ? .5 : .35;   // la phalène d'hiver, d'un vol lent et flottant ; le Grand Paon, lent et large
+      b.x = base.x + Math.cos(b.t * w) * R; b.z = base.z + Math.sin(b.t * w) * R; b.y = base.y + Math.sin(b.t * w * 1.4) * (p.flotte ? .2 : .12);
       b.ang = b.t * w + Math.PI/2;
     } else if(f === "papillon" && !p.butine){       // il volette autour de sa fleur (le paon-du-jour, lui, se pose : plus bas)
       const nx = base.x + Math.sin(b.t * .8) * .6 + Math.sin(b.t * 2.1) * .15, nz = base.z + Math.cos(b.t * .6) * .6;
@@ -452,7 +458,7 @@ function vivre(b, dt){
     }
   }
   /* Les ailes battent ; la luciole clignote */
-  const vite = p.nectar ? 40 : p.flotte && !b.mesh.userData.femelle ? 7 : VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? 9 : 28) : 0;
+  const vite = p.nectar ? 40 : p.flotte && !b.mesh.userData.femelle ? 7 : VOLE[f] && !b.posee || p.ras && b.etat === "vit" && !b.posee || b.etat === "vole" && !b.posee && !b.compte && f !== "fourmi" && f !== "cloporte" || b.etat === "fuit" && b.mesh.userData.elytres && !b.compte ? (f === "papillon" ? (p.lourd ? 5 : 9) : 28) : 0;   // le Grand Paon, à grands coups lents
   for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (vite ? Math.sin(b.t * vite + (a.phase || 0)) * .7 : b.posee && b.mesh.userData.ailes.length > 2 ? 0 : .1);   // la libellule : en décalé ; posée, à plat
   /* Les pattes qui marchent (la fourmi) : les trépieds se relaient au rythme du chemin fait ; à l'arrêt, elles se reposent */
   const pattes = b.mesh.userData.pattes;
@@ -471,6 +477,15 @@ function vivre(b, dt){
     b.fe = (b.fe || 0) + ((b.posee && !(b.flash > 0) && !soleil ? 1 : 0) - (b.fe || 0)) * Math.min(1, dt * (b.flash > 0 ? 25 : 6));
     const fremit = b.mesh.userData.fremit && b.posee && !soleil;                       // le machaon, posé, fait frémir ses ailes en buvant
     if(!vite) for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (fremit ? .75 + Math.sin(b.t * 18) * .3 : ferme * b.fe + .05);
+  }
+  /* Le Grand Paon posé, ailes à plat (Yo, 28 octobre 2026 : posé ailes à plat et qui montre ses yeux quand on l'approche,
+     « D'accord ») : on s'approche, il les soulève et les rabat lentement ; surpris, il les bat fort, puis s'envole */
+  if(b.mesh.userData.grandPaon && b.posee){
+    if(b.flash > 0 && (b.flash -= dt) <= 0){ b.flash = 0; b.flashFait = true; if(b.etat === "vit") fuir(b, true); }
+    const pres = Math.hypot(player.position.x - b.x, player.position.z - b.z) < 1.8;
+    b.montre = (b.montre || 0) + ((pres || b.flash > 0 ? 1 : 0) - (b.montre || 0)) * Math.min(1, dt * 4);
+    const bat = b.flash > 0 ? Math.max(0, Math.sin(b.t * 13)) * .9 : Math.max(0, Math.sin(b.t * 3.5)) * .45;
+    for(const a of b.mesh.userData.ailes) a.pivot.rotation.z = a.cote * bat * b.montre;
   }
   /* La trompe du sphinx : déroulée quand il boit */
   const tr = b.mesh.userData.trompe;

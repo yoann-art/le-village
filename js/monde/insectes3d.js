@@ -1479,6 +1479,95 @@ export function manteModele(){
   return g;
 }
 
+/* ---------- Le Grand Paon de nuit ----------
+   D'après l'image de Yo (28 octobre 2026 : « Voici le Grand Paon de nuit »), comme un vrai (Yo : « Sans trompe, comme un
+   vrai », « Mâles et femelles au hasard », posé ailes à plat et qui montre ses yeux quand on l'approche : « D'accord ») :
+   le plus grand papillon d'Europe ; sur chaque aile un grand oeil (noir à lunule claire, cerclé de fauve, de rouge et de
+   noir, dans un anneau blanc), des bandes qui suivent le bord : la base sombre, une ligne blanche en zigzag, le champ
+   gris-brun, une ligne brune et rousse, une bande grise festonnée, le bord pâle ; le bout de l'aile de devant taché de
+   rouge et de blanc. Le corps poilu brun au collier clair, le ventre en anneaux ; pas de trompe (adulte, il ne mange plus) ;
+   les antennes en plumes, larges chez le mâle, fines chez la femelle, plus grande et plus dodue (au hasard) ; six pattes.
+   Posé sur un tronc (fabrique({tronc})), il est dressé contre l'écorce, ailes ouvertes à plat (userData.dresse). */
+const GP_AV = lisse([[0, -.006], [.05, -.1], [.12, -.2], [.19, -.262], [.24, -.285], [.272, -.255], [.272, -.17], [.235, -.08], [.14, .015], [.05, .03]]);
+const GP_AR = festonne([[0, .006], [.09, -.012], [.18, .025], [.235, .1], [.23, .18], [.17, .235], [.09, .22], [.035, .15], [.01, .07]]);
+const BGAV = [-.01, -.3, .3, .34], BGAR = [-.01, -.03, .26, .28];
+/* une copie du contour, réduite (s) et ondulée (amp, n ondes) : les bandes suivent le bord de l'aile */
+function bande(c, contour, s, amp = 0, n = 0){ trace(c, contour.map(([x, z], k) => { const w = s * (1 + amp * Math.sin(k / contour.length * Math.PI * 2 * n)); return [x * w, z * w]; })); }
+function grandPaonAile(c, contour, avant, dessous){
+  /* le bord pâle, la bande grise, la ligne brune, la ligne rousse, le champ, la ligne blanche, la base (le dessous plus pâle) */
+  const P = dessous ? ["#E6D8C0", "#B0A294", "#7A5A48", "#B05A40", "#A89280", "#EEE4D2", "#806250"] : ["#E4C89A", "#9A8676", "#4E3224", "#A23C26", "#8C6E5A", "#F0E4CC", "#5A3C2C"];
+  trace(c, contour); c.fillStyle = P[0]; c.fill();
+  c.save(); trace(c, contour); c.clip();
+  bande(c, contour, .86, .035, 18); c.fillStyle = P[1]; c.fill();
+  bande(c, contour, .74, .02, 12); c.fillStyle = P[2]; c.fill();
+  bande(c, contour, .7, .02, 12); c.fillStyle = P[3]; c.fill();
+  bande(c, contour, .665, .02, 12); c.fillStyle = P[4]; c.fill();
+  bande(c, contour, .37, .06, 11); c.fillStyle = P[5]; c.fill();
+  bande(c, contour, .31, .05, 11); c.fillStyle = P[6]; c.fill();
+  c.strokeStyle = "rgba(60,40,30,.25)"; c.lineWidth = .0025;                                          // les nervures
+  for(let k = 2; k < contour.length; k += Math.round(contour.length / 9)){ const [x, z] = contour[k]; c.beginPath(); c.moveTo(0, 0); c.lineTo(x * .95, z * .95); c.stroke(); }
+  const [ex, ez, r] = avant ? [.132, -.13, .047] : [.115, .088, .045];                                 // le grand oeil
+  oeil(c, ex, ez, [[r, "#F2EADA"], [r * .88, "#2A1A14"], [r * .8, "#A83C26"], [r * .64, "#D8A448"], [r * .44, "#1E1410"]]);
+  c.strokeStyle = dessous ? "#C8B8A0" : "#E8DCC4"; c.lineWidth = r * .1; c.beginPath(); c.arc(ex, ez, r * .22, 3.3, 4.9); c.stroke();   // sa lunule claire
+  if(avant){                                                                                           // le bout de l'aile, rouge et blanc
+    c.beginPath(); c.ellipse(.25, -.262, .028, .016, -.8, 0, Math.PI * 2); c.fillStyle = "#B8402A"; c.fill();
+    c.beginPath(); c.ellipse(.236, -.25, .011, .007, -.8, 0, Math.PI * 2); c.fillStyle = "#F4ECDE"; c.fill();
+  }
+  c.restore();
+  c.save(); trace(c, contour); c.strokeStyle = "#B08A62"; c.lineWidth = .008; c.stroke(); c.restore();   // le bord
+}
+let GRAND_PAON = {};
+function grandPaonGeos(male){
+  if(GRAND_PAON[male]) return GRAND_PAON[male];
+  const M = [], brun = 0x5A3A28, fauve = 0x8A6646, creme = 0xE4D2B2, d = male ? 1 : 1.18;
+  boule(M, brun, 0, 0, 0, .046, .044, .056, ROND);                                                  // le thorax
+  for(let k = 0; k < 24; k++){ const a = k * 2.39996, h = (k / 24) * 2 - 1, r = Math.sqrt(1 - h * h);   // son poil brun et fauve
+    boule(M, [brun, fauve, 0x6E4E36][k % 3], Math.cos(a) * r * .042, h * .04 + .004, Math.sin(a) * r * .05 + .004, .015, .013, .015, POIL); }
+  for(let k = 0; k < 10; k++){ const a = k / 10 * Math.PI * 2;                                       // le collier clair
+    boule(M, k % 2 ? creme : 0xD4C09C, Math.cos(a) * .036, Math.sin(a) * .032 + .004, -.046, .014, .013, .012, POIL); }
+  for(let k = 0; k < 7; k++){ const r = (.034 - k * .0035) * d;                                        // le ventre en anneaux, fauve et brun
+    boule(M, k % 2 ? 0x7A5A40 : 0xB89870, 0, -.008 - k * .002, .05 + k * .017 * d, r, r * .94, .014 * d); }
+  boule(M, brun, 0, .004, -.072, .028, .026, .026, ROND);                                           // la tête, sans trompe
+  for(let k = 0; k < 8; k++){ const a = k / 8 * Math.PI * 2; boule(M, k % 2 ? creme : fauve, Math.cos(a) * .02, .012 + Math.sin(a) * .012, -.082, .008, .007, .007, POIL); }
+  for(const s of [-1, 1]){
+    boule(M, 0x1A1210, s * .021, .006, -.08, .014, .016, .015);                                     // un grand oeil
+    boule(M, 0xFFFFFF, s * .026, .014, -.09, .0036, .0042, .0036, BOULE_P);                        // son reflet
+    const p0 = V(s * .01, .026, -.086), p1 = V(s * .065, .1, -.15), l0 = male ? .022 : .01;        // l'antenne en plume
+    baton(M, 0x7A5A3A, p0, p1, .0025);
+    const ax = p1.clone().sub(p0), cote = V(-ax.z, 0, ax.x).normalize();                            // la plume s'étale de part et d'autre
+    ovale(M, 0xA8824E, p0.clone().lerp(p1, .5).add(V(0, -.001, 0)), ax, ax.length() * .5, l0 * .8, .0015);
+    for(let k = 1; k < 16; k++){ const m = p0.clone().lerp(p1, k / 16), l = l0 * (1 - Math.pow(k / 16 - .45, 2) * 1.6);
+      for(const c of [-1, 1]) baton(M, 0xC09A68, m, m.clone().addScaledVector(cote, c * l).addScaledVector(ax, l * 3), .0012); }
+    for(const [h, g, p] of [[V(s * .02, -.03, -.04), V(s * .05, -.05, -.06), V(s * .062, -.088, -.07)],   // six pattes brunes, articulées
+                            [V(s * .024, -.032, -.014), V(s * .06, -.05, -.008), V(s * .074, -.088, .002)],
+                            [V(s * .022, -.03, .01), V(s * .056, -.05, .03), V(s * .068, -.088, .05)]]){
+      pilule(M, 0x5A3A26, h, g, .0055); pilule(M, 0x5A3A26, g, p, .0045);
+      boule(M, 0xB07A4A, g.x, g.y, g.z, .0062, .0062, .0062, BOUT);
+      ovale(M, 0x4A2E1E, p.clone().add(V(s * .004, -.002, -.006)), V(s * .3, 0, -1), .009, .005, .004);
+    }
+  }
+  const tex = {av: peinture(BGAV, c => grandPaonAile(c, GP_AV, true)), ar: peinture(BGAR, c => grandPaonAile(c, GP_AR, false)),
+               avD: peinture(BGAV, c => grandPaonAile(c, GP_AV, true, true)), arD: peinture(BGAR, c => grandPaonAile(c, GP_AR, false, true))};
+  const ailes = cote => { const av = aileGeo(GP_AV, cote, BGAV, 4), ar = aileGeo(GP_AR, cote, BGAR, 4); ar.translate(0, -.004, 0);
+    return {av, ar, avD: retourne(av), arD: retourne(ar)}; };
+  return GRAND_PAON[male] = {corps: fusionner(M), tex, droite: ailes(1), gauche: ailes(-1)};
+}
+export function grandPaonModele(opt = {}){
+  const male = Math.random() < .5, G = grandPaonGeos(male), g = new THREE.Group(), t = new THREE.Group(), ailes = [], cote1 = THREE.FrontSide;
+  t.scale.setScalar(male ? 1 : 1.1); g.add(t);                                                    // la femelle, plus grande
+  const corps = new THREE.Mesh(G.corps, corpsMat()); corps.position.y = .092; t.add(corps);      // les pattes au point de pose
+  for(const [A, cote] of [[G.droite, 1], [G.gauche, -1]]){
+    const pivot = new THREE.Group();
+    pivot.add(new THREE.Mesh(A.av, toon({map: G.tex.avD, side: cote1})), new THREE.Mesh(A.ar, toon({map: G.tex.arD, side: cote1})),   // (aileGeo regarde vers le bas : le dessous)
+              new THREE.Mesh(A.avD, toon({map: G.tex.av, side: cote1})), new THREE.Mesh(A.arD, toon({map: G.tex.ar, side: cote1})));
+    pivot.position.set(cote * .036, .11, -.012); t.add(pivot);
+    ailes.push({pivot, cote});
+  }
+  if(opt.tronc){ t.rotation.x = Math.PI / 2; g.userData.dresse = true; }                         // sur l'écorce : tête en haut, ailes à plat
+  g.userData.ailes = ailes; g.userData.male = male; g.userData.grandPaon = true;
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'insecte, sa fabrique ; l'échelle (le reste suit insectes.js).
    Leur taille suit l'ordre de la nature (décision de Yo, 26 octobre 2026 : « passe les insectes à la taille réduite ») :
    la fourmi environ 0,25 P de long, la coccinelle 0,3 P, la piéride 0,4 P d'envergure. */
@@ -1491,4 +1580,5 @@ export const MODELES_INSECTES = {pieride: {fabrique: pierideModele, echelle: 1.5
   paonDuJour: {fabrique: paonModele, echelle: 1.52}, machaon: {fabrique: machaonModele, echelle: 1.4},
   vulcain: {fabrique: vulcainModele, echelle: 1.52}, citron: {fabrique: citronModele, echelle: 1.4},
   sphinx: {fabrique: sphinxModele, echelle: 1.5}, phalene: {fabrique: phaleneModele, echelle: 1.45},
-  cigale: {fabrique: cigaleModele, echelle: 1.55}, mante: {fabrique: manteModele, echelle: 1.75}};
+  cigale: {fabrique: cigaleModele, echelle: 1.55}, mante: {fabrique: manteModele, echelle: 1.75},
+  grandPaon: {fabrique: grandPaonModele, echelle: 1.52}};
