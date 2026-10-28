@@ -236,7 +236,15 @@ let conseil = -1e9;
 function vivre(o, dt){
   o.t += dt; o.age += dt;
   let bat = false;
-  if(o.etat === "vol" || o.etat === "part"){        // il vole vers sa place, en arc
+  if(o.etat === "plane"){                            // la mouette plane en larges cercles, les ailes immobiles, puis va se poser
+    bat = true;
+    const P = o.plane; P.t += dt; const a = P.a0 + P.t * P.w;
+    o.x = P.cx + Math.cos(a) * P.r; o.z = P.cz + Math.sin(a) * P.r;
+    o.y = P.y0 + (P.h - P.y0) * Math.min(1, P.t / 2) + Math.sin(P.t * .7) * .12;
+    o.ang = a + Math.sign(P.w) * Math.PI / 2;
+    o.alpha = Math.min(1, o.alpha + dt);
+    if(P.t > P.d) envoler(o, false);
+  } else if(o.etat === "vol" || o.etat === "part"){        // il vole vers sa place, en arc
     bat = true;
     const v = o.vol; v.t += dt; const u = Math.min(1, v.t / v.d);
     o.x = v.x0 + (o.pl.x - v.x0) * u; o.z = v.z0 + (o.pl.z - v.z0) * u;
@@ -284,10 +292,18 @@ function vivre(o, dt){
       if(o.danse > 0){ o.danse -= dt; bat = true; o.y = o.pl.y + Math.abs(Math.sin(o.danse * 6)) * .3; o.ang += dt * 2; if(o.danse <= 0) o.y = o.pl.y; }
     }
     if((o.bouge -= dt) <= 0) envoler(o, false);       // de temps en temps, il change de place
+    else if(OISEAUX[o.k].plane && Math.random() < dt * .05){            // la mouette s'élève et plane au-dessus de la mer et du ponton (Yo, 28 octobre 2026)
+      const r = 1.4 + Math.random() * 1.2, a0 = Math.random() * 6.28;
+      o.plane = {t: 0, r, a0, cx: o.x - Math.cos(a0) * r, cz: o.z - Math.sin(a0) * r, y0: o.y, h: o.pl.y + 2 + Math.random() * .8, w: (Math.random() < .5 ? -1 : 1) * .55, d: 6 + Math.random() * 6};
+      o.etat = "plane"; o.saut = null; o.course = 0; }
   }
   /* le vol ondulé (la mésange) : quelques battements, puis les ailes fermées, en glissant un peu plus bas */
   const plie = bat && OISEAUX[o.k].ondule && (o.t * 2.2) % 1 > .55;
   for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (bat && !plie ? Math.sin(o.t * 22) * .9 : .05);
+  if(o.mesh.userData.grandesAiles){                   // la mouette : les grandes ailes ouvertes en vol, qui battent lentement, immobiles quand elle plane
+    for(const m of o.mesh.userData.plies) m.visible = !bat;
+    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * 7) * .45) : a.cote * .05;
+  }
   const tete = o.mesh.userData.tete;
   if(tete){ const r = bat ? 0 : o.regard || 0; tete.rotation.y += (r - tete.rotation.y) * Math.min(1, dt * 14);   // de petits coups de tête vifs
     tete.rotation.z += ((o.penche > 0 ? .55 : 0) - tete.rotation.z) * Math.min(1, dt * 10); }   // la tête penchée, à l'écoute de la terre
@@ -298,7 +314,7 @@ function vivre(o, dt){
   if(o.envers > 0 && (o.etat !== "pose" || (o.envers -= dt) <= 0)) o.envers = 0;
   o.inv = (o.inv || 0) + ((o.envers > 0 ? 1 : 0) - (o.inv || 0)) * Math.min(1, dt * 8);
   const pas = OISEAUX[o.k].marche && o.saut && o.saut.d ? Math.sin(o.saut.t / o.saut.d * Math.PI) : 0;   // la pie se dandine à chaque pas
-  o.mesh.rotation.z = o.inv * Math.PI + pas * (o.course % 2 ? .12 : -.12);
+  o.mesh.rotation.z = o.inv * Math.PI + pas * (o.course % 2 ? .12 : -.12) + (o.etat === "plane" ? -.3 * Math.sign(o.plane.w) : 0);   // penchée dans le virage
   const vol = o.mesh.userData.vol;
   if(vol) for(const m of vol) m.visible = bat;                          // le blanc des ailes, en vol seulement
   o.mesh.rotation.y = -o.ang - Math.PI/2;

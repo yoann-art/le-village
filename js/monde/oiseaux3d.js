@@ -83,12 +83,14 @@ function assembler(G, male){
   const g = new THREE.Group(), mat = corpsMat();
   g.add(new THREE.Mesh(G.corps, mat));
   const tete = new THREE.Group(); tete.position.set(0, .3, -.06); tete.add(new THREE.Mesh(G.tete, mat)); g.add(tete);
-  const vol = [];                                                                                     // ce qu'on ne voit qu'en vol (le blanc des ailes de la pie)
+  const vol = [], plies = [];                                                                         // ce qu'on ne voit qu'en vol (le blanc des ailes de la pie, les grandes ailes de la mouette)
   g.userData.ailes = [[G.droite, 1, G.volD], [G.gauche, -1, G.volG]].map(([geo, cote, v]) => { const pivot = new THREE.Group();
-    pivot.position.set(cote * .092, .26, 0); pivot.add(new THREE.Mesh(geo, mat));
+    const repli = new THREE.Mesh(geo, mat); pivot.position.set(cote * .092, .26, 0); pivot.add(repli);
     if(v){ const m = new THREE.Mesh(v, mat); m.visible = false; pivot.add(m); vol.push(m); }
+    if(G.grandesAiles) plies.push(repli);
     g.add(pivot); return {pivot, cote}; });
   if(vol.length) g.userData.vol = vol;
+  if(plies.length){ g.userData.plies = plies; g.userData.grandesAiles = true; }                        // en vol : les ailes repliées cachées, les grandes ailes ouvertes
   if(G.ver){ const v = new THREE.Mesh(G.ver, mat); v.visible = false; tete.add(v); g.userData.ver = v; }   // le ver au bout du bec (le merle)
   if(G.queue){ const q = new THREE.Group(); q.position.set(0, .2, .15); q.add(new THREE.Mesh(G.queue, mat)); g.add(q); g.userData.queue = q; }   // la queue sur son pivot (le rouge-gorge la relève)
   g.userData.tete = tete; g.userData.male = male;
@@ -259,8 +261,63 @@ function pieGeos(){
 }
 export const pieModele = () => assembler(pieGeos(), undefined);
 
+/* ---------- La mouette rieuse ----------
+   D'après l'image de Yo (28 octobre 2026 : « Voici la mouette. »), comme une vraie (Yo : « La mouette rieuse comme une
+   vraie », « Le capuchon brun au printemps et en été », « Le vol plané au-dessus du ponton et de la mer ») : ronde comme
+   l'image ; blanche, le dos et les ailes gris très clair, le bout des ailes noir à petits miroirs blancs ; le bec rouge
+   sombre à la pointe plus foncée, les pattes rouges et palmées ; au printemps et en été, le capuchon brun chocolat ; en
+   automne et en hiver, la tête blanche à la petite tache sombre derrière l'oeil. Mâle et femelle sont pareils. En vol,
+   les ailes repliées laissent place à de grandes ailes ouvertes (userData.grandesAiles, plies, vol), qui battent
+   lentement ou restent immobiles quand elle plane. */
+function pattePalmee(M, s, c, griffe){
+  const h = V(s * .042, .085, .0), p = V(s * .046, .012, -.004);
+  pilule(M, c, h, p, .0085);
+  const bouts = [-.5, 0, .5].map(a => { const d = V(Math.sin(a) * s, 0, -Math.cos(a)), b = p.clone().addScaledVector(d, .045).setY(.006);
+    baton(M, c, p, b, .006); boule(M, griffe, b.x + d.x * .004, .005, b.z + d.z * .004, .005, .004, .007, BOULE_P); return b; });
+  for(const k of [0, 1]){ const m = p.clone().add(bouts[k]).add(bouts[k + 1]).multiplyScalar(1 / 3);    // la palmure entre les doigts
+    bouleT(M, c, m.x, .006, m.z, .018, .003, .02, 0, s * (k ? -.25 : .25), 0, BOULE_P); }
+  baton(M, c, p, p.clone().add(V(0, 0, .02)).setY(.008), .005);                                       // le petit doigt arrière
+}
+const MOUETTE = {};
+function mouetteGeos(capuchon){
+  if(MOUETTE[capuchon]) return MOUETTE[capuchon];
+  const blanc = 0xF4F4F2, gris = 0xB4BCC8, noir = 0x1E1E22, rouge = 0xB02A26, patteC = 0xC8382E, M = [];
+  boule(M, blanc, 0, .19, .01, .155, .155, .17);
+  boule(M, blanc, 0, .205, -.05, .138, .135, .12);
+  boule(M, gris, 0, .25, .07, .128, .1, .135);                                                        // le dos gris clair
+  for(const s of [-1, 1]) pattePalmee(M, s, patteC, 0x4A2A24);
+  const Q = []; bouleT(Q, blanc, 0, 0, .07, .048, .012, .09);                                       // la queue blanche, courte
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(blanc, 0, .36, -.07, .13, .125, .127);
+  if(capuchon) bouleT(T, 0x4A3226, 0, .372 - y0, -.085 - z0, .133, .118, .13, .55);                     // le capuchon brun chocolat (printemps, été)
+  for(const s of [-1, 1]){
+    if(capuchon) t(0xF4F4F2, s * .05, .372, -.172, .03, .02, .02, BOULE_P);                              // le croissant blanc autour de l'oeil
+    else t(0x50505A, s * .12, .38, -.105, .014, .026, .026, BOULE_P);                                          // la petite tache derrière l'oeil (hiver)
+    t(0x1A1210, s * .05, .378, -.182, .025, .027, .02);
+    t(0xFFFFFF, s * .056, .388, -.199, .0065, .0075, .004, BOULE_P);
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .35 - y0, -.19 - z0), q0, V(.024, .022, .065)), c: rouge});   // le bec rouge sombre
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .35 - y0, -.236 - z0), q0, V(.011, .01, .022)), c: 0x5A1A18});   // sa pointe plus foncée
+  const aile = s => { const A = [];                                                                   // repliée : grise, le bout noir croisé sur la queue
+    bouleT(A, gris, s * .03, -.03, .07, .035, .08, .16, -.25, 0, s * .15);
+    bouleT(A, noir, s * .02, -.05, .22, .024, .03, .07, -.3, 0, s * .1, BOULE_P);
+    bouleT(A, blanc, s * .03, -.045, .25, .008, .012, .014, -.3, 0, s * .1, BOULE_P);                    // un petit miroir blanc
+    return fusionner(A); };
+  const grande = s => { const A = [];                                                                 // ouverte, en vol : longue et pointue
+    bouleT(A, gris, s * .16, 0, .03, .16, .012, .075, 0, s * -.12, 0);
+    bouleT(A, blanc, s * .15, .002, -.035, .15, .008, .012, 0, s * -.12, 0, BOULE_P);                    // le bord avant blanc
+    bouleT(A, noir, s * .33, 0, .06, .075, .01, .035, 0, s * -.3, 0, BOULE_P);                          // le bout noir
+    bouleT(A, blanc, s * .34, .006, .065, .012, .004, .01, 0, 0, 0, BOULE_P);                           // son miroir blanc
+    return fusionner(A); };
+  return MOUETTE[capuchon] = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), droite: aile(1), gauche: aile(-1),
+    volD: grande(1), volG: grande(-1), grandesAiles: true};
+}
+export function mouetteModele(opt = {}){
+  return assembler(mouetteGeos(opt.saison === "printemps" || opt.saison === "ete"), undefined);
+}
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
-  pie: {fabrique: pieModele, echelle: .85}};
+  pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78}};

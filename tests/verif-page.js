@@ -1766,8 +1766,18 @@ export async function verifier(){
     if(!pi2.saut || pi2.saut.d !== .28) throw new Error("la pie ne marche pas à grands pas");
     pi2.vol = {x0: pi2.x, y0: pi2.y, z0: pi2.z, t: 0, d: 2}; pi2.etat = "vol"; frames(1);
     if(!pi2.mesh.userData.vol.every(m => m.visible)) throw new Error("la pie en vol ne montre pas le blanc de ses ailes");
+    /* la mouette rieuse : le capuchon brun en été seulement ; elle s'élève et plane, les grandes ailes ouvertes */
+    const moE = MODELES_OISEAUX.mouette.fabrique({saison: "ete"}), moH = MODELES_OISEAUX.mouette.fabrique({saison: "hiver"});
+    const nbTri = m => { let n = 0; m.traverse(x => { if(x.geometry) n += x.geometry.attributes.position.count; }); return n; };
+    if(nbTri(moE) === nbTri(moH)) throw new Error("la mouette n'a pas de capuchon l'été");
+    pauseOiseaux(true); pauseOiseaux(false);
+    const mo = lacherOiseau("mouette", player.position.x + 3, player.position.z + 3); frames(2);
+    const r3 = Math.random; Math.random = () => .001; frames(1); Math.random = r3;
+    frames(20);
+    if(mo.etat !== "plane" || mo.y < 1) throw new Error(`la mouette ne s'élève pas pour planer (${mo.etat}, ${mo.y.toFixed(2)})`);
+    if(mo.mesh.userData.plies.some(m => m.visible) || !mo.mesh.userData.vol.every(m => m.visible)) throw new Error("la mouette qui plane n'ouvre pas ses grandes ailes");
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);
