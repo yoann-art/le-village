@@ -43,7 +43,7 @@ import { footOf } from "../js/monde/meubles.js";
 import { updateVitrine } from "../js/vitrine.js";
 import { forcerMeteo, updateMeteo, couvertIci, neigeAuSol } from "../js/monde/meteo.js";
 import { lacherInsecte, pauseInsectes, insectesPresents, essaiRate, essaiFuite, attrapeEnCours } from "../js/insectes.js";
-import { lacherOiseau, pauseOiseaux, oiseauEnCours, oiseauxAPondre, OISEAUX_SAISON, essaiEnvol, oiseauxIci } from "../js/oiseaux.js";
+import { lacherOiseau, pauseOiseaux, oiseauEnCours, oiseauxAPondre, OISEAUX_SAISON, oiseauxIci } from "../js/oiseaux.js";
 import { lacherGibier, lacherCerfBlanc, pauseChasse, vent, chanceDe } from "../js/chasse.js";
 import { lacherMonstre, pauseMonstres, monstresVaincus, monstresIci, racinesIci, gardienIci, hydreIci, pochesIci, eclaterPoche } from "../js/monstres.js";
 import { antre } from "../js/monde/grotte.js";
@@ -1723,18 +1723,16 @@ export async function verifier(){
     state.carnet.oiseaux = carnetO;
     if(!neuf.length || neuf.some(k => OISEAUX[k].rarete !== "commun")) throw new Error(`au début d'une partie, viennent : ${neuf.join(", ")}`);
     if(!apres.some(k => OISEAUX[k].rarete !== "commun")) throw new Error("après 3 oiseaux attrapés, seuls les communs viennent encore");
-    /* les moineaux en groupe : chacun compte, ils s'envolent ensemble */
+    /* les moineaux volent seuls (Yo, 28 octobre 2026 : « Finalement je voudrais que les moineaux volent seuls ») */
     pauseOiseaux(true); pauseOiseaux(false);
-    const chefM = lacherOiseau("moineau", player.position.x + 4, player.position.z + 4, 0, 3); frames(2);
-    const groupeM = Object.values(oiseauxIci()).filter(o => o.bande && o.bande === chefM.bande);
-    if(groupeM.length !== 3) throw new Error(`le groupe de moineaux compte ${groupeM.length} oiseaux`);
-    essaiEnvol(chefM); frames(1);
-    if(groupeM.some(o => o.etat === "pose")) throw new Error("les moineaux ne s'envolent pas ensemble");
+    const seulM = lacherOiseau("moineau", player.position.x + 4, player.position.z + 4); frames(2);
+    const autour = oiseauxIci().filter(o => o.k === "moineau" && Math.hypot(o.x - seulM.x, o.z - seulM.z) < 1).length;
+    if(autour !== 1) throw new Error(`un moineau lâché en amène ${autour}`);
     /* le moineau domestique d'après l'image de Yo : mâles et femelles au hasard ; la tête qui tourne ; le bec noir du mâle au printemps */
     const {MODELES_OISEAUX} = await import("../js/monde/oiseaux3d.js");
     const moiM = Array.from({length: 24}, () => MODELES_OISEAUX.moineau.fabrique().userData).filter(u => u.male).length;
     if(!moiM || moiM === 24) throw new Error(`les moineaux ne sont pas variés (${moiM} mâles sur 24)`);
-    if(!groupeM.every(o => o.mesh.userData.tete && o.mesh.userData.ailes.length === 2)) throw new Error("le moineau n'a pas sa tête qui tourne, ou ses deux ailes");
+    if(!seulM.mesh.userData.tete || seulM.mesh.userData.ailes.length !== 2) throw new Error("le moineau n'a pas sa tête qui tourne, ou ses deux ailes");
     /* la mésange charbonnière : mâles et femelles au hasard (la bande large ou fine) ; perchée, elle se suspend la tête en bas */
     const mesM = Array.from({length: 24}, () => MODELES_OISEAUX.mesange.fabrique().userData).filter(u => u.male).length;
     if(!mesM || mesM === 24) throw new Error(`les mésanges ne sont pas variées (${mesM} mâles sur 24)`);
@@ -1744,7 +1742,7 @@ export async function verifier(){
     frames(10);
     if(!(mes.envers > 0) || mes.mesh.rotation.z < 2.5) throw new Error(`la mésange perchée ne se met pas la tête en bas (${mes.envers}, ${mes.mesh.rotation.z.toFixed(2)})`);
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; un groupe de 3 moineaux qui s'envolent ensemble`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

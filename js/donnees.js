@@ -574,7 +574,7 @@ for(const [k, p] of Object.entries(INSECTES)){
    (chênes et ifs), feuillage. farouche : il s'envole de plus loin (le coucou) ; pic : il tambourine sur le tronc ;
    yeux : la couleur de ses yeux. */
 export const OISEAUX = {
-  moineau:  {nom:"Moineau", pluriel:"moineaux", groupe:true, ou:["sol"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x9A7A5A, tete:0x6B5040, poitrine:0xD8C8B0, bec:0x3A3A3A, note:"Il picore les miettes et s'envole en groupe"},
+  moineau:  {nom:"Moineau", pluriel:"moineaux", ou:["sol"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x9A7A5A, tete:0x6B5040, poitrine:0xD8C8B0, bec:0x3A3A3A, note:"Il picore les miettes et s'envole en groupe"},
   mesange:  {nom:"Mésange charbonnière", pluriel:"mésanges charbonnières", une:true, acrobate:true, ondule:true, ou:["arbres", "buissons"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x7FA05A, tete:0x1C1C1C, poitrine:0xF0D84A, bec:0x2A2A2A, note:"Acrobate, souvent la tête en bas"},
   rougeGorge:{nom:"Rouge-gorge", pluriel:"rouges-gorges", ou:["sol", "buissons"], saisons:["automne", "hiver"], heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x8A6A4A, tete:0x8A6A4A, poitrine:0xE8703A, bec:0x2A2A2A, note:"Il suit le jardinier pour attraper les vers"},
   merle:    {nom:"Merle", pluriel:"merles", ou:["sol"], saisons:TOUTE, heures:"jour", rarete:"commun", prix:2, forme:"passereau", couleur:0x222222, tete:0x222222, poitrine:0x2E2E2E, bec:0xF0A030, taille:1.2, note:"Il chante au crépuscule"},

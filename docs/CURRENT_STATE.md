@@ -21,8 +21,8 @@
   (`modele` dans `js/insectes.js`). Proposition de Claude, non codée : la piéride
   posée sur une fleur, les ailes refermées.
 - Les oiseaux de l'île (12) : les règles d'abord (v2.1.83 : 4 à la fois au printemps et en été, 3 en automne et en hiver ;
-  seuls les communs tant que le carnet compte moins de 3 oiseaux ; les moineaux par 2 ou 3, qui comptent chacun et
-  s'envolent ensemble) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 2 sur 12 (la mésange charbonnière, la tête en bas et le vol ondulé, v2.1.85 ; le moineau
+  seuls les communs tant que le carnet compte moins de 3 oiseaux ; v2.1.86 : les moineaux volent seuls, plus de
+  groupes) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 2 sur 12 (la mésange charbonnière, la tête en bas et le vol ondulé, v2.1.85 ; le moineau
   domestique, mâles et femelles, v2.1.84).
 - La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.

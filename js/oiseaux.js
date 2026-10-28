@@ -194,7 +194,7 @@ function ajouter(k, pl){
 function retirer(o){ groupe.remove(o.mesh); oiseaux.splice(oiseaux.indexOf(o), 1); }
 let chant = -1e9;
 function pondre(){
-  const ks = oiseauxAPondre(ici), libres = maxIci() - oiseaux.filter(o => o.etat !== "part").length;
+  const ks = oiseauxAPondre(ici);
   if(!ks.length) return;
   for(let essai = 0; essai < 6; essai++){
     const par = {};
@@ -203,13 +203,11 @@ function pondre(){
     let x = Math.random() * rangs.reduce((n, r) => n + PECHE.poids[r], 0);
     const r = rangs.find(r => (x -= PECHE.poids[r]) < 0) || rangs[0];
     const k = par[r][Math.floor(Math.random() * par[r].length)], p = OISEAUX[k];
-    const n = p.groupe ? Math.min(libres, 2 + (Math.random() < .5 ? 1 : 0)) : 1;   // les moineaux : 2 ou 3, selon la place qui reste
-    if(p.groupe && n < 2) continue;
     const pl = places(p.ou[Math.floor(Math.random() * p.ou.length)]).filter(q => !oiseaux.some(o => Math.hypot(o.pl.x - q.x, o.pl.z - q.z) < 1.2));
     if(!pl.length) continue;
-    const o = bande(k, pl[Math.floor(Math.random() * pl.length)], n);
-    /* il arrive en volant, de haut (le groupe ensemble) */
-    for(const a of membres(o)){ a.vol = {x0: a.x + 3, y0: a.y + 3, z0: a.z - 2, t: 0, d: 1.4 + Math.random() * .2}; a.etat = "vol"; }
+    const o = ajouter(k, pl[Math.floor(Math.random() * pl.length)]);
+    /* il arrive en volant, de haut */
+    o.vol = {x0: o.x + 3, y0: o.y + 3, z0: o.z - 2, t: 0, d: 1.4}; o.etat = "vol";
     /* le corbeau des brumes répète des mots entendus ailleurs (carnet) */
     if(p.mots && performance.now() - chant > 90000){ chant = performance.now();
       toast(`🐦 ${["« Bonjour ! »", "« Ferrer ! »", "« Coucou ! Coucou ! »", "« Couic ! »", "« Grrr… »", "« Planches ! »"][Math.floor(Math.random() * 6)]} … Un corbeau des brumes répète des mots entendus ailleurs, sur un arbre mort`, 3800); }
@@ -219,17 +217,7 @@ function pondre(){
   }
 }
 /* Pour la vérification automatique : un oiseau posé à un endroit précis */
-export function lacherOiseau(k, x, z, y = 0, n = 1){ const o = bande(k, {x, y, z}, n); for(const a of membres(o)) a.alpha = 1; return o; }
-/* Les moineaux vont en petits groupes de 2 ou 3, comme les vrais (Yo, 28 octobre 2026 : « En groupe de 2, 3 mais considéré
-   comme 2, 3 oiseaux », « Seulement les moineaux ») : chacun compte, ils se posent les uns près des autres, picorent
-   chacun de leur côté et s'envolent ensemble (o.bande, la même pour tout le groupe) */
-function bande(k, pl, n){
-  const chef = ajouter(k, pl);
-  if(n > 1){ chef.bande = {}; for(let j = 1; j < n; j++){ const a = j * 2.4 + Math.random(), r = .35 + Math.random() * .2;
-    ajouter(k, Object.assign({}, pl, {x: pl.x + Math.cos(a) * r, z: pl.z + Math.sin(a) * r})).bande = chef.bande; } }
-  return chef;
-}
-const membres = o => o.bande ? oiseaux.filter(a => a.bande === o.bande) : [o];
+export function lacherOiseau(k, x, z, y = 0){ const o = ajouter(k, {x, y, z}); o.alpha = 1; return o; }
 /* S'envoler vers une autre place (loin du personnage s'il fuit) ; pas de place : il s'en va */
 function envoler(o, fuite, partir){
   const p = OISEAUX[o.k], pp = player.position;
@@ -243,13 +231,7 @@ function envoler(o, fuite, partir){
   if(pl) o.pl = pl;
   else { const a = Math.atan2(o.z - pp.z, o.x - pp.x); o.pl = {x: o.x + Math.cos(a) * 6, y: o.y + 5, z: o.z + Math.sin(a) * 6}; }
   if(partir) o.etat = "part";
-  for(const a of membres(o)) if(a !== o && a.etat === "pose"){         // le groupe s'envole ensemble, et se repose ensemble
-    a.pl = Object.assign({}, o.pl, {x: o.pl.x + a.x - o.x, z: o.pl.z + a.z - o.z});
-    a.vol = {x0: a.x, y0: a.y, z0: a.z, t: 0, d: o.vol.d + Math.random() * .15}; a.etat = o.etat;
-  }
 }
-/* Pour la vérification automatique : cet oiseau surpris s'envole */
-export const essaiEnvol = o => envoler(o, true);
 let conseil = -1e9;
 function vivre(o, dt){
   o.t += dt; o.age += dt;
@@ -326,8 +308,6 @@ function lancerFilet(o){
   const nouveau = !e.n; e.n++;
   save();
   retirer(o);
-  const reste = o.bande && oiseaux.find(a => a.bande === o.bande && a.etat === "pose");
-  if(reste) envoler(reste, true);                   // les autres du groupe s'envolent
   montre = {mesh: modele(o.k, {male: o.mesh.userData.male}), t: 0}; sceneIci().add(montre.mesh);   // le même (mâle ou femelle)
   const p = OISEAUX[o.k];
   toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(o.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
