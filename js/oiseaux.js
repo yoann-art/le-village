@@ -297,7 +297,8 @@ function vivre(o, dt){
     } else if((o.geste -= dt) <= 0){
       o.geste = 1 + Math.random() * 2.5;
       const r = Math.random();
-      if(OISEAUX[o.k].plonge && r < .55){                               // le martin-pêcheur, posé au-dessus de l'eau : il hoche la tête pour viser, puis plonge
+      if(OISEAUX[o.k].claque && r < .3){ o.claque = 1.6 + Math.random(); o.geste = 3 + Math.random() * 3; }   // la cigogne renverse la tête en arrière et claque du bec
+      else if(OISEAUX[o.k].plonge && r < .55){                               // le martin-pêcheur, posé au-dessus de l'eau : il hoche la tête pour viser, puis plonge
         o.geste = 2 + Math.random() * 3;
         const e = r < .3 && eauPres(o.x, o.z);
         if(e){ o.plonge = {t: 0, x0: o.x, z0: o.z, y0: o.y, wx: e.x, wz: e.z}; o.ang = Math.atan2(e.z - o.z, e.x - o.x); o.etat = "plonge"; }
@@ -361,13 +362,17 @@ function vivre(o, dt){
   if(cou){
     const U = o.mesh.userData;
     if(o.rentre > 0) o.rentre -= dt;
-    let rx = bat ? .9 : 0;
+    const tendu = OISEAUX[o.k].couTendu;                // la cigogne vole le cou tendu devant elle (le héron, replié)
+    let rx = bat ? (tendu ? -1.35 : .9) : 0;
+    if(o.claque > 0 && (o.etat !== "pose" || (o.claque -= dt) <= 0)) o.claque = 0;
+    if(o.claque > 0) rx = 1.25;                          // la tête renversée, presque sur le dos
+    if(U.becBas) U.becBas.rotation.x = o.claque > 0 ? -Math.max(0, Math.sin(o.t * 26)) * .45 : 0;   // le bec qui claque
     if(o.frappe > 0 && o.etat === "pose"){ o.frappe = Math.max(0, o.frappe - dt); const f = 1 - o.frappe;
       rx = f < .12 ? -1.2 * f / .12 : f < .45 ? -1.2 : f < .75 ? -1.2 * (.75 - f) / .3 : .3 * Math.sin((f - .75) / .25 * Math.PI);   // il lance le bec, le ressort, puis avale
       U.poisson.visible = f > .3 && f < .92; }
     else { o.frappe = 0; U.poisson.visible = false; }
     cou.rotation.x += (rx - cou.rotation.x) * Math.min(1, dt * (o.frappe > 0 ? 30 : 6));
-    U.couM.scale.y += ((bat ? .35 : o.rentre > 0 && !(o.frappe > 0) ? .55 : 1) - U.couM.scale.y) * Math.min(1, dt * 5);
+    U.couM.scale.y += ((bat && !tendu ? .35 : o.rentre > 0 && !(o.frappe > 0) ? .55 : 1) - U.couM.scale.y) * Math.min(1, dt * 5);
     U.tete.position.y = U.longCou * U.couM.scale.y;
     U.jambes.rotation.x += ((bat ? -1.35 : 0) - U.jambes.rotation.x) * Math.min(1, dt * 5);
   }

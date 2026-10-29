@@ -415,14 +415,16 @@ function heronGeos(){
   return HERON = {corps: fusionner(C), jambes: fusionner(J), cou: fusionner(K), tete: fusionner(T), poisson: fusionner(P),
     droite: aile(1), gauche: aile(-1), volD: grande(1), volG: grande(-1)};
 }
-export function heronModele(){
-  const G = heronGeos(), g = new THREE.Group(), mat = corpsMat();
+/* un grand échassier (le héron, la cigogne) : le corps, les pattes sur leur pivot, le cou sur le sien, la tête au bout */
+function echassier(G){
+  const g = new THREE.Group(), mat = corpsMat();
   g.add(new THREE.Mesh(G.corps, mat));
   const jambes = new THREE.Group(); jambes.position.set(0, .5, .02); jambes.add(new THREE.Mesh(G.jambes, mat)); g.add(jambes);
   const cou = new THREE.Group(); cou.position.set(0, .66, -.13); g.add(cou);
   const couM = new THREE.Mesh(G.cou, mat); cou.add(couM);
   const tete = new THREE.Group(); tete.position.y = LONG_COU; cou.add(tete); tete.add(new THREE.Mesh(G.tete, mat));
   const poisson = new THREE.Mesh(G.poisson, mat); poisson.visible = false; tete.add(poisson);
+  if(G.becBas){ const b = new THREE.Group(); b.position.set(0, .02, -.123); b.add(new THREE.Mesh(G.becBas, mat)); tete.add(b); g.userData.becBas = b; }   // le bas du bec, qui claque (la cigogne)
   const vol = [], plies = [];
   g.userData.ailes = [[G.droite, G.volD, 1], [G.gauche, G.volG, -1]].map(([a, v, cote]) => { const pivot = new THREE.Group();
     pivot.position.set(cote * .1, .67, .0); const m = new THREE.Mesh(a, mat), w = new THREE.Mesh(v, mat); w.visible = false;
@@ -430,6 +432,53 @@ export function heronModele(){
   Object.assign(g.userData, {vol, plies, grandesAiles: true, cou, couM, tete, poisson, jambes, longCou: LONG_COU});
   return g;
 }
+export const heronModele = () => echassier(heronGeos());
+
+/* ---------- La cigogne blanche ----------
+   D'après l'image de Yo (29 octobre 2026 : « Voici la cigogne »), comme une vraie (Yo : « Comme une vraie, un peu plus
+   grande que le héron », « Le claquement de bec, tête renversée », « Le vol plané, cou tendu » ; le nid sur le toit,
+   plus tard, dans la Boîte à idées) : toute blanche, le bout des ailes noir ; le long bec et les longues pattes rouges ;
+   l'oeil sombre dans un peu de peau noire. Mâle et femelle pareils. Montée comme le héron (echassier), le bas du bec sur
+   son pivot (userData.becBas) pour claquer ; en vol, de très grandes ailes blanches au bout noir. */
+let CIGOGNE = null;
+function cigogneGeos(){
+  if(CIGOGNE) return CIGOGNE;
+  const blanc = 0xF4F2EC, noir = 0x1E1E22, rouge = 0xD8402A, C = [];
+  bouleT(C, blanc, 0, .6, .05, .13, .13, .2, -.25);
+  bouleT(C, blanc, 0, .6, -.07, .1, .12, .11, -.25);
+  bouleT(C, noir, 0, .55, .25, .07, .03, .08, -.5, 0, 0, BOULE_P);                                      // le bout noir des ailes, sur la queue
+  const J = [];
+  for(const s of [-1, 1]){
+    const h = V(s * .045, 0, 0), g = V(s * .05, -.23, .02), p = V(s * .05, -.485, -.01);
+    pilule(J, rouge, h, g, .012); pilule(J, rouge, g, p, .01);
+    for(const [a, l] of [[-.5, .07], [0, .085], [.5, .07], [Math.PI, .04]]){ const d = V(Math.sin(a) * s, 0, -Math.cos(a)), b = p.clone().addScaledVector(d, l).setY(-.49);
+      baton(J, rouge, p, b, .007); boule(J, 0x3A2420, b.x + d.x * .006, -.49, b.z + d.z * .006, .006, .005, .009, BOULE_P); }
+  }
+  const K = [], pt = u => V(0, u * LONG_COU, -u * .01);
+  for(let k = 0; k < 3; k++) pilule(K, blanc, pt(k / 3), pt((k + 1) / 3), .058 - k * .007);            // le cou blanc, bien droit
+  const T = [];
+  bouleT(T, blanc, 0, .02, -.03, .05, .046, .065, .1);
+  for(const s of [-1, 1]){
+    boule(T, 0x2A2A2E, s * .034, .03, -.055, .018, .016, .012, BOULE_P);                               // la peau noire autour de l'oeil
+    boule(T, 0x1A1210, s * .04, .03, -.06, .01, .011, .007, BOULE_P);
+    boule(T, 0xFFFFFF, s * .043, .034, -.065, .003, .003, .002, BOULE_P);
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .016, -.085), q0, V(.018, .012, .17)), c: rouge});   // le haut du long bec rouge
+  const B = [{geo: CONE, m: new THREE.Matrix4().compose(V(0, -.008, 0), q0, V(.023, .014, .23)), c: 0xC8381E}];   // le bas, qui claque, depuis sa base
+  const grand = new THREE.Matrix4().makeScale(1.45, 1.45, 1.45);
+  for(const e of T) e.m.premultiply(grand);                                                          // une tête de jouet, comme le héron
+  const aile = s => { const A = []; bouleT(A, blanc, s * .02, -.03, .04, .04, .09, .15, -.3, 0, s * .1);
+    bouleT(A, noir, s * .02, -.08, .17, .035, .07, .12, -.3, 0, s * .08); return fusionner(A); };       // le bout noir, replié derrière
+  const grande = s => { const A = [];                                                                 // en vol : très grandes, blanches au bout noir
+    bouleT(A, blanc, s * .2, 0, .03, .2, .014, .1, 0, s * -.05, 0);
+    bouleT(A, noir, s * .25, -.002, .1, .22, .011, .05, 0, s * -.05, 0, BOULE_P);                        // le bord de fuite noir
+    bouleT(A, noir, s * .48, 0, .07, .1, .011, .09, 0, s * -.15, 0, BOULE_P);                             // le bout noir
+    return fusionner(A); };
+  return CIGOGNE = {corps: fusionner(C), jambes: fusionner(J), cou: fusionner(K), tete: fusionner(T), becBas: fusionner(B),
+    poisson: fusionner([{geo: BOULE_P, m: new THREE.Matrix4().makeScale(.001, .001, .001), c: blanc}]),
+    droite: aile(1), gauche: aile(-1), volD: grande(1), volG: grande(-1)};
+}
+export const cigogneModele = () => echassier(cigogneGeos());
 
 /* ---------- La chouette effraie ----------
    D'après l'image de Yo (29 octobre 2026 : « Voici la chouette effraie »), comme une vraie (Yo : « Comme une vraie, avec
@@ -563,6 +612,6 @@ export function martinModele(opt = {}){
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
   pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78},
-  hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8},
+  hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8}, cigogne: {fabrique: cigogneModele, echelle: .9},
   chouette: {fabrique: effraieModele, echelle: 1.05}, rossignol: {fabrique: rossignolModele, echelle: .95},
   martinPecheur: {fabrique: martinModele, echelle: .9}};

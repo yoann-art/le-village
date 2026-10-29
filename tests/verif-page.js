@@ -1831,8 +1831,18 @@ export async function verifier(){
     frames(20);
     if(mp.etat !== "pose" || !mp.mesh.visible) throw new Error(`le martin-pêcheur ne revient pas à sa place (${mp.etat})`);
     placePlayer(avantMP.x, avantMP.z, 1, 0);
+    /* la cigogne : la tête renversée, elle claque du bec ; elle plane, le cou tendu */
+    pauseOiseaux(true); pauseOiseaux(false);
+    const ci = lacherOiseau("cigogne", player.position.x + 4, player.position.z + 4, 2.5); ci.pl.perche = true; frames(2);
+    ci.geste = 99; ci.claque = 2; let ciBec = 0;
+    for(let k = 0; k < 10; k++){ frames(1); ciBec = Math.min(ciBec, ci.mesh.userData.becBas.rotation.x); }
+    if(ci.mesh.userData.cou.rotation.x < .9 || ciBec > -.2) throw new Error("la cigogne ne renverse pas la tête pour claquer du bec");
+    ci.claque = 0; frames(10);
+    const r7 = Math.random; Math.random = () => .001; frames(1); Math.random = r7;
+    frames(12);
+    if(ci.etat !== "plane" || ci.mesh.userData.cou.rotation.x > -.9) throw new Error(`la cigogne ne plane pas le cou tendu (${ci.etat})`);
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; un martin-pêcheur (${mpM} mâles sur 24) qui plonge et ressort avec un petit poisson ; un rossignol qui relève la queue et chante, tête levée ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une cigogne qui claque du bec, tête renversée, et plane le cou tendu ; un martin-pêcheur (${mpM} mâles sur 24) qui plonge et ressort avec un petit poisson ; un rossignol qui relève la queue et chante, tête levée ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);
