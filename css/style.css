@@ -121,6 +121,7 @@ button{font:inherit;color:inherit}
 .ico-poisson{width:1.35em;height:.85em;vertical-align:middle}
 .ico{width:1em;height:1em;vertical-align:middle}
 .ico-insecte{width:1.05em;height:1.05em;vertical-align:middle}
+.ico-photo{width:1.8em;height:1.8em;object-fit:contain;vertical-align:middle;pointer-events:none;filter:drop-shadow(0 0 1px rgba(255,246,226,.95)) drop-shadow(0 0 2px rgba(255,246,226,.5))}   /* la photo du modèle refait (icones.js) */
 .sh-tabs.sous{margin-top:-2px;flex-wrap:wrap;gap:6px}
 .sh-tabs.sous .sh-tab{flex:1 1 auto;font-size:14px;padding:6px 8px}
 .tile.inconnu .te{color:var(--muted);font-weight:700}

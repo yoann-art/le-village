@@ -17,6 +17,7 @@ import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
 import "./coffres.js";
 import { view, setLacet } from "./commandes.js";
+import { prendreIcones } from "./icones.js";                 // les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026)
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
@@ -245,3 +246,4 @@ setTimeout(() => {
   if(migrationMsg) toast(migrationMsg, 4200);
   else if(!state.buildings.some(b => !B[b.type].fixe)) toast("Ramasse les branches de chêne et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
 }, 700);
+prendreIcones();                                         // les photos des modèles refaits, une à la fois, quelques secondes après le chargement

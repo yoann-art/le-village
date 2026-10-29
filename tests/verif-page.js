@@ -2486,6 +2486,17 @@ export async function verifier(){
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
     return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
   });
+  /* les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026) : une photo du modèle, le reste dessiné */
+  await etape("Les icônes : la photo des modèles refaits d'après les images de Yo", async () => {
+    const {iconesPhoto, photographier} = await import("../js/icones.js");
+    const ks = iconesPhoto();
+    if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
+      throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
+    const url = photographier("mesange");
+    if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
+    if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
+    return `${ks.length} icônes en photo (insectes, oiseaux, fleurs sauvages, ce qu'on ramasse) ; les outils gardent leur dessin`;
+  });
   /* la caméra tourne tout autour du personnage (demande de Yo, 29 octobre 2026) ; le joystick suit ; la boussole la remet au nord */
   await etape("La caméra qui tourne à 360° : le doigt qui glisse, le joystick qui suit, la boussole", async () => {
     if(isInside()) await sortir();
