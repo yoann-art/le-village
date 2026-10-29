@@ -1796,8 +1796,18 @@ export async function verifier(){
     if(!he.mesh.userData.poisson.visible) throw new Error("le héron ne ressort pas de poisson");
     he.frappe = 0; he.vol = {x0: he.x, y0: he.y, z0: he.z, t: 0, d: 9}; he.etat = "vol"; frames(20);
     if(he.mesh.userData.couM.scale.y > .6 || he.mesh.userData.jambes.rotation.x > -1) throw new Error("le héron en vol ne replie pas le cou");
+    /* la chouette effraie : mâles et femelles au hasard ; la tête qui tourne presque dans le dos ; la chasse lente et basse */
+    const chM = Array.from({length: 24}, () => MODELES_OISEAUX.chouette.fabrique().userData).filter(u => u.male).length;
+    if(!chM || chM === 24) throw new Error(`les chouettes ne sont pas variées (${chM} mâles sur 24)`);
+    pauseOiseaux(true); pauseOiseaux(false);
+    const ch = lacherOiseau("chouette", player.position.x - 4, player.position.z - 3, 2); ch.pl.perche = true; frames(2);
+    ch.geste = 99; ch.regard = 2.3; frames(6);
+    if(ch.mesh.userData.tete.rotation.y < 2) throw new Error("la chouette ne tourne pas la tête presque dans son dos");
+    const r5 = Math.random; Math.random = () => .001; frames(1); Math.random = r5;
+    frames(50);
+    if(ch.etat !== "chasse" || ch.y > .8) throw new Error(`la chouette ne chasse pas en vol bas (${ch.etat}, ${ch.y.toFixed(2)})`);
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

@@ -246,10 +246,10 @@ function vivre(o, dt){
     if(P.t > P.d) envoler(o, false);
   } else if(o.etat === "chasse"){                    // l'hirondelle chasse en grandes boucles rapides, puis revient se poser sur son toit
     bat = true;
-    const C = o.chasse; C.t += dt; const a = C.a0 + C.t * C.w, bas = meteo() === "nuages";   // avant la pluie, en rase-mottes (carnet)
+    const C = o.chasse; C.t += dt; const a = C.a0 + C.t * C.w, bas = meteo() === "nuages", lente = OISEAUX[o.k].chasse === "lente";   // avant la pluie, en rase-mottes (carnet) ; la chouette, lente et basse
     const nx = C.cx + Math.cos(a) * C.r + Math.sin(a * 2) * .7, nz = C.cz + Math.sin(a) * C.r;
     o.ang = Math.atan2(nz - o.z, nx - o.x); o.x = nx; o.z = nz;
-    const h = bas ? .25 + Math.abs(Math.sin(C.t * 1.7)) * .2 : .9 + Math.sin(C.t * 1.3) * .5;
+    const h = lente ? .55 + Math.sin(C.t * .9) * .1 : bas ? .25 + Math.abs(Math.sin(C.t * 1.7)) * .2 : .9 + Math.sin(C.t * 1.3) * .5;
     o.y += (Math.min(h, o.y + 4 * dt) - o.y) * Math.min(1, dt * 3);
     if(C.t > C.d){ o.vol = {x0: o.x, y0: o.y, z0: o.z, t: 0, d: 1}; o.etat = "vol"; }   // elle revient à sa place
   } else if(o.etat === "vol" || o.etat === "part"){        // il vole vers sa place, en arc
@@ -296,7 +296,8 @@ function vivre(o, dt){
         o.saut = {t: 0, x0: o.x, z0: o.z, x1: o.pl.x + Math.cos(a) * .25, z1: o.pl.z + Math.sin(a) * .25}; }
       else if(r < .7){ o.pique = .4;
         if(o.pl.perche && OISEAUX[o.k].acrobate && Math.random() < .5) o.envers = 2 + Math.random() * 2; }   // la mésange se suspend la tête en bas pour picorer
-      else if(o.mesh.userData.tete && Math.random() < .7) o.regard = Math.random() < .25 ? 0 : (Math.random() - .5) * 2;   // le moineau tourne la tête, d'un coup, puis ailleurs
+      else if(o.mesh.userData.tete && Math.random() < .7){ o.regard = Math.random() < .25 ? 0 : (Math.random() - .5) * (OISEAUX[o.k].tourneTete ? 4.8 : 2);   // le moineau tourne la tête, d'un coup, puis ailleurs ; la chouette presque jusque dans son dos
+        if(OISEAUX[o.k].tourneTete && Math.random() < .35) o.balance = 1.6; }   // … et la balance de droite à gauche pour écouter
       else o.ang += (Math.random() - .5) * 2;
     }
     if(o.pique > 0) o.pique = Math.max(0, o.pique - dt);
@@ -308,8 +309,8 @@ function vivre(o, dt){
     }
     if((o.bouge -= dt) <= 0) envoler(o, false);       // de temps en temps, il change de place
     else if(OISEAUX[o.k].chasse && Math.random() < dt * .04){           // posée les deux tiers du temps, puis elle part chasser (Yo, 29 octobre 2026)
-      const r = 2 + Math.random() * 1.5, a0 = Math.random() * 6.28;
-      o.chasse = {t: 0, r, a0, cx: o.x - Math.cos(a0) * r, cz: o.z - Math.sin(a0) * r, w: (Math.random() < .5 ? -1 : 1) * 1.6, d: 8 + Math.random() * 2};
+      const lente = OISEAUX[o.k].chasse === "lente", r = (lente ? 2.5 : 2) + Math.random() * 1.5, a0 = Math.random() * 6.28;   // la chouette, en vol bas, lent et silencieux
+      o.chasse = {t: 0, r, a0, cx: o.x - Math.cos(a0) * r, cz: o.z - Math.sin(a0) * r, w: (Math.random() < .5 ? -1 : 1) * (lente ? .55 : 1.6), d: lente ? 10 + Math.random() * 4 : 8 + Math.random() * 2};
       o.etat = "chasse"; }
     else if(OISEAUX[o.k].plane && Math.random() < dt * .05){            // la mouette s'élève et plane au-dessus de la mer et du ponton (Yo, 28 octobre 2026)
       const r = 1.4 + Math.random() * 1.2, a0 = Math.random() * 6.28;
@@ -322,11 +323,12 @@ function vivre(o, dt){
   if(o.mesh.userData.grandesAiles){                   // la mouette : les grandes ailes ouvertes en vol, qui battent lentement, immobiles quand elle plane
     for(const m of o.mesh.userData.plies) m.visible = !bat;
     const glisse = o.etat === "chasse" && Math.sin(o.t * 3) > .3;        // l'hirondelle : quelques battements vifs, puis elle glisse
-    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" || glisse ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * (o.etat === "chasse" ? 16 : OISEAUX[o.k].lent ? 3.5 : 7)) * .45) : a.cote * .05;
+    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" || glisse ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * (OISEAUX[o.k].lent ? 3.5 : o.etat === "chasse" ? 16 : 7)) * .45) : a.cote * .05;
   }
   const tete = o.mesh.userData.tete;
   if(tete){ const r = bat ? 0 : o.regard || 0; tete.rotation.y += (r - tete.rotation.y) * Math.min(1, dt * 14);   // de petits coups de tête vifs
-    tete.rotation.z += ((o.penche > 0 ? .55 : 0) - tete.rotation.z) * Math.min(1, dt * 10); }   // la tête penchée, à l'écoute de la terre
+    if(o.balance > 0) o.balance -= dt;
+    tete.rotation.z += ((o.penche > 0 ? .55 : o.balance > 0 ? Math.sin(o.t * 7) * .35 : 0) - tete.rotation.z) * Math.min(1, dt * 10); }   // la tête penchée, à l'écoute de la terre ; la chouette qui la balance
   /* le cou du héron : tendu à l'affût, rentré au repos, replié en vol (les pattes traînent derrière) ; il se lance pour
      pêcher, ressort un petit poisson et l'avale (Yo, 29 octobre 2026) */
   const cou = o.mesh.userData.cou;

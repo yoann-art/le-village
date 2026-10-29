@@ -428,9 +428,60 @@ export function heronModele(){
   return g;
 }
 
+/* ---------- La chouette effraie ----------
+   D'après l'image de Yo (29 octobre 2026 : « Voici la chouette effraie »), comme une vraie (Yo : « Comme une vraie, avec
+   les yeux noirs et les pattes emplumées », « Mâles et femelles au hasard ») : le masque blanc en coeur bordé de roux,
+   les yeux tout noirs, le petit bec pâle ; le dos et les ailes dorés, tachetés de gris et de points blancs ; le ventre
+   presque blanc chez le mâle, chamois et plus tacheté chez la femelle (au hasard) ; les pattes couvertes de petites
+   plumes blanches, les doigts gris rosé aux griffes sombres. En vol, de grandes ailes larges et arrondies. */
+const EFFRAIE = {};
+function effraieGeos(male){
+  if(EFFRAIE[male]) return EFFRAIE[male];
+  const dore = 0xD8A050, gris = 0x9A8E86, blanc = 0xF8F4EC, ventre = male ? 0xF6F2EA : 0xEED6B0, roux = 0xC0803E, M = [];
+  boule(M, ventre, 0, .19, .01, .155, .155, .17);
+  boule(M, ventre, 0, .205, -.05, .138, .135, .12);
+  boule(M, dore, 0, .245, .07, .13, .112, .135);                                                      // le dos doré
+  for(let k = 0; k < (male ? 5 : 14); k++){ const a = k * 2.4, y = .1 + (k % 5) * .04, x = Math.sin(a) * .07;   // les petits points du ventre
+    boule(M, 0x6A5A50, x, y, -Math.sqrt(Math.max(0, .155 ** 2 - x * x - (y - .19) ** 2 * .9)) * 1.06 + .005, .005, .007, .004, BOULE_P); }
+  for(const s of [-1, 1]){                                                                            // les pattes emplumées, les doigts gris rosé
+    pilule(M, blanc, V(s * .045, .085, 0), V(s * .047, .02, -.004), .016);
+    const p = V(s * .047, .012, -.006);
+    for(const [a, l] of [[-.45, .04], [0, .045], [.45, .04], [Math.PI, .03]]){ const d = V(Math.sin(a) * s, 0, -Math.cos(a)), b = p.clone().addScaledVector(d, l).setY(.007);
+      baton(M, 0xB0A09C, p, b, .0065); bouleT(M, 0x2E2622, b.x + d.x * .006, .006, b.z + d.z * .006, .005, .006, .01, .5, 0, 0, BOULE_P); }
+  }
+  const Q = []; bouleT(Q, dore, 0, 0, .05, .045, .012, .07);
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(dore, 0, .37, -.06, .14, .13, .13);                                                               // la tête dorée
+  for(const s of [-1, 1]){
+    bouleT(T, roux, s * .04, .352 - y0, -.142 - z0, .084, .104, .034, 0, 0, s * -.15);                    // le bord roux du masque…
+    bouleT(T, blanc, s * .038, .352 - y0, -.15 - z0, .074, .094, .034, 0, 0, s * -.15);                  // … et le masque blanc en coeur
+    t(0x0E0A0A, s * .048, .37, -.178, .026, .028, .016);                                              // l'oeil tout noir
+    t(0xFFFFFF, s * .054, .38, -.193, .0065, .0075, .004, BOULE_P);
+  }
+  bouleT(T, blanc, 0, .352 - y0, -.163 - z0, .055, .09, .03, -.1);                                   // le milieu du coeur, blanc
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .332 - y0, -.2 - z0), new THREE.Quaternion().setFromEuler(new THREE.Euler(.6, 0, 0)), V(.014, .012, .04)), c: 0xE8CCB4});   // le petit bec pâle
+  const aile = s => { const A = [];
+    bouleT(A, dore, s * .03, -.04, .07, .035, .09, .16, -.25, 0, s * .15);
+    bouleT(A, gris, s * .05, -.07, .1, .02, .05, .09, -.25, 0, s * .15);
+    for(let k = 0; k < 4; k++) bouleT(A, blanc, s * .058, -.03 - k * .02, .04 + k * .035, .004, .006, .006, 0, 0, 0, BOULE_P);   // les points blancs
+    return fusionner(A); };
+  const grande = s => { const A = [];                                                                 // en vol : larges, arrondies
+    bouleT(A, dore, s * .2, 0, .04, .2, .014, .11, 0, s * -.06, 0);
+    bouleT(A, gris, s * .32, .004, .07, .08, .01, .07, 0, s * -.1, 0, BOULE_P);
+    bouleT(A, blanc, s * .2, -.008, .04, .19, .006, .1, 0, s * -.06, 0, BOULE_P);                       // le dessous presque blanc
+    return fusionner(A); };
+  return EFFRAIE[male] = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), droite: aile(1), gauche: aile(-1),
+    volD: grande(1), volG: grande(-1), grandesAiles: true};
+}
+export function effraieModele(opt = {}){
+  const male = opt.male ?? Math.random() < .5;
+  return assembler(effraieGeos(male), male);
+}
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
   pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78},
-  hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8}};
+  hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8},
+  chouette: {fabrique: effraieModele, echelle: 1.05}};
