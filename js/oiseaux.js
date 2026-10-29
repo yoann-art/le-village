@@ -216,6 +216,17 @@ function pondre(){
     return;
   }
 }
+/* Le point d'eau le plus proche, à moins de 2 P (le martin-pêcheur y plonge) */
+function eauPres(x, z){
+  if(ici !== "ile") return null;
+  const tx = tileOf(x), tz = tileOf(z); let best = null;
+  for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++){
+    if(!inb(tx + dx, tz + dz) || map.type[idx(tx + dx, tz + dz)] !== "water") continue;
+    const cx = centerOf(tx + dx), cz = centerOf(tz + dz), d = Math.hypot(cx - x, cz - z);
+    if(d > .4 && (!best || d < best.d)) best = {x: cx, z: cz, d};
+  }
+  return best;
+}
 /* Pour la vérification automatique : un oiseau posé à un endroit précis */
 export function lacherOiseau(k, x, z, y = 0){ const o = ajouter(k, {x, y, z}); o.alpha = 1; return o; }
 /* S'envoler vers une autre place (loin du personnage s'il fuit) ; pas de place : il s'en va */
@@ -244,6 +255,16 @@ function vivre(o, dt){
     o.ang = a + Math.sign(P.w) * Math.PI / 2;
     o.alpha = Math.min(1, o.alpha + dt);
     if(P.t > P.d) envoler(o, false);
+  } else if(o.etat === "plonge"){                    // le martin-pêcheur : il s'élève, plonge tête la première, ressort avec un petit poisson et revient à sa place
+    const P = o.plonge; P.t += dt; const u = P.t / 1.4, mx = P.x0 + (P.wx - P.x0) * .4, mz = P.z0 + (P.wz - P.z0) * .4;
+    o.mesh.visible = !(u > .5 && u < .8);
+    P.nez = u > .28 && u < .5;
+    if(u < .28){ const k = u / .28; o.x = P.x0 + (mx - P.x0) * k; o.z = P.z0 + (mz - P.z0) * k; o.y = P.y0 + Math.sin(k * Math.PI / 2) * .6; bat = true; }
+    else if(u < .5){ const k = (u - .28) / .22; o.x = mx + (P.wx - mx) * k; o.z = mz + (P.wz - mz) * k; o.y = P.y0 + .6 - (P.y0 + .75) * k; }
+    else if(u < .8){ o.x = P.wx; o.z = P.wz; o.y = -.15; }
+    else if(u < 1.3){ const k = (u - .8) / .5; o.x = P.wx + (P.x0 - P.wx) * k; o.z = P.wz + (P.z0 - P.wz) * k; o.y = -.15 + (P.y0 + .15) * k + Math.sin(k * Math.PI) * .5; bat = true;
+      o.ang = Math.atan2(P.z0 - P.wz, P.x0 - P.wx); }
+    else { o.x = P.x0; o.z = P.z0; o.y = P.y0; o.etat = "pose"; o.mange = 2.5; o.mesh.visible = true; }
   } else if(o.etat === "chasse"){                    // l'hirondelle chasse en grandes boucles rapides, puis revient se poser sur son toit
     bat = true;
     const C = o.chasse; C.t += dt; const a = C.a0 + C.t * C.w, bas = meteo() === "nuages", lente = OISEAUX[o.k].chasse === "lente";   // avant la pluie, en rase-mottes (carnet) ; la chouette, lente et basse
@@ -276,7 +297,12 @@ function vivre(o, dt){
     } else if((o.geste -= dt) <= 0){
       o.geste = 1 + Math.random() * 2.5;
       const r = Math.random();
-      if(OISEAUX[o.k].peche){                                          // le héron, à l'affût, immobile longtemps (carnet) ; parfois il pêche, avance à grands pas lents, ou rentre le cou
+      if(OISEAUX[o.k].plonge && r < .55){                               // le martin-pêcheur, posé au-dessus de l'eau : il hoche la tête pour viser, puis plonge
+        o.geste = 2 + Math.random() * 3;
+        const e = r < .3 && eauPres(o.x, o.z);
+        if(e){ o.plonge = {t: 0, x0: o.x, z0: o.z, y0: o.y, wx: e.x, wz: e.z}; o.ang = Math.atan2(e.z - o.z, e.x - o.x); o.etat = "plonge"; }
+        else o.hoche = 1.5; }
+      else if(OISEAUX[o.k].peche){                                          // le héron, à l'affût, immobile longtemps (carnet) ; parfois il pêche, avance à grands pas lents, ou rentre le cou
         o.geste = 3 + Math.random() * 4;
         if(r < .3) o.frappe = 1;
         else if(r < .55){ const a = Math.atan2(o.pl.z - o.z, o.pl.x - o.x) + (Math.random() - .5) * 2; o.ang = a; o.course = 2 + Math.floor(Math.random() * 2);
@@ -355,6 +381,12 @@ function vivre(o, dt){
     bec.rotation.x = -ch * (.35 + Math.sin(o.t * 23) * .2);           // le bas du bec s'ouvre vers le bas
     o.mesh.userData.gorge.scale.setScalar(1 + ch * (.25 + Math.sin(o.t * 31) * .15));
   }
+  if(OISEAUX[o.k].plonge){                            // le hochement de tête ; le petit poisson, de la sortie de l'eau jusqu'à ce qu'il l'avale
+    if(o.hoche > 0) o.hoche -= dt;
+    if(o.mange > 0) o.mange -= dt;
+    tete.rotation.x = o.hoche > 0 ? Math.sin(o.t * 10) * .25 : o.mange > .8 ? Math.sin(o.t * 14) * .3 : 0;   // il secoue son poisson, puis l'avale
+    o.mesh.userData.poisson.visible = o.mange > .4 || o.etat === "plonge" && o.plonge.t / 1.4 > .8;
+  }
   const ver = o.mesh.userData.ver;
   if(ver) ver.visible = o.tire > 0 && o.tire < .55;
   o.mesh.position.set(o.x, o.y + (bat && OISEAUX[o.k].ondule ? Math.cos(o.t * 2.2 * Math.PI * 2) * .08 : 0), o.z);
@@ -367,6 +399,7 @@ function vivre(o, dt){
   if(vol) for(const m of vol) m.visible = bat;                          // le blanc des ailes, en vol seulement
   o.mesh.rotation.y = -o.ang - Math.PI/2;
   o.mesh.rotation.x = o.pique > 0 ? Math.sin(o.pique / (o.pl.face !== undefined ? .16 : .4) * Math.PI) * .5 : 0;
+  if(o.etat === "plonge" && o.plonge.nez) o.mesh.rotation.x = -1.3;    // tête la première
   if(o.tire > 0) o.mesh.rotation.x = o.tire > .55 ? Math.sin((.8 - o.tire) / .25 * Math.PI / 2) * .6 : .6 * o.tire / .55 - Math.sin((.55 - o.tire) / .55 * Math.PI) * .15;   // le bec dans la terre, puis il tire en arrière
   /* le rouge-gorge fait de petites courbettes en relevant la queue d'un coup, et l'agite par petits coups (Yo, 28 octobre
      2026 : « Les courbettes et les coups de queue, d'accord ») */

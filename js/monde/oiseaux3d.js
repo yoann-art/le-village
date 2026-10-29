@@ -93,6 +93,7 @@ function assembler(G, male){
   if(plies.length){ g.userData.plies = plies; g.userData.grandesAiles = true; }                        // en vol : les ailes repliées cachées, les grandes ailes ouvertes
   if(G.bec){ const b = new THREE.Group(); b.position.set(0, .342 - .3, -.17 + .06); b.add(new THREE.Mesh(G.bec, mat)); tete.add(b); g.userData.bec = b; }   // le bas du bec, qui s'ouvre (le rossignol chante)
   if(G.gorge){ const m = new THREE.Mesh(G.gorge, mat); m.position.set(0, .3 - .3, -.15 + .06); tete.add(m); g.userData.gorge = m; }   // la gorge, qui vibre
+  if(G.poisson){ const m = new THREE.Mesh(G.poisson, mat); m.visible = false; tete.add(m); g.userData.poisson = m; }   // le petit poisson dans le bec (le martin-pêcheur)
   if(G.ver){ const v = new THREE.Mesh(G.ver, mat); v.visible = false; tete.add(v); g.userData.ver = v; }   // le ver au bout du bec (le merle)
   if(G.queue){ const q = new THREE.Group(); q.position.set(0, .2, .15); q.add(new THREE.Mesh(G.queue, mat)); g.add(q); g.userData.queue = q; }   // la queue sur son pivot (le rouge-gorge la relève)
   g.userData.tete = tete; g.userData.male = male;
@@ -514,10 +515,54 @@ function rossignolGeos(){
 }
 export const rossignolModele = () => assembler(rossignolGeos(), undefined);
 
+/* ---------- Le martin-pêcheur d'Europe ----------
+   D'après l'image de Yo (29 octobre 2026 : « Voici le martin-pêcheur. »), comme un vrai (Yo : « Comme un vrai, avec le
+   long bec et le dos turquoise », « Mâles et femelles au hasard (le bas du bec orange chez la femelle) », « Le plongeon
+   et le petit poisson ») : rond comme l'image ; la tête et les ailes bleues piquetées de bleu clair, la bande turquoise
+   vive le long du dos, la courte queue bleue ; la joue et le ventre orange, la gorge et la tache du cou blanches ; le
+   long bec droit en poignard, tout noir chez le mâle, le bas orange chez la femelle (au hasard) ; les petites pattes
+   rouges. Un petit poisson caché dans le bec (userData.poisson). */
+const MARTIN = {};
+function martinGeos(male){
+  if(MARTIN[male]) return MARTIN[male];
+  const bleu = 0x1E74B4, clair = 0x6EC8EC, turq = 0x3CD8E4, orange = 0xE8742A, blanc = 0xF4EEE0, M = [];
+  boule(M, orange, 0, .19, .01, .155, .155, .17);
+  boule(M, orange, 0, .205, -.05, .138, .135, .12);
+  boule(M, bleu, 0, .245, .065, .13, .112, .14);
+  bouleT(M, turq, 0, .3, .11, .034, .012, .11, -.75);                                                 // la bande turquoise du dos
+  for(const s of [-1, 1]) patte(M, s, 0xE04A2A, 0x4A2420);
+  const Q = []; bouleT(Q, bleu, 0, 0, .05, .04, .011, .07);
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(bleu, 0, .36, -.07, .13, .125, .127);
+  for(let k = 0; k < 10; k++){ const a = k * 2.4, r = .035 + (k % 3) * .02; t(clair, Math.sin(a) * r, .45 + Math.cos(a) * .01 - (k % 3) * .01, -.06 + Math.cos(a) * r * .6, .008, .005, .008, BOULE_P); }   // les piquetés clairs
+  t(blanc, 0, .3, -.15, .055, .045, .03);                                                             // la gorge blanche
+  for(const s of [-1, 1]){
+    t(orange, s * .062, .356, -.142, .042, .036, .04);                                                  // la joue orange
+    t(blanc, s * .105, .33, -.08, .03, .035, .03);                                                    // la tache blanche du cou
+    t(0x1A1210, s * .05, .378, -.182, .025, .027, .02);
+    t(0xFFFFFF, s * .056, .388, -.199, .0065, .0075, .004, BOULE_P);
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .352 - y0, -.19 - z0), q0, V(.02, .012, .13)), c: 0x1E1E22});   // le long bec en poignard, le haut noir…
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .338 - y0, -.19 - z0), q0, V(.018, .01, .12)), c: male ? 0x2A2A2E : 0xD8582A});   // … le bas orange chez la femelle
+  const P = []; bouleT(P, 0xC8D4DC, .0, .34 - y0, -.29 - z0, .045, .01, .013, 0, Math.PI / 2, 0, BOULE_P);   // le petit poisson, en travers du bec
+  boule(P, 0x8A98A8, -.045, .34 - y0, -.29 - z0, .008, .012, .004, BOULE_P);
+  const aile = s => { const A = [];
+    bouleT(A, bleu, s * .03, -.04, .07, .035, .085, .15, -.25, 0, s * .15);
+    for(let k = 0; k < 4; k++) bouleT(A, clair, s * .058, -.02 - k * .014, .02 + k * .03, .004, .006, .006, 0, 0, 0, BOULE_P);
+    bouleT(A, 0x16507E, s * .035, -.075, .17, .026, .022, .05, -.3, 0, s * .12, BOULE_P);
+    return fusionner(A); };
+  return MARTIN[male] = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), poisson: fusionner(P), droite: aile(1), gauche: aile(-1)};
+}
+export function martinModele(opt = {}){
+  const male = opt.male ?? Math.random() < .5;
+  return assembler(martinGeos(male), male);
+}
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
   pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78},
   hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8},
-  chouette: {fabrique: effraieModele, echelle: 1.05}, rossignol: {fabrique: rossignolModele, echelle: .95}};
+  chouette: {fabrique: effraieModele, echelle: 1.05}, rossignol: {fabrique: rossignolModele, echelle: .95},
+  martinPecheur: {fabrique: martinModele, echelle: .9}};

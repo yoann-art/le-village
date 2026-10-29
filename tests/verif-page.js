@@ -1812,8 +1812,26 @@ export async function verifier(){
     if(ro.mesh.userData.queue.rotation.x > -.25) throw new Error("le rossignol ne relève pas la queue");
     ro.chant = 4; frames(8);
     if(ro.mesh.userData.tete.rotation.x < .3 || ro.mesh.userData.bec.rotation.x > -.1) throw new Error("le rossignol ne chante pas, tête levée et bec ouvert");
+    /* le martin-pêcheur : mâles et femelles au hasard ; au bord de l'étang, il plonge et ressort avec un petit poisson */
+    const mpM = Array.from({length: 24}, () => MODELES_OISEAUX.martinPecheur.fabrique().userData).filter(u => u.male).length;
+    if(!mpM || mpM === 24) throw new Error(`les martins-pêcheurs ne sont pas variés (${mpM} mâles sur 24)`);
+    let bordE = -1;
+    for(let i = 0; i < N * N && bordE < 0; i++){ const x = i % N, z = Math.floor(i / N);
+      if(map.type[i] === "grass" && lieuEau(idx(Math.min(N - 1, x + 1), z)) === "etang" && map.type[idx(Math.min(N - 1, x + 1), z)] === "water") bordE = i; }
+    if(bordE < 0) throw new Error("pas de bord d'étang pour le martin-pêcheur");
+    const avantMP = {x: player.position.x, z: player.position.z};
+    placePlayer(centerOf(bordE % N) - 3, centerOf(Math.floor(bordE / N)), 1, 0);   // le joueur, à quelques pas de l'étang
+    pauseOiseaux(true); pauseOiseaux(false);
+    const mp = lacherOiseau("martinPecheur", centerOf(bordE % N), centerOf(Math.floor(bordE / N))); frames(2);
+    const r6 = Math.random; Math.random = () => .1; mp.geste = 0; frames(1); Math.random = r6;
+    if(mp.etat !== "plonge") throw new Error(`le martin-pêcheur ne plonge pas (${mp.etat})`);
+    mp.geste = 99; frames(24);
+    if(!mp.mesh.userData.poisson.visible) throw new Error(`le martin-pêcheur ne ressort pas avec un poisson (${mp.etat}, ${mp.plonge.t.toFixed(2)})`);
+    frames(20);
+    if(mp.etat !== "pose" || !mp.mesh.visible) throw new Error(`le martin-pêcheur ne revient pas à sa place (${mp.etat})`);
+    placePlayer(avantMP.x, avantMP.z, 1, 0);
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; un rossignol qui relève la queue et chante, tête levée ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; un martin-pêcheur (${mpM} mâles sur 24) qui plonge et ressort avec un petit poisson ; un rossignol qui relève la queue et chante, tête levée ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);
