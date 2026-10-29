@@ -46,7 +46,7 @@ const ZMIN = .6, ZMAX = 1.6, ZKEY = "le-village-zoom";
    dehors, dans la forêt et le Marais, ni en construisant ni en décorant) et l'angle de cette image (view.lacetIci), que
    personnage.js lit pour que le joystick suive la caméra */
 const LKEY = "le-village-lacet";
-export const view = {zoom: 1, lacet: 0, lacetIci: 0, peutTourner: () => false};
+export const view = {zoom: 1, lacet: 0, lacetIci: 0, elan: 0, doigt: false, peutTourner: () => false};   // elan : la vitesse (rad/s) quand le doigt se lève ; doigt : un doigt fait tourner
 try{ const z = parseFloat(localStorage.getItem(ZKEY)); if(z >= ZMIN && z <= ZMAX) view.zoom = z; }catch(_){}
 try{ const l = parseFloat(localStorage.getItem(LKEY)); if(isFinite(l)) view.lacet = l; }catch(_){}
 export function setLacet(l){ view.lacet = Math.atan2(Math.sin(l), Math.cos(l)); try{ localStorage.setItem(LKEY, String(view.lacet)); }catch(_){} }
@@ -55,15 +55,20 @@ function saveZoom(){ try{ localStorage.setItem(ZKEY, String(view.zoom)); }catch(
 const app = $("#app"), fingers = new Map();
 let pinchDist = 0;
 const onScene = e => e.target.tagName === "CANVAS";
-app.addEventListener("pointerdown", e => { if(onScene(e)){ fingers.set(e.pointerId, {x:e.clientX, y:e.clientY, x0:e.clientX, tourne:false}); pinchDist = 0; } });
+app.addEventListener("pointerdown", e => { if(onScene(e)){ fingers.set(e.pointerId, {x:e.clientX, y:e.clientY, x0:e.clientX, t:e.timeStamp, tourne:false}); pinchDist = 0; view.elan = 0; } });
 app.addEventListener("pointermove", e => {
   const f = fingers.get(e.pointerId);
   if(!f) return;
   const dx = e.clientX - f.x;
   f.x = e.clientX; f.y = e.clientY;
   if(fingers.size === 1 && view.peutTourner()){              // un seul doigt qui glisse : la caméra tourne (un balayage de l'écran : un demi-tour)
-    if(!f.tourne && Math.abs(e.clientX - f.x0) > 10) f.tourne = true;   // un simple toucher, un appui long, ne tournent pas
-    if(f.tourne) view.lacet -= dx * Math.PI / Math.max(320, innerWidth);
+    if(!f.tourne && Math.abs(e.clientX - f.x0) > 10) f.tourne = view.doigt = true;   // un simple toucher, un appui long, ne tournent pas
+    if(f.tourne){                                               // un balayage de toute la largeur de l'écran : un tour complet (Yo : « longue »)
+      const dl = -dx * 2 * Math.PI / Math.max(320, innerWidth), dts = Math.max(.008, (e.timeStamp - f.t) / 1000);
+      view.lacet += dl;
+      f.v = (f.v || 0) * .6 + dl / dts * .4;                    // sa vitesse, adoucie, pour l'élan au lâcher
+    }
+    f.t = e.timeStamp;
     return;
   }
   if(fingers.size !== 2) return;
@@ -75,7 +80,7 @@ function endFinger(e){
   const f = fingers.get(e.pointerId);
   if(!fingers.delete(e.pointerId)) return;
   pinchDist = 0; saveZoom();
-  if(f.tourne) setLacet(view.lacet);
+  if(f.tourne){ view.doigt = false; view.elan = e.timeStamp - f.t < 80 ? Math.max(-9, Math.min(9, f.v || 0)) : 0; setLacet(view.lacet); }   // lâché en glissant : elle continue un peu sur sa lancée
 }
 app.addEventListener("pointerup", endFinger);
 app.addEventListener("pointercancel", endFinger);

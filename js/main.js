@@ -150,7 +150,7 @@ function tick(now){
 }
 /* Le bouton boussole : sa flèche montre le nord ; un toucher remet la caméra vers le nord (la vue d'avant) */
 const btnNord = $("#btn-nord"), flecheNord = btnNord && btnNord.querySelector("svg");
-let nordVu = null;
+let nordVu = null, lacetVu = 0;
 function majNord(libre){
   if(!btnNord) return;
   if(btnNord.hidden === libre) btnNord.hidden = !libre;
@@ -192,11 +192,19 @@ function camera_(now, dt, marche){
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
   ajusterBrume(D);                                         // la brume de la grotte du Marais suit la caméra (étape 1.13)
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
-  if(takeJump()) camT.copy(target);
+  const saut = takeJump();
+  if(saut) camT.copy(target);
   else camT.lerp(target, 1 - Math.pow(.0005, dt));
   /* la caméra tourne autour du personnage (demande de Yo) : dehors, dans la forêt et le Marais ; ailleurs, vers le nord */
   const libre = !dv && !placing && !deplaceEnCours() && (!isInside() || ["foret", "marais"].includes(currentPlace().b.type));
-  view.lacetIci = libre ? view.lacet : 0;
+  if(libre && view.elan && !view.doigt){                   // l'élan, quand le doigt s'est levé en glissant, qui ralentit doucement
+    view.lacet += view.elan * dt; view.elan *= Math.exp(-dt * 5);
+    if(Math.abs(view.elan) < .05){ view.elan = 0; setLacet(view.lacet); }
+  }
+  const vise = libre ? view.lacet : 0;                     // la caméra suit l'angle voulu en glissant (plus fluide que par à-coups)
+  if(saut) lacetVu = vise;
+  else { const d = Math.atan2(Math.sin(vise - lacetVu), Math.cos(vise - lacetVu)); lacetVu += d * Math.min(1, dt * 18); }
+  view.lacetIci = lacetVu;
   majNord(libre);
   const L = view.lacetIci;
   camera.position.set(camT.x + Math.sin(L) * OFF.z * D, camT.y + OFF.y * D, camT.z + Math.cos(L) * OFF.z * D);
