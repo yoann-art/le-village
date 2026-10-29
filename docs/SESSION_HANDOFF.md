@@ -1,59 +1,71 @@
-# Passation de séance (26 octobre 2026, fin de journée)
+# Passation de séance (29 octobre 2026)
 
 ## Où on en est
 
-- Version en ligne : **v2.1.59** (commit `165e3ac`), envoyée sur GitHub avec l'accord de Yo le 26 octobre 2026
-  (run de vérification `40277249010`, noté dans `.claude/verif-suivi.txt`).
-- Dernière tâche : **la fourmi d'après l'image de Yo**, deuxième des 23 insectes de l'île. Son image était rousse ;
-  Claude a signalé que la fourmi du jeu (« Elle marche en file indienne ») est la fourmi noire des jardins ; Yo :
-  « Garde la fourmi noire des jardins (même forme que mon image, mais noire) » (v2.1.58). Puis, à sa demande, elle
-  marche en deux trépieds qui se relaient (v2.1.59). Yo n'a validé ni la fourmi ni la piéride sur son téléphone.
-- Comparaison et animation : `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\fourmi-comparaison.png` et
-  `fourmi-marche.gif`.
+- Version en ligne : **v2.1.97** (commit `d754a08`), envoyée sur GitHub avec l'accord de Yo le 29 octobre 2026
+  (run de vérification `40844309073`, vert, noté dans `.claude/verif-suivi.txt`). Carnet de bugs : aucune note ouverte.
+- **Les 21 insectes de l'île sont refaits d'après les images de Yo** (v2.1.57 à v2.1.82, le dernier : le Grand Paon de
+  nuit). Le cloporte et l'épeire sont en réserve (`reserve` dans `INSECTES`), décision de Yo.
+- **Les 12 oiseaux de l'île sont refaits d'après ses images** (v2.1.84 à v2.1.97, le dernier : la cigogne), après leurs
+  règles (v2.1.83) : 4 à la fois au printemps et en été, 3 en automne et en hiver ; seuls les communs tant que le carnet
+  compte moins de 3 oiseaux ; les moineaux volent seuls (v2.1.86, Yo est revenu sur les groupes).
+- Les 7 insectes et les 5 oiseaux de la Forêt profonde, les 4 insectes et les 4 oiseaux du Marais gardent leur forme simple.
+- Yo n'a pas encore dit avoir tout validé sur son téléphone.
+- Comparaisons : `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\` et `…\images\oiseaux\` (`<nom>-comparaison.png`).
 
 ## Les derniers fichiers modifiés
 
-- Jeu (enregistré, envoyé) : `js/monde/insectes3d.js` (`fourmiModele` : le corps et deux trépieds, `userData.pattes`,
-  `userData.pas`), `js/insectes.js` (dans `vivre` : les pattes qui marchent, `b.foule`, `b.marche`),
-  `tests/verif-page.js` (la fourmi : six pattes, deux trépieds qui marchent), `js/version.js` (2.1.59).
-- Hors du dépôt : `outils-claude\insecte.mjs` accepte maintenant `OUT`, `ADRESSE` (un autre port) et `VUES` (les caméras,
-  en JSON).
+- `js/monde/oiseaux3d.js` (nouveau, comme `insectes3d.js`) : `MODELES_OISEAUX`, `assembler` (les petits oiseaux ronds :
+  corps, tête sur un pivot au cou, ailes, et selon l'oiseau la queue, le bas du bec, la gorge, le ver, le poisson, les
+  grandes ailes de vol), `echassier` (le héron et la cigogne : cou et pattes sur leurs pivots).
+- `js/oiseaux.js` : `modele` prend d'abord `MODELES_OISEAUX` ; `OISEAUX_SAISON`, `oiseauxAPondre` ; les comportements
+  dans `vivre`, réglés par des données dans `OISEAUX` (`js/donnees.js`) : `acrobate`, `ondule` (mésange), `courbette`
+  (rouge-gorge), `ecoute` (merle), `marche` (pie, mouette), `plane` (mouette, cigogne), `chasse` (hirondelle ;
+  « lente » : la chouette), `peche`, `lent` (héron), `tourneTete` (chouette), `queueHaute` (rossignol), `plonge`
+  (martin-pêcheur), `claque`, `couTendu` (cigogne) ; les états en plus de « pose »/« vol »/« part » : « plane »,
+  « chasse », « plonge ».
+- `js/monde/insectes3d.js`, `js/insectes.js` : les 21 insectes et leurs comportements (voir DEVELOPMENT_HISTORY).
+- `tests/verif-page.js` : un geste par insecte et par oiseau (étapes « Attraper un insecte au filet » et « Attraper un
+  oiseau au filet »). Un geste qui dépend du hasard (un oiseau qui repart chasser) doit l'empêcher le temps du contrôle :
+  la v2.1.95 a échoué sur GitHub pour ça.
 
 ## À faire en premier dans la nouvelle séance
 
-1. `git status` : le dossier doit être propre (rien en cours).
-2. Le port 8000 : le 26 octobre, deux anciens `serveur.py` d'anciennes séances le gardaient et montraient l'ancien jeu ;
-   Claude n'a pas eu le droit de les arrêter et a travaillé sur une copie servie au port 8002 (configuration temporaire,
-   retirée ensuite de `launch.json`). Yo redémarre l'ordinateur : vérifier que le port 8000 montre bien ce dossier.
-3. Lire le résultat de la dernière vérification de GitHub (`https://api.github.com/repos/yoann-art/le-village/actions/runs`)
-   et les notes ouvertes du carnet de bugs (`/issues?state=open`, seulement celles de `yoann-art`).
-4. Attendre Yo : son avis sur la piéride et la fourmi, puis l'image de l'insecte suivant (« Voici le … »).
+1. `git status` : le dossier doit être propre.
+2. Lancer le jeu avec `preview_start` « jeu » ; s'il est arrêté pendant une vérification (`ERR_CONNECTION_REFUSED`),
+   le relancer et refaire la vérification (c'est arrivé deux fois le 28 et le 29 octobre).
+3. Lire la dernière vérification de GitHub et le carnet de bugs (seulement les notes de `yoann-art`).
+4. Attendre Yo : son avis sur son téléphone, puis la suite. Yo veut faire **tout ce qui se trouve sur son île en premier**
+   (28 octobre 2026) ; sur l'île, restent par exemple les poissons d'après images, les sons de la nature, le niveau 3 de
+   la Scierie, les bâtiments d'après images (voir [CURRENT_STATE.md](CURRENT_STATE.md)). Lui proposer, ne pas choisir.
 
-## Pour refaire un insecte (la méthode qui a marché)
+## Pour refaire un animal (la méthode qui a marché)
 
-1. Ranger l'image de Yo : `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\<nom>.png` (l'application garde une
-   copie de ses images dans le dossier `images` de la séance).
-2. Dans `js/monde/insectes3d.js` : un corps fusionné (`fusionner`, `boule`, `baton`), tête vers −z ; ailes plates
-   `aileGeo(contour, cote, boîte)` peintes par `peinture(boîte, dessin)` (CanvasTexture), deux maillages par côté sur un
-   pivot ; `userData.ailes = [{pivot, cote}]` ; l'ajouter à `MODELES_INSECTES` avec son `echelle`. Un insecte sans
-   ailes doit quand même avoir `userData.ailes = []` : `insectes.js` les parcourt à chaque image sans test.
-3. Rendu : `outils-claude/insecte.mjs` (changer son dossier de sortie), comparer à l'image, recommencer jusqu'à ce que
-   ce soit au plus près ; une photo dans le jeu (aperçu « jeu », `lacherInsecte(k, x, z, y)` depuis la page, heure
-   forcée à midi avec `forcerHeure(13)` de `js/monde/ciel.js`) ; assembler la comparaison.
-4. Un contrôle dans `tests/verif-page.js` (étape « Attraper un insecte »), version dans `js/version.js`, une ligne dans
-   `docs/DEVELOPMENT_HISTORY.md` ; `NAVIGATEUR=msedge node tests/verif.mjs` jusqu'à « Tout va bien » ; commit ;
-   envoyer la comparaison à Yo ; demander « Oui, envoie » ; après l'envoi, surveiller GitHub et noter le run.
+1. Ranger l'image de Yo dans `images\<thème>\<nom>.png`. La comparer au vrai animal et lister les écarts : Yo veut
+   **comme un vrai** (mémoire `insectes-comme-des-vrais`), mâles et femelles au hasard quand ils diffèrent.
+2. Proposer un découpage (le modèle, ce qu'il fait, les vérifications) et des questions ; attendre son accord.
+3. Le modèle : rendu avec `outils-claude\insecte.mjs` pour un insecte ; pour un oiseau, le script de la séance
+   `oiseau.mjs` (dans le dossier temporaire, à recréer au besoin : il charge `MODELES_OISEAUX[clé].fabrique` et rend deux
+   vues ; `HASARD` < 0,5 donne un mâle, `SAISON`, `VUES`, `OUVERT`). Retoucher jusqu'à ce que ce soit au plus près ;
+   une photo dans le jeu (`lacherOiseau(k, x, z, y)` ou `lacherInsecte`) ; la comparaison avec PIL, envoyée à Yo.
+4. Un geste dans `tests/verif-page.js`, la version dans `js/version.js`, une ligne dans `DEVELOPMENT_HISTORY.md` et
+   `CURRENT_STATE.md` ; `NAVIGATEUR=msedge node tests/verif.mjs` jusqu'à « Tout va bien » ; demander « Oui, envoie » ;
+   `git push origin HEAD:main` ; surveiller GitHub, noter le run, mettre à jour le Journal du plan de production ; renvoyer
+   à Yo la liste (✅ faits, restants).
 
 ## Points qui demandent l'accord de Yo
 
-- L'ordre des chantiers après les insectes (voir [NEXT_STEPS.md](NEXT_STEPS.md)).
-- *(proposition de Claude)* la piéride posée les ailes refermées.
-- *(proposition de Claude, pas encore faite à Yo)* les pattes qui marchent pour les autres insectes qui marchent.
+- La suite sur l'île (voir plus haut).
+- La note du carnet du moineau dit encore « s'envole en groupe » (les moineaux volent seuls depuis la v2.1.86) ; celle
+  du rouge-gorge « Il suit le jardinier », que Yo n'a pas voulu dans le jeu.
+- Dans la Boîte à idées : le vulcain sur les pommes tombées, le nid de la cigogne sur les toits.
+- Un petit défaut signalé : la bande turquoise du martin-pêcheur dépasse un peu derrière la tête, vue de côté.
 
 ## Fichiers à lire selon la tâche
 
 - Toujours : `CLAUDE.md`, ce fichier, [CURRENT_STATE.md](CURRENT_STATE.md).
-- Un modèle d'après image : `js/monde/formes.js`, le modèle le plus proche déjà fait (`insectes3d.js`, une fleur, `scierie.js`).
+- Un modèle d'après image : `js/monde/formes.js`, le modèle le plus proche déjà fait (`insectes3d.js`, `oiseaux3d.js`,
+  une fleur, `scierie.js`).
 - Un système de jeu : [ARCHITECTURE.md](ARCHITECTURE.md), puis chercher son nom dans [DEVELOPMENT_HISTORY.md](DEVELOPMENT_HISTORY.md).
 - Rendu, performance, sauvegarde : [TECHNICAL_DECISIONS.md](TECHNICAL_DECISIONS.md).
 - Game design, contenu, règles complètes de Yo : [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).

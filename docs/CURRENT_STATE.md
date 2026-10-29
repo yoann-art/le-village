@@ -1,4 +1,4 @@
-# Hearthwild : l'état actuel (26 octobre 2026, v2.1.57)
+# Hearthwild : l'état actuel (29 octobre 2026, v2.1.97)
 
 ## Ce qui marche (vérifié)
 
@@ -6,12 +6,13 @@
 - Étape 2.1 (le décor de l'île) : faite d'après les images de Yo (arbres de l'île, pierre, caillou, branche, herbes,
   groseillier, thym, galets, sol, plage, mer, étang, berge, 7 fleurs sauvages) ; restent les sons de la nature.
 - Étape 2.2 (la Scierie dehors) : niveaux 1 et 2 faits (v2.1.46 à v2.1.50).
-- Les insectes : nouvelles règles (v2.1.55, v2.1.56) ; la piéride blanche refaite d'après son image (v2.1.57).
-- **Essais réellement faits pour la v2.1.57 (26 octobre 2026)** : la vérification complète sur le PC
-  (`NAVIGATEUR=msedge node tests/verif.mjs`) : « Tout va bien » ; une photo de la piéride dans le jeu (aperçu « jeu »).
-  La v2.1.57 a été envoyée sur GitHub (commit `303947d`) : vérification de GitHub **verte** (run `40272323021`,
-  noté dans `.claude/verif-suivi.txt`). Pas encore validée par Yo sur son téléphone.
-- Carnet de bugs : aucune note ouverte sur GitHub au 26 octobre 2026.
+- Les 21 insectes et les 12 oiseaux de l'île refaits d'après les images de Yo, comme des vrais (v2.1.57 à v2.1.97 ;
+  le détail plus bas).
+- **Essais réellement faits pour la v2.1.97 (29 octobre 2026)** : la vérification complète sur le PC
+  (`NAVIGATEUR=msedge node tests/verif.mjs`) : « Tout va bien » ; une photo de la cigogne dans le jeu (aperçu « jeu »).
+  La v2.1.97 a été envoyée sur GitHub (commit `d754a08`) : vérification de GitHub **verte** (run `40844309073`,
+  noté dans `.claude/verif-suivi.txt`). Les insectes et les oiseaux ne sont pas encore validés par Yo sur son téléphone.
+- Carnet de bugs : aucune note ouverte sur GitHub au 29 octobre 2026.
 
 ## En partie fait
 
