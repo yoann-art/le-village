@@ -31,7 +31,9 @@
   domestique, mâles et femelles, v2.1.84).
 - La Scierie : le niveau 3 fait d'après l'image de Yo (v2.1.104), sur un terrain de 5 × 5 (v2.1.103) ; « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.
-- Les bâtiments agrandis : les 6 autres gardent l'ancien modèle agrandi (`ANCIEN` dans `batiments.js`) en attendant leurs images.
+- La Carrière : le niveau 1 fait d'après la nouvelle image de Yo (v2.1.106), à ciel ouvert, sur un terrain de 5 × 5 ; les niveaux 2 et 3
+  attendent leurs images (prompts prêts dans `prompts.html`).
+- Les bâtiments agrandis : les 5 autres gardent l'ancien modèle agrandi (`ANCIEN` dans `batiments.js`) en attendant leurs images.
 - Les fleurs de jardin (rose, tulipe, lavande, tournesol, capucine, cosmos) : en graines à l'étal du Marché, avec leur
   forme simple ; leurs modèles viendront avec leurs lieux.
 - Les galets de l'étang et la marguerite : la marguerite est en réserve (`reserve` dans `FLEURS`).

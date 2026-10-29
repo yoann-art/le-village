@@ -372,7 +372,7 @@ export async function verifier(){
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
   await etape("Les bâtiments agrandis (Yo, 22 octobre 2026) et la Scierie aux niveaux 1 et 2 d'après ses images", async () => {
-    const tailles = {scierie: 5, chaumiere: 4, carriere: 4, forge: 4, marche: 5, taverne: 5, chateau: 6};
+    const tailles = {scierie: 5, chaumiere: 4, carriere: 5, forge: 4, marche: 5, taverne: 5, chateau: 6};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
     let n = 0; g.traverse(o => { if(o.isMesh) n++; });

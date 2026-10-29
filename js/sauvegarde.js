@@ -7,7 +7,7 @@ const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
-    buildings:[], nextId:1, scierie5:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
+    buildings:[], nextId:1, scierie5:true, carriere5:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
     entreeMine:"eboulee",                                    // l'entrée de la mine à déblayer puis construire (étape 1.11)
     ileN: ILE};                                              // la taille de l'île (étape 2.1 : la grande île)
 }
@@ -84,6 +84,30 @@ export let state, migrationMsg = null;
       for(const i of choix[1]){ const c = state.ile[i]; if(c && c.o){ state.aRendre.push(c.o); delete state.ile[i]; } delete state.chemins[i]; }
     }
     state.scierie5 = true;
+  }
+  /* La Carrière passe de 4 × 4 à 5 × 5, sa porte à droite (Yo, 29 octobre 2026) : la case devant la porte reste la même
+     (le terrain grandit de deux colonnes à gauche et d'une rangée derrière, et perd sa colonne de droite) ; si ce côté n'est
+     pas libre, on essaie un peu plus loin ; ce qui était posé ou planté sur les cases prises revient au sac (aRendre) */
+  if(!state.carriere5){
+    const ILE_N = 96, cle = (x, z) => z * ILE_N + x, pris = new Set();
+    const taille = b => ({chaumiere:4, scierie:5, marche:5, taverne:5, forge:4, chateau:6, mine:3, foret:3})[b.type] || 1;
+    for(const b of state.buildings) if(b.type !== "carriere"){ const s = taille(b);
+      for(let dz = -1; dz <= s; dz++) for(let dx = 0; dx < s; dx++) pris.add(cle(b.x + dx, b.z + dz)); }
+    state.aRendre = state.aRendre || [];
+    for(const b of state.buildings) if(b.type === "carriere" && !b.rot){
+      const ancien = new Set(); for(let dz = 0; dz < 4; dz++) for(let dx = 0; dx < 4; dx++) ancien.add(cle(b.x + dx, b.z + dz));
+      ancien.add(cle(b.x + 1, b.z + 4));                                    // son ancienne case de porte
+      const essai = ([ox, oz]) => { const t = [];
+        for(let dz = 0; dz <= 5; dz++) for(let dx = 0; dx < 5; dx++){ if(dz === 5 && dx !== 3) continue;   // le carré, et la case devant la nouvelle porte
+          const x = b.x + ox + dx, z = b.z + oz + dz;
+          if(x < 1 || z < 1 || x > ILE_N - 2 || z > ILE_N - 2) return null; if(!ancien.has(cle(x, z))) t.push(cle(x, z)); }
+        return t.some(i => pris.has(i)) ? null : t; };
+      const choix = [[-2, -1], [-3, -1], [-1, -1], [-2, -2], [-2, 0], [-1, 0], [-3, 0]].map(o => [o, essai(o)]).find(([, t]) => t);
+      if(!choix) continue;
+      b.x += choix[0][0]; b.z += choix[0][1];
+      for(const i of choix[1]){ const c = state.ile[i]; if(c && c.o){ state.aRendre.push(c.o); delete state.ile[i]; } delete state.chemins[i]; }
+    }
+    state.carriere5 = true;
   }
   /* Les pièces repartent en terre battue et torchis clair (Yo, 29 octobre 2026 : « Les parties en cours repartent en terre
      battue et torchis (les meubles restent en place) ») : les couleurs de l'ancienne palette s'en vont */

@@ -221,12 +221,12 @@ if(state.buildings.some(b => b.rot)){
   save();
 }
 
-/* La Scierie agrandie en 5 × 5 (sauvegarde.js) : ce qui était posé ou planté sur ses nouvelles cases revient au sac (un arbre,
+/* La Scierie et la Carrière agrandies en 5 × 5 (sauvegarde.js) : ce qui était posé ou planté sur ses nouvelles cases revient au sac (un arbre,
    son bois ; une plante, sa récolte ; un objet posé, lui-même) */
 if(state.aRendre && state.aRendre.length){
   for(const o of state.aRendre){ const r = RECOLTE[o];
     if(r && r.res) addOwned(r.res, (r.coups || 1) * (r.parCoup || 1)); else if(r && r.cueille) addOwned(r.cueille, r.n || 1); else if(objet(o)) addOwned(o, 1); }
-  setTimeout(() => toast("🪚 Ta Scierie a maintenant un terrain de 5 × 5, pour sa roue à eau. Ce qui poussait à côté est dans ton sac.", 4600), 1500);
+  setTimeout(() => toast("🏗️ Un de tes bâtiments a maintenant un terrain de 5 × 5. Ce qui poussait à côté est dans ton sac.", 4600), 1500);
   delete state.aRendre; save();
 }
 

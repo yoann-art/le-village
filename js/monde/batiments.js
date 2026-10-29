@@ -13,6 +13,7 @@ import { VITRE, lanterne } from "./ciel.js";
 import { makeMeuble } from "./meubles.js";
 import { scierieNiveau1, scierieNiveau2, scierieNiveau3, FACADE as FACADE_MAISON, DECALE } from "./scierie.js";
 import { saison } from "../donnees.js";
+import { carriereNiveau1, FACADE as FACADE_CARRIERE } from "./carriere.js";
 const FACADE_SCIERIE = FACADE_MAISON + DECALE;            // la façade, dans le carré de 5 × 5
 
 const MUR = 2 * P, PORTE = 1.5 * P;
@@ -32,8 +33,8 @@ lanterne(null, 0, 0, LANTERNE);
    Yo (NOUVEAUX : la Scierie au niveau 1, scierie.js), leur ancien modèle est agrandi d'autant (echelle) */
 const ANCIEN = {chaumiere: 3, scierie: 3, carriere: 3, forge: 3, marche: 4, taverne: 4, chateau: 4};
 const ANCIENNE_PORTE = {chaumiere: 0, scierie: -.45, carriere: -.45, forge: -.4, marche: 0, taverne: 0, chateau: 0};
-const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}};
-const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];
+const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE]}};
+const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];   // les niveaux sans image gardent l'ancien modèle agrandi
 const echelle = (type, lvl) => nouveau(type, lvl) || !ANCIEN[type] ? 1 : sizeOf(type) / ANCIEN[type];
 const frontOf = (type, lvl) => nouveau(type, lvl) ? nouveau(type, lvl)[1] : ANCIEN[type] ? (ANCIEN[type] / 2 - .2) * echelle(type, lvl) : sizeOf(type) / 2 - .2;
 
