@@ -345,6 +345,16 @@ function vivre(o, dt){
     U.tete.position.y = U.longCou * U.couM.scale.y;
     U.jambes.rotation.x += ((bat ? -1.35 : 0) - U.jambes.rotation.x) * Math.min(1, dt * 5);
   }
+  /* le rossignol chante (carnet : « Il chante dans le noir ») : perché, la tête levée, le bec ouvert, la gorge qui vibre */
+  const bec = o.mesh.userData.bec;
+  if(bec){
+    if(o.etat === "pose" && !(o.chant > 0) && Math.random() < dt * .12) o.chant = 3 + Math.random() * 3;
+    if(o.chant > 0 && (o.etat !== "pose" || (o.chant -= dt) <= 0)) o.chant = 0;
+    const ch = o.chant > 0 ? 1 : 0;
+    tete.rotation.x += (ch * .45 - tete.rotation.x) * Math.min(1, dt * 6);
+    bec.rotation.x = -ch * (.35 + Math.sin(o.t * 23) * .2);           // le bas du bec s'ouvre vers le bas
+    o.mesh.userData.gorge.scale.setScalar(1 + ch * (.25 + Math.sin(o.t * 31) * .15));
+  }
   const ver = o.mesh.userData.ver;
   if(ver) ver.visible = o.tire > 0 && o.tire < .55;
   o.mesh.position.set(o.x, o.y + (bat && OISEAUX[o.k].ondule ? Math.cos(o.t * 2.2 * Math.PI * 2) * .08 : 0), o.z);
@@ -362,14 +372,15 @@ function vivre(o, dt){
      2026 : « Les courbettes et les coups de queue, d'accord ») */
   const queue = o.mesh.userData.queue;
   if(queue){
-    const cb = OISEAUX[o.k].courbette;                                    // les courbettes : le rouge-gorge
+    const cb = OISEAUX[o.k].courbette, qh = OISEAUX[o.k].queueHaute;     // les courbettes : le rouge-gorge ; la queue relevée et agitée : le rossignol
     if(cb && o.etat === "pose" && !(o.courbe > 0) && Math.random() < dt * .5) o.courbe = .45;
-    if(cb && o.etat === "pose" && !(o.coup > 0) && Math.random() < dt * .9) o.coup = .18;
+    if((cb || qh) && o.etat === "pose" && !(o.coup > 0) && Math.random() < dt * (qh ? 1.4 : .9)) o.coup = .18;
     if(o.pose > 0) o.pose = Math.max(0, o.pose - dt);
     const c = o.courbe > 0 ? Math.sin((1 - (o.courbe = Math.max(0, o.courbe - dt)) / .45) * Math.PI) : 0;
     const q = o.coup > 0 ? Math.sin((1 - (o.coup = Math.max(0, o.coup - dt)) / .18) * Math.PI) : 0;
     o.mesh.rotation.x += c * .3;                                         // il plonge un peu en avant…
-    queue.rotation.x = -(c * .8 + q * .45 + (o.pose > 0 ? Math.sin(o.pose / .5 * Math.PI) * .9 : 0) + pas * .3);   // … et relève la queue (en se posant ; la pie à chaque pas)
+    queue.rotation.x = -(c * .8 + q * .45 + (o.pose > 0 ? Math.sin(o.pose / .5 * Math.PI) * .9 : 0) + pas * .3 + (qh && o.etat === "pose" ? .35 : 0));   // … et relève la queue (en se posant ; la pie à chaque pas ; le rossignol, toujours un peu)
+    if(qh) queue.scale.x = 1 + q * .35;                                  // le rossignol l'étale en éventail en l'agitant
   }
   const al = Math.max(0, o.alpha) * (OISEAUX[o.k].brume ? .78 : 1);   // le corbeau des brumes se fond dans la brume
   for(const m of o.mats) m.opacity = al;

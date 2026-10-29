@@ -91,6 +91,8 @@ function assembler(G, male){
     g.add(pivot); return {pivot, cote}; });
   if(vol.length) g.userData.vol = vol;
   if(plies.length){ g.userData.plies = plies; g.userData.grandesAiles = true; }                        // en vol : les ailes repliées cachées, les grandes ailes ouvertes
+  if(G.bec){ const b = new THREE.Group(); b.position.set(0, .342 - .3, -.17 + .06); b.add(new THREE.Mesh(G.bec, mat)); tete.add(b); g.userData.bec = b; }   // le bas du bec, qui s'ouvre (le rossignol chante)
+  if(G.gorge){ const m = new THREE.Mesh(G.gorge, mat); m.position.set(0, .3 - .3, -.15 + .06); tete.add(m); g.userData.gorge = m; }   // la gorge, qui vibre
   if(G.ver){ const v = new THREE.Mesh(G.ver, mat); v.visible = false; tete.add(v); g.userData.ver = v; }   // le ver au bout du bec (le merle)
   if(G.queue){ const q = new THREE.Group(); q.position.set(0, .2, .15); q.add(new THREE.Mesh(G.queue, mat)); g.add(q); g.userData.queue = q; }   // la queue sur son pivot (le rouge-gorge la relève)
   g.userData.tete = tete; g.userData.male = male;
@@ -478,10 +480,44 @@ export function effraieModele(opt = {}){
   return assembler(effraieGeos(male), male);
 }
 
+/* ---------- Le rossignol philomèle ----------
+   D'après l'image de Yo (29 octobre 2026 : « Voici le rossignol »), comme un vrai (Yo : « Comme un vrai, avec les pattes
+   brun rosé et la longue queue rousse », « La queue rousse relevée et agitée », « Le chant qu'on voit (tête levée, bec
+   ouvert, gorge qui vibre) ») : rond comme l'image ; le dos brun chaud sans taches, la longue queue rousse ; le ventre
+   chamois pâle, la gorge plus claire ; le grand oeil sombre au fin cercle clair ; le bec fin et sombre, dont le bas s'ouvre
+   (userData.bec) ; la gorge qui vibre quand il chante (userData.gorge) ; les pattes brun rosé. Mâle et femelle pareils. */
+let ROSSIGNOL = null;
+function rossignolGeos(){
+  if(ROSSIGNOL) return ROSSIGNOL;
+  const brun = 0x8A5A36, roux = 0xB8582A, chamois = 0xE8D2B0, gorge = 0xF2E6D0, M = [];
+  boule(M, chamois, 0, .19, .01, .155, .155, .17);
+  boule(M, chamois, 0, .205, -.05, .138, .135, .12);
+  boule(M, brun, 0, .245, .065, .132, .114, .14);
+  for(const s of [-1, 1]) patte(M, s, 0xB07A6A, 0x4A3430);
+  const Q = []; bouleT(Q, roux, 0, 0, .1, .048, .012, .13); bouleT(Q, 0xA04A22, 0, .004, .17, .042, .01, .07, 0, 0, 0, BOULE_P);   // la longue queue rousse
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(brun, 0, .36, -.07, .13, .125, .127);
+  t(chamois, 0, .335, -.105, .11, .1, .1);                                                            // le bas de la tête, plus clair
+  for(const s of [-1, 1]){
+    t(0xE8D8BC, s * .05, .378, -.176, .031, .033, .02);                                               // le fin cercle clair
+    t(0x1A1210, s * .05, .378, -.182, .025, .027, .02);
+    t(0xFFFFFF, s * .056, .388, -.199, .0065, .0075, .004, BOULE_P);
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .354 - y0, -.19 - z0), q0, V(.018, .011, .045)), c: 0x3A2E28});   // le haut du bec
+  const B = [{geo: CONE, m: new THREE.Matrix4().compose(V(0, -.002, -.02), q0, V(.016, .008, .04)), c: 0x4A3A32}];   // le bas du bec, sur son pivot
+  const G = []; boule(G, gorge, 0, 0, 0, .05, .035, .03);                                              // la gorge claire
+  const aile = s => { const A = [];
+    bouleT(A, brun, s * .03, -.04, .07, .035, .085, .15, -.25, 0, s * .15);
+    bouleT(A, 0x7A4A2C, s * .035, -.075, .18, .026, .022, .055, -.3, 0, s * .12, BOULE_P);
+    return fusionner(A); };
+  return ROSSIGNOL = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), bec: fusionner(B), gorge: fusionner(G), droite: aile(1), gauche: aile(-1)};
+}
+export const rossignolModele = () => assembler(rossignolGeos(), undefined);
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
   pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78},
   hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8},
-  chouette: {fabrique: effraieModele, echelle: 1.05}};
+  chouette: {fabrique: effraieModele, echelle: 1.05}, rossignol: {fabrique: rossignolModele, echelle: .95}};

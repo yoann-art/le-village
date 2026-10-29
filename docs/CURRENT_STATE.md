@@ -22,7 +22,7 @@
   posée sur une fleur, les ailes refermées.
 - Les oiseaux de l'île (12) : les règles d'abord (v2.1.83 : 4 à la fois au printemps et en été, 3 en automne et en hiver ;
   seuls les communs tant que le carnet compte moins de 3 oiseaux ; v2.1.86 : les moineaux volent seuls, plus de
-  groupes) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 9 sur 12 (la chouette effraie, la tête qui tourne et la chasse lente, v2.1.93 ; le héron cendré, qui pêche un petit poisson, v2.1.92 ; l'hirondelle, qui chasse en boucles, v2.1.91 ; la mouette rieuse, capuchon l'été, qui plane, v2.1.90 ; la pie à la longue queue, qui marche à grands pas, v2.1.89 ; le merle, qui court, écoute et tire un ver, v2.1.88 ; le rouge-gorge, qui fait des courbettes, v2.1.87 ; la mésange charbonnière, la tête en bas et le vol ondulé, v2.1.85 ; le moineau
+  groupes) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 10 sur 12 (le rossignol, qui chante tête levée, v2.1.94 ; la chouette effraie, la tête qui tourne et la chasse lente, v2.1.93 ; le héron cendré, qui pêche un petit poisson, v2.1.92 ; l'hirondelle, qui chasse en boucles, v2.1.91 ; la mouette rieuse, capuchon l'été, qui plane, v2.1.90 ; la pie à la longue queue, qui marche à grands pas, v2.1.89 ; le merle, qui court, écoute et tire un ver, v2.1.88 ; le rouge-gorge, qui fait des courbettes, v2.1.87 ; la mésange charbonnière, la tête en bas et le vol ondulé, v2.1.85 ; le moineau
   domestique, mâles et femelles, v2.1.84).
 - La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.

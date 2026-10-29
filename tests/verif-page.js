@@ -1806,8 +1806,14 @@ export async function verifier(){
     const r5 = Math.random; Math.random = () => .001; frames(1); Math.random = r5;
     frames(50);
     if(ch.etat !== "chasse" || ch.y > .8) throw new Error(`la chouette ne chasse pas en vol bas (${ch.etat}, ${ch.y.toFixed(2)})`);
+    /* le rossignol : la queue rousse relevée ; il chante, la tête levée, le bec ouvert, la gorge qui vibre */
+    pauseOiseaux(true); pauseOiseaux(false);
+    const ro = lacherOiseau("rossignol", player.position.x - 4, player.position.z + 2); frames(6);
+    if(ro.mesh.userData.queue.rotation.x > -.25) throw new Error("le rossignol ne relève pas la queue");
+    ro.chant = 4; frames(8);
+    if(ro.mesh.userData.tete.rotation.x < .3 || ro.mesh.userData.bec.rotation.x > -.1) throw new Error("le rossignol ne chante pas, tête levée et bec ouvert");
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; un rossignol qui relève la queue et chante, tête levée ; une chouette effraie (${chM} mâles sur 24) qui tourne la tête presque dans son dos et chasse en vol bas ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);
