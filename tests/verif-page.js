@@ -1787,8 +1787,17 @@ export async function verifier(){
     if(hiEtat !== "chasse" || hiY > .6) throw new Error(`l'hirondelle ne chasse pas en rase-mottes par temps nuageux (${hiEtat}, ${hiY.toFixed(2)})`);
     hi.chasse.t = 99; frames(30);
     if(hi.etat !== "pose" || Math.abs(hi.y - 2) > .05) throw new Error(`l'hirondelle ne revient pas sur son toit (${hi.etat}, ${hi.y.toFixed(2)})`);
+    /* le héron cendré : il lance le bec et ressort un petit poisson ; en vol, le cou replié et les pattes derrière */
+    pauseOiseaux(true); pauseOiseaux(false);
+    const he = lacherOiseau("heron", player.position.x + 4, player.position.z - 3); frames(2);
+    he.geste = 99; he.frappe = 1; frames(4);
+    if(he.mesh.userData.cou.rotation.x > -.6) throw new Error("le héron ne lance pas le bec");
+    frames(4);
+    if(!he.mesh.userData.poisson.visible) throw new Error("le héron ne ressort pas de poisson");
+    he.frappe = 0; he.vol = {x0: he.x, y0: he.y, z0: he.z, t: 0, d: 9}; he.etat = "vol"; frames(20);
+    if(he.mesh.userData.couM.scale.y > .6 || he.mesh.userData.jambes.rotation.x > -1) throw new Error("le héron en vol ne replie pas le cou");
     pauseOiseaux(true); pauseOiseaux(false); frames(2);
-    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
+    return `un moineau (${moiM} mâles sur 24), inscrit au carnet ; un héron qui pêche un petit poisson et vole le cou replié ; une hirondelle (${hiM} mâles sur 24) qui chasse en rase-mottes par temps nuageux, puis revient sur son toit ; une mouette rieuse (capuchon brun l'été) qui plane, les ailes ouvertes ; une pie qui marche à grands pas, le blanc des ailes en vol ; une mésange (${mesM} mâles sur 24) perchée la tête en bas ; un rouge-gorge qui fait des courbettes, la queue relevée ; un merle (${merM} mâles sur 24) qui penche la tête et tire un ver ; une coccinelle a fui le moineau posé tout près ; 4 oiseaux à la fois au printemps et en été, 3 en automne et en hiver ; au début, seuls les communs (${neuf.length} espèces) ; les moineaux volent seuls`;
   });
   await etape("La vie de la Forêt profonde : un insecte, un oiseau, un poisson du ruisseau", async () => {
     place(4);

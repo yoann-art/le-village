@@ -276,7 +276,14 @@ function vivre(o, dt){
     } else if((o.geste -= dt) <= 0){
       o.geste = 1 + Math.random() * 2.5;
       const r = Math.random();
-      if(OISEAUX[o.k].marche && !o.pl.perche && r < .65){               // la pie : elle marche à grands pas en se dandinant, ou saute de côté
+      if(OISEAUX[o.k].peche){                                          // le héron, à l'affût, immobile longtemps (carnet) ; parfois il pêche, avance à grands pas lents, ou rentre le cou
+        o.geste = 3 + Math.random() * 4;
+        if(r < .3) o.frappe = 1;
+        else if(r < .55){ const a = Math.atan2(o.pl.z - o.z, o.pl.x - o.x) + (Math.random() - .5) * 2; o.ang = a; o.course = 2 + Math.floor(Math.random() * 2);
+          o.pas = {d: .8, l: .16}; o.saut = {t: 0, d: .8, x0: o.x, z0: o.z, x1: o.x + Math.cos(a) * .16, z1: o.z + Math.sin(a) * .16}; }
+        else if(r < .7) o.rentre = 5 + Math.random() * 5;
+        else o.regard = (Math.random() - .5) * 1.2; }
+      else if(OISEAUX[o.k].marche && !o.pl.perche && r < .65){               // la pie : elle marche à grands pas en se dandinant, ou saute de côté
         if(r < .45){ const a = Math.atan2(o.pl.z - o.z, o.pl.x - o.x) + (Math.random() - .5) * 2.4; o.ang = a; o.course = 2 + Math.floor(Math.random() * 3);
           o.pas = {d: .28, l: .13}; o.saut = {t: 0, d: .28, x0: o.x, z0: o.z, x1: o.x + Math.cos(a) * .13, z1: o.z + Math.sin(a) * .13}; }
         else { const c = Math.random() < .5 ? 1 : -1, a = o.ang + c * Math.PI / 2;
@@ -315,11 +322,27 @@ function vivre(o, dt){
   if(o.mesh.userData.grandesAiles){                   // la mouette : les grandes ailes ouvertes en vol, qui battent lentement, immobiles quand elle plane
     for(const m of o.mesh.userData.plies) m.visible = !bat;
     const glisse = o.etat === "chasse" && Math.sin(o.t * 3) > .3;        // l'hirondelle : quelques battements vifs, puis elle glisse
-    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" || glisse ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * (o.etat === "chasse" ? 16 : 7)) * .45) : a.cote * .05;
+    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" || glisse ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * (o.etat === "chasse" ? 16 : OISEAUX[o.k].lent ? 3.5 : 7)) * .45) : a.cote * .05;
   }
   const tete = o.mesh.userData.tete;
   if(tete){ const r = bat ? 0 : o.regard || 0; tete.rotation.y += (r - tete.rotation.y) * Math.min(1, dt * 14);   // de petits coups de tête vifs
     tete.rotation.z += ((o.penche > 0 ? .55 : 0) - tete.rotation.z) * Math.min(1, dt * 10); }   // la tête penchée, à l'écoute de la terre
+  /* le cou du héron : tendu à l'affût, rentré au repos, replié en vol (les pattes traînent derrière) ; il se lance pour
+     pêcher, ressort un petit poisson et l'avale (Yo, 29 octobre 2026) */
+  const cou = o.mesh.userData.cou;
+  if(cou){
+    const U = o.mesh.userData;
+    if(o.rentre > 0) o.rentre -= dt;
+    let rx = bat ? .9 : 0;
+    if(o.frappe > 0 && o.etat === "pose"){ o.frappe = Math.max(0, o.frappe - dt); const f = 1 - o.frappe;
+      rx = f < .12 ? -1.2 * f / .12 : f < .45 ? -1.2 : f < .75 ? -1.2 * (.75 - f) / .3 : .3 * Math.sin((f - .75) / .25 * Math.PI);   // il lance le bec, le ressort, puis avale
+      U.poisson.visible = f > .3 && f < .92; }
+    else { o.frappe = 0; U.poisson.visible = false; }
+    cou.rotation.x += (rx - cou.rotation.x) * Math.min(1, dt * (o.frappe > 0 ? 30 : 6));
+    U.couM.scale.y += ((bat ? .35 : o.rentre > 0 && !(o.frappe > 0) ? .55 : 1) - U.couM.scale.y) * Math.min(1, dt * 5);
+    U.tete.position.y = U.longCou * U.couM.scale.y;
+    U.jambes.rotation.x += ((bat ? -1.35 : 0) - U.jambes.rotation.x) * Math.min(1, dt * 5);
+  }
   const ver = o.mesh.userData.ver;
   if(ver) ver.visible = o.tire > 0 && o.tire < .55;
   o.mesh.position.set(o.x, o.y + (bat && OISEAUX[o.k].ondule ? Math.cos(o.t * 2.2 * Math.PI * 2) * .08 : 0), o.z);

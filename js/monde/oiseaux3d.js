@@ -361,9 +361,76 @@ export function hirondelleModele(opt = {}){
   return assembler(hirondelleGeos(male), male);
 }
 
+/* ---------- Le héron cendré ----------
+   D'après l'image de Yo (29 octobre 2026 : « Voici le héron cendré »), comme un vrai (Yo : « Comme un vrai, avec les
+   pattes brun-jaune », « Sa taille, un peu plus petit que ton personnage », « La pêche du petit poisson », « Le vol le cou
+   replié ») : la tête blanche à la bande noire qui finit en plumes noires derrière la tête, l'oeil jaune, le long bec jaune
+   en poignard ; le cou blanc aux traits noirs devant ; le dos et les ailes gris, les épaules noires, le devant blanc ; les
+   longues pattes brun-jaune. Mâle et femelle sont pareils. Le cou est sur un pivot (userData.cou : il se tend, se rentre,
+   se lance pour pêcher), la tête au bout (userData.tete, que le cou porte à userData.longCou × son allongement) ; un petit
+   poisson caché au bout du bec (userData.poisson) ; les pattes sur un pivot aux hanches (userData.jambes : en vol, elles
+   traînent derrière) ; en vol, de grandes ailes (comme la mouette). */
+let HERON = null;
+const LONG_COU = .3;
+function heronGeos(){
+  if(HERON) return HERON;
+  const gris = 0x9EA6B0, grisF = 0x6A7280, blanc = 0xF2F2EE, noir = 0x22242A, jaune = 0xE2A63A, patteC = 0x9A8456;
+  const C = [];                                                                                      // le corps
+  bouleT(C, gris, 0, .6, .05, .13, .13, .2, -.25);
+  bouleT(C, blanc, 0, .6, -.07, .1, .12, .11, -.25);                                                  // le devant blanc
+  for(const s of [-1, 1]) bouleT(C, noir, s * .09, .67, -.06, .03, .055, .06, -.25, 0, s * .2, BOULE_P);   // les épaules noires
+  bouleT(C, grisF, 0, .55, .25, .07, .03, .07, -.5, 0, 0, BOULE_P);                                    // la courte queue
+  const J = [];                                                                                      // les pattes, depuis les hanches (0, .5, .02)
+  for(const s of [-1, 1]){
+    const h = V(s * .045, 0, 0), g = V(s * .05, -.23, .02), p = V(s * .05, -.485, -.01);
+    pilule(J, patteC, h, g, .011); pilule(J, patteC, g, p, .009);
+    for(const [a, l] of [[-.5, .07], [0, .085], [.5, .07], [Math.PI, .05]]){ const d = V(Math.sin(a) * s, 0, -Math.cos(a)), b = p.clone().addScaledVector(d, l).setY(-.49);
+      baton(J, patteC, p, b, .006); boule(J, 0x4A3E2E, b.x + d.x * .006, -.49, b.z + d.z * .006, .006, .005, .009, BOULE_P); }
+  }
+  const K = [];                                                                                      // le cou, de la base (0, 0, 0) vers le haut
+  const pt = u => V(0, u * LONG_COU, -Math.sin(u * Math.PI) * .03 - u * .02);
+  for(let k = 0; k < 3; k++) pilule(K, blanc, pt(k / 3), pt((k + 1) / 3), .056 - k * .007);           // un cou lisse et épais, à peine en S
+  for(let k = 1; k < 8; k++){ const q = pt(k / 8); bouleT(K, noir, 0, q.y, q.z - .052 + k * .002, .006, .02, .006, -.3, 0, 0, BOULE_P); }   // les traits noirs devant
+  const T = [];                                                                                      // la tête, au bout du cou
+  bouleT(T, blanc, 0, .02, -.03, .05, .045, .07, .1);
+  for(const s of [-1, 1]){
+    bouleT(T, noir, s * .03, .04, .0, .02, .014, .065, .1, s * .2, 0, BOULE_P);                         // la bande noire, de l'oeil à la nuque
+    boule(T, 0xE8C040, s * .036, .03, -.055, .016, .016, .012, BOULE_P);                                // l'oeil jaune
+    boule(T, 0x1A1210, s * .041, .03, -.06, .009, .01, .007, BOULE_P);
+    boule(T, 0xFFFFFF, s * .044, .034, -.065, .003, .003, .002, BOULE_P);
+  }
+  for(const [x, l] of [[-.006, .16], [.006, .13]]) baton(T, noir, V(x, .045, .02), V(x * 3, .0, .02 + l), .004);   // les plumes noires de la nuque
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .015, -.085), q0, V(.017, .014, .16)), c: jaune});   // le long bec en poignard
+  const grand = new THREE.Matrix4().makeScale(1.45, 1.45, 1.45); for(const e of T) e.m.premultiply(grand);   // une tête de jouet, plus grosse
+  const P = []; bouleT(P, 0xC8D0D8, 0, .012, -.25, .03, .009, .012, 0, .1, 0, BOULE_P); boule(P, 0x8A96A4, .03, .012, -.248, .008, .01, .004, BOULE_P);   // le petit poisson
+  const aile = s => { const A = []; bouleT(A, gris, s * .02, -.05, .07, .04, .1, .2, -.3, 0, s * .1);
+    bouleT(A, grisF, s * .02, -.09, .22, .03, .05, .08, -.3, 0, s * .08, BOULE_P); return fusionner(A); };
+  const grande = s => { const A = [];                                                                 // en vol : larges et arrondies, le bout sombre
+    bouleT(A, gris, s * .22, 0, .05, .22, .014, .12, 0, s * -.08, 0);
+    bouleT(A, grisF, s * .46, 0, .08, .1, .011, .09, 0, s * -.2, 0, BOULE_P);
+    return fusionner(A); };
+  return HERON = {corps: fusionner(C), jambes: fusionner(J), cou: fusionner(K), tete: fusionner(T), poisson: fusionner(P),
+    droite: aile(1), gauche: aile(-1), volD: grande(1), volG: grande(-1)};
+}
+export function heronModele(){
+  const G = heronGeos(), g = new THREE.Group(), mat = corpsMat();
+  g.add(new THREE.Mesh(G.corps, mat));
+  const jambes = new THREE.Group(); jambes.position.set(0, .5, .02); jambes.add(new THREE.Mesh(G.jambes, mat)); g.add(jambes);
+  const cou = new THREE.Group(); cou.position.set(0, .66, -.13); g.add(cou);
+  const couM = new THREE.Mesh(G.cou, mat); cou.add(couM);
+  const tete = new THREE.Group(); tete.position.y = LONG_COU; cou.add(tete); tete.add(new THREE.Mesh(G.tete, mat));
+  const poisson = new THREE.Mesh(G.poisson, mat); poisson.visible = false; tete.add(poisson);
+  const vol = [], plies = [];
+  g.userData.ailes = [[G.droite, G.volD, 1], [G.gauche, G.volG, -1]].map(([a, v, cote]) => { const pivot = new THREE.Group();
+    pivot.position.set(cote * .1, .67, .0); const m = new THREE.Mesh(a, mat), w = new THREE.Mesh(v, mat); w.visible = false;
+    pivot.add(m, w); g.add(pivot); plies.push(m); vol.push(w); return {pivot, cote}; });
+  Object.assign(g.userData, {vol, plies, grandesAiles: true, cou, couM, tete, poisson, jambes, longCou: LONG_COU});
+  return g;
+}
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
   pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78},
-  hirondelle: {fabrique: hirondelleModele, echelle: .92}};
+  hirondelle: {fabrique: hirondelleModele, echelle: .92}, heron: {fabrique: heronModele, echelle: .8}};
