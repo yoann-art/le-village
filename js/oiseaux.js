@@ -28,7 +28,7 @@ import { ARBRES } from "./monde/essences.js";
 import { pontonCases, eauLibre } from "./monde/ponton.js";
 import { player, pencheMain, allure, ALLURE_DOUCE } from "./monde/personnage.js";
 import { saisonDe } from "./peche.js";
-import { brouillard } from "./monde/meteo.js";
+import { brouillard, meteo } from "./monde/meteo.js";
 import { marais, maraisObj, plante, mcx, mcz, W as WM, CHICOTS } from "./monde/marais.js";
 import { toast } from "./interface.js";
 import { tenu } from "./barre.js";
@@ -244,6 +244,14 @@ function vivre(o, dt){
     o.ang = a + Math.sign(P.w) * Math.PI / 2;
     o.alpha = Math.min(1, o.alpha + dt);
     if(P.t > P.d) envoler(o, false);
+  } else if(o.etat === "chasse"){                    // l'hirondelle chasse en grandes boucles rapides, puis revient se poser sur son toit
+    bat = true;
+    const C = o.chasse; C.t += dt; const a = C.a0 + C.t * C.w, bas = meteo() === "nuages";   // avant la pluie, en rase-mottes (carnet)
+    const nx = C.cx + Math.cos(a) * C.r + Math.sin(a * 2) * .7, nz = C.cz + Math.sin(a) * C.r;
+    o.ang = Math.atan2(nz - o.z, nx - o.x); o.x = nx; o.z = nz;
+    const h = bas ? .25 + Math.abs(Math.sin(C.t * 1.7)) * .2 : .9 + Math.sin(C.t * 1.3) * .5;
+    o.y += (Math.min(h, o.y + 4 * dt) - o.y) * Math.min(1, dt * 3);
+    if(C.t > C.d){ o.vol = {x0: o.x, y0: o.y, z0: o.z, t: 0, d: 1}; o.etat = "vol"; }   // elle revient à sa place
   } else if(o.etat === "vol" || o.etat === "part"){        // il vole vers sa place, en arc
     bat = true;
     const v = o.vol; v.t += dt; const u = Math.min(1, v.t / v.d);
@@ -292,6 +300,10 @@ function vivre(o, dt){
       if(o.danse > 0){ o.danse -= dt; bat = true; o.y = o.pl.y + Math.abs(Math.sin(o.danse * 6)) * .3; o.ang += dt * 2; if(o.danse <= 0) o.y = o.pl.y; }
     }
     if((o.bouge -= dt) <= 0) envoler(o, false);       // de temps en temps, il change de place
+    else if(OISEAUX[o.k].chasse && Math.random() < dt * .04){           // posée les deux tiers du temps, puis elle part chasser (Yo, 29 octobre 2026)
+      const r = 2 + Math.random() * 1.5, a0 = Math.random() * 6.28;
+      o.chasse = {t: 0, r, a0, cx: o.x - Math.cos(a0) * r, cz: o.z - Math.sin(a0) * r, w: (Math.random() < .5 ? -1 : 1) * 1.6, d: 8 + Math.random() * 2};
+      o.etat = "chasse"; }
     else if(OISEAUX[o.k].plane && Math.random() < dt * .05){            // la mouette s'élève et plane au-dessus de la mer et du ponton (Yo, 28 octobre 2026)
       const r = 1.4 + Math.random() * 1.2, a0 = Math.random() * 6.28;
       o.plane = {t: 0, r, a0, cx: o.x - Math.cos(a0) * r, cz: o.z - Math.sin(a0) * r, y0: o.y, h: o.pl.y + 2 + Math.random() * .8, w: (Math.random() < .5 ? -1 : 1) * .55, d: 6 + Math.random() * 6};
@@ -302,7 +314,8 @@ function vivre(o, dt){
   for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = a.cote * (bat && !plie ? Math.sin(o.t * 22) * .9 : .05);
   if(o.mesh.userData.grandesAiles){                   // la mouette : les grandes ailes ouvertes en vol, qui battent lentement, immobiles quand elle plane
     for(const m of o.mesh.userData.plies) m.visible = !bat;
-    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * 7) * .45) : a.cote * .05;
+    const glisse = o.etat === "chasse" && Math.sin(o.t * 3) > .3;        // l'hirondelle : quelques battements vifs, puis elle glisse
+    for(const a of o.mesh.userData.ailes) a.pivot.rotation.z = bat ? a.cote * (o.etat === "plane" || glisse ? .06 + Math.sin(o.t * 1.3) * .04 : Math.sin(o.t * (o.etat === "chasse" ? 16 : 7)) * .45) : a.cote * .05;
   }
   const tete = o.mesh.userData.tete;
   if(tete){ const r = bat ? 0 : o.regard || 0; tete.rotation.y += (r - tete.rotation.y) * Math.min(1, dt * 14);   // de petits coups de tête vifs
@@ -314,7 +327,7 @@ function vivre(o, dt){
   if(o.envers > 0 && (o.etat !== "pose" || (o.envers -= dt) <= 0)) o.envers = 0;
   o.inv = (o.inv || 0) + ((o.envers > 0 ? 1 : 0) - (o.inv || 0)) * Math.min(1, dt * 8);
   const pas = OISEAUX[o.k].marche && o.saut && o.saut.d ? Math.sin(o.saut.t / o.saut.d * Math.PI) : 0;   // la pie se dandine à chaque pas
-  o.mesh.rotation.z = o.inv * Math.PI + pas * (o.course % 2 ? .12 : -.12) + (o.etat === "plane" ? -.3 * Math.sign(o.plane.w) : 0);   // penchée dans le virage
+  o.mesh.rotation.z = o.inv * Math.PI + pas * (o.course % 2 ? .12 : -.12) + (o.etat === "plane" ? -.3 * Math.sign(o.plane.w) : o.etat === "chasse" ? -.45 * Math.sign(o.chasse.w) : 0);   // penchée dans le virage
   const vol = o.mesh.userData.vol;
   if(vol) for(const m of vol) m.visible = bat;                          // le blanc des ailes, en vol seulement
   o.mesh.rotation.y = -o.ang - Math.PI/2;

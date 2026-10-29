@@ -316,8 +316,54 @@ export function mouetteModele(opt = {}){
   return assembler(mouetteGeos(opt.saison === "printemps" || opt.saison === "ete"), undefined);
 }
 
+/* ---------- L'hirondelle rustique ----------
+   D'après l'image de Yo (29 octobre 2026 : « Voici l'hirondelle »), comme une vraie (Yo : « Comme une vraie », « Mâle
+   et femelle au hasard ») : ronde comme l'image ; le dos, les ailes et la tête bleu nuit brillant, le front et la gorge
+   rouge brique, la bande bleu nuit sous la gorge, le ventre crème ; la queue très fourchue aux deux longs filets et aux
+   petites taches blanches, plus longs chez le mâle (au hasard) ; un petit bec, de petites pattes sombres. En vol, de
+   longues ailes pointues en faux (comme la mouette). */
+const HIRONDELLE = {};
+function hirondelleGeos(male){
+  if(HIRONDELLE[male]) return HIRONDELLE[male];
+  const bleu = 0x1E2A5A, rouge = 0xB0451E, creme = 0xF0E6D4, M = [];
+  boule(M, creme, 0, .19, .01, .155, .155, .17);
+  boule(M, bleu, 0, .28, -.03, .133, .085, .14);                                                      // la bande bleu nuit, sous la gorge
+  boule(M, bleu, 0, .245, .065, .132, .115, .14);                                                     // le dos bleu nuit
+  for(const s of [-1, 1]) patte(M, s, 0x2A2626, 0x161414);
+  const Q = [], l = male ? .2 : .12;                                                                  // la queue fourchue, ses deux longs filets
+  bouleT(Q, bleu, 0, 0, .05, .045, .011, .07);
+  for(const s of [-1, 1]){
+    bouleT(Q, bleu, s * .03, 0, .09 + l * .5, .011, .007, l * .55 + .03, 0, s * .22, 0, BOULE_P);
+    bouleT(Q, creme, s * .02, .004, .07, .008, .004, .01, 0, 0, 0, BOULE_P);                           // une petite tache blanche
+  }
+  const T = [], y0 = .3, z0 = -.06, t = (c, x, y, z, sx, sy, sz, geo) => boule(T, c, x, y - y0, z - z0, sx, sy, sz, geo);
+  t(bleu, 0, .36, -.07, .13, .125, .127);
+  bouleT(T, rouge, 0, .335 - y0, -.105 - z0, .11, .1, .1, -.3);                                       // la gorge rouge brique…
+  t(rouge, 0, .395, -.17, .05, .03, .03, BOULE_P);                                                    // … et le front
+  for(const s of [-1, 1]){
+    t(0x1A1210, s * .05, .378, -.182, .025, .027, .02);
+    t(0xFFFFFF, s * .056, .388, -.199, .0065, .0075, .004, BOULE_P);
+  }
+  T.push({geo: CONE, m: new THREE.Matrix4().compose(V(0, .352 - y0, -.2 - z0), q0, V(.02, .016, .035)), c: 0x1E1C1E});   // le petit bec
+  const aile = s => { const A = [];
+    bouleT(A, bleu, s * .03, -.04, .08, .035, .08, .17, -.25, 0, s * .15);
+    bouleT(A, 0x161E40, s * .02, -.06, .22, .022, .025, .07, -.3, 0, s * .1, BOULE_P);
+    return fusionner(A); };
+  const grande = s => { const A = [];                                                                 // en vol : longue, pointue, en faux
+    bouleT(A, bleu, s * .17, 0, .03, .17, .012, .06, 0, s * -.25, 0);
+    bouleT(A, 0x161E40, s * .37, 0, .14, .13, .009, .03, 0, s * -.65, 0, BOULE_P);
+    return fusionner(A); };
+  return HIRONDELLE[male] = {corps: fusionner(M), tete: fusionner(T), queue: fusionner(Q), droite: aile(1), gauche: aile(-1),
+    volD: grande(1), volG: grande(-1), grandesAiles: true};
+}
+export function hirondelleModele(opt = {}){
+  const male = opt.male ?? Math.random() < .5;
+  return assembler(hirondelleGeos(male), male);
+}
+
 /* Les modèles faits d'après une image : la clé de l'oiseau, sa fabrique ; l'échelle (avec sa taille, oiseaux.js). Leur
    taille suit l'ordre de la nature : le moineau petit, le merle et la pie plus grands, le héron et la cigogne bien plus. */
 export const MODELES_OISEAUX = {moineau: {fabrique: moineauModele, echelle: 1}, mesange: {fabrique: mesangeModele, echelle: .95},
   rougeGorge: {fabrique: rougeGorgeModele, echelle: .95}, merle: {fabrique: merleModele, echelle: .92},
-  pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78}};
+  pie: {fabrique: pieModele, echelle: .85}, mouette: {fabrique: mouetteModele, echelle: .78},
+  hirondelle: {fabrique: hirondelleModele, echelle: .92}};
