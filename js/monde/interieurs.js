@@ -12,7 +12,7 @@
 import { P, G, part, toon } from "./formes.js";
 import { roomSide } from "../regles.js";
 import { makeMeuble } from "./meubles.js";
-import { COULEURS } from "../donnees.js";
+import { REVETEMENTS, SOL_DEPART, MUR_DEPART } from "../donnees.js";
 import { makeMine } from "./mine.js";
 import { makeForet } from "./foret.js";
 import { makeGrotte } from "./grotte.js";
@@ -54,13 +54,54 @@ const FENETRE = toon({color: 0xCFE4F4, emissive: 0xBFDDF8, emissiveIntensity: .8
 export const lumieresDedans = Array.from({length: 4}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 const SILL = 0x654028, MAT = 0xA9322A, GOLD = 0xE2B24D;
 
-/* Sol : un carreau par case (jusqu'à 12 × 12 P) */
-const floor = new THREE.InstancedMesh(new THREE.BoxGeometry(P, .2, P), toon({color:0xffffff}), 144);
-floor.receiveShadow = true;
-/* Ses couleurs existent dès le départ : sinon, entré d'abord dans la mine ou la forêt (sol vide), les pièces
-   avaient ensuite un sol sans couleur, noir sur le téléphone, même en la changeant (bug de Yo, v1.8.2) */
-floor.setColorAt(0, new THREE.Color(0xffffff));
-interior.add(floor);
+/* Les motifs des sols et des murs (demande de Yo, 29 octobre 2026 : des pièces basiques au départ, transformées avec les
+   ressources) : une petite image en gris, que la couleur du bois ou de la pierre teinte ; une case de sol, ou 1 P de mur */
+function motif(dessin){
+  const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+  const c = cv.getContext("2d"); c.fillStyle = "#fff"; c.fillRect(0, 0, 64, 64);
+  let g = 7; const hasard = () => (g = (g * 16807) % 2147483647) / 2147483647;
+  dessin(c, hasard);
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  return t;
+}
+const tache = (c, hasard, n, a) => { for(let k = 0; k < n; k++){ c.fillStyle = `rgba(60,40,20,${a * hasard()})`; c.beginPath(); c.arc(hasard() * 64, hasard() * 64, 1 + hasard() * 4, 0, 7); c.fill(); } };
+const MOTIFS = {
+  terre: motif((c, h) => tache(c, h, 60, .16)),                                                  // la terre battue, tachetée
+  torchis: motif((c, h) => tache(c, h, 40, .08)),                                                // le torchis, à peine marbré
+  lames: motif((c, h) => { for(let k = 0; k < 4; k++){ c.fillStyle = `rgba(80,50,20,${.04 + h() * .08})`; c.fillRect(0, k * 16, 64, 16);   // quatre lames par case
+    c.fillStyle = "rgba(60,35,15,.35)"; c.fillRect(0, k * 16, 64, 1.5); c.fillRect((k * 23 + 11) % 64, k * 16, 1.5, 16); } }),
+  dalles: motif((c, h) => { c.fillStyle = `rgba(40,40,40,${.05 + h() * .06})`; c.fillRect(3, 3, 58, 58); tache(c, h, 14, .08);   // une dalle par case
+    c.fillStyle = "rgba(40,40,40,.4)"; c.fillRect(0, 0, 64, 3); c.fillRect(0, 0, 3, 64); }),
+  lambris: motif((c, h) => { for(let k = 0; k < 4; k++){ c.fillStyle = `rgba(80,50,20,${.03 + h() * .08})`; c.fillRect(k * 16, 0, 16, 64);   // des planches debout
+    c.fillStyle = "rgba(60,35,15,.38)"; c.fillRect(k * 16, 0, 1.5, 64); } }),
+  moellons: motif((c, h) => { for(let r = 0; r < 4; r++) for(let k = -1; k < 3; k++){ const x = k * 32 + (r % 2) * 16;   // des pierres en rangs
+    c.fillStyle = `rgba(40,40,40,${.03 + h() * .1})`; c.fillRect(x + 2, r * 16 + 2, 28, 12); }
+    c.fillStyle = "rgba(40,40,40,.35)"; for(let r = 0; r < 4; r++){ c.fillRect(0, r * 16, 64, 2); for(let k = -1; k < 3; k++) c.fillRect(k * 32 + (r % 2) * 16, r * 16, 2, 16); } })
+};
+/* Sol : un carreau par case (jusqu'à 12 × 12 P), un groupe de carreaux par motif (terre, lames, dalles) */
+const SOLS = {};
+for(const m of ["terre", "lames", "dalles"]){
+  const f = new THREE.InstancedMesh(new THREE.BoxGeometry(P, .2, P), toon({color: 0xffffff, map: MOTIFS[m]}), 144);
+  f.receiveShadow = true;
+  /* ses couleurs existent dès le départ : sinon, entré d'abord dans la mine ou la forêt (sol vide), les pièces avaient
+     ensuite un sol sans couleur, noir sur le téléphone (bug de Yo, v1.8.2) */
+  f.setColorAt(0, new THREE.Color(0xffffff)); f.count = 0;
+  interior.add(f); SOLS[m] = f;
+}
+const solVide = () => { for(const f of Object.values(SOLS)) f.count = 0; };
+/* Ce qui recouvre une case du sol, ou un mur (fond, gauche, droite) : le revêtement posé, sinon le départ */
+export const solDe = (deco, x, z) => REVETEMENTS[deco && deco.sol && deco.sol[`${x},${z}`]] || SOL_DEPART;
+export const murDe = (deco, cote) => REVETEMENTS[deco && deco.murs && deco.murs[cote]] || MUR_DEPART;
+/* Un mur de long P de longueur, teinté et à son motif ; mur : son côté (pour le toucher en décorant) */
+function murMesh(geo, rev, long, sx, sy, sz, x, y, z, mur){
+  const t = MOTIFS[rev.motif].clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, Math.round(long)), rev.motif === "moellons" ? 2 : 1);
+  const m = new THREE.Mesh(geo, toon({color: rev.couleur, map: t}));
+  m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  if(mur) m.userData.mur = mur;
+  return m;
+}
+let murs = [];                                   // les trois murs de la pièce (decorer.js les touche du doigt)
+export const mursPiece = () => murs;
 
 let room = null, dedans = null;                  // dedans : l'ambiance du bâtiment où l'on est (pas la mine, la forêt, la grotte)
 /* À la première personne (demande de Yo, 13 octobre 2026 ; vue.js) : le mur de devant, avec sa porte fermée, et le plafond,
@@ -115,7 +156,7 @@ export function buildRoom(b){
   interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null; dedans = null; brumeGrotte = false;
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js
     const m = makeForet();
-    room = m.group; floor.count = 0; base = m;
+    room = m.group; solVide(); base = m;
     interior.background.setHex(m.fond); interior.fog = new THREE.Fog(m.fond, m.brume[0], m.brume[1]);
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
     interior.add(room); lampeSur(0, D_FORET / 2);
@@ -123,7 +164,7 @@ export function buildRoom(b){
   }
   if(b.type === "trajet" || b.type === "marais"){    // le voyage en barque et le Marais brumeux (étape 1.13) : marais.js
     const m = b.type === "trajet" ? makeTrajet() : makeMarais();
-    room = m.group; floor.count = 0;
+    room = m.group; solVide();
     if(b.type === "marais") base = m;                 // le Marais suit l'heure, comme la forêt (nuitForet)
     interior.background.setHex(m.fond); interior.fog = new THREE.Fog(m.fond, m.brume[0], m.brume[1]);
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
@@ -132,7 +173,7 @@ export function buildRoom(b){
   }
   if(b.type === "grotte"){                           // la grotte de la forêt (étape 1.8) : construite par grotte.js, noire
     const m = makeGrotte(b.palier, b.zone);
-    room = m.group; floor.count = 0;
+    room = m.group; solVide();
     interior.background.setHex(m.fond);
     if(m.brume){ interior.fog = new THREE.Fog(m.fond, 14, 22); brumeGrotte = true; }   // la grotte du Marais : sa brume (ajusterBrume)
     hemi.color.setHex(m.sky); hemi.groundColor.setHex(m.ground); hemi.intensity = m.hemi; lamp.color.setHex(m.light); lamp.intensity = m.power;
@@ -141,32 +182,32 @@ export function buildRoom(b){
   }
   if(b.type === "mine"){                             // la mine : une grotte, construite par mine.js
     const m = makeMine();
-    room = m.group; floor.count = 0;
+    room = m.group; solVide();
     hemi.groundColor.setHex(m.ground); lamp.color.setHex(m.light); lamp.intensity = m.power;
     interior.add(room); lamp.target.position.set(0, 0, 0);
     return {w: m.w, d: m.d, doorX: m.doorX, walk: m.walk};
   }
-  const a = AMBIANCE[b.type], w = roomSide(b.type, b.lvl), d = w;
-  /* Couleurs des murs et du sol : celles choisies par le joueur, sinon celles de l'ambiance */
-  const deco = b.deco || {}, pick = key => COULEURS[key] && COULEURS[key].hex;
-  const wall = pick(deco.wall) || a.wall;
-  const tiles = pick(deco.floor) ? [pick(deco.floor), new THREE.Color(pick(deco.floor)).multiplyScalar(.9).getHex()] : a.floor;
+  /* Toutes les pièces pareilles au départ (Yo, 29 octobre 2026) : la terre battue, le torchis clair, des poutres simples ;
+     chaque bâtiment garde sa lumière (la Forge rougeoyante, la Taverne chaude…) */
+  const a = Object.assign({}, AMBIANCE[b.type], {beam: 0x6B4A30, band: null, banner: null}), w = roomSide(b.type, b.lvl), d = w;
+  const deco = b.deco || {}, wall = MUR_DEPART.couleur;
 
   hemi.groundColor.setHex(a.ground || 0x6B4A2F);
   lamp.color.setHex(a.light); lamp.intensity = a.power;
 
   const m4 = new THREE.Matrix4(), col = new THREE.Color();
-  let k = 0;
-  for(let z = 0; z < d; z++) for(let x = 0; x < w; x++, k++){
-    m4.makeTranslation(x - w/2 + .5, -.1, z - d/2 + .5); floor.setMatrixAt(k, m4);
-    floor.setColorAt(k, col.setHex(tiles[(x + z) % 2]));
+  solVide();
+  for(let z = 0; z < d; z++) for(let x = 0; x < w; x++){
+    const r = solDe(deco, x, z), f = SOLS[r.motif], k = f.count++;
+    m4.makeTranslation(x - w/2 + .5, -.1, z - d/2 + .5); f.setMatrixAt(k, m4);
+    f.setColorAt(k, col.setHex(r.couleur).multiplyScalar((x + z) % 2 ? .95 : 1));   // un carreau sur deux, à peine plus sombre
   }
-  floor.count = k;
-  floor.instanceMatrix.needsUpdate = true; floor.instanceColor.needsUpdate = true;
+  for(const f of Object.values(SOLS)){ f.instanceMatrix.needsUpdate = true; if(f.instanceColor) f.instanceColor.needsUpdate = true; }
 
-  room.add(part(MUR_X, wall, w + 2*EP, MUR, EP, 0, MUR/2, -d/2 - EP/2));             // fond
-  room.add(part(MUR_Z, wall, EP, MUR, d + EP, -w/2 - EP/2, MUR/2, -EP/2));            // gauche
-  room.add(part(MUR_Z, wall, EP, MUR, d + EP, w/2 + EP/2, MUR/2, -EP/2));             // droite
+  murs = [murMesh(MUR_X, murDe(deco, "fond"), w, w + 2*EP, MUR, EP, 0, MUR/2, -d/2 - EP/2, "fond"),
+          murMesh(MUR_Z, murDe(deco, "gauche"), d, EP, MUR, d + EP, -w/2 - EP/2, MUR/2, -EP/2, "gauche"),
+          murMesh(MUR_Z, murDe(deco, "droite"), d, EP, MUR, d + EP, w/2 + EP/2, MUR/2, -EP/2, "droite")];
+  room.add(...murs);
   /* les fenêtres (la pénombre) : deux au fond (une au Château, entre ses bannières), une sur chaque côté */
   for(const u of a.banner ? [0] : [-w/4, w/4]) fenetre(a, w, d, null, u);
   for(const c of [-1, 1]) fenetre(a, w, d, c, -d/6);

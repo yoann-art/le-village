@@ -888,7 +888,16 @@ export const ATELIERS = {
     {out:"tonneau", in:{planche:5}, t:60, lvl:2},
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"etagere", in:{planche:6}, t:90, lvl:2},
-    {out:"lit", in:{planche:8, or:2}, t:120, lvl:3}
+    {out:"lit", in:{planche:8, or:2}, t:120, lvl:3},
+    /* Les sols et les murs des pièces, avec les bois de l'île (demande de Yo, 29 octobre 2026) : le chêne, ce sont les planches */
+    {out:"parquetChene", n:4, in:{planche:2}, t:30, lvl:1, cat:"Sols et murs"},
+    {out:"parquetPin", n:4, in:{boisPin:2}, t:30, lvl:1},
+    {out:"parquetBouleau", n:4, in:{boisBouleau:2}, t:30, lvl:1},
+    {out:"parquetPommier", n:4, in:{boisPommier:2}, t:30, lvl:1},
+    {out:"lambrisChene", in:{planche:4}, t:40, lvl:1},
+    {out:"lambrisPin", in:{boisPin:4}, t:40, lvl:1},
+    {out:"lambrisBouleau", in:{boisBouleau:4}, t:40, lvl:1},
+    {out:"lambrisPommier", in:{boisPommier:4}, t:40, lvl:1}
   ]},
   chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{planche:6, fibre:4},
     pour:"tisser la toile, agrandir ton sac, fabriquer des chandelles, des lanternes, des pots de fleurs, des tapis et des vitrines", recettes:[
@@ -908,6 +917,13 @@ export const ATELIERS = {
     pour:"tailler des blocs, des statues et des cheminées, et ouvrir les géodes", recettes:[
     {out:"bloc", n:2, in:{pierre:1}, t:5, lvl:1, cat:"Matériaux"},
     {out:"gravier", n:4, in:{pierre:1}, t:5, lvl:1},
+    /* Les sols et les murs des pièces, en pierre (demande de Yo, 29 octobre 2026) */
+    {out:"dallagePierre", n:4, in:{bloc:2}, t:30, lvl:1, cat:"Sols et murs"},
+    {out:"dallageGranit", n:4, in:{granit:2}, t:30, lvl:1},
+    {out:"dallageMarbre", n:4, in:{marbre:2}, t:30, lvl:1},
+    {out:"murPierre", in:{bloc:4}, t:40, lvl:1},
+    {out:"murGranit", in:{granit:4}, t:40, lvl:1},
+    {out:"murMarbre", in:{marbre:4}, t:40, lvl:1},
     {out:"statue", in:{bloc:3}, t:40, lvl:1, cat:"Décoration"},
     {out:"cheminee", in:{bloc:6, planche:2}, t:90, lvl:2},
     /* étape 1.11, morceau 4 : la géode s'ouvre sur un cristal tiré au sort quand elle est prête (CRISTAUX, ateliers.js) */
@@ -983,6 +999,42 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
+/* Les revêtements des pièces (demande de Yo, 29 octobre 2026 : « chaque intérieur soit tous identiques et basique au départ
+   et que l'on pourra transformer en fonction des ressources (mur, sol,..) » ; la bible : « Tous les intérieurs se décorent
+   librement, murs et sols compris ») : au départ, partout, un sol de terre battue et des murs de torchis clair ; ensuite,
+   ce qu'on fabrique avec les bois de l'île et la pierre, posé case par case pour le sol (une fabrication : 4 cases) et mur
+   par mur (une fabrication : un mur). sol : pour le sol (sinon un mur) ; motif : lames, dalles, lambris, moellons ;
+   couleur : celle du bois ou de la pierre. Prix à revoir avec ceux de tout le jeu (Yo : « à ajuster en fonction de la
+   difficulté et de la rareté »). */
+export const REVETEMENTS = {
+  parquetChene:  {nom:"Parquet de chêne", pluriel:"cases de parquet de chêne", sol:true, motif:"lames", couleur:0xC8955A},
+  parquetPin:    {nom:"Parquet de pin", pluriel:"cases de parquet de pin", sol:true, motif:"lames", couleur:0xE8D08A},
+  parquetBouleau:{nom:"Parquet de bouleau", pluriel:"cases de parquet de bouleau", sol:true, motif:"lames", couleur:0xF0E8DA},
+  parquetPommier:{nom:"Parquet de pommier", pluriel:"cases de parquet de pommier", sol:true, motif:"lames", couleur:0xC8826A},
+  dallagePierre: {nom:"Dallage de pierre", pluriel:"cases de dallage de pierre", sol:true, motif:"dalles", couleur:0xA8A49A},
+  dallageGranit: {nom:"Dallage de granit", pluriel:"cases de dallage de granit", sol:true, motif:"dalles", couleur:0x8E8A88},
+  dallageMarbre: {nom:"Dallage de marbre", pluriel:"cases de dallage de marbre", sol:true, motif:"dalles", couleur:0xEDEAE2},
+  lambrisChene:  {nom:"Lambris de chêne", pluriel:"murs de lambris de chêne", motif:"lambris", couleur:0xC8955A},
+  lambrisPin:    {nom:"Lambris de pin", pluriel:"murs de lambris de pin", motif:"lambris", couleur:0xE8D08A},
+  lambrisBouleau:{nom:"Lambris de bouleau", pluriel:"murs de lambris de bouleau", motif:"lambris", couleur:0xF0E8DA},
+  lambrisPommier:{nom:"Lambris de pommier", pluriel:"murs de lambris de pommier", motif:"lambris", couleur:0xC8826A},
+  murPierre:     {nom:"Mur de pierre", pluriel:"murs de pierre", motif:"moellons", couleur:0xA8A49A},
+  murGranit:     {nom:"Mur de granit", pluriel:"murs de granit", motif:"moellons", couleur:0x8E8A88},
+  murMarbre:     {nom:"Mur de marbre", pluriel:"murs de marbre", motif:"moellons", couleur:0xEDEAE2}
+};
+/* Le départ de toutes les pièces : la terre battue et le torchis clair */
+export const SOL_DEPART = {motif:"terre", couleur:0x9C7C5A}, MUR_DEPART = {motif:"torchis", couleur:0xEADFC8};
+for(const r of Object.values(REVETEMENTS)){
+  const c = "#" + r.couleur.toString(16).padStart(6, "0"), t = "#1C2230";
+  r.emoji = r.sol ? "🟫" : "🧱";
+  r.usage = r.sol ? `Un sol pour tes pièces : dans « Décorer », touche « Sol », puis les cases où le poser. L'ancien revient dans ton sac.`
+    : `Un mur pour tes pièces : dans « Décorer », touche « Murs », puis le mur où le poser. L'ancien revient dans ton sac.`;
+  const lignes = r.motif === "lames" ? `<path d="M3 9H21M3 15H21M10 3V9M16 9V15M8 15V21" stroke="${t}" stroke-opacity=".3" stroke-width="1"/>`
+    : r.motif === "dalles" ? `<path d="M3 12H21M12 3V21" stroke="${t}" stroke-opacity=".3" stroke-width="1.2"/>`
+    : r.motif === "lambris" ? `<path d="M7.5 3V21M12 3V21M16.5 3V21" stroke="${t}" stroke-opacity=".3" stroke-width="1"/>`
+    : `<path d="M3 8H21M3 13.5H21M3 19H21M9 3V8M15 8V13.5M8 13.5V19M17 13.5V19" stroke="${t}" stroke-opacity=".3" stroke-width="1"/>`;
+  r.icone = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="${c}" stroke="${t}" stroke-opacity=".4"/>${lignes}</svg>`;
+}
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
 export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","lit","grandTapis"];
@@ -1276,6 +1328,6 @@ for(const [k, p] of Object.entries(GIBIER)){
     `${p.une ? "Elle" : "Il"} ${k === "cerfBlanc" ? "offre" : "donne"} : ${Object.entries(p.donne).map(([d, n]) => `${n} ${(n > 1 ? PRODUITS[d].pluriel : PRODUITS[d].nom).toLowerCase()}`).join(", ")}.`;
   p.emoji = p.emoji || (p.forme === "lapin" ? "🐇" : p.forme === "renard" ? "🦊" : p.forme === "oiseau" ? "🐦" : p.forme === "sanglier" ? "🐗" : "🦌");
 }
-export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k] || GIBIER[k] || FLEURS[k];
+export const objet = k => RES[k] || PRODUITS[k] || OUTILS[k] || GRAINES[k] || POSABLES[k] || POISSONS[k] || INSECTES[k] || OISEAUX[k] || GROUPES[k] || MEUBLES[k] || GIBIER[k] || FLEURS[k] || REVETEMENTS[k];
 /* Son image dans le sac, les coffres et le carnet : un dessin pour les poissons, sinon son emoji */
 export const icone = k => objet(k).icone || objet(k).emoji;

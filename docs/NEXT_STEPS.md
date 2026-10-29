@@ -29,7 +29,10 @@ Ce que Yo a demandé est marqué **(Yo)** ; ce que Claude propose est marqué *(
   toutes les pièces ; les revêtements fabriqués avec les ressources, posés **mur par mur**, et le sol **case par case** ;
   les parties en cours repartent en terre battue et torchis (les meubles restent en place) ; la palette de couleurs
   gratuite enlevée ; la lumière propre à chaque bâtiment gardée. Le bouton « Décorer » à revoir (Meubles, Sol, Murs).
-  Découpage accepté le 29 octobre 2026 (après les icônes).
+  Fait en v2.1.102 (avec les bois de l'île et la pierre ; les bois de la forêt et du Marais plus tard).
+- **Les prix de tout le jeu, à revoir** (Yo, 29 octobre 2026 : « Les prix seront à ajuster en fonction de la difficulté et de
+  la rareté et ceux-ci pour tout ce qui se trouve dans le jeu ») : un passage sur tous les prix et toutes les recettes.
+- **Des prompts pour les bois, la pomme et les graines** (Yo, 29 octobre 2026), pour qu'ils aient leur propre image.
 
 - **La Scierie niveau 3** d'après son image (étape 2.2, morceau 3), puis **la Scierie qui vit** (morceau 4 : roue à eau
   qui tourne déjà, scie qui bouge quand l'établi travaille, fumée, fenêtres la nuit, neige sur le toit).

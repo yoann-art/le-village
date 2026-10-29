@@ -436,6 +436,30 @@ export async function verifier(){
     $("#sheetWrap [data-close]").click(); await wait(300);
     await sortir();
   });
+  /* les pièces (Yo, 29 octobre 2026) : toutes en terre battue et torchis clair au départ ; les revêtements fabriqués avec les
+     ressources, posés case par case et mur par mur ; l'ancien revient dans le sac ; plus de palette gratuite */
+  if(scierie) await etape("Les pièces : terre battue et torchis au départ, un parquet case par case, un lambris mur par mur", async () => {
+    const {solDe, murDe, mursPiece} = await import("../js/monde/interieurs.js");
+    const {essaiPose} = await import("../js/decorer.js");
+    const {SOL_DEPART, MUR_DEPART, REVETEMENTS} = await import("../js/donnees.js");
+    if(!ATELIERS.scierie.recettes.some(r => r.out === "parquetPin") || !ATELIERS.carriere.recettes.some(r => r.out === "murPierre")) throw new Error("les revêtements ne se fabriquent pas");
+    await entrer(scierie);
+    if(solDe(scierie.deco, 0, 0) !== SOL_DEPART || murDe(scierie.deco, "fond") !== MUR_DEPART) throw new Error("la pièce ne commence pas en terre battue et torchis");
+    if($("#deco-room")) throw new Error("la palette gratuite de la pièce est encore là");
+    sacAdd("parquetPin", 4); sacAdd("lambrisPin", 1);
+    $("#btn-deco").click(); $("#deco-sol").click(); await wait(200);
+    const bp = $("#sheet [data-revet='parquetPin']");
+    if(!bp || bp.disabled) throw new Error("le parquet de pin ne se propose pas dans « Sol »");
+    bp.click(); await wait(200);
+    if(!essaiPose("parquetPin", "1,1", true) || solDe(scierie.deco, 1, 1).nom !== "Parquet de pin" || owned("parquetPin") !== 3) throw new Error("le parquet ne se pose pas case par case");
+    if(!essaiPose("lambrisPin", "fond", false) || murDe(scierie.deco, "fond").nom !== "Lambris de pin" || owned("lambrisPin") !== 0) throw new Error("le lambris ne se pose pas sur le mur du fond");
+    if(mursPiece()[0].material.color.getHex() !== REVETEMENTS.lambrisPin.couleur || murDe(scierie.deco, "gauche") !== MUR_DEPART) throw new Error("le mur du fond n'a pas changé seul");
+    essaiPose(null, "1,1", true); essaiPose(null, "fond", false);
+    if(owned("parquetPin") !== 4 || owned("lambrisPin") !== 1 || solDe(scierie.deco, 1, 1) !== SOL_DEPART) throw new Error("enlevés, ils ne reviennent pas dans le sac");
+    $("#deco-done").click(); payer({parquetPin: 4, lambrisPin: 1});
+    await sortir();
+    return "la Scierie commence en terre battue et torchis ; un parquet de pin posé sur une case, un lambris de pin sur le mur du fond, puis enlevés et rendus au sac";
+  });
   if(scierie) await etape("Améliorer la Scierie : elle change d'allure au niveau 2", async () => {
     sacAdd("bois", 18); sacAdd("pierre", 9); sacAdd("fibre", 6);
     const avant = toitDe(scierie);

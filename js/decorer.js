@@ -6,15 +6,15 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, objet } from "./donnees.js";
-import { owned, addOwned, hasAll, placeFor, missingHTML } from "./regles.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, objet, REVETEMENTS } from "./donnees.js";
+import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
-import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem } from "./monde/interieurs.js";
+import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem, mursPiece } from "./monde/interieurs.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player, R, placePlayer } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
-import { openSheet, toast, wrap, renderHUD } from "./interface.js";
+import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
 import { openAtelier } from "./ateliers.js";
 import { premiereActive } from "./vue.js";
@@ -130,8 +130,10 @@ function showSel(){
 export function startDeco(){
   const place = currentPlace();
   if(!place || deco) return;
-  deco = place;
+  deco = place; pose = null;
   if(!deco.b.deco) deco.b.deco = {items: [], next: 1};
+  if(!deco.b.deco.sol) deco.b.deco.sol = {};
+  if(!deco.b.deco.murs) deco.b.deco.murs = {};
   const {room} = deco;
   placePlayer(room.doorX, room.d/2 - .3, 0, -1);      // le personnage attend sur le paillasson
   view.target.set(0, 0, 0); view.width = room.w + 1;
@@ -141,7 +143,7 @@ export function startDeco(){
 }
 export function finishDeco(){
   if(!deco) return;
-  drag = null; sel = null; plate.visible = false;
+  drag = null; sel = null; plate.visible = false; pose = null; peint = null;
   deco = null;
   $("#deco-bar").hidden = true;
   $("#place-hint").hidden = true; $("#place-hint").classList.remove("bad");
@@ -174,6 +176,7 @@ function planHTML(b){
 /* « à l'établi », « au comptoir », « à la table de taille » */
 const aLe = a => a.le.startsWith("le ") ? "au " + a.le.slice(3) : "à " + a.le;
 $("#deco-cat").addEventListener("click", () => {
+  pose = null; montrerPose();                                        // retour aux meubles
   const here = deco.b.type;
   /* Aucun meuble : on dit comment en avoir (demande de Yo : tout semblait grisé sans raison) */
   const empty = !MEUBLES_ORDER.some(t => craftable(t) && owned(t) > 0);
@@ -271,15 +274,53 @@ $("#deco-color").addEventListener("click", () => {
   openSheet(`<div class="sh-head"><h2 class="display">🎨 ${m.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Touche une couleur : le meuble change tout de suite.</p>${swatches("item", sel.color)}`);
 });
-$("#deco-room").addEventListener("click", () => {
-  const d = deco.b.deco;
-  openSheet(`<div class="sh-head"><h2 class="display">🎨 La pièce</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">« D'origine » garde l'ambiance du bâtiment.</p>
-    <h3 style="margin:10px 0 0">Murs</h3>${swatches("wall", d.wall)}
-    <h3 style="margin:4px 0 0">Sol</h3>${swatches("floor", d.floor)}`);
-});
+/* ----- Les sols et les murs (demande de Yo, 29 octobre 2026) : on choisit un revêtement fabriqué, puis on touche les cases
+   du sol (case par case, le doigt peut glisser) ou un mur (mur par mur) ; l'ancien revient dans le sac ; « Terre battue » ou
+   « Torchis clair » enlève le revêtement. Plus de palette gratuite pour la pièce. ----- */
+let pose = null;                     // le revêtement qu'on pose : {sol : vrai pour le sol, k : sa clé, ou null pour enlever}
+let peint = null;                    // le doigt qui pose sur le sol : {pid, dernier}
+export const poseEnCours = () => pose;
+const atelierDe = k => ATELIERS[REVETEMENTS[k].motif === "lames" || REVETEMENTS[k].motif === "lambris" ? "scierie" : "carriere"];
+function revetementsHTML(sol){
+  const ks = Object.keys(REVETEMENTS).filter(k => !!REVETEMENTS[k].sol === sol);
+  const lignes = ks.map(k => { const r = REVETEMENTS[k], n = owned(k);
+    return `<div class="brow"><div class="be" aria-hidden="true">${r.icone}</div>
+      <div class="bt"><span class="bn">${r.nom}${n ? ` × ${n}` : ""}</span><p>${n ? (sol ? "Touche les cases du sol où le poser." : "Touche le mur où le poser.") : `Tu n'en as pas. Se fabrique ${aLe(atelierDe(k))}.`}</p></div>
+      <button class="btn primary" data-revet="${k}" data-sol="${sol ? 1 : 0}" ${n ? "" : "disabled"}>Poser</button></div>`; }).join("");
+  return `<div class="sh-head"><h2 class="display">${sol ? "🟫 Le sol" : "🧱 Les murs"}</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p class="muted" style="margin:0 0 6px">${sol ? "Case par case : une fabrication donne 4 cases." : "Mur par mur : le fond, la gauche, la droite."}</p>
+    <div class="brow"><div class="be" aria-hidden="true">${sol ? "🟤" : "⬜"}</div><div class="bt"><span class="bn">${sol ? "Terre battue" : "Torchis clair"}</span>
+      <p>Le départ, gratuit : ${sol ? "les cases touchées redeviennent" : "le mur touché redevient"} comme au début, et le revêtement revient dans ton sac.</p></div>
+      <button class="btn" data-revet="" data-sol="${sol ? 1 : 0}">Choisir</button></div>${lignes}`;
+}
+$("#deco-sol").addEventListener("click", () => openSheet(revetementsHTML(true)));
+$("#deco-murs").addEventListener("click", () => openSheet(revetementsHTML(false)));
+function montrerPose(){
+  if(!pose){ $("#place-hint").hidden = true; return; }
+  const nom = pose.k ? REVETEMENTS[pose.k].nom : pose.sol ? "Terre battue" : "Torchis clair", n = pose.k ? ` (il t'en reste ${owned(pose.k)})` : "";
+  hint(`${pose.sol ? "🟫" : "🧱"} ${nom}${n} : touche ${pose.sol ? "les cases du sol" : "un mur"}. « ➕ Meubles » pour revenir aux meubles.`, false);
+}
+/* Poser le revêtement choisi sur une case du sol (« x,z ») ou un mur (« fond », « gauche », « droite ») ; vrai si c'est fait */
+function poser(cle){
+  const d = deco.b.deco, table = pose.sol ? d.sol : d.murs, avant = table[cle] || null;
+  if(avant === pose.k) return false;
+  if(pose.k){
+    if(owned(pose.k) < 1){ toast(`Plus de ${REVETEMENTS[pose.k].nom.toLowerCase()} : fabrique-en ${aLe(atelierDe(pose.k))}`, 3200); pose = null; montrerPose(); return false; }
+    payer({[pose.k]: 1}); table[cle] = pose.k;
+  } else delete table[cle];
+  if(avant) addOwned(avant, 1);                                     // l'ancien revient dans le sac
+  buildRoom(deco.b); montrerPose(); renderHUD(); save();
+  return true;
+}
+const caseSous = (x, y) => { if(!groundAt(x, y, hit)) return null; const {w, d} = deco.room, ix = Math.floor(hit.x + w/2), iz = Math.floor(hit.z + d/2);
+  return ix >= 0 && iz >= 0 && ix < w && iz < d ? `${ix},${iz}` : null; };
+function murSous(x, y){ const t = aim(x, y).intersectObjects(mursPiece(), false)[0]; return t ? t.object.userData.mur : null; }
+/* Pour la vérification : poser un revêtement (ou null pour enlever) sur une case (« x,z ») ou un mur, comme au doigt */
+export function essaiPose(k, cle, sol){ if(!deco) return false; pose = {sol, k}; return poser(cle); }
 wrap.addEventListener("click", e => {
   if(deco && e.target.closest("[data-atelier]")){ openAtelier(deco.b); return; }
+  const rv = e.target.closest("[data-revet]");
+  if(rv && deco){ pose = {sol: rv.dataset.sol === "1", k: rv.dataset.revet || null}; sel = null; showSel(); closeSheet(); montrerPose(); return; }
   const btn = e.target.closest("[data-couleur]");
   if(!btn || !deco) return;
   const key = btn.dataset.couleur || undefined, target = btn.dataset.cible, d = deco.b.deco;
@@ -348,6 +389,11 @@ canvas.addEventListener("pointerdown", e => {
     if(id !== null) press = {id, pid: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, timer: setTimeout(startLift, 500)};
     return;
   }
+  if(pose){                                                          // on pose un sol ou un mur : pas de meuble choisi
+    if(pose.sol){ const c = caseSous(e.clientX, e.clientY); if(c){ poser(c); peint = {pid: e.pointerId, dernier: c}; } }
+    else { const m = murSous(e.clientX, e.clientY); if(m) poser(m); }
+    return;
+  }
   const id = pickItem(aim(e.clientX, e.clientY));
   const it = id !== null ? items().find(v => v.id === id) : null;
   sel = it || null;
@@ -360,6 +406,7 @@ canvas.addEventListener("pointermove", e => {
     if(Math.hypot(press.x - press.sx, press.y - press.sy) > 12) cancelPress();   // le doigt a bougé : pas d'appui long
   }
   if(lift && e.pointerId === lift.pid){ lift.x = e.clientX; lift.y = e.clientY; updateLift(); }
+  if(peint && e.pointerId === peint.pid && pose){ const c = caseSous(e.clientX, e.clientY); if(c && c !== peint.dernier){ peint.dernier = c; poser(c); } return; }   // le doigt glisse : case après case
   if(!deco || !drag || e.pointerId !== drag.pid || !groundAt(e.clientX, e.clientY, hit)) return;
   settle(sel, hit.x + drag.ox, hit.z + drag.oz);
   if(!problem(sel)) drag.last = {x: sel.x, z: sel.z};
@@ -370,6 +417,7 @@ function fingerUp(e){
   if(press && e.pointerId === press.pid) cancelPress();
   if(lift && e.pointerId === lift.pid) endLift();
   if(drag && e.pointerId === drag.pid) endDrag();
+  if(peint && e.pointerId === peint.pid) peint = null;
 }
 canvas.addEventListener("pointerup", fingerUp);
 canvas.addEventListener("pointercancel", fingerUp);

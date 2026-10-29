@@ -6,6 +6,8 @@
 - Étape 2.1 (le décor de l'île) : faite d'après les images de Yo (arbres de l'île, pierre, caillou, branche, herbes,
   groseillier, thym, galets, sol, plage, mer, étang, berge, 7 fleurs sauvages) ; restent les sons de la nature.
 - Étape 2.2 (la Scierie dehors) : niveaux 1 et 2 faits (v2.1.46 à v2.1.50).
+- Les pièces : toutes en terre battue et torchis clair au départ ; sols (case par case) et murs (mur par mur) fabriqués
+  avec les bois de l'île et la pierre, posés dans « Décorer » (v2.1.102). Les icônes en photo des modèles refaits (v2.1.101).
 - La caméra tourne à 360° autour du personnage (glisser un doigt ; la boussole la remet au nord), dehors, dans la
   forêt et le Marais (v2.1.99).
 - Les 21 insectes et les 12 oiseaux de l'île refaits d'après les images de Yo, comme des vrais (v2.1.57 à v2.1.97 ;
