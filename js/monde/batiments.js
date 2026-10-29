@@ -11,7 +11,8 @@ import { state, save } from "../sauvegarde.js";
 import { sizeOf, maxLvl, doorTile } from "../regles.js";
 import { VITRE, lanterne } from "./ciel.js";
 import { makeMeuble } from "./meubles.js";
-import { scierieNiveau1, scierieNiveau2, FACADE as FACADE_SCIERIE } from "./scierie.js";
+import { scierieNiveau1, scierieNiveau2, FACADE as FACADE_MAISON, DECALE } from "./scierie.js";
+const FACADE_SCIERIE = FACADE_MAISON + DECALE;            // la façade, dans le carré de 5 × 5
 
 const MUR = 2 * P, PORTE = 1.5 * P;
 const C = {wall:0xF2E2C2, wood:0x8B5A3C, dark:0x654028, straw:0xDDB256, red:0xC8553D, white:0xF4EFE6, blue:0x4E6DB3, stone:0xAEB0B3, stone2:0x8E9195, gold:0xE2B24D, lit:0xF6D27A,

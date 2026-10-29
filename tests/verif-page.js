@@ -372,7 +372,7 @@ export async function verifier(){
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
   await etape("Les bâtiments agrandis (Yo, 22 octobre 2026) et la Scierie aux niveaux 1 et 2 d'après ses images", async () => {
-    const tailles = {scierie: 4, chaumiere: 4, carriere: 4, forge: 4, marche: 5, taverne: 5, chateau: 6};
+    const tailles = {scierie: 5, chaumiere: 4, carriere: 4, forge: 4, marche: 5, taverne: 5, chateau: 6};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
     let n = 0; g.traverse(o => { if(o.isMesh) n++; });
@@ -382,7 +382,10 @@ export async function verifier(){
     let eau = 0; g2.traverse(o => { if(o.isMesh && o.material.transparent && o.material.side === THREE.DoubleSide) eau++; });
     if(!(g2.userData.toit > g.userData.toit)) throw new Error("le niveau 2 de la Scierie n'est pas plus haut que le niveau 1");
     if(eau < 4) throw new Error(`la roue du niveau 2 n'a que ${eau} nappes d'eau`);
-    return `petits 4 × 4, grands 5 × 5, Château 6 × 6 ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue`;
+    /* redressée (Yo, 29 octobre 2026) : tout tient dans le carré de 5 × 5, la roue face à l'avant */
+    const bx = new THREE.Box3().setFromObject(g2);
+    if(bx.min.x < -2.52 || bx.max.x > 2.52 || bx.min.z < -2.52 || bx.max.z > 2.52) throw new Error(`la Scierie déborde de son carré (${bx.min.x.toFixed(2)} à ${bx.max.x.toFixed(2)}, ${bx.min.z.toFixed(2)} à ${bx.max.z.toFixed(2)})`);
+    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);

@@ -5,7 +5,7 @@
    la porte, qui doit rester libre. Tourner les bâtiments (v1.9.3) : retiré à la demande de Yo le 9 octobre 2026 (la
    vue reste la même, ça ne sert à rien) ; un bâtiment tourné pendant l'essai reprend sa porte en bas (voir plus bas). */
 import { $ } from "./outils.js";
-import { RES, B, ORDER, ATELIERS, FABRIQUE_A, COFFRE, traversable } from "./donnees.js";
+import { RES, B, ORDER, ATELIERS, FABRIQUE_A, COFFRE, traversable, RECOLTE, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
@@ -219,6 +219,15 @@ if(state.buildings.some(b => b.rot)){
     if(freeTile(x, z)){ delete b.rot; clearHerbes(b.type, b.x, b.z); placeMesh(b); }
   }
   save();
+}
+
+/* La Scierie agrandie en 5 × 5 (sauvegarde.js) : ce qui était posé ou planté sur ses nouvelles cases revient au sac (un arbre,
+   son bois ; une plante, sa récolte ; un objet posé, lui-même) */
+if(state.aRendre && state.aRendre.length){
+  for(const o of state.aRendre){ const r = RECOLTE[o];
+    if(r && r.res) addOwned(r.res, (r.coups || 1) * (r.parCoup || 1)); else if(r && r.cueille) addOwned(r.cueille, r.n || 1); else if(objet(o)) addOwned(o, 1); }
+  setTimeout(() => toast("🪚 Ta Scierie a maintenant un terrain de 5 × 5, pour sa roue à eau. Ce qui poussait à côté est dans ton sac.", 4600), 1500);
+  delete state.aRendre; save();
 }
 
 /* Un seul bâtiment de chaque sorte (demande de Yo, v1.10.2) : ensuite, on l'améliore depuis sa fiche, jusqu'au

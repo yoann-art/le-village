@@ -7,7 +7,7 @@ const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
-    buildings:[], nextId:1, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
+    buildings:[], nextId:1, scierie5:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
     entreeMine:"eboulee",                                    // l'entrée de la mine à déblayer puis construire (étape 1.11)
     ileN: ILE};                                              // la taille de l'île (étape 2.1 : la grande île)
 }
@@ -63,6 +63,28 @@ export let state, migrationMsg = null;
   if(!state.terrain) state.terrain = {};                    // étape 1.9 : les cases creusées ou comblées
   if(!state.chemins) state.chemins = {};                    // étape 1.9, morceau 2 : les chemins {case: sorte}
   if(!state.sacNiveau) state.sacNiveau = 0;
+  /* La Scierie passe de 4 × 4 à 5 × 5 (Yo, 29 octobre 2026) : son terrain s'agrandit d'une colonne à gauche et d'une rangée
+     derrière, la maison et sa porte restent à leur place ; si ce côté n'est pas libre (un autre bâtiment, sa porte, le bord
+     de l'île), elle s'agrandit d'un autre côté. Ce qui était posé ou planté sur les cases prises s'en va, et revient au sac
+     (aRendre, rendu par construire.js) */
+  if(!state.scierie5){
+    const ILE_N = 96, pris = new Set(), cle = (x, z) => z * ILE_N + x;
+    const taille = b => b.type === "scierie" ? 4 : ({chaumiere:4, carriere:4, marche:5, taverne:5, forge:4, chateau:6, mine:3, foret:3})[b.type] || 1;
+    for(const b of state.buildings) if(b.type !== "scierie"){ const s = taille(b);
+      for(let dz = -1; dz <= s; dz++) for(let dx = 0; dx < s; dx++) pris.add(cle(b.x + dx, b.z + dz)); }   // le carré et la rangée devant (la porte)
+    state.aRendre = state.aRendre || [];
+    for(const b of state.buildings) if(b.type === "scierie" && !b.rot){
+      const ancien = new Set(); for(let dz = 0; dz < 4; dz++) for(let dx = 0; dx < 4; dx++) ancien.add(cle(b.x + dx, b.z + dz));
+      const essai = ([ox, oz]) => { const t = []; for(let dz = 0; dz < 5; dz++) for(let dx = 0; dx < 5; dx++){ const x = b.x + ox + dx, z = b.z + oz + dz;
+        if(x < 1 || z < 1 || x > ILE_N - 2 || z > ILE_N - 3) return null; if(!ancien.has(cle(x, z))) t.push(cle(x, z)); }
+        return t.some(i => pris.has(i)) ? null : t; };
+      const choix = [[-1, -1], [0, -1], [-1, 0], [0, 0]].map(o => [o, essai(o)]).find(([, t]) => t);
+      if(!choix) continue;                                                    // nulle part : elle reste en 4 × 4 de terrain (rare)
+      b.x += choix[0][0]; b.z += choix[0][1];
+      for(const i of choix[1]){ const c = state.ile[i]; if(c && c.o){ state.aRendre.push(c.o); delete state.ile[i]; } delete state.chemins[i]; }
+    }
+    state.scierie5 = true;
+  }
   /* Les pièces repartent en terre battue et torchis clair (Yo, 29 octobre 2026 : « Les parties en cours repartent en terre
      battue et torchis (les meubles restent en place) ») : les couleurs de l'ancienne palette s'en vont */
   for(const b of state.buildings) if(b.deco){ delete b.deco.wall; delete b.deco.floor; }                 // demande de Yo (11 octobre 2026) : le sac qui s'agrandit (SACS)

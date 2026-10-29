@@ -165,7 +165,13 @@ function treteaux(g){
   for(const x of [.15 + dx, 1.75 + dx]){ boite(g, POUTRE, .08, .3, .1, x, y + .12, zs); boite(g, FER, .1, .04, .14, x, y + .01, zs); }
 }
 
-export function scierieNiveau1(g){
+/* Le terrain de la Scierie passe à 5 × 5 (Yo, 29 octobre 2026 : « la Scierie en 5 × 5, la maison de la même taille, la roue
+   face à l'avant à gauche ») : la maison garde sa taille et sa place, décalée de DECALE dans le carré (le terrain s'est
+   agrandi d'une colonne à gauche et d'une rangée derrière) ; à gauche, la place de la roue */
+export const DECALE = .5;
+function maison(g){ const m = new THREE.Group(); m.position.set(DECALE, 0, DECALE); g.add(m); return m; }
+export function scierieNiveau1(g0){
+  const g = maison(g0);
   corps(g);
   pignonPlanches(g, FACADE + .02);
   pignonPlanches(g, Z0 - .02);
@@ -176,6 +182,7 @@ export function scierieNiveau1(g){
   appentis(g);
   rondins(g);
   treteaux(g);
+  g0.userData.toit = g.userData.toit;
 }
 
 /* ================= La Scierie, niveau 2 =================
@@ -348,20 +355,22 @@ function appentis2(g){
   });
   [[-1.88, -1.15, 1.1], [-1.86, -.85, .95]].forEach(([x, z, h], k) => planche(g, k ? CLAIR : ton2(k), .07, h, .2, x, h / 2, z, .12, 0, -.18));
 }
-/* la table à scie circulaire : son plateau, ses pieds écartés, sa lame ronde et ses dents */
+/* la table à scie circulaire : son plateau, ses pieds écartés, sa lame ronde et ses dents ; devant la roue, bien alignée avec
+   la façade (Yo, 29 octobre 2026 : « mieux agencé, plus droit ») */
 function tableScie(g){
-  const x = -1.6, z = 1.45, y = .58;
+  const x = -1.44, z = 2.02, y = .58;
   for(let k = 0; k < 4; k++) boite(g, k % 2 ? CLAIR : ton2(k), .62, .08, .095, x, y, z - .15 + k * .1);
   boite(g, POTEAU2, .66, .08, .44, x, y - .06, z);
   for(const s of [-1, 1]) for(const t of [-1, 1]) boite(g, POTEAU2, .09, y - .06, .09, x + s * .25, (y - .06) / 2, z + t * .15);   // les pieds bien droits (demande de Yo, v2.1.50)
   boite(g, POTEAU2, .5, .06, .06, x, .2, z + .15); boite(g, POTEAU2, .5, .06, .06, x, .2, z - .15);
   for(const s of [-1, 1]) boite(g, POTEAU2, .06, .06, .3, x + s * .25, .2, z);
-  boite(g, FONCE, .03, .02, .3, x + .04, y + .045, z);
-  const r = .2, lame = ajoute(g, part(G.cyl, LAME, r * 2, .015, r * 2, x + .04, y + .05, z)); lame.rotation.z = Math.PI / 2;
-  const moyeu = ajoute(g, part(G.cyl, 0x6E7278, .07, .03, .07, x + .04, y + .05, z)); moyeu.rotation.z = Math.PI / 2;
+  /* la lame, dans le sens de la table (de gauche à droite), qu'on voit de face depuis l'avant */
+  boite(g, FONCE, .3, .02, .03, x, y + .045, z + .02);
+  const r = .2, lame = ajoute(g, part(G.cyl, LAME, r * 2, .015, r * 2, x, y + .05, z + .02)); lame.rotation.x = Math.PI / 2;
+  const moyeu = ajoute(g, part(G.cyl, 0x6E7278, .07, .03, .07, x, y + .05, z + .02)); moyeu.rotation.x = Math.PI / 2;
   for(let k = 0; k < 20; k++){
     const ang = k / 20 * Math.PI * 2, yy = y + .05 + Math.cos(ang) * r;
-    if(yy > y + .06) planche(g, LAME, .016, .045, .045, x + .04, yy, z + Math.sin(ang) * r, ang + .4, 0, 0);
+    if(yy > y + .06) planche(g, LAME, .045, .045, .016, x + Math.sin(ang) * r, yy, z + .02, 0, 0, -ang - .4);
   }
 }
 /* un rondin couché le long de z : son écorce, son bout clair et ses cernes */
@@ -385,7 +394,10 @@ function rondins2(g){
 
 /* ---------- La roue à eau et son eau ---------- */
 const RO = {x: 0, y: .78, z: 0, R: .7, e: .22};                   // le moyeu (autour duquel le moulin est fait), le rayon, l'épaisseur
-const MOULIN = {x: -1.66, z: .3, tourne: -.5};                      // sa place, et combien il est tourné vers l'avant
+/* sa place (dans le carré de 5 × 5) : face à l'avant, bien droit (Yo, 29 octobre 2026) ; l'eau coule vers le dehors, à
+   l'opposé du mur (Yo : « dans l'autre sens ») : la goulotte arrive du côté de la maison, l'axe et son pilier de pierres
+   derrière la roue, le bassin vers le bord du carré (miroir : le moulin est retourné de gauche à droite) */
+const MOULIN = {x: -1.44, z: .56, tourne: -Math.PI / 2, miroir: true};
 const NIVEAU = .14;                                                // l'eau du bassin
 const LEVRE = {z: RO.z + .1, y: RO.y + RO.R + .19};                // le bout de la goulotte
 const OMEGA = .9, RW = RO.R + .07, TH0 = .32, TH1 = 1.42;           // la roue tourne (radians par seconde) ; l'eau la suit de TH0 à TH1, à RW du moyeu
@@ -554,10 +566,12 @@ function roueEtEau(g){
   bouge(); bulles.onBeforeRender = bouge;
   moulin.add(bulles);
   moulin.position.set(MOULIN.x, 0, MOULIN.z); moulin.rotation.y = MOULIN.tourne;
+  if(MOULIN.miroir) moulin.scale.x = -1;                             // l'axe reste derrière la roue, l'eau tombe vers le dehors
   g.add(moulin);
 }
 
-export function scierieNiveau2(g){
+export function scierieNiveau2(g0){
+  const g = maison(g0);
   corps2(g);
   pignon2(g, FACADE + .02, true);
   pignon2(g, N2.Z0 - .02, false);
@@ -565,7 +579,8 @@ export function scierieNiveau2(g){
   porte2(g);
   lanterne2(g);
   appentis2(g);
-  tableScie(g);
   rondins2(g);
-  roueEtEau(g);
+  tableScie(g0);
+  roueEtEau(g0);
+  g0.userData.toit = g.userData.toit;
 }

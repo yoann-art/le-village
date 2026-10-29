@@ -13,7 +13,7 @@ export const RES = {
    Un seul bâtiment de chaque sorte (demande de Yo, v1.10.2), qu'on améliore ensuite jusqu'au niveau 3, le Château aussi. */
 export const B = {
   chaumiere:{nom:"Chaumière", emoji:"🛖", cost:{bois:20, pierre:10, fibre:12}, stars:1, size:4, door:-.5, taille:"moyenne", desc:"Loge des villageois. Rapporte des étoiles."},
-  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:12, pierre:6, fibre:4}, stars:1, size:4, door:-.5, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois en coupant les arbres, par niveau."},
+  scierie:  {nom:"Scierie", emoji:"🪚", cost:{bois:12, pierre:6, fibre:4}, stars:1, size:5, door:0, taille:"moyenne", bonus:{res:"bois", pct:25}, desc:"+25 % de bois en coupant les arbres, par niveau."},
   carriere: {nom:"Carrière", emoji:"⛏️", cost:{planche:15, pierre:20}, stars:1, size:4, door:-.5, taille:"moyenne", bonus:{res:"pierre", pct:25}, desc:"+25 % de pierre en minant les rochers, par niveau."},
   marche:   {nom:"Marché", emoji:"⚖️", cost:{planche:25, bloc:15, fibre:10}, stars:2, size:5, door:0, taille:"grande", bonus:{res:"or", pct:25}, desc:"+25 % d'or aux ventes du comptoir, par niveau."},
   taverne:  {nom:"Taverne", emoji:"🍺", cost:{planche:30, bloc:25, or:20}, stars:3, size:5, door:0, taille:"grande", all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
