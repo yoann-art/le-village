@@ -1785,7 +1785,8 @@ export async function verifier(){
     frames(50);
     const hiY = hi.y, hiEtat = hi.etat; forcerMeteo("beau");
     if(hiEtat !== "chasse" || hiY > .6) throw new Error(`l'hirondelle ne chasse pas en rase-mottes par temps nuageux (${hiEtat}, ${hiY.toFixed(2)})`);
-    hi.chasse.t = 99; frames(30);
+    const chasse0 = OISEAUX.hirondelle.chasse; OISEAUX.hirondelle.chasse = false;   // revenue, qu'elle ne reparte pas aussitôt chasser (le hasard)
+    hi.chasse.t = 99; frames(30); OISEAUX.hirondelle.chasse = chasse0;
     if(hi.etat !== "pose" || Math.abs(hi.y - 2) > .05) throw new Error(`l'hirondelle ne revient pas sur son toit (${hi.etat}, ${hi.y.toFixed(2)})`);
     /* le héron cendré : il lance le bec et ressort un petit poisson ; en vol, le cou replié et les pattes derrière */
     pauseOiseaux(true); pauseOiseaux(false);
