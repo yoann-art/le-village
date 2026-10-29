@@ -385,6 +385,10 @@ export async function verifier(){
     /* redressée (Yo, 29 octobre 2026) : tout tient dans le carré de 5 × 5, la roue face à l'avant */
     const bx = new THREE.Box3().setFromObject(g2);
     if(bx.min.x < -2.52 || bx.max.x > 2.52 || bx.min.z < -2.52 || bx.max.z > 2.52) throw new Error(`la Scierie déborde de son carré (${bx.min.x.toFixed(2)} à ${bx.max.x.toFixed(2)}, ${bx.min.z.toFixed(2)} à ${bx.max.z.toFixed(2)})`);
+    /* le niveau 3 d'après l'image de Yo (29 octobre 2026) : plus haut, dans son carré ; les jardinières selon la saison */
+    const g3 = makeBuilding("scierie", 3), b3 = new THREE.Box3().setFromObject(g3), nb = s => { let n = 0; makeBuilding("scierie", 3).traverse(o => { if(o.isMesh) n++; }); return n; };
+    if(!(g3.userData.toit > g2.userData.toit)) throw new Error("le niveau 3 de la Scierie n'est pas plus haut que le niveau 2");
+    if(b3.min.x < -2.52 || b3.max.x > 2.52 || b3.min.z < -2.52 || b3.max.z > 2.52) throw new Error(`la Scierie du niveau 3 déborde de son carré (${b3.min.x.toFixed(2)} à ${b3.max.x.toFixed(2)})`);
     return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {

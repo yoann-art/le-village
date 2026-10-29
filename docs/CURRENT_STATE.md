@@ -29,7 +29,7 @@
   seuls les communs tant que le carnet compte moins de 3 oiseaux ; v2.1.86 : les moineaux volent seuls, plus de
   groupes) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 12 sur 12, tous faits (la cigogne, qui claque du bec et plane le cou tendu, v2.1.97 ; le martin-pêcheur, qui plonge et ressort avec un poisson, v2.1.95 ; le rossignol, qui chante tête levée, v2.1.94 ; la chouette effraie, la tête qui tourne et la chasse lente, v2.1.93 ; le héron cendré, qui pêche un petit poisson, v2.1.92 ; l'hirondelle, qui chasse en boucles, v2.1.91 ; la mouette rieuse, capuchon l'été, qui plane, v2.1.90 ; la pie à la longue queue, qui marche à grands pas, v2.1.89 ; le merle, qui court, écoute et tire un ver, v2.1.88 ; le rouge-gorge, qui fait des courbettes, v2.1.87 ; la mésange charbonnière, la tête en bas et le vol ondulé, v2.1.85 ; le moineau
   domestique, mâles et femelles, v2.1.84).
-- La Scierie : le niveau 3 et « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
+- La Scierie : le niveau 3 fait d'après l'image de Yo (v2.1.104), sur un terrain de 5 × 5 (v2.1.103) ; « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.
 - Les bâtiments agrandis : les 6 autres gardent l'ancien modèle agrandi (`ANCIEN` dans `batiments.js`) en attendant leurs images.
 - Les fleurs de jardin (rose, tulipe, lavande, tournesol, capucine, cosmos) : en graines à l'étal du Marché, avec leur

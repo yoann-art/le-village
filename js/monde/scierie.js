@@ -357,8 +357,8 @@ function appentis2(g){
 }
 /* la table à scie circulaire : son plateau, ses pieds écartés, sa lame ronde et ses dents ; devant la roue, bien alignée avec
    la façade (Yo, 29 octobre 2026 : « mieux agencé, plus droit ») */
-function tableScie(g){
-  const x = -1.44, z = 2.02, y = .58;
+function tableScie(g, x = -1.44, z = 2.02){
+  const y = .58;
   for(let k = 0; k < 4; k++) boite(g, k % 2 ? CLAIR : ton2(k), .62, .08, .095, x, y, z - .15 + k * .1);
   boite(g, POTEAU2, .66, .08, .44, x, y - .06, z);
   for(const s of [-1, 1]) for(const t of [-1, 1]) boite(g, POTEAU2, .09, y - .06, .09, x + s * .25, (y - .06) / 2, z + t * .15);   // les pieds bien droits (demande de Yo, v2.1.50)
@@ -583,4 +583,173 @@ export function scierieNiveau2(g0){
   tableScie(g0);
   roueEtEau(g0);
   g0.userData.toit = g.userData.toit;
+}
+
+/* ================= La Scierie, niveau 3 =================
+   D'après l'image de Yo (29 octobre 2026 : « Voici la scierie de niveau 3 »), au plus près de l'image, avec ses choix : la
+   roue reste à gauche, comme au niveau 2 (« la Scierie ne change pas de côté en montant de niveau »), l'eau qui coule vers le
+   dehors ; la grue à droite ; la scie n'est plus devant la porte (« Retire la scie devant la porte et place la ailleurs. Un
+   endroit logique et qui ne gêne pas ») : sur le côté, entre la grue qui descend les rondins et la pile de rondins ; les
+   fleurs des jardinières comme dans la vraie nature (saison) ; le rondin de la grue qui se balance doucement (VENT).
+   La maison : un rez-de-chaussée de pierres claires, sa porte en arc, deux lanternes, une fenêtre à jardinière ; un étage
+   de planches et de colombages, sa galerie à balustrade où sèchent des planches et des rondins ; le toit de tuiles plus
+   haut, sa lucarne, sa cheminée ; l'enseigne à la lame de scie sur le pignon ; devant, un dallage de pierres. */
+const N3 = {HS: 1.3, HM: 2.6};
+const PIERRE_JOINT = 0x8E887E;
+/* un mur de pierres : un fond sombre (les joints) et des rangs de pierres en quinconce, un peu en saillie */
+function murPierres(g, a, b, h, fixe, sens){
+  const {X0, X1} = N2, ep = .14, long = b - a;
+  if(sens === "x") boite(g, PIERRE_JOINT, long, h, ep, (a + b) / 2, h / 2, fixe); else boite(g, PIERRE_JOINT, ep, h, long, fixe, h / 2, (a + b) / 2);
+  const rangs = Math.round(h / .18), hr = h / rangs;
+  for(let r = 0; r < rangs; r++){
+    const dec = r % 2 ? .16 : 0;
+    for(let u = a - dec; u < b - .02; u += .32){
+      const u0 = Math.max(a, u), u1 = Math.min(b, u + .3), c = (u0 + u1) / 2, l = u1 - u0;
+      if(l < .06) continue;
+      const hex = PIERRES[(r * 5 + Math.round(u * 7)) % 4 + (((r * 5 + Math.round(u * 7)) % 4) < 0 ? 4 : 0)];
+      if(sens === "x") boite(g, hex, l - .03, hr - .03, ep + .03, c, (r + .5) * hr, fixe); else boite(g, hex, ep + .03, hr - .03, l - .03, fixe, (r + .5) * hr, c);
+    }
+  }
+}
+/* une fenêtre à quatre carreaux, son appui ; jardiniere : la caisse de fleurs sous l'appui */
+function fenetre3(g, x, y, z, sens = "x", jardin = null){
+  const f = (w, h, d, dx, dy, dz, hex) => sens === "x" ? boite(g, hex, w, h, d, x + dx, y + dy, z + dz) : boite(g, hex, d, h, w, x + dz, y + dy, z + dx);
+  f(.5, .54, .06, 0, 0, .02, POTEAU2);
+  f(.36, .4, .05, 0, 0, .04, VITRE).castShadow = false;
+  f(.035, .4, .06, 0, 0, .06, POTEAU2); f(.36, .035, .06, 0, 0, .06, POTEAU2);
+  f(.6, .07, .14, 0, -.3, .07, POTEAU2);
+  if(jardin) jardiniere(g, x, y - .42, z, sens, jardin);
+}
+/* la caisse de fleurs, comme dans la vraie nature (Yo, 29 octobre 2026) : au printemps, des pensées jaunes et violettes ;
+   l'été, des géraniums rouges ; l'automne, le feuillage seul ; l'hiver, la terre nue */
+const FLEURS_JARDIN = {printemps: [0xF2C94C, 0x7A4FB0, 0xF4F0E0], ete: [0xD8342A, 0xE8505A, 0xC82A2A], automne: [], hiver: []};
+function jardiniere(g, x, y, z, sens, saison){
+  const f = (w, h, d, dx, dy, dz, hex, geo = G.box) => sens === "x" ? ajoute(g, part(geo, hex, w, h, d, x + dx, y + dy, z + dz)) : ajoute(g, part(geo, hex, d, h, w, x + dz, y + dy, z + dx));
+  f(.56, .14, .16, 0, 0, .16, 0xA5662E);                                                       // la caisse
+  f(.5, .03, .12, 0, .07, .16, 0x5A3E28);                                                       // la terre
+  if(saison === "hiver") return;
+  const feuilles = saison === "automne" ? [0x6E7A3A, 0x8A7A3A] : [0x4E8A3A, 0x5E9A44];
+  for(let k = 0; k < 5; k++) f(.13, .09, .1, -.2 + k * .1, .11, .15 + (k % 2) * .03, feuilles[k % 2], G.head);
+  const fl = FLEURS_JARDIN[saison] || [];
+  for(let k = 0; k < (fl.length ? 6 : 0); k++) f(.07, .06, .07, -.22 + k * .088, .17 + (k % 2) * .03, .17 + (k % 3 - 1) * .03, fl[k % fl.length], G.head);
+}
+/* une lanterne de fer sur sa potence, contre la façade */
+function lanterneMur(g, x, y, z){
+  boite(g, FER, .06, .2, .04, x, y + .32, z + .03);
+  boite(g, FER, .05, .05, .26, x, y + .38, z + .15);
+  boite(g, FER, .03, .1, .03, x, y + .3, z + .26);
+  const chapeau = ajoute(g, part(G.cone4, FER, .24, .11, .24, x, y + .22, z + .26)); chapeau.rotation.y = Math.PI / 4;
+  ajoute(g, part(G.box, LUEUR, .13, .18, .13, x, y + .07, z + .26));
+  for(const [dx, dz] of [[-.07, -.07], [.07, -.07], [-.07, .07], [.07, .07]]) boite(g, FER, .025, .2, .025, x + dx, y + .07, z + .26 + dz);
+  boite(g, FER, .18, .04, .18, x, y - .04, z + .26);
+}
+/* la porte en arc : ses planches, son arc de planches, ses pentures et son anneau ; l'arc de pierres autour ; deux marches */
+function porte3(g){
+  const z = FACADE + .1, x = -.5, w = .8, hd = .78, r = w / 2;
+  for(let k = 0; k < 4; k++) boite(g, k % 2 ? PORTE_C : 0x8E5226, w / 4 - .01, hd, .06, x - w / 2 + (k + .5) * w / 4, hd / 2 + .12, z);
+  const haut = ajoute(g, part(G.cyl, PORTE_C, w, .06, w, x, hd + .12, z)); haut.rotation.x = Math.PI / 2; haut.scale.set(r * 2, .06, r * 2);
+  boite(g, 0x8E5226, w, .02, .05, x, hd + .12, z + .03);                                         // le haut de la porte, en demi-rond
+  for(const y of [.36, .78]){ boite(g, FER, w * .7, .07, .03, x + .06, y, z + .05);
+    const c = ajoute(g, part(G.cyl, FER, .1, .03, .1, x - w * .3, y, z + .05)); c.rotation.x = Math.PI / 2; }
+  ajoute(g, part(G.tore, FER, .16, .16, .25, x + .25, .62, z + .07));
+  for(let k = 0; k <= 8; k++){ const a = k / 8 * Math.PI, rr = r + .1;                           // l'arc de pierres
+    const p = pave(g, PIERRES[k % 4], .14, .18, .22, x + Math.cos(a) * rr, hd + .12 + Math.sin(a) * rr, FACADE + .04); p.rotation.z = a - Math.PI / 2; }
+  for(const s of [-1, 1]) for(let k = 0; k < 3; k++) pave(g, PIERRES[(k + (s > 0 ? 2 : 0)) % 4], .16, .26, .2, x + s * (r + .1), .13 + k * .27, FACADE + .04);
+  pave(g, PIERRES[0], 1.1, .12, .36, x, .06, FACADE + .3); pave(g, PIERRES[2], .95, .1, .26, x, .16, FACADE + .2);   // les deux marches
+}
+/* l'étage : un plancher qui déborde, des murs de planches debout, les colombages (poteaux, croix, poutres) */
+function etage3(g){
+  const {X0, X1, Z0} = N2, {HS, HM} = N3, h = HM - HS, et = new THREE.Group(); et.position.y = HS; g.add(et);
+  boite(et, POTEAU2, X1 - X0 + .3, .16, FACADE - Z0 + .3, (X0 + X1) / 2, .02, (Z0 + FACADE) / 2);   // le plancher
+  murDebout(et, X0, X1, h, FACADE - .02, "x"); murDebout(et, X0, X1, h, Z0, "x");
+  murDebout(et, Z0, FACADE, h, X0, "z"); murDebout(et, Z0, FACADE, h, X1, "z");
+  for(const x of [X0, X1]) for(const z of [Z0, FACADE]) boite(et, POTEAU2, .22, h, .22, x, h / 2, z);
+  for(const z of [FACADE + .05, Z0 - .05]){ boite(et, POTEAU2, X1 - X0 + .3, .18, .14, 0, h - .05, z);
+    for(const x of [-.4, .4]) boite(et, POTEAU2, .14, h, .1, x, h / 2, z); }
+  for(const [x, z0, z1] of [[X0 - .06, Z0, FACADE], [X1 + .06, Z0, FACADE]]){                     // les croix des colombages, sur les côtés
+    const w = (z1 - z0) / 2, l = Math.hypot(w, h - .2) - .06, an = Math.atan2(w, h - .2);          // deux panneaux, une croix dans chacun
+    for(const c of [z0 + w / 2, z1 - w / 2]) for(const s of [-1, 1]) planche(et, POTEAU2, .08, l, .1, x, h / 2 - .04, c, s * an, 0, 0);
+    boite(et, POTEAU2, .1, .16, z1 - z0 + .2, x, h - .05, (z0 + z1) / 2);
+  }
+  fenetre3(et, -.8, .7, FACADE + .02); fenetre3(et, .8, .7, FACADE + .02);
+  /* la galerie : son plancher au-dessus de la porte, ses consoles, sa balustrade ; des planches et des rondins qui sèchent */
+  const zg = FACADE + .42;
+  boite(et, CLAIR, X1 - X0 + .3, .08, .46, 0, 0, FACADE + .22);
+  for(const x of [X0 + .1, -.5, X1 - .1]) planche(et, POTEAU2, .1, .5, .1, x, -.22, FACADE + .2, -.75, 0, 0);
+  for(let k = 0; k <= 8; k++) boite(et, POTEAU2, .06, .42, .06, X0 - .1 + k * (X1 - X0 + .2) / 8, .25, zg);
+  for(const y of [.46, .2]) boite(et, POTEAU2, X1 - X0 + .3, .07, .07, 0, y, zg);
+  for(let k = 0; k < 4; k++) boite(et, k % 2 ? CLAIR : ton2(k), .7, .07, .14, .55, .08 + k * .075, FACADE + .2);
+  for(const dx of [0, .2]) rondin(et, -.95 + dx, .14, FACADE + .2, .09, .3);
+  return et;
+}
+/* le toit (comme au niveau 2, plus haut d'un étage), le pignon et son enseigne, la cheminée, la lucarne */
+function toit3(g){
+  const r = new THREE.Group(); r.position.y = N3.HM - N2.HM; g.add(r);
+  pignon2(r, FACADE + .02, false); pignon2(r, N2.Z0 - .02, false);
+  const res = toit2(r); cheminee2(r, res);
+  g.userData.toit = r.userData.toit + r.position.y;
+  /* l'enseigne : une planche de bois pendue à deux fers, la lame de scie peinte dessus */
+  const ye = N2.HM + .55, ze = FACADE + .14;
+  boite(r, CLAIR, .86, .42, .06, 0, ye, ze);
+  boite(r, POTEAU2, .9, .06, .07, 0, ye + .21, ze); boite(r, POTEAU2, .9, .06, .07, 0, ye - .21, ze);
+  for(const x of [-.3, .3]){ boite(r, FER, .04, .2, .04, x, ye + .3, ze); boite(r, FER, .06, .04, .14, x, ye + .4, ze - .05); }
+  const lame = ajoute(r, part(G.cyl, 0x8A5A2E, .3, .02, .3, 0, ye, ze + .04)); lame.rotation.x = Math.PI / 2;
+  for(let k = 0; k < 12; k++){ const a = k / 12 * Math.PI * 2; planche(r, 0x8A5A2E, .05, .05, .02, Math.sin(a) * .16, ye + Math.cos(a) * .16, ze + .04, 0, 0, -a + .4); }
+  const centre = ajoute(r, part(G.cyl, CLAIR, .07, .03, .07, 0, ye, ze + .05)); centre.rotation.x = Math.PI / 2;
+  /* la lucarne, sur la pente de droite : ses joues de planches, sa fenêtre, son petit toit de tuiles */
+  const {a, sommet} = res, xl = .62, yl = sommet - xl * Math.tan(a) - .1, zl = -.35;
+  boite(r, ton2(1), .5, .5, .55, xl, yl, zl);
+  fenetre3(r, xl + .27, yl + .02, zl, "z");
+  for(const s of [-1, 1]) planche(r, TUILES[(s + 2) % 4], .62, .06, .4, xl + .05, yl + .35, zl + s * .17, s * .6, 0, 0);
+  boite(r, CLAIR, .66, .1, .1, xl + .05, yl + .47, zl);
+}
+/* la grue de bois, à droite : son mât, sa flèche, sa jambe de force, sa poulie ; au bout de la corde, le rondin qui se
+   balance doucement (au temps du vent) */
+function grue3(g){
+  const x = 2.18, z0 = -.55, H = 2.45, zb = .55;
+  boite(g, POTEAU2, .2, H, .2, x, H / 2, z0);
+  pave(g, PIERRES[1], .44, .16, .44, x, .08, z0);
+  boite(g, POTEAU2, .16, .16, zb - z0 + .25, x, H - .1, (z0 + zb) / 2 + .05);
+  planche(g, POTEAU2, .1, .95, .1, x, H - .5, z0 + .32, .78, 0, 0);
+  for(const y of [H - .1, H - .6]) boite(g, FER, .24, .06, .24, x, y, z0);
+  const poulie = ajoute(g, part(G.cyl, 0x6E7278, .16, .06, .16, x, H - .24, zb)); poulie.rotation.z = Math.PI / 2;
+  const balance = new THREE.Group(); balance.position.set(x, H - .24, zb); g.add(balance);
+  const L = 1.05;
+  boite(balance, 0xC8A878, .025, L, .025, 0, -L / 2, 0);                                          // la corde
+  for(const s of [-1, 1]) planche(balance, 0xC8A878, .02, .34, .02, 0, -L - .12, s * .12, s * .7, 0, 0);
+  rondin(balance, 0, -L - .3, 0, .14, .72);
+  const bouge = () => { const t = VENT.temps.value; balance.rotation.x = Math.sin(t * .9) * .07; balance.rotation.z = Math.sin(t * .6 + 1) * .04; balance.updateMatrixWorld(true); };
+  balance.traverse(m => { if(m.isMesh) m.onBeforeRender = bouge; });
+  return balance;
+}
+/* devant : le dallage de pierres, la pile de rondins dans ses barrières (à droite, près de la grue et de la scie), la pile de
+   planches (à gauche, pour laisser voir la fenêtre) */
+function cour3(g){
+  for(let k = 0; k < 6; k++) for(let j = 0; j < 2; j++) boite(g, PIERRES[(k + j * 3) % 4], .38, .04, .4, -.45 + k * .4, .02, 1.88 + j * .42);
+  for(let c = 0; c < 2; c++) for(let k = 0; k < 2 - c; k++) rondin(g, 1.95 + k * .3 + c * .15, .15 + c * .26, 2.08, .14, .55);
+  for(const xx of [1.72, 2.42]) boite(g, POTEAU2, .07, .6, .07, xx, .3, 2.42);
+  for(const y of [.45, .22]) boite(g, POTEAU2, .76, .06, .05, 2.07, y, 2.42);
+  for(const zz of [1.78]) for(const xx of [1.72, 2.42]) boite(g, POTEAU2, .07, .6, .07, xx, .3, zz);
+  for(let k = 0; k < 4; k++) for(let j = 0; j < 3; j++){
+    const travers = k % 2;
+    boite(g, (k + j) % 2 ? CLAIR : ton2(j + k), travers ? .5 : .15, .08, travers ? .15 : .5, -1.62 + (travers ? 0 : (j - 1) * .17), .05 + k * .09, 2.1 + (travers ? (j - 1) * .17 : 0));   // à gauche devant, sous la roue
+  }
+}
+export function scierieNiveau3(g0, opt = {}){
+  const saison = opt.saison || "printemps", g = maison(g0), {X0, X1, Z0} = N2, {HS} = N3;
+  /* le rez-de-chaussée de pierres, et sa poutre de bas */
+  murPierres(g, X0, -.97, HS, FACADE - .02, "x"); murPierres(g, -.03, X1, HS, FACADE - .02, "x");
+  boite(g, PIERRE_JOINT, .94, HS - 1.0, .14, -.5, 1.0 + (HS - 1.0) / 2, FACADE - .02);
+  murPierres(g, X0, X1, HS, Z0, "x"); murPierres(g, Z0, FACADE, HS, X0, "z"); murPierres(g, Z0, FACADE, HS, X1, "z");
+  porte3(g);
+  lanterneMur(g, -1.06, .95, FACADE); lanterneMur(g, .06, .95, FACADE);
+  fenetre3(g, .62, .78, FACADE, "x", saison);
+  fenetre3(g, X1 + .02, .78, .1, "z", saison);
+  etage3(g);
+  toit3(g);
+  g0.userData.toit = g.userData.toit;
+  cour3(g0);
+  tableScie(g0, 2.05, .95);
+  grue3(g0);
+  roueEtEau(g0);
 }
