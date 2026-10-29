@@ -6,7 +6,7 @@ import { map, idx, inb, tileOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state } from "../sauvegarde.js";
 import { traversable } from "../donnees.js";
-import { jv, keys } from "../commandes.js";
+import { jv, keys, view } from "../commandes.js";
 import { makeOutil } from "./outils3d.js";
 import { passageCases } from "./ponton.js";
 
@@ -212,7 +212,8 @@ export function updatePlayer(dt){
     }
   } else if(mag > 0){
     const sp = SPEED * mag * dt * (lent > 0 ? .55 : 1), p = player.position, l = Math.hypot(ix, iz);
-    const ux = ix / l, uz = iz / l;
+    const c = Math.cos(view.lacetIci), s = Math.sin(view.lacetIci);            // le joystick suit la caméra : le haut, vers le fond de l'écran
+    const ux = (ix * c + iz * s) / l, uz = (iz * c - ix * s) / l;
     const nx = p.x + ux * sp, nz = p.z + uz * sp;
     if(free(nx, p.z)) p.x = nx;
     if(free(p.x, nz)) p.z = nz;

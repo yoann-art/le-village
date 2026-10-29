@@ -60,7 +60,7 @@ import { mainsIci, gesteOutil } from "../js/monde/mains.js";
 import { choisirVue, premiereActive, vuePremiere, pencherVue } from "../js/vue.js";
 import { frontTile } from "../js/monde/personnage.js";
 import { decorating } from "../js/decorer.js";
-import { keys } from "../js/commandes.js";
+import { keys, jv, view, setLacet } from "../js/commandes.js";
 import { updateRecolte } from "../js/recolte.js";
 import { updateChemins } from "../js/terraformer.js";
 import { checkDoors, isInside, currentPlace, doorOf, retourIle, allerA } from "../js/lieux.js";
@@ -2485,6 +2485,32 @@ export async function verifier(){
     $("#btn-act").click();
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
     return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
+  });
+  /* la caméra tourne tout autour du personnage (demande de Yo, 29 octobre 2026) ; le joystick suit ; la boussole la remet au nord */
+  await etape("La caméra qui tourne à 360° : le doigt qui glisse, le joystick qui suit, la boussole", async () => {
+    if(isInside()) await sortir();
+    /* une place dégagée vers l'ouest : 1,5 P libre */
+    let ouest = null;
+    for(let r = 0; r < 12 && !ouest; r++) for(let dx = -r; dx <= r && !ouest; dx++) for(let dz = -r; dz <= r && !ouest; dz++){
+      const x = player.position.x + dx, z = player.position.z + dz;
+      if([0, .5, 1, 1.5].every(d => islandWalkable(x - d, z) && islandWalkable(x - d, z - .3) && islandWalkable(x - d, z + .3))) ouest = {x, z};
+    }
+    if(!ouest) throw new Error("pas de place dégagée pour marcher");
+    placePlayer(ouest.x, ouest.z, 0, 1);
+    try {
+      setLacet(Math.PI / 2);
+      if(!await attendre(() => camera.position.x - player.position.x > 1 && Math.abs(camera.position.z - player.position.z) < .5))
+        throw new Error(`la caméra ne tourne pas autour du personnage (${(camera.position.x - player.position.x).toFixed(2)}, ${(camera.position.z - player.position.z).toFixed(2)})`);
+      if($("#btn-nord").hidden) throw new Error("la boussole ne se montre pas");
+      const x0 = player.position.x, z0 = player.position.z;
+      jv.x = 0; jv.z = -1; for(let k = 0; k < 4; k++) updatePlayer(.05); jv.z = 0;
+      const dx = player.position.x - x0, dz = player.position.z - z0;
+      if(!(dx < -.05 && Math.abs(dz) < Math.abs(dx) / 3)) throw new Error(`le joystick ne suit pas la caméra (${dx.toFixed(2)}, ${dz.toFixed(2)})`);
+      $("#btn-nord").click();
+      if(Math.abs(view.lacet) > .001) throw new Error("la boussole ne remet pas la caméra vers le nord");
+      if(!await attendre(() => camera.position.z - player.position.z > 1 && Math.abs(camera.position.x - player.position.x) < .5)) throw new Error("la caméra ne revient pas vers le nord");
+    } finally { jv.x = jv.z = 0; setLacet(0); }
+    return "la caméra tourne d'un quart de tour autour du personnage, pousser le joystick vers le haut va vers le fond de l'écran, la boussole la remet vers le nord";
   });
   if(scierie) await etape("La vue à la première personne : le bouton 👁️, la caméra aux yeux, le doigt tourne la tête, le joystick avance où l'on regarde et tourne la vue, viser ce qu'on regarde, les mains, entrer dans la Scierie, décorer en vue de dessus", async () => {
     if(isInside()) await sortir();

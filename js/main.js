@@ -16,7 +16,7 @@ import { reglerRecul } from "./monde/chene.js";
 import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
 import "./coffres.js";
-import { view } from "./commandes.js";
+import { view, setLacet } from "./commandes.js";
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
@@ -148,6 +148,16 @@ function tick(now){
     save(); lastSave = now; dirty = false;
   });
 }
+/* Le bouton boussole : sa flèche montre le nord ; un toucher remet la caméra vers le nord (la vue d'avant) */
+const btnNord = $("#btn-nord"), flecheNord = btnNord && btnNord.querySelector("svg");
+let nordVu = null;
+function majNord(libre){
+  if(!btnNord) return;
+  if(btnNord.hidden === libre) btnNord.hidden = !libre;
+  const a = Math.round(view.lacetIci * 180 / Math.PI);
+  if(a !== nordVu){ nordVu = a; flecheNord.style.transform = `rotate(${a}deg)`; }
+}
+if(btnNord) btnNord.addEventListener("click", e => { e.stopPropagation(); setLacet(0); toast("🧭 La caméra regarde à nouveau vers le nord", 1400); });
 /* La caméra, le soleil, la mer, et ce qu'on bâtit dehors */
 function camera_(now, dt, marche){
   const dv = decoView();
@@ -169,12 +179,14 @@ function camera_(now, dt, marche){
     const sol = t < -.05 ? OEIL / Math.tan(-t) : Infinity;
     viser({sol: sol <= PORTEE ? sol : null});
     viseur.hidden = false;
+    view.lacetIci = 0; majNord(false);                     // à la première personne, le regard suit le personnage
     viseur.classList.toggle("cible", !btnAct.hidden);       // quelque chose à faire là : le point devient un rond
     camera.position.set(p.x, OEIL, p.z);
     camera.lookAt(p.x + Math.sin(lacet) * c, OEIL + Math.sin(t), p.z + Math.cos(lacet) * c);
   } else {
   lacet = null;
   viser(null);
+  view.peutTourner = () => !decoView() && !placing && !deplaceEnCours() && !premiereActive() && (!isInside() || ["foret", "marais"].includes(currentPlace().b.type));
   if(!viseur.hidden) viseur.hidden = true;
   setFov(FOV_DESSUS);
   setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
@@ -182,7 +194,12 @@ function camera_(now, dt, marche){
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
   if(takeJump()) camT.copy(target);
   else camT.lerp(target, 1 - Math.pow(.0005, dt));
-  camera.position.copy(camT).addScaledVector(OFF, D);
+  /* la caméra tourne autour du personnage (demande de Yo) : dehors, dans la forêt et le Marais ; ailleurs, vers le nord */
+  const libre = !dv && !placing && !deplaceEnCours() && (!isInside() || ["foret", "marais"].includes(currentPlace().b.type));
+  view.lacetIci = libre ? view.lacet : 0;
+  majNord(libre);
+  const L = view.lacetIci;
+  camera.position.set(camT.x + Math.sin(L) * OFF.z * D, camT.y + OFF.y * D, camT.z + Math.cos(L) * OFF.z * D);
   camera.lookAt(camT.x, .4, camT.z);
   }
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule

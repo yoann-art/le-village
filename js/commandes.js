@@ -40,26 +40,42 @@ window.addEventListener("blur", () => { for(const k in keys) keys[k] = 0; });
 /* Zoom : pincer l'écran à deux doigts sur le téléphone ; molette ou touches + et − sur ordinateur.
    view.zoom multiplie la distance de la caméra : plus petit = plus près. Gardé sur l'appareil. */
 const ZMIN = .6, ZMAX = 1.6, ZKEY = "le-village-zoom";
-export const view = {zoom: 1};
+/* La caméra qui tourne tout autour du personnage (demande de Yo, 29 octobre 2026 : « tourner la caméra à 360 degrés
+   pour jouer ainsi on verra mieux la faune et flore ») : glisser un doigt sur l'écran, de gauche à droite ; view.lacet
+   (en radians, 0 : vers le nord comme avant) est gardé sur l'appareil ; main.js dit où il s'applique (view.peutTourner :
+   dehors, dans la forêt et le Marais, ni en construisant ni en décorant) et l'angle de cette image (view.lacetIci), que
+   personnage.js lit pour que le joystick suive la caméra */
+const LKEY = "le-village-lacet";
+export const view = {zoom: 1, lacet: 0, lacetIci: 0, peutTourner: () => false};
 try{ const z = parseFloat(localStorage.getItem(ZKEY)); if(z >= ZMIN && z <= ZMAX) view.zoom = z; }catch(_){}
+try{ const l = parseFloat(localStorage.getItem(LKEY)); if(isFinite(l)) view.lacet = l; }catch(_){}
+export function setLacet(l){ view.lacet = Math.atan2(Math.sin(l), Math.cos(l)); try{ localStorage.setItem(LKEY, String(view.lacet)); }catch(_){} }
 function setZoom(z){ view.zoom = Math.max(ZMIN, Math.min(ZMAX, z)); }
 function saveZoom(){ try{ localStorage.setItem(ZKEY, String(view.zoom)); }catch(_){} }
 const app = $("#app"), fingers = new Map();
 let pinchDist = 0;
 const onScene = e => e.target.tagName === "CANVAS";
-app.addEventListener("pointerdown", e => { if(onScene(e)){ fingers.set(e.pointerId, {x:e.clientX, y:e.clientY}); pinchDist = 0; } });
+app.addEventListener("pointerdown", e => { if(onScene(e)){ fingers.set(e.pointerId, {x:e.clientX, y:e.clientY, x0:e.clientX, tourne:false}); pinchDist = 0; } });
 app.addEventListener("pointermove", e => {
   const f = fingers.get(e.pointerId);
   if(!f) return;
+  const dx = e.clientX - f.x;
   f.x = e.clientX; f.y = e.clientY;
+  if(fingers.size === 1 && view.peutTourner()){              // un seul doigt qui glisse : la caméra tourne (un balayage de l'écran : un demi-tour)
+    if(!f.tourne && Math.abs(e.clientX - f.x0) > 10) f.tourne = true;   // un simple toucher, un appui long, ne tournent pas
+    if(f.tourne) view.lacet -= dx * Math.PI / Math.max(320, innerWidth);
+    return;
+  }
   if(fingers.size !== 2) return;
   const [a, b] = [...fingers.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
   if(pinchDist && d) setZoom(view.zoom * pinchDist / d);
   pinchDist = d;
 });
 function endFinger(e){
+  const f = fingers.get(e.pointerId);
   if(!fingers.delete(e.pointerId)) return;
   pinchDist = 0; saveZoom();
+  if(f.tourne) setLacet(view.lacet);
 }
 app.addEventListener("pointerup", endFinger);
 app.addEventListener("pointercancel", endFinger);

@@ -6,6 +6,8 @@
 - Étape 2.1 (le décor de l'île) : faite d'après les images de Yo (arbres de l'île, pierre, caillou, branche, herbes,
   groseillier, thym, galets, sol, plage, mer, étang, berge, 7 fleurs sauvages) ; restent les sons de la nature.
 - Étape 2.2 (la Scierie dehors) : niveaux 1 et 2 faits (v2.1.46 à v2.1.50).
+- La caméra tourne à 360° autour du personnage (glisser un doigt ; la boussole la remet au nord), dehors, dans la
+  forêt et le Marais (v2.1.99).
 - Les 21 insectes et les 12 oiseaux de l'île refaits d'après les images de Yo, comme des vrais (v2.1.57 à v2.1.97 ;
   le détail plus bas).
 - **Essais réellement faits pour la v2.1.97 (29 octobre 2026)** : la vérification complète sur le PC
