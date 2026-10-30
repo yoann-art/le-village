@@ -52,7 +52,7 @@ import { torcheAllumee, updateTorche } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
 import { forcerSaison, saisonDu, reglerHemisphere, saison } from "../js/donnees.js";
-import { allumerCompteur, rapportPerf, mesures, mettreDeCote, releve } from "../js/performance.js";
+import { allumerCompteur, rapportPerf, mesures, mettreDeCote, releve, regularite, lancerSession, sessionEnCours, rapportSession } from "../js/performance.js";
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable, regard, tenirTorche } from "../js/monde/personnage.js";
@@ -617,6 +617,24 @@ export async function verifier(){
       if(!$("#perf").hidden) throw new Error("toucher la version ne l'éteint pas");
       return `${m.ips} images/s, ${m.triangles} triangles, ${m.dessins} dessins ; le rapport (${r.split("\n").length} lignes)`;
     } finally { allumerCompteur(false); }
+  });
+  await etape("La session de mesure (mission de Yo, 30 octobre 2026) : ⏱️, les P95 à P99,9, les seuils, la carte graphique, la mémoire, minute par minute ; le rapport s'ouvre à la fin", async () => {
+    try {
+      allumerCompteur(true);
+      $("#perf [data-session='120000']").click();      // le toucher de Yo sur ⏱️ 2 min
+      if(!sessionEnCours()) throw new Error("toucher ⏱️ 2 min ne lance pas la mesure");
+      await wait(1500);
+      if(!$("#perf").textContent.includes("mesure 0:")) throw new Error(`le compteur ne montre pas la mesure en cours (« ${$("#perf").textContent} »)`);
+      $("#perf [data-session='120000']").click();      // toucher ⏱️ pendant la mesure : elle finit, son rapport s'ouvre
+      if(sessionEnCours()) throw new Error("toucher ⏱️ pendant la mesure ne la finit pas");
+      const ouvert = document.querySelector(".perf-rapport"), r = rapportSession();
+      if(!ouvert || !ouvert.textContent.includes("Session de mesure")) throw new Error("le rapport de la session ne s'ouvre pas");
+      for(const mot of ["P99,9", "au-delà de 16,7 ms", "Carte graphique", "Mémoire", "Minute par minute", "Travail du jeu"]) if(!r.includes(mot)) throw new Error(`le rapport de la session ne dit pas « ${mot} »`);
+      const R = regularite();
+      if(!(R.images > 0 && R.p50 > 0 && R.p99 >= R.p95 && R.p95 >= R.p50)) throw new Error(`les quantiles sont faux (${JSON.stringify(R)})`);
+      if(!rapportPerf().includes("P99,9")) throw new Error("le rapport de 10 s ne dit pas les quantiles");
+      return `${r.split("\n")[1]} ; médiane ${R.p50.toFixed(1)} ms, P99 ${R.p99.toFixed(1)} ms ; carte graphique : ${R.gpu ? R.gpu.moyenne.toFixed(1) + " ms" : "pas mesurable ici"}`;
+    } finally { allumerCompteur(false); const f = document.querySelector("#sheetWrap [data-close]"); if(f) f.click(); }
   });
   await etape("La fluidité (mission de Yo, 16 octobre 2026) : le tri de ce que voit la caméra, les morceaux rassemblés, les programmes gardés, la carte graphique préparée", async () => {
     /* le tri par carrés donne exactement ce que donnait l'ancien tri, objet par objet, sous 40 caméras au hasard */
