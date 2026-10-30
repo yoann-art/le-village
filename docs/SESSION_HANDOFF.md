@@ -1,4 +1,16 @@
-# Passation de séance (29 octobre 2026)
+# Passation de séance (30 octobre 2026)
+
+## Le dernier travail : le personnage
+
+- **v2.1.112** : la fille et le garçon refaits d'après les images de Yo (`js/monde/heros.js`, `fabriqueHeros`, `COULEURS_HEROS` ;
+  `personnage.js` : `habiller`, `placerMains`). Détail : DEVELOPMENT_HISTORY.md, « Le personnage d'après les images de Yo ».
+- Yo n'a pas encore vu le personnage sur son téléphone ; lui demander une session ⏱️ 2 min (référence v2.1.109 : 67 images/s).
+- La suite acceptée par Yo : 3. les réglages (peau 6 à 8 tons, visage, coiffure parmi sa planche, 8 couleurs de cheveux, couleur de
+  la tunique) ; 4. l'écran « Qui es-tu ? » (partie neuve et une fois pour une partie en cours, aperçu qui tourne, `state.perso`,
+  les mains à la première personne de la même peau) ; 5. les accords dans les textes (prêt/prête) ; 6. vérification et docs.
+- Les scripts de portrait et de photo dans le jeu de cette séance : `outils-claude/heros.mjs`, `heros_jeu.mjs`, `lumiere.mjs`.
+
+## Avant (29 octobre 2026)
 
 ## Où on en est
 

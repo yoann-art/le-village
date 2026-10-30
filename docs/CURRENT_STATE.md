@@ -8,6 +8,8 @@
 - Étape 2.2 (la Scierie dehors) : niveaux 1 et 2 faits (v2.1.46 à v2.1.50).
 - Les pièces : toutes en terre battue et torchis clair au départ ; sols (case par case) et murs (mur par mur) fabriqués
   avec les bois de l'île et la pierre, posés dans « Décorer » (v2.1.102). Les icônes en photo des modèles refaits (v2.1.101).
+- Le personnage (v2.1.112) : la fille et le garçon d'après les images de Yo (`js/monde/heros.js`), 5 dessins, 15 600 et
+  17 400 triangles (limite 25 000) ; c'est le garçon qui apparaît en attendant l'écran « Qui es-tu ? » (`state.perso`).
 - La caméra tourne à 360° autour du personnage (glisser un doigt ; la boussole la remet au nord), dehors, dans la
   forêt et le Marais (v2.1.99).
 - Les 21 insectes et les 12 oiseaux de l'île refaits d'après les images de Yo, comme des vrais (v2.1.57 à v2.1.97 ;

@@ -9,23 +9,26 @@ import { traversable } from "../donnees.js";
 import { jv, keys, view } from "../commandes.js";
 import { makeOutil } from "./outils3d.js";
 import { passageCases } from "./ponton.js";
+import { fabriqueHeros } from "./heros.js";
 
 export const player = new THREE.Group();
 const body = new THREE.Group();
 player.add(body);
-body.add(part(G.cyl, 0xE0654F, .46,.4,.4, 0,.44,0));
-body.add(part(G.head, 0xF2C9A0, 1,1,1, 0,.86,0));
-const hair = part(G.hair, 0x6B4226, 1,1,1, 0,.88,-.02); hair.rotation.x = -.3; body.add(hair);
-body.add(part(G.eye, 0x1C2230, 1,1,1, -.08,.87,.22));
-body.add(part(G.eye, 0x1C2230, 1,1,1, .08,.87,.22));
-const legL = part(G.cyl, 0x3B4A6B, .13,.24,.13, -.09,.12,0);
-const legR = part(G.cyl, 0x3B4A6B, .13,.24,.13, .09,.12,0);
-body.add(legL, legR);
-/* La main droite, qui n'apparaît qu'avec un outil ; l'outil penche un peu vers l'avant (étape 1.4) */
+/* Le héros, la fille ou le garçon (heros.js, d'après les images de Yo, 30 octobre 2026) : le corps, les bras et les jambes,
+   qui se balancent en marchant ; habiller() le refait (la personnalisation) */
+let heros = null, legL, legR, armL, armR;
+export function habiller(o){
+  if(heros) body.remove(heros.corps, ...heros.bras, ...heros.jambes);
+  heros = fabriqueHeros(o);
+  [armR, armL] = heros.bras; [legR, legL] = heros.jambes;
+  body.add(heros.corps, ...heros.bras, ...heros.jambes);
+}
+habiller((state.perso) || {});
+/* La main droite, qui ne sert qu'avec un outil : elle suit le bout du bras droit (placerMains) ; l'outil penche un peu vers
+   l'avant (étape 1.4) */
 const hand = new THREE.Group();
 hand.position.set(-.27, .4, .08);
 hand.rotation.x = .35;
-hand.add(part(G.head, 0xF2C9A0, .38,.38,.38, 0,0,0));
 hand.visible = false;
 body.add(hand);
 let held = null, heldK = null;
@@ -43,7 +46,6 @@ export const mainGauche = () => torche.visible ? "torche" : lanterneG.visible ? 
 /* La torche, dans la main gauche (étape 1.8) : allumée dans la grotte, sa flamme vacille (t : le temps) */
 const torche = new THREE.Group();
 torche.position.set(.27, .4, .1);
-torche.add(part(G.head, 0xF2C9A0, .38, .38, .38, 0, 0, 0));
 torche.add(part(G.cyl, 0x7A4E2A, .05, .42, .05, 0, .16, .04));
 const flamme = part(G.head, toon({color: 0xFFB347, emissive: 0xFF8A1E, emissiveIntensity: 1}), .5, .8, .5, 0, .42, .04);
 const coeur = part(G.head, toon({color: 0xFFF2B0, emissive: 0xFFE070, emissiveIntensity: 1}), .25, .45, .25, 0, .4, .04);
@@ -54,7 +56,6 @@ body.add(torche);
 /* La lanterne à main (demande de Yo, 11 octobre 2026), à la place de la torche : elle pend sous la main gauche */
 const lanterneG = new THREE.Group();
 lanterneG.position.set(.27, .4, .1);
-lanterneG.add(part(G.head, 0xF2C9A0, .38, .38, .38, 0, 0, 0));
 lanterneG.add(part(G.cyl, 0xC8743C, .025, .16, .025, 0, -.08, .04));                      // l'anse
 lanterneG.add(part(G.cone4, 0xC8743C, .2, .08, .2, 0, -.16, .04));                         // le chapeau
 const verreL = part(G.box, toon({color: 0xFFF2C0, emissive: 0xFFC860, emissiveIntensity: 1}), .14, .17, .14, 0, -.28, .04);
@@ -68,6 +69,17 @@ export function tenirTorche(oui, t = 0, lanterne = false){
 }
 /* Penche la main (et l'outil) vers l'avant : rx en radians ; sans rien, la position normale (la pêche s'en sert) */
 export function pencheMain(rx){ hand.rotation.x = rx === undefined ? .35 : rx; }
+/* Les bras : ils se balancent en marchant (b : le balancement) ; un outil en main, le bras droit se lève devant et suit le geste
+   (l'angle de la main) ; la torche ou la lanterne, le bras gauche se lève un peu ; la main (l'outil, la torche) est au bout */
+const bout = new THREE.Vector3();
+function placerMains(b){
+  armR.rotation.x = hand.visible ? -.55 - (hand.rotation.x - .35) * .55 : b;
+  armL.rotation.x = torche.visible || lanterneG.visible ? -.65 : -b;
+  for(const [bras, m] of [[armR, hand], [armL, torche], [armL, lanterneG]]){
+    if(!m.visible) continue;
+    bras.updateMatrix(); m.position.copy(bout.set(0, -heros.longBras, .01).applyMatrix4(bras.matrix));
+  }
+}
 player.scale.setScalar(P / 1.12);   // le modèle fait 1,12 de haut : le personnage mesure 1 P
 scene.add(player);
 
@@ -178,6 +190,7 @@ function bouger(dt){
   body.rotation.x = a;
   body.position.set(0, e.roule ? .45 - .45 * Math.cos(a) + Math.sin(u * Math.PI) * .25 : 0, e.roule ? -.45 * Math.sin(a) : 0);
   legL.rotation.x = legR.rotation.x = e.roule ? -.9 : 0;
+  placerMains(0); if(e.roule) armL.rotation.x = armR.rotation.x = -1.3;
   if(e.t >= e.T){ elanEnCours = null; body.rotation.x = 0; body.position.set(0, 0, 0); }
 }
 /* Ralenti un moment (étape 1.13, morceau 6 : la sangsue géante s'accroche) */
@@ -228,5 +241,6 @@ export function updatePlayer(dt){
   const sw = mag > 0 ? Math.sin(walkT) : 0;
   body.position.y = mag > 0 ? Math.abs(sw) * .05 : 0;
   legL.rotation.x = sw * .6; legR.rotation.x = -sw * .6;
+  placerMains(sw * .45);
   return pousseJoy;
 }

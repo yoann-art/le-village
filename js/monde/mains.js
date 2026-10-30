@@ -21,6 +21,7 @@ import { OUTILS } from "../donnees.js";
 import { renderer, camera, hemi as hemiIle, sun } from "./scene.js";
 import { hemiDedans, lampeDedans } from "./interieurs.js";
 import { outilTenu, angleMain, mainGauche, allure } from "./personnage.js";
+import { COULEURS_HEROS } from "./heros.js";
 
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(50, 1, .01, 5);
@@ -30,7 +31,8 @@ soleil.position.set(-.4, 1, .7);
 const feu = new THREE.PointLight(0xFFB060, 0, 1.4, 1.4);    // la lueur de la torche sur les mains
 scene.add(ciel, soleil, soleil.target, feu);
 
-const PEAU = 0xF2C9A0, MANCHE = 0xE0654F, REVERS = 0xF4EFE6;
+/* la peau et la manche verte du héros (heros.js), le revers un peu plus sombre */
+const PEAU = COULEURS_HEROS.peau, MANCHE = COULEURS_HEROS.tunique, REVERS = COULEURS_HEROS.revers;
 /* Un bras : g se place à l'écran ; p, le poignet, tourne comme la main du personnage (son devant regarde droit devant) */
 function bras(cote){
   const g = new THREE.Group(), p = new THREE.Group();

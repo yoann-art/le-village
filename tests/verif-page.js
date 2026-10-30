@@ -623,7 +623,7 @@ export async function verifier(){
      le groseillier plein l'été 36 700, le Grand Paon 10 400, la chouette 6 200). Les dépasser se décide avec Yo, en le mesurant
      sur son téléphone (⏱️ 2 min), avant de relever la limite ici */
   await etape("Le budget de la fluidité : aucun bâtiment, objet de l'île, insecte ou oiseau trop lourd pour le téléphone de Yo", async () => {
-    const BUDGET = {batiment: 45000, ile: 40000, insecte: 12000, oiseau: 8000, dessinsIle: 8};
+    const BUDGET = {batiment: 45000, ile: 40000, insecte: 12000, oiseau: 8000, dessinsIle: 8, personnage: 25000};   // le personnage : 25 000, accord de Yo (30 octobre 2026)
     const tri = o => { let t = 0, d = 0; o.traverse(m => { if(m.isMesh && m.geometry && !(m.parent && m.parent.isLOD && m !== m.parent.levels[0].object)){ const g = m.geometry; t += (g.index ? g.index.count : g.attributes.position.count) / 3; d++; } }); return {t: Math.round(t), d}; };
     const trop = [], pire = {};
     const noter = (sorte, nom, v) => { if(!pire[sorte] || v.t > pire[sorte].t) pire[sorte] = {nom, t: v.t};
@@ -633,6 +633,8 @@ export async function verifier(){
     for(const k of Object.keys(B)) for(const l of [1, 2, 3]) noter("batiment", `${k} niveau ${l}`, tri(makeBuilding(k, l)));
     for(const [k, f] of Object.entries(MODELES_INSECTES)) for(let n = 0; n < 6; n++) noter("insecte", k, tri(f.fabrique({saison: "ete", tronc: n % 2 === 1})));
     for(const [k, f] of Object.entries(MODELES_OISEAUX)) for(let n = 0; n < 4; n++) noter("oiseau", k, tri(f.fabrique({saison: "ete"})));
+    const {fabriqueHeros} = await import("../js/monde/heros.js");
+    for(const sexe of ["garcon", "fille"]){ const h = fabriqueHeros({sexe}), g = new THREE.Group(); g.add(h.corps, ...h.bras, ...h.jambes); noter("personnage", sexe, tri(g)); }
     try {
       for(const s of ["printemps", "ete", "automne", "hiver"]){
         forcerSaison(s); rafraichirSaison();
@@ -641,6 +643,36 @@ export async function verifier(){
     } finally { forcerSaison(null); rafraichirSaison(); }
     if(trop.length) throw new Error(`trop lourd pour le téléphone de Yo : ${[...new Set(trop)].slice(0, 6).join(" ; ")}`);
     return Object.entries(pire).map(([s, p]) => `${s} le plus lourd : ${p.nom} ${p.t} triangles`).join(" ; ");
+  });
+  /* Le personnage d'après les images de Yo (30 octobre 2026) : la fille et le garçon se fabriquent, en 5 dessins ; en marchant, bras
+     et jambes se balancent ; un outil en main, la main suit le bout du bras droit ; habiller() change de personnage */
+  await etape("Le personnage : la fille et le garçon, les bras et les jambes qui bougent, l'outil au bout du bras", async () => {
+    const P = await import("../js/monde/personnage.js"), {fabriqueHeros} = await import("../js/monde/heros.js");
+    const dessins = {};
+    for(const sexe of ["garcon", "fille"]){
+      const h = fabriqueHeros({sexe}), g = new THREE.Group(); g.add(h.corps, ...h.bras, ...h.jambes);
+      let d = 0; g.traverse(m => { if(m.isMesh) d++; }); dessins[sexe] = d;
+      if(d !== 5) throw new Error(`${sexe} : ${d} dessins au lieu de 5`);
+    }
+    const avant = P.player.position.clone();
+    try {
+      P.habiller({sexe: "fille"});
+      const corps = () => { const o = []; P.player.traverse(m => { if(m.isMesh && m.material && m.material.vertexColors) o.push(m); }); return o; };
+      if(corps().length < 5) throw new Error("habiller ne met pas la fille");
+      const angles = new Set();
+      jv.x = 0; jv.z = -1;
+      for(let i = 0; i < 12; i++){ updatePlayer(1 / 30); const b = []; P.player.traverse(m => { if(m.isGroup && m.parent && m.rotation.x) b.push(m.rotation.x.toFixed(2)); }); angles.add(b.join()); }
+      jv.x = 0; jv.z = 0; updatePlayer(1 / 30);
+      if(angles.size < 4) throw new Error("en marchant, les bras et les jambes ne se balancent pas");
+      P.holdTool("hachePierre"); updatePlayer(1 / 30);
+      const main = new THREE.Vector3(), bout = new THREE.Vector3(); let bras = null;
+      P.player.traverse(m => { if(m.isGroup && m.children.some(c => c.isMesh) && m.position.x < -.05 && m.position.y > .5) bras = m; });
+      if(!bras) throw new Error("le bras droit est introuvable");
+      bras.updateMatrix(); bout.set(0, -.23, .01).applyMatrix4(bras.matrix);
+      P.player.traverse(m => { if(m.isGroup && m.children.length && !m.children.some(c => c.isMesh && c.material && c.material.vertexColors) && m.visible && m.position.x < -.05 && m.position.y < .6 && m.position.y > .2) main.copy(m.position); });
+      if(main.distanceTo(bout) > .02) throw new Error(`l'outil n'est pas au bout du bras droit (${main.distanceTo(bout).toFixed(3)})`);
+      return `5 dessins chacun ; ${angles.size} poses en 12 images de marche ; l'outil au bout du bras`;
+    } finally { P.holdTool(null); P.habiller(state.perso || {}); P.placePlayer(avant.x, avant.z, 0, 1); }
   });
   await etape("La session de mesure (mission de Yo, 30 octobre 2026) : ⏱️, les P95 à P99,9, les seuils, la carte graphique, la mémoire, minute par minute ; le rapport s'ouvre à la fin", async () => {
     try {
