@@ -11,7 +11,7 @@ import { $ } from "./outils.js";
 import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { sizeOf, porteDe, SENS, mineOuverte } from "./regles.js";
-import { scene, halfViewWidth } from "./monde/scene.js";
+import { scene, halfViewWidth, renderer, camera } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
 import { meubleAt, hasPlan } from "./monde/meubles.js";
@@ -54,6 +54,10 @@ function fade(change){
   setTimeout(() => {
     change();
     jump = true;
+    /* La première fois dans un lieu (la mine, la forêt, une pièce…), ses programmes de dessin sont compilés ici, l'écran encore
+       tout noir (mission de Yo, 30 octobre 2026 : les petits arrêts) : avant, la première image du lieu figeait le jeu pendant
+       que le noir s'effaçait (240 à 440 ms sur le PC) ; ensuite, rien à faire (ils sont gardés) */
+    if(inside) try { renderer.compile(interior, camera); } catch(e){ console.error(e); }
     fondu.classList.remove("on");
     setTimeout(() => { busy = false; }, 250);
   }, 260);

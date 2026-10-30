@@ -222,6 +222,19 @@ function ajouter(k, pl){
   return b;
 }
 function retirer(b){ groupe.remove(b.mesh); betes.splice(betes.indexOf(b), 1); }
+/* Préparer les insectes au chargement (mission de Yo, 30 octobre 2026 : les petits arrêts) : en jouant, la première
+   apparition d'un insecte envoyait ses formes à la carte graphique et compilait le programme de son fondu (jusqu'à 93 ms
+   d'arrêt). Chaque espèce est faite ici quelques fois (mâles et femelles, sur un tronc ou non), comme à son apparition (ses
+   matières copiées, transparentes), pour le dessin de préparation (scene.js, preparer) ; ses formes restent ensuite gardées */
+export function echantillonsInsectes(){
+  const g = new THREE.Group();
+  for(const k of Object.keys(INSECTES)) if(!INSECTES[k].reserve) for(let n = 0; n < 6; n++){
+    const m = modele(k, {tronc: n % 2 === 1});
+    m.traverse(o => { if(o.material){ o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .5; } });
+    g.add(m);
+  }
+  return g;
+}
 /* Une nouvelle bête : une rareté d'abord (comme les poissons), puis une espèce qui a une place ici */
 function pondre(){
   const ks = insectesPresents(ici);

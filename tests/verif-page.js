@@ -674,6 +674,14 @@ export async function verifier(){
     const nen = nenupharGeo("ete", 0), cn = nen.attributes.color;
     let blancs = 0; for(let i = 0; i < cn.count; i++) if(cn.getX(i) > .95 && cn.getY(i) > .95 && cn.getZ(i) > .95) blancs++;
     if(blancs > cn.count * .2) throw new Error(`les feuilles de nénuphar ont perdu leurs couleurs (${blancs} sommets blancs sur ${cn.count})`);
+    /* les insectes et les oiseaux préparés au chargement (v2.1.109) : en faire apparaître de chaque espèce, en fondu, ne
+       compile plus aucun programme de dessin */
+    const {echantillonsInsectes} = await import("../js/insectes.js"), {echantillonsOiseaux} = await import("../js/oiseaux.js");
+    renderer.compile(scene, camera);                    // d'abord tout le reste de la scène (même ce qui ne se dessine jamais) : seules les bêtes comptent
+    const betes = new THREE.Group(), p0 = renderer.info.programs.length;
+    betes.add(echantillonsInsectes(), echantillonsOiseaux()); scene.add(betes);
+    try { renderer.compile(scene, camera); } finally { scene.remove(betes); }
+    if(renderer.info.programs.length !== p0) throw new Error(`faire apparaître les bêtes compile encore ${renderer.info.programs.length - p0} programmes`);
     return `${tests} objets triés comme avant ; le thym et ${fleur} d'un seul morceau ; ${renderer.info.programs.length} programmes gardés`;
   });
   await etape("Les petits objets visibles dès qu'ils sont à l'écran (correction de Yo, 16 octobre 2026) : en avançant vers un groupe de fleurs, d'herbes, de pierres, vu de dessus et à la première personne", async () => {

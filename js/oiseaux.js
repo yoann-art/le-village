@@ -192,6 +192,17 @@ function ajouter(k, pl){
   return o;
 }
 function retirer(o){ groupe.remove(o.mesh); oiseaux.splice(oiseaux.indexOf(o), 1); }
+/* Préparer les oiseaux au chargement (comme les insectes, insectes.js : echantillonsInsectes) : chaque espèce quelques fois
+   (mâles et femelles), ses matières copiées et transparentes comme à son apparition, pour le dessin de préparation */
+export function echantillonsOiseaux(){
+  const g = new THREE.Group();
+  for(const k of Object.keys(OISEAUX)) for(let n = 0; n < 4; n++){
+    const m = modele(k);
+    m.traverse(o => { if(o.material){ o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .5; } });
+    g.add(m);
+  }
+  return g;
+}
 let chant = -1e9;
 function pondre(){
   const ks = oiseauxAPondre(ici);
