@@ -53,6 +53,11 @@ Yo, l'auteur, n'est pas développeur : il travaille en français, pas à pas, et
 - **Jamais de tas de terre sous une fleur**, même si l'image en montre un.
 - Fluide sur un téléphone Android milieu de gamme (celui de Yo : Adreno 810) : mesurer triangles et dessins, un modèle
   léger au loin.
+- **Surveiller la fluidité sans que Yo le redise** (sa demande du 30 octobre 2026) : à chaque nouveau modèle, mesurer ses
+  triangles, sommets et dessins, vérifier qu'il est préparé au chargement (rien de compilé ni d'envoyé en jouant) et lui
+  dire ce qui pèse ; toutes les 5 versions environ, lui demander une session ⏱️ 2 min et la comparer à la dernière
+  (référence v2.1.109 : 67 images/s, 6,9 % au-delà de 22,2 ms). L'étape « Le budget de la fluidité » de la vérification
+  bloque un modèle trop lourd : relever une limite seulement avec l'accord de Yo.
 - Une nouvelle partie n'est jamais bloquée (première hache, pioche, bois, pierre, or) ; aucune limite qui bloque une
   session ; le danger reste hors du village ; pas de mini-jeux.
 - Ne jamais contredire la bible, le Grand Carnet ou une décision de Yo sans lui en parler d'abord.

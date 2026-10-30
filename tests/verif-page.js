@@ -618,6 +618,30 @@ export async function verifier(){
       return `${m.ips} images/s, ${m.triangles} triangles, ${m.dessins} dessins ; le rapport (${r.split("\n").length} lignes)`;
     } finally { allumerCompteur(false); }
   });
+  /* Le budget de la fluidité (Yo, 30 octobre 2026 : surveiller régulièrement, sans avoir à le redire) : un modèle trop lourd
+     bloque l'envoi ; les limites sont un peu au-dessus des plus lourds d'aujourd'hui (la Scierie niveau 3 37 800 triangles,
+     le groseillier plein l'été 36 700, le Grand Paon 10 400, la chouette 6 200). Les dépasser se décide avec Yo, en le mesurant
+     sur son téléphone (⏱️ 2 min), avant de relever la limite ici */
+  await etape("Le budget de la fluidité : aucun bâtiment, objet de l'île, insecte ou oiseau trop lourd pour le téléphone de Yo", async () => {
+    const BUDGET = {batiment: 45000, ile: 40000, insecte: 12000, oiseau: 8000, dessinsIle: 8};
+    const tri = o => { let t = 0, d = 0; o.traverse(m => { if(m.isMesh && m.geometry && !(m.parent && m.parent.isLOD && m !== m.parent.levels[0].object)){ const g = m.geometry; t += (g.index ? g.index.count : g.attributes.position.count) / 3; d++; } }); return {t: Math.round(t), d}; };
+    const trop = [], pire = {};
+    const noter = (sorte, nom, v) => { if(!pire[sorte] || v.t > pire[sorte].t) pire[sorte] = {nom, t: v.t};
+      if(v.t > BUDGET[sorte]) trop.push(`${nom} : ${v.t} triangles (limite ${BUDGET[sorte]})`);
+      if(sorte === "ile" && v.d > BUDGET.dessinsIle) trop.push(`${nom} : ${v.d} dessins (limite ${BUDGET.dessinsIle})`); };
+    const {makeBuilding} = await import("../js/monde/batiments.js"), {MODELES_INSECTES} = await import("../js/monde/insectes3d.js"), {MODELES_OISEAUX} = await import("../js/monde/oiseaux3d.js");
+    for(const k of Object.keys(B)) for(const l of [1, 2, 3]) noter("batiment", `${k} niveau ${l}`, tri(makeBuilding(k, l)));
+    for(const [k, f] of Object.entries(MODELES_INSECTES)) for(let n = 0; n < 6; n++) noter("insecte", k, tri(f.fabrique({saison: "ete", tronc: n % 2 === 1})));
+    for(const [k, f] of Object.entries(MODELES_OISEAUX)) for(let n = 0; n < 4; n++) noter("oiseau", k, tri(f.fabrique({saison: "ete"})));
+    try {
+      for(const s of ["printemps", "ete", "automne", "hiver"]){
+        forcerSaison(s); rafraichirSaison();
+        for(let i = 0; i < N * N; i++){ const g = objMesh(i); if(g) noter("ile", `${map.obj[i]} (${s})`, tri(g)); }
+      }
+    } finally { forcerSaison(null); rafraichirSaison(); }
+    if(trop.length) throw new Error(`trop lourd pour le téléphone de Yo : ${[...new Set(trop)].slice(0, 6).join(" ; ")}`);
+    return Object.entries(pire).map(([s, p]) => `${s} le plus lourd : ${p.nom} ${p.t} triangles`).join(" ; ");
+  });
   await etape("La session de mesure (mission de Yo, 30 octobre 2026) : ⏱️, les P95 à P99,9, les seuils, la carte graphique, la mémoire, minute par minute ; le rapport s'ouvre à la fin", async () => {
     try {
       allumerCompteur(true);

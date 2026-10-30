@@ -53,8 +53,10 @@
   faite (v2.1.107 : le compteur amélioré, ⏱️ 2 min / 5 min, quantiles, carte graphique, mémoire) ; étape 2 faite (v2.1.108 :
   chaque sommet gardé une seule fois ; le fond de la mer essayé et abandonné, sans gain ; mesuré par Yo : 11,9 % d'images en
   retard au lieu de 20,9 %) ; étape 4 faite (v2.1.109 : les bêtes préparées au chargement, les programmes d'un lieu compilés
-  sous le noir du fondu) ; restent, chacune avec l'accord de Yo : 3. la place des objets immobiles calculée une fois,
-  5. moins d'objets jetés en mémoire (détail : DEVELOPMENT_HISTORY.md, v2.1.107 à v2.1.109).
+  sous le noir du fondu). Arrêtée là par Yo (mesuré chez lui en v2.1.109 : 67 images/s, 6,9 % au-delà de 22,2 ms, contre
+  56 et 20,9 % au départ) ; l'étape 5 écartée (la part du jeu dans la mémoire jetée est faible), l'étape 3 en réserve ;
+  à suivre : un blocage de 2,2 s juste après le chargement, vu une fois chez Yo, pas sur le PC (piste dans
+  DEVELOPMENT_HISTORY.md). La surveillance : la règle de CLAUDE.md et l'étape « Le budget de la fluidité » de la vérification.
 - La fluidité sur le téléphone de Yo (Adreno 810) : mesurée bonne en v2.1.18 ; depuis, beaucoup de modèles détaillés
   (groseillier plein l'été environ 36 000 triangles, fleurs 10 000 à 21 000, Scierie niveau 2 environ 30 000) : le
   compteur de performance (toucher le numéro de version) le dira.
