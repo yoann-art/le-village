@@ -80,8 +80,8 @@ function tete(sexe){
     m.push({geo: MOYENNE, m: M(s * .202, .858, -.008, .009, .033, .024, 0, s * .55, s * -.12), c: C.oreille});
     m.push({geo: MOYENNE, m: M(s * .192, .838, .008, .012, .012, .01), c: C.peau});                     // le petit rebord devant le creux
   }
-  /* le nez, une petite boule ronde, un peu plus rose */
-  m.push({geo: MOYENNE, m: surVisage(0, -.42, .012, .027, .022, .028), c: C.nez});
+  /* le nez, un petit bouton rond, un peu plus rose, qui ne dépasse presque pas (d'en haut, il ne pend pas comme un bec) */
+  m.push({geo: MOYENNE, m: surVisage(0, -.38, .004, .026, .021, .014), c: C.nez});
   /* la bouche : un sourire fin aux coins relevés, la lèvre du bas à peine marquée */
   m.push({geo: arc(.042, .0048, 1.55), m: surVisage(0, -.58, .001, 1, .95, .6, -Math.PI / 2 - .775), c: C.levres});
   /* les yeux : le blanc, l'iris brun plus clair en bas, la pupille, deux reflets, l'épais trait de la paupière, le pli de la
@@ -157,7 +157,10 @@ const nB = V(0, 0, 0);
 const enBoule = (x, y, z, n0) => nB.set(x - CALOTTE.c.x, (y - CALOTTE.c.y) * .8, z - CALOTTE.c.z).normalize().multiplyScalar(.45).addScaledVector(n0, .55).normalize();
 function cheveux(sexe){
   const h = hasard(sexe === "fille" ? 7 : 3), m = [], o = CALOTTE.c;
-  const ajoute = (pts, r, plat = .55) => m.push({geo: meche(pts, r, o, plat), m: new THREE.Matrix4(), c: C.cheveux, ombre: ombreCheveux, normale: enBoule});
+  const ajoute = (pts, r, plat = .55, centre = o) => m.push({geo: meche(pts, r, centre, plat), m: new THREE.Matrix4(), c: C.cheveux, ombre: ombreCheveux, normale: enBoule});
+  /* la frange, à plat sur le front : son côté plat regarde devant (vu de face, elle couvre le front ; tournée vers le haut,
+     comme sa racine, elle ne montrait que sa tranche) */
+  const FRONT = V(0, .95, -.25);
   /* Une mèche qui suit le crâne : de (t0, f0) à (t1, f1), en s'écartant jusqu'à k1 ; bout : la pointe qui rebique (dt, df, dk) */
   const flot = (t0, f0, t1, f1, k1, r, bout, plat) => {
     const pts = [];
@@ -168,13 +171,13 @@ function cheveux(sexe){
   /* la calotte : une boule posée sur la tête ; sous la naissance des cheveux (haute sur le front, plus basse sur les tempes et
      la nuque), elle rentre dans la tête et laisse voir le front et le visage */
   const cal = new THREE.SphereGeometry(1, 24, 18), P = cal.attributes.position;
-  /* la fille : la calotte descend sous sa frange (le front ne se voit pas entre ses mèches) */
-  const f0 = sexe === "fille" ? .94 : .99;
+  /* la calotte descend sous la frange (le front ne se voit pas entre les mèches) */
+  const f0 = sexe === "fille" ? .94 : .955;
   const naissance = a => a < .3 ? f0 - (f0 - .97) * a / .3 : a < .5 ? .97 - .12 * (a - .3) / .2 : a < .62 ? .85 - .06 * (a - .5) / .12 : .79 - .03 * (a - .62) / .38;
   for(let i = 0; i < P.count; i++){
     const x = P.getX(i), y = P.getY(i), z = P.getZ(i), a = Math.abs(Math.atan2(x, z)) / Math.PI;
     if(o.y + y * CALOTTE.r.y < naissance(a)) P.setXYZ(i, x * .8, y * .8, z * .8);
-    else if(sexe === "fille" && z > 0){ const k = 1 + .08 * z; P.setXYZ(i, x * k, y * k, z * k); }      // le dessous de sa frange, bombé sur le front
+    else if(z > 0){ const k = 1 + (sexe === "fille" ? .13 : .07) * z; P.setXYZ(i, x * k, y * k, z * k); }      // le dessous de la frange, bombé sur le front
   }
   cal.computeVertexNormals();
   m.push({geo: cal, m: M(o.x, o.y, o.z, CALOTTE.r.x, CALOTTE.r.y, CALOTTE.r.z), c: C.cheveux, ombre: (x, y, z) => ombreCheveux(x, y, z) * .9, normale: enBoule});
@@ -185,11 +188,15 @@ function cheveux(sexe){
       const t = raie + (i < 6 ? -1 : 1) * (.15 + (i % 6) * .42) + (h() - .5) * .1;
       flot(raie + (t - raie) * .15, 1.4, t, Math.abs(t) < 1.1 ? .95 : .55, 1.1, .08, null, .5);      // devant, elles s'arrêtent où la frange commence
     }
-    /* la frange : des mèches arrondies et pointues qui tombent droit sur le front jusqu'au-dessus des sourcils, un peu écartées
-       de la raie, plus longues sur les côtés */
+    /* la frange, posée sur la peau du front (comme les sourcils ; posée sur la calotte, elle rentrait dans le front et laissait
+       voir la peau entre ses mèches) : des mèches serrées qui se recouvrent et tombent droit jusqu'au-dessus des sourcils, un peu
+       écartées de la raie, plus longues sur les côtés, la pointe qui s'arrondit vers le visage */
+    const xr = Math.sin(raie);
     for(let i = 0; i < 10; i++){
-      const t = -.86 + i * .19 + (h() - .5) * .05, cote = t > raie ? 1 : -1, bord = Math.min(1, Math.abs(t - raie) / .7);
-      flot(t * .85, 1.25, t, .36 - bord * .2 + (h() - .5) * .06, 1.1, .085, [cote * .02, -.08, -.02], .6);
+      const x0 = -.72 + i * .16 + (h() - .5) * .04, cote = x0 > xr ? 1 : -1, bord = Math.min(1, Math.abs(x0) / .72);
+      const fin = .34 - bord * bord * .3 + (h() - .5) * .05, dx = cote * .05 + x0 * .08;
+      const pts = [[x0 * .9, 1], [x0 + dx * .4, .8], [x0 + dx * .8, (.6 + fin) / 2 + .04], [x0 + dx - x0 * .06, fin]];
+      ajoute(surFace(pts, .02), .08 + h() * .01, .45, FRONT);
     }
     /* les longues mèches ondulées : elles suivent le crâne derrière les oreilles, puis tombent jusqu'aux épaules en grosses
        vagues qui s'écartent un peu, et finissent en boucle vers l'extérieur */
@@ -208,36 +215,39 @@ function cheveux(sexe){
     }
   } else {
     /* le garçon : des touffes en bataille, comme de la pâte à modeler, posées partout sur le crâne ; chacune part de sa racine
-       et s'éloigne de l'épi (en haut, derrière), tirée vers le bas par son poids ; la frange est balayée vers sa droite (-x),
-       une mèche vers sa gauche ; les pointes se soulèvent */
-    const epi = V(0, .62, -.78).normalize(), bas = V(0, -1, 0), droite = V(-1, 0, 0), n = V(0, 0, 0), d = V(0, 0, 0), q = new THREE.Quaternion();
+       et s'éloigne de l'épi (en haut, derrière), tirée vers le bas par son poids ; les pointes se soulèvent */
+    const epi = V(0, .62, -.78).normalize(), bas = V(0, -1, 0), n = V(0, 0, 0), d = V(0, 0, 0), q = new THREE.Quaternion();
     /* sous le milieu de la tête, les joues l'élargissent (bomber) : les mèches s'écartent d'autant, sans rentrer dans la peau */
     const surCrane = (v, k) => { const l = v.y < 0 && v.z > .2 ? 1 - .2 * v.y * Math.min(1, (v.z - .2) / .4) : 1;
       return V(o.x + CALOTTE.r.x * v.x * k * l, o.y + CALOTTE.r.y * v.y * k, o.z + CALOTTE.r.z * v.z * k * l); };
     const tangent = (v, a) => v.clone().addScaledVector(a, -a.dot(v));
     /* des racines bien réparties (une spirale sur la boule), seulement au-dessus de la naissance des cheveux, le visage et les
-       oreilles dégagés ; et un rang serré au-dessus du front, pour la frange */
+       oreilles dégagés (le front est à la frange) */
     const N = 64, racines = [];
     for(let i = 0; i < N; i++){
       const y = 1 - (i + .5) / N * 1.55, rr = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
       const v = V(Math.sin(a) * rr, y, Math.cos(a) * rr), t = Math.abs(Math.atan2(v.x, v.z)) / Math.PI, yy = o.y + CALOTTE.r.y * v.y;
       if(yy < naissance(t) + (t < .3 ? .035 : t < .5 ? .1 : .01) || (t < .72 && yy < .9)) continue;
-      if(!(v.z > .3 && v.y > .55 && Math.abs(v.x) < .6)) racines.push([v, false]);
+      if(!(v.z > .3 && v.y > .55 && Math.abs(v.x) < .6)) racines.push(v);
     }
-    for(let i = 0; i < 7; i++){ const x = -.6 + i * .2, y = .8 - Math.abs(x) * .2; racines.push([V(x, y, Math.sqrt(1 - x * x - y * y)), true]); }
-    for(const [v, devant] of racines){
+    for(const v of racines){
       n.copy(v);
-      d.copy(tangent(n.clone().sub(epi), n)).normalize().multiplyScalar(devant ? .4 : 1);
-      d.add(tangent(bas, n).multiplyScalar(devant ? 1.1 : .6 + .4 * Math.max(0, -n.z)));
-      if(devant) d.add(tangent(droite, n).multiplyScalar(n.x > .3 ? -.5 : .6));
+      d.copy(tangent(n.clone().sub(epi), n)).normalize();
+      d.add(tangent(bas, n).multiplyScalar(.6 + .4 * Math.max(0, -n.z)));
       const t = Math.abs(Math.atan2(n.x, n.z)) / Math.PI;
       const oreille = t > .38 && t < .66 && n.y < .55;                                     // au-dessus de l'oreille : courtes, vers l'arrière
       if(oreille) d.add(tangent(V(0, .3, -1), n).multiplyScalar(2));
-      d.normalize().applyQuaternion(q.setFromAxisAngle(n, (h() - .5) * (devant ? .4 : .9)));
-      const cote = !devant && t > .2 && t < .78 && n.y < .62;                                // sur les côtés : plus courtes, elles s'arrêtent au-dessus des oreilles
-      const L = (devant ? .72 : oreille ? .3 : cote ? (n.y < .1 ? .18 : .32) : .55) + h() * .15, kb = devant ? 1.12 + h() * .06 : cote ? 1.3 + h() * .1 : 1.24 + h() * .12 + (n.y > .6 ? .06 : 0);
+      d.normalize().applyQuaternion(q.setFromAxisAngle(n, (h() - .5) * .9));
+      const cote = t > .2 && t < .78 && n.y < .62;                                // sur les côtés : plus courtes, elles s'arrêtent au-dessus des oreilles
+      const L = (oreille ? .3 : cote ? (n.y < .1 ? .18 : .32) : .55) + h() * .15, kb = cote ? 1.3 + h() * .1 : 1.24 + h() * .12 + (n.y > .6 ? .06 : 0);
       const pts = [0, .35, .7, 1].map(u => surCrane(n.clone().addScaledVector(d, L * u).normalize(), .99 + (kb - .99) * Math.pow(u, 1.2)));
       ajoute(pts, .085 + h() * .025, .62);
+    }
+    /* la frange, posée sur la peau du front (comme les sourcils) : de grosses mèches qui partent du haut de la tête et se
+       recouvrent, balayées vers sa droite (-x) jusqu'au-dessus des sourcils, la plus longue au milieu ; une mèche vers sa gauche */
+    for(const [x0, fin, dx] of [[.52, .56, -.1], [.32, .44, -.18], [.12, .27, -.24], [-.08, .4, -.2], [-.28, .5, -.16], [-.48, .6, -.1], [.64, .58, .1]]){
+      const pts = [[x0, .95], [x0 + dx * .3, .78], [x0 + dx * .7, .6], [x0 + dx, fin]].map(([lx, ly]) => [lx, ly + (h() - .5) * .03]);
+      ajoute(surFace(pts, .022), .07 + h() * .012, .45, FRONT);
     }
   }
   return m;
