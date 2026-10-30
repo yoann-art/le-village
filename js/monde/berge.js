@@ -165,14 +165,13 @@ function fusionnerCouleurs(M){
     return {...p, couleur: undefined, geo: p.geo, _c: C, _i: I};
   });
   const g = fusionner(morceaux.map(p => p._c ? {...p, couleur: null} : p));
-  /* reprendre les couleurs des feuilles (fusionner les a mises en blanc) */
+  /* reprendre les couleurs des feuilles (fusionner les a mises en blanc) ; fusionner garde chaque sommet une seule fois,
+     dans l'ordre de la forme de départ */
   let o = 0;
   const col = g.attributes.color;
   for(const p of morceaux){
-    const n = p.geo.index ? p.geo.index.count : p.geo.attributes.position.count;
-    if(p._c){
-      for(let i = 0; i < n; i++){ const v = p._i ? p._i.getX(i) : i; col.setXYZ(o + i, p._c.getX(v), p._c.getY(v), p._c.getZ(v)); }
-    }
+    const n = p.geo.attributes.position.count;
+    if(p._c) for(let i = 0; i < n; i++) col.setXYZ(o + i, p._c.getX(i), p._c.getY(i), p._c.getZ(i));
     o += n;
   }
   col.needsUpdate = true;

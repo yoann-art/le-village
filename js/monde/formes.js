@@ -56,14 +56,22 @@ export const roof = (hex, w, h, y, x=0, z=0) => { const m = part(G.cone4, hex, w
    plus sombre, le dessus plus clair) ; une forme peut aussi porter sa propre teinte par sommet (l'attribut « teinte » :
    la nervure d'une feuille, les sillons d'une écorce) ; couleur(x, y, z), quand il est là, donne la couleur de chaque sommet
    (une groseille : rouge sombre en haut, orangée en bas, comme si la lumière la traversait) */
+/* Chaque sommet n'est gardé qu'une fois (mission de Yo, 30 octobre 2026 : la fluidité) : une forme de départ (une boule, une
+   feuille…) partage ses sommets entre ses triangles ; avant, chacun était recopié pour chaque triangle qui le touche (3,9 fois
+   en moyenne) et la carte graphique les calculait autant de fois, vent compris. Les triangles se suivent dans le même ordre,
+   avec exactement les mêmes sommets : l'image est la même */
 const cTmp = new THREE.Color(), n0 = new THREE.Vector3();
 export function fusionner(morceaux){
-  const prets = morceaux.map(p => { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone(); g.applyMatrix4(p.m); return [g, p]; });
+  const prets = morceaux.map(p => { const g = p.geo.clone(); g.applyMatrix4(p.m); return [g, p]; });
   const total = prets.reduce((n, [g]) => n + g.attributes.position.count, 0);
+  const nIdx = prets.reduce((n, [g]) => n + (g.index ? g.index.count : g.attributes.position.count), 0);
   const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), col = new Float32Array(total * 3);
-  let o = 0;
+  const idx = total > 65535 ? new Uint32Array(nIdx) : new Uint16Array(nIdx);
+  let o = 0, k = 0;
   for(const [g, p] of prets){
-    const P = g.attributes.position, Nn = g.attributes.normal, T = g.attributes.teinte;
+    const P = g.attributes.position, Nn = g.attributes.normal, T = g.attributes.teinte, I = g.index;
+    if(I) for(let j = 0; j < I.count; j++) idx[k++] = o + I.getX(j);
+    else for(let j = 0; j < P.count; j++) idx[k++] = o + j;
     cTmp.set(p.c);
     for(let i = 0; i < P.count; i++, o++){
       const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
@@ -80,6 +88,7 @@ export function fusionner(morceaux){
   r.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   r.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
   r.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  r.setIndex(new THREE.BufferAttribute(idx, 1));
   r.computeBoundingSphere();
   return r;
 }

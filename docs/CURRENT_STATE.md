@@ -50,9 +50,10 @@
 ## Limites et points à surveiller
 
 - L'optimisation de la fluidité (mission de Yo, 30 octobre 2026 ; point de retour `avant-optimisation-v2.1.106`) : audit fait, étape 1
-  faite (v2.1.107 : le compteur amélioré, ⏱️ 2 min / 5 min, quantiles, carte graphique, mémoire) ; restent, chacune avec l'accord de Yo :
-  2. le fond de la mer dessiné en dernier, 3. la place des objets immobiles calculée une fois, 4. les bêtes préparées au
-  chargement, 5. moins d'objets jetés en mémoire (détail : DEVELOPMENT_HISTORY.md, v2.1.107).
+  faite (v2.1.107 : le compteur amélioré, ⏱️ 2 min / 5 min, quantiles, carte graphique, mémoire) ; étape 2 faite (v2.1.108 :
+  chaque sommet gardé une seule fois ; le fond de la mer essayé et abandonné, sans gain) ; restent, chacune avec l'accord de
+  Yo : 3. la place des objets immobiles calculée une fois, 4. les bêtes préparées au chargement, 5. moins d'objets jetés en
+  mémoire (détail : DEVELOPMENT_HISTORY.md, v2.1.107 et v2.1.108).
 - La fluidité sur le téléphone de Yo (Adreno 810) : mesurée bonne en v2.1.18 ; depuis, beaucoup de modèles détaillés
   (groseillier plein l'été environ 36 000 triangles, fleurs 10 000 à 21 000, Scierie niveau 2 environ 30 000) : le
   compteur de performance (toucher le numéro de version) le dira.

@@ -308,7 +308,7 @@ export async function verifier(){
     let mpn = null; if(pn >= 0 && objMesh(pn)) objMesh(pn).traverse(o => { if(o.userData.perceNeige) mpn = o.userData.perceNeige; });
     if(!mpn) throw new Error("le perce-neige n'a pas son modèle");
     const { perceNeigeModele } = await import("/js/monde/perceNeige.js");
-    const triangles = g => { let n = 0; g.traverse(o => { if(o.isMesh) n += o.geometry.attributes.position.count / 3; }); return n; };
+    const triangles = g => { let n = 0; g.traverse(o => { if(o.isMesh) n += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; }); return n; };
     if(!(triangles(perceNeigeModele("ete", 1, .3)) < triangles(perceNeigeModele("hiver", 2, .3)) / 3)) throw new Error("le perce-neige ne dort pas sous terre l'été");
     /* la violette (Yo, 25 octobre 2026) : son modèle d'après l'image ; ses feuilles en coeur restent toute l'année */
     const vi = map.obj.indexOf("violette");
@@ -665,6 +665,15 @@ export async function verifier(){
     if(jetables) throw new Error(`${jetables} programmes de dessin pourraient être jetés`);
     if(MAT_OMBRE.visible) throw new Error("les boules d'ombre des arbres se dessinent à l'image");
     if(!rapportPerf().includes("préparé au chargement")) throw new Error("le rapport ne dit pas la préparation de la carte graphique");
+    /* chaque sommet gardé une seule fois (v2.1.108) : les formes rassemblées ont un index, les mêmes triangles ; les feuilles
+       de nénuphar gardent leurs couleurs (vertes, pas blanches) */
+    const {fusionner} = await import("../js/monde/formes.js"), {nenupharGeo} = await import("../js/monde/berge.js");
+    const sph = new THREE.SphereGeometry(1, 8, 6), f = fusionner([{geo: sph, m: new THREE.Matrix4(), c: 0x80A040}, {geo: sph, m: new THREE.Matrix4().makeTranslation(2, 0, 0), c: 0x406020}]);
+    if(!f.index || f.index.count !== 2 * sph.index.count || f.attributes.position.count !== 2 * sph.attributes.position.count) throw new Error("les formes rassemblées ne gardent pas chaque sommet une seule fois");
+    if(f.index.getX(sph.index.count) !== sph.index.getX(0) + sph.attributes.position.count) throw new Error("le second morceau ne pointe pas vers ses propres sommets");
+    const nen = nenupharGeo("ete", 0), cn = nen.attributes.color;
+    let blancs = 0; for(let i = 0; i < cn.count; i++) if(cn.getX(i) > .95 && cn.getY(i) > .95 && cn.getZ(i) > .95) blancs++;
+    if(blancs > cn.count * .2) throw new Error(`les feuilles de nénuphar ont perdu leurs couleurs (${blancs} sommets blancs sur ${cn.count})`);
     return `${tests} objets triés comme avant ; le thym et ${fleur} d'un seul morceau ; ${renderer.info.programs.length} programmes gardés`;
   });
   await etape("Les petits objets visibles dès qu'ils sont à l'écran (correction de Yo, 16 octobre 2026) : en avançant vers un groupe de fleurs, d'herbes, de pierres, vu de dessus et à la première personne", async () => {
