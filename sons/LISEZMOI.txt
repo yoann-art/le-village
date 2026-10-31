@@ -1,0 +1,16 @@
+Les sons de Hearthwild
+======================
+
+Tous les sons sont de vrais enregistrements libres de droits (CC0, domaine public : utilisables dans un jeu vendu,
+sans obligation de citer l'auteur). Les packs d'origine sont gardés sur le PC, hors du dépôt :
+C:\Users\Artefact\Desktop\Hearthwild\sons\
+
+interface/ (étape 1 des sons, v2.1.114), d'après trois packs de Kenney (www.kenney.nl), licence CC0 :
+  - « Interface Sounds » (kenney.nl/assets/interface-sounds) :
+      clic (click_001), ouvrir (maximize_008), fermer (minimize_008), ramasser (drop_003), refus (error_008),
+      etoile (glass_003), pret (confirmation_001), fini (confirmation_004), nouveau (glass_001), casse (error_005)
+  - « UI Audio » (kenney.nl/assets/ui-audio) : choisir (click2), message (rollover6)
+  - « RPG Audio » (kenney.nl/assets/rpg-audio) : sac (cloth1), sacFerme (cloth3), page (bookFlip3), pieces (handleCoins),
+      payer (handleCoins2), coffre (creak3), porte (doorOpen_1), porteFerme (doorClose_4)
+
+Merci à Kenney.

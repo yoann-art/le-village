@@ -181,7 +181,7 @@ function render(){
     <h3 style="margin:8px 0 6px">Tes cases rapides</h3>
     <div class="sac-grid co">${grille("case", SAC.cases)}</div>
     <button class="btn ghost" data-co-deplacer style="margin-top:10px;width:100%">🗃️ Déplacer le coffre${co.items.length ? ", avec ce qu'il contient" : ""}</button>
-    <div class="co-fiche">${ficheHTML()}</div>`);
+    <div class="co-fiche">${ficheHTML()}</div>`, "coffre");
 }
 export function openCoffre(id){ open = coffreOf(id); sel = null; if(open) render(); }
 

@@ -42,7 +42,10 @@
 
 ## Pas commencé
 
-- Les sons de la nature (étape 2.1, morceau 5) et la musique (Yo génère les morceaux avec Suno ; doc
+- Les sons : l'étape 1 sur 5 faite (v2.1.114 : le moteur `js/sons.js`, le réglage 🔊, les sons de l'interface ; la liste
+  de tous les sons dans le document https://claude.ai/artifact/XXaqvJGFDoojdDXZ3SaQ7S) ; restent les gestes, l'ambiance de
+  l'île (les sons de la nature, étape 2.1, morceau 5), les bêtes, les lieux et activités.
+- La musique (Yo génère les morceaux avec Suno ; doc
   https://claude.ai/artifact/LWFge8j2WxeRZEdrv88mCe, fichiers attendus dans `C:\Users\Artefact\Desktop\Hearthwild\musiques\`).
 - L'étape 2.3 (la Scierie dedans), 2.4 à 2.7.
 - Les arbres de la forêt et du Marais d'après images (morceau 2d), la forêt et le Marais refaits.

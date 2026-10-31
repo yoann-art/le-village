@@ -15,6 +15,7 @@
 import { $ } from "./outils.js";
 import { RES, PRODUITS, MEUBLES_ORDER, OUTILS, GRAINES, POSABLES, POISSONS, INSECTES, OU_INSECTE, OISEAUX, OU_OISEAU, GIBIER, OU_GIBIER, MONSTRES, PIERRES, CARTES, SAC, SACS, COFFRE, objet, icone, ouPoisson, lieuxDe, DANS_ZONE } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
+import { jouer } from "./sons.js";
 import { coffresCount, pierresTrouvees, placesSac, sacActuel } from "./regles.js";
 import { openSheet, wrap, toast } from "./interface.js";
 import { toggleHold, hold, barreAuto, utilisable, jauge, dansCase, auSac, renderBarre, enCase } from "./barre.js";
@@ -231,13 +232,13 @@ function render(){
       <button class="sh-tab" role="tab" data-sac-tab="sac" aria-selected="${tab === "sac"}">🎒 Sac</button>
       <button class="sh-tab" role="tab" data-sac-tab="coffres" aria-selected="${tab === "coffres"}">🗃️ Coffres</button>
       <button class="sh-tab" role="tab" data-sac-tab="carnet" aria-selected="${tab === "carnet"}">📖 Carnet</button>
-    </div>` + (tab === "sac" ? sacHTML() : tab === "coffres" ? coffresHTML() : carnetHTML()));
+    </div>` + (tab === "sac" ? sacHTML() : tab === "coffres" ? coffresHTML() : carnetHTML()), "sac");
 }
 $("#btn-sac").addEventListener("click", () => { pick = null; render(); });
 wrap.addEventListener("click", e => {
   const t = e.target.closest("[data-sac-tab]"), slot = e.target.closest("[data-slot]"), fi = e.target.closest("[data-carnet]"), pg = e.target.closest("[data-carnet-page]");
-  if(pg){ if(pg.dataset.carnetPage !== page){ page = pg.dataset.carnetPage; fiche = null; render(); } return; }
-  if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; fiche = null; render(); } return; }
+  if(pg){ if(pg.dataset.carnetPage !== page){ page = pg.dataset.carnetPage; fiche = null; jouer("page"); render(); } return; }   // une page du carnet qui tourne
+  if(t){ if(t.dataset.sacTab !== tab){ tab = t.dataset.sacTab; pick = null; fiche = null; if(tab === "carnet") jouer("page"); render(); } return; }
   if(fi){ fiche = fiche === fi.dataset.carnet ? null : fi.dataset.carnet; render(); return; }
   if(slot){ const [ou, j] = slot.dataset.slot.split(":"); pick = pick && pick.ou === ou && pick.j === +j ? null : {ou, j: +j}; render(); return; }
   const it = choisi();

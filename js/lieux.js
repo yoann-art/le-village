@@ -21,6 +21,7 @@ import { PUITS } from "./monde/marais.js";
 import { player, R, dir4, placePlayer, setWalkable, islandWalkable, degager } from "./monde/personnage.js";
 import { placing } from "./construire.js";
 import { toast } from "./interface.js";
+import { jouer } from "./sons.js";
 
 let inside = null;        // {b, room} quand on est dans un bâtiment ; dans la grotte : {b: {type: "grotte", palier}, room, foret} ;
                           // en voyage : {b: {type: "trajet" | "marais"}, room, ponton}
@@ -76,6 +77,7 @@ function installer(b){
   return room;
 }
 function enter(b){
+  if(B[b.type] && !B[b.type].fixe) jouer("porte");               // la porte d'un bâtiment (la mine et la forêt auront leurs sons, étape 5 des sons)
   fade(() => {
     installer(b);
     /* Pas encore de plan de travail : on dit comment le construire */
@@ -170,6 +172,7 @@ export function retourIle(x, z, fx, fz, apres){
 }
 function exit(){
   const b = inside.b;
+  if(B[b.type] && !B[b.type].fixe) jouer("porteFerme");
   fade(() => {
     inside = null;
     scene.add(player);

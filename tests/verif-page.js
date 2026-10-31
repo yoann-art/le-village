@@ -264,6 +264,43 @@ export async function verifier(){
     if(!$("#sheet").textContent.includes("Sac")) throw new Error("l'écran du sac ne s'ouvre pas");
     $("#sheetWrap [data-close]").click(); await wait(300);
   });
+  /* Les sons, étape 1 (Yo, 31 octobre 2026) : tous prêts au chargement, légers ; chaque geste de l'interface demande le sien ;
+     le réglage 🔊 se garde sur le téléphone */
+  await etape("Les sons de l'interface : prêts au chargement, le sac, la page du carnet, les messages, les pièces, le réglage du son", async () => {
+    const S = await import("../js/sons.js"), I = await import("../js/interface.js");
+    await Promise.race([S.charges, wait(15000)]);
+    if(S.etat.erreurs.length) throw new Error(`sons qui ne se chargent pas : ${S.etat.erreurs.join(", ")}`);
+    if(S.etat.prets !== S.etat.total) throw new Error(`${S.etat.prets} sons prêts sur ${S.etat.total}`);
+    let poids = 0;
+    for(const s of Object.values(S.SONS)) poids += (await (await fetch(`sons/${s.f}.ogg`)).arrayBuffer()).byteLength;
+    if(poids > 400000) throw new Error(`les sons de l'interface pèsent ${Math.round(poids / 1000)} Ko (limite 400)`);
+    const attendu = async (geste, k) => { S.etat.joues.length = 0; geste(); await wait(250); if(!S.etat.joues.includes(k)) throw new Error(`${k} attendu, entendu : ${S.etat.joues.join(", ") || "rien"}`); };
+    await attendu(() => $("#btn-sac").click(), "sac");
+    if(S.etat.joues.includes("clic")) throw new Error("le bouton du sac fait aussi un clic");
+    await attendu(() => $("#sheetWrap [data-sac-tab='carnet']").click(), "page");
+    if(S.etat.joues.includes("sac")) throw new Error("changer d'onglet rejoue le son du sac");
+    await attendu(() => $("#sheetWrap [data-close]").click(), "sacFerme");
+    await wait(300);
+    for(const [msg, k] of [["🪵 +3 bois", "ramasser"], ["🎒 Ton sac est plein : range tes affaires", "refus"], ["🐟 Le gardon ! Nouveau poisson pour ton carnet", "nouveau"], ["Scierie construite", "fini"], ["🪚 Planches : c'est prêt, dans ton sac", "pret"], ["💥 Ta hache en pierre s'est cassée", "casse"]])
+      if(S.sonDuMessage(msg) !== k) throw new Error(`« ${msg} » sonne ${S.sonDuMessage(msg)} au lieu de ${k}`);
+    const or = state.res.or;
+    try { state.res.or += 3; await attendu(() => I.renderHUD(), "pieces"); state.res.or -= 3; await attendu(() => I.renderHUD(), "payer"); }
+    finally { state.res.or = or; I.renderHUD(); }
+    const avant = {...S.reglage};
+    try {
+      await attendu(() => $("#btn-son").click(), "ouvrir");
+      const curseurs = $("#sheet").querySelectorAll("input[type=range]");
+      if(curseurs.length !== 4) throw new Error(`${curseurs.length} curseurs dans le réglage du son au lieu de 4`);
+      const g = $("#sheet [data-son='general']"); g.value = 35; g.dispatchEvent(new Event("input", {bubbles: true}));
+      if(Math.abs(JSON.parse(localStorage.getItem("hearthwild-sons")).general - .35) > .001) throw new Error("le volume choisi n'est pas gardé");
+      const c = $("#sheet [data-son='coupe']"); c.checked = true; c.dispatchEvent(new Event("input", {bubbles: true})); c.dispatchEvent(new Event("change", {bubbles: true}));
+      if(!$("#btn-son").classList.contains("coupe")) throw new Error("le bouton 🔊 n'est pas barré quand le son est coupé");
+    } finally {
+      S.reglerSon(avant);
+      I.closeSheet(); await wait(300);
+    }
+    return `${S.etat.total} sons prêts, ${Math.round(poids / 1000)} Ko ; le sac, la page, les pièces, les messages et le réglage sonnent`;
+  });
   let scierie = null;
   await etape("Bâtir la Scierie", async () => {
     sacAdd("bois", 30); sacAdd("pierre", 15); sacAdd("fibre", 10);
