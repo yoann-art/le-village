@@ -1,7 +1,8 @@
 /* ================= Les sons du jeu =================
    Étape 1 des sons (demande de Yo, 31 octobre 2026 : « un son pour chaque chose qui le mérite » ; la liste complète dans
    le document « Les sons du jeu », https://claude.ai/artifact/XXaqvJGFDoojdDXZ3SaQ7S). De vrais enregistrements libres
-   de droits (CC0 : Kenney, voir sons/LISEZMOI.txt), choisis par Claude, validés par Yo en jouant.
+   de droits (CC0 : Freesound et Kenney, voir sons/LISEZMOI.txt), choisis par Yo à l'écoute (chaque son, parmi dix
+   propositions de Claude : sa règle du 31 octobre 2026, ne jamais lui imposer un son).
    - Le moteur (Web Audio) : trois voies, les bruitages, l'ambiance et la musique (plus tard), sous un volume général.
      Le téléphone n'accepte le son qu'après un premier toucher : le moteur se réveille au premier geste ; il se tait
      quand le jeu est caché (autre appli, écran éteint) et reprend au retour.
@@ -14,28 +15,31 @@
      sonne selon ce qu'il dit (un gain, un refus, un « c'est prêt »…), voir sonDuMessage. */
 import { $ } from "./outils.js";
 
-/* fichier, volume (pour que tous sonnent à peu près aussi fort), voie */
+/* Les sons choisis par Yo sur la page d'écoute (31 octobre 2026, https://claude.ai/artifact/6hKV11NDBwD3fowwPeq26Z : dix
+   propositions par chose, toutes à la même force) ; fermer le panneau, fermer le sac et payer reprennent le son de leur
+   contraire (son choix). f : le fichier ; v : le volume dans le jeu, une fois tous les sons ramenés à la même force
+   (comme sur la page d'écoute) : les petits gestes plus doux, les grandes nouvelles plus fortes */
 export const SONS = {
-  clic:       {f: "interface/clic",       v: .55},
-  choisir:    {f: "interface/choisir",    v: .4},
-  ouvrir:     {f: "interface/ouvrir",     v: .22},
-  fermer:     {f: "interface/fermer",     v: .2},
-  sac:        {f: "interface/sac",        v: .7},
-  sacFerme:   {f: "interface/sacFerme",   v: .8},
-  page:       {f: "interface/page",       v: 1},
-  ramasser:   {f: "interface/ramasser",   v: .45},
-  message:    {f: "interface/message",    v: .22},
-  refus:      {f: "interface/refus",      v: .4},
-  pieces:     {f: "interface/pieces",     v: .9},
-  payer:      {f: "interface/payer",      v: 1},
-  etoile:     {f: "interface/etoile",     v: .35},
-  pret:       {f: "interface/pret",       v: .25},
-  fini:       {f: "interface/fini",       v: .28},
-  nouveau:    {f: "interface/nouveau",    v: .4},
-  coffre:     {f: "interface/coffre",     v: .8},
-  casse:      {f: "interface/casse",      v: .45},
-  porte:      {f: "interface/porte",      v: .55},
-  porteFerme: {f: "interface/porteFerme", v: .5}
+  clic:       {f: "interface/clic.ogg",       v: .45},
+  choisir:    {f: "interface/choisir.ogg",    v: .45},
+  ouvrir:     {f: "interface/panneau.mp3",    v: .5},
+  fermer:     {f: "interface/panneau.mp3",    v: .45},
+  sac:        {f: "interface/sac.mp3",        v: .65},
+  sacFerme:   {f: "interface/sac.mp3",        v: .6},
+  page:       {f: "interface/page.mp3",       v: .65},
+  ramasser:   {f: "interface/ramasser.mp3",   v: .55},
+  message:    {f: "interface/message.mp3",    v: .45},
+  refus:      {f: "interface/refus.mp3",      v: .6},
+  pieces:     {f: "interface/pieces.mp3",     v: .75},
+  payer:      {f: "interface/pieces.mp3",     v: .7},
+  etoile:     {f: "interface/etoile.mp3",     v: .7},
+  pret:       {f: "interface/pret.mp3",       v: .65},
+  fini:       {f: "interface/fini.mp3",       v: .75},
+  nouveau:    {f: "interface/nouveau.mp3",    v: .75},
+  coffre:     {f: "interface/coffre.mp3",     v: .75},
+  casse:      {f: "interface/casse.mp3",      v: .7},
+  porte:      {f: "interface/porte.mp3",      v: .65},
+  porteFerme: {f: "interface/porteFerme.mp3", v: .65}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
@@ -60,13 +64,28 @@ function appliquer(){
 }
 appliquer();
 
-/* Les tampons, décodés au chargement ; etat.prets : combien sont prêts (la vérification le lit) */
-const tampons = {};
+/* Les tampons, décodés au chargement (un fichier partagé par deux sons ne l'est qu'une fois) ; etat.prets : combien sont
+   prêts (la vérification le lit). Comme sur la page d'écoute : le silence du début est sauté (bornes : où le son commence
+   et finit vraiment) et chaque son est ramené à la même force (force) */
+const tampons = {}, bornes = {}, force = {};
+function mesurer(b){
+  const d = b.getChannelData(0); let pk = 0;
+  for(let i = 0; i < d.length; i++){ const v = Math.abs(d[i]); if(v > pk) pk = v; }
+  pk = pk || 1;
+  let deb = 0, fin = d.length - 1;
+  while(deb < d.length && Math.abs(d[deb]) < pk * .05) deb++;
+  while(fin > deb && Math.abs(d[fin]) < pk * .01) fin--;
+  deb = Math.max(0, deb - Math.round(b.sampleRate * .008)); fin = Math.min(d.length - 1, fin + Math.round(b.sampleRate * .03));
+  let s = 0; for(let i = deb; i <= fin; i++) s += d[i] * d[i];
+  const rms = Math.sqrt(s / Math.max(1, fin - deb + 1)) || .01;
+  return {t: deb / b.sampleRate, dur: (fin - deb + 1) / b.sampleRate, force: Math.min(.95 / pk, Math.max(.3, .11 / rms))};
+}
 export const etat = {total: Object.keys(SONS).length, prets: 0, erreurs: [], joues: []};
+const fichiers = {};
 export const charges = !ctx ? Promise.resolve() : Promise.all(Object.entries(SONS).map(([k, s]) =>
-  fetch(`sons/${s.f}.ogg`).then(r => { if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-    .then(a => new Promise((ok, ko) => ctx.decodeAudioData(a, ok, ko)))
-    .then(b => { tampons[k] = b; etat.prets++; })
+  (fichiers[s.f] = fichiers[s.f] || fetch(`sons/${s.f}`).then(r => { if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(a => new Promise((ok, ko) => ctx.decodeAudioData(a, ok, ko))))
+    .then(b => { const m = mesurer(b); tampons[k] = b; bornes[k] = m; force[k] = m.force; etat.prets++; })
     .catch(e => { etat.erreurs.push(k); console.warn("son", k, e); })));
 
 /* Le premier geste réveille le son ; caché, le jeu se tait */
@@ -99,9 +118,9 @@ export function jouer(k, {vol = 1, hauteur = 1, voie = "bruitages", discret = fa
   const src = ctx.createBufferSource(), g = ctx.createGain();
   src.buffer = b;
   src.playbackRate.value = hauteur * (.96 + Math.random() * .08);
-  g.gain.value = s.v * vol;
+  g.gain.value = s.v * force[k] * vol;
   src.connect(g).connect(voies[voie]);
-  src.start();
+  src.start(0, bornes[k].t, bornes[k].dur);
 }
 
 /* Les boutons : un petit clic, joué juste après le geste, sauf si le bouton a déjà fait son propre son ; les cases

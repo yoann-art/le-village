@@ -2,15 +2,29 @@ Les sons de Hearthwild
 ======================
 
 Tous les sons sont de vrais enregistrements libres de droits (CC0, domaine public : utilisables dans un jeu vendu,
-sans obligation de citer l'auteur). Les packs d'origine sont gardés sur le PC, hors du dépôt :
-C:\Users\Artefact\Desktop\Hearthwild\sons\
+sans obligation de citer l'auteur ; on les cite quand même, par politesse). Chaque son a été choisi par Yo à l'écoute,
+parmi dix propositions (page d'écoute : https://claude.ai/artifact/6hKV11NDBwD3fowwPeq26Z). Les fichiers d'origine et
+toutes les propositions sont gardés sur le PC, hors du dépôt : C:\Users\Artefact\Desktop\Hearthwild\sons\
 
-interface/ (étape 1 des sons, v2.1.114), d'après trois packs de Kenney (www.kenney.nl), licence CC0 :
-  - « Interface Sounds » (kenney.nl/assets/interface-sounds) :
-      clic (click_001), ouvrir (maximize_008), fermer (minimize_008), ramasser (drop_003), refus (error_008),
-      etoile (glass_003), pret (confirmation_001), fini (confirmation_004), nouveau (glass_001), casse (error_005)
-  - « UI Audio » (kenney.nl/assets/ui-audio) : choisir (click2), message (rollover6)
-  - « RPG Audio » (kenney.nl/assets/rpg-audio) : sac (cloth1), sacFerme (cloth3), page (bookFlip3), pieces (handleCoins),
-      payer (handleCoins2), coffre (creak3), porte (doorOpen_1), porteFerme (doorClose_4)
+interface/ (étape 1 des sons, v2.1.114) :
+  Freesound (freesound.org, licence CC0 ; numéro du son, titre, auteur) :
+    panneau.mp3     816261  « Broomstick whoosh 2 - Soft low OKM1 », Sadiquecat (ouvrir et fermer un panneau)
+    sac.mp3         429108  « 01-OpeningBag.wav », cazadordoblekatana (ouvrir et fermer le sac)
+    page.mp3        397548  « Page Turn 01 », LilMati
+    coffre.mp3      676426  « Open Chest », leongameryt
+    ramasser.mp3    665183  « Item or Material Pickup Pop 1 of 3 », el_boss
+    message.mp3     242502  « Pop-up/notification.wav », GabrielAraujo
+    refus.mp3       458572  « Bonk.wav », facklere
+    nouveau.mp3     486952  « harp flourish », nathanmanaker
+    pret.mp3        127149  « ding.wav », Daphne_in_Wonderland
+    casse.mp3       443293  « Wood Break.wav », Deathscyp
+    pieces.mp3      336579  « coins - in cloth 05.wav », Anthousai (gagner et payer)
+    etoile.mp3      562292  « Heal - Rpg », colorsCrimsonTears
+    fini.mp3        521640  « WinBanjo.wav », Fupicat
+    porte.mp3       400329  « Door_Open.wav », N-RAZM
+    porteFerme.mp3  117614  « Door close.wav », soundmary
+  Kenney (www.kenney.nl, licence CC0) :
+    clic.ogg        « Interface Sounds », click_005
+    choisir.ogg     « UI Audio », click2
 
-Merci à Kenney.
+Merci à eux.

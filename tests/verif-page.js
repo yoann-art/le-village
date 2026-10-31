@@ -272,7 +272,7 @@ export async function verifier(){
     if(S.etat.erreurs.length) throw new Error(`sons qui ne se chargent pas : ${S.etat.erreurs.join(", ")}`);
     if(S.etat.prets !== S.etat.total) throw new Error(`${S.etat.prets} sons prêts sur ${S.etat.total}`);
     let poids = 0;
-    for(const s of Object.values(S.SONS)) poids += (await (await fetch(`sons/${s.f}.ogg`)).arrayBuffer()).byteLength;
+    for(const f of new Set(Object.values(S.SONS).map(s => s.f))) poids += (await (await fetch(`sons/${f}`)).arrayBuffer()).byteLength;
     if(poids > 400000) throw new Error(`les sons de l'interface pèsent ${Math.round(poids / 1000)} Ko (limite 400)`);
     const attendu = async (geste, k) => { S.etat.joues.length = 0; geste(); await wait(250); if(!S.etat.joues.includes(k)) throw new Error(`${k} attendu, entendu : ${S.etat.joues.join(", ") || "rien"}`); };
     await attendu(() => $("#btn-sac").click(), "sac");
