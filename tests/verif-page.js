@@ -273,7 +273,7 @@ export async function verifier(){
     if(S.etat.prets !== S.etat.total) throw new Error(`${S.etat.prets} sons prêts sur ${S.etat.total}`);
     let poids = 0;
     for(const f of new Set(Object.values(S.SONS).map(s => s.f))) poids += (await (await fetch(`sons/${f}`)).arrayBuffer()).byteLength;
-    if(poids > 400000) throw new Error(`les sons de l'interface pèsent ${Math.round(poids / 1000)} Ko (limite 400)`);
+    if(poids > 1000000) throw new Error(`les sons pèsent ${Math.round(poids / 1000)} Ko (limite 1 000 : ils sont tous préparés au chargement)`);
     const attendu = async (geste, k) => { S.etat.joues.length = 0; geste(); await wait(250); if(!S.etat.joues.includes(k)) throw new Error(`${k} attendu, entendu : ${S.etat.joues.join(", ") || "rien"}`); };
     await attendu(() => $("#btn-sac").click(), "sac");
     if(S.etat.joues.includes("clic")) throw new Error("le bouton du sac fait aussi un clic");
@@ -538,7 +538,9 @@ export async function verifier(){
     enMain("hachePierre"); frames(1, .016);
     if($("#btn-act").textContent !== "🌳 Chêne") throw new Error(`la hache en main, le bouton dit « ${$("#btn-act").textContent} »`);
     let vol = 0;
+    const S = await import("../js/sons.js"); S.etat.joues.length = 0;
     for(let k = 0; k < 3; k++){ frames(1, .016); $("#btn-act").click(); vol = Math.max(vol, feuillesQuiVolent()); frames(25); }
+    for(const k of ["hache", "arbreTombe"]) if(!S.etat.joues.includes(k)) throw new Error(`le son « ${k} » ne sonne pas en coupant le chêne (entendu : ${S.etat.joues.join(", ")})`);
     if(saison() !== "hiver" && !vol) throw new Error("aucune feuille ne tombe du chêne qu'on coupe");
     if(map.obj[idx(...t)] !== "souche") throw new Error(`à la place du chêne : ${map.obj[idx(...t)]} au lieu d'une souche`);
     const n = owned("bois") - bois;
@@ -1484,9 +1486,10 @@ export async function verifier(){
     hold(null); keys.u = keys.d = keys.l = keys.r = 0;
     placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
     if(!$("#btn-act").dataset.action.includes("Cueillir")) throw new Error(`face à ${FLEURS[k].nom.toLowerCase()} en fleur, le bouton dit « ${$("#btn-act").dataset.action} »`);
-    const avant = owned(k);
+    const avant = owned(k), S = await import("../js/sons.js"); S.etat.joues.length = 0;
     $("#btn-act").click(); frames(1);
     if(owned(k) !== avant + 1) throw new Error("la fleur cueillie n'est pas dans le sac");
+    if(!S.etat.joues.includes("cueillir")) throw new Error(`cueillir la fleur ne fait pas son son (entendu : ${S.etat.joues.join(", ")})`);
     /* cueillie, elle quitte sa place (décidé par Yo le 18 octobre 2026) ; on la remet pour la déterrer à la pelle */
     if(map.obj[t.i]) throw new Error("cueillie, la fleur reste à sa place");
     setObj(t.i, k, Date.now() - FLEUR_RARETE[FLEURS[k].rarete].pousse * 1000 - 1000);
@@ -1500,8 +1503,10 @@ export async function verifier(){
     /* la graine replantée */
     enMain(g); frames(1);
     if(!$("#btn-act").dataset.action.includes("Planter")) throw new Error(`la graine en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    S.etat.joues.length = 0;
     $("#btn-act").click(); frames(1);
     if(map.obj[t.i] !== k) throw new Error("la graine n'est pas plantée");
+    if(!S.etat.joues.includes("planter")) throw new Error("planter la graine ne fait pas son son");
     /* bug de Yo (v1.9.8) : le bouton d'un long message ne doit jamais aller sous le joystick (le texte de sa capture) */
     const bt = $("#btn-act"), avantTexte = bt.textContent;
     bt.hidden = false; bt.textContent = "🌱 Jeune tulipe : elle sera grande dans 2 h 37, et fleurira au printemps";
@@ -1535,8 +1540,10 @@ export async function verifier(){
     keys.u = keys.d = keys.l = keys.r = 0;
     placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
     if(!$("#btn-act").dataset.action.includes("Arroser")) throw new Error(`l'arrosoir en main, face à la fleur, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    const S = await import("../js/sons.js"); S.etat.joues.length = 0;
     $("#btn-act").click(); frames(60, .016);                                    // (le bouton revient après le geste d'arroser)
     if(state.eau !== 4 || !(state.ile[t.i].arrose > 0)){ hold(null); throw new Error("la fleur n'est pas arrosée"); }
+    if(!S.etat.joues.includes("arroser")){ hold(null); throw new Error("arroser ne fait pas son son"); }
     if(!$("#btn-act").dataset.action.includes("Déjà arrosé")){ hold(null); throw new Error(`arrosée, le bouton dit « ${$("#btn-act").dataset.action} »`); }
     /* le lendemain, 4 chances sur 10 : on rejoue le jour jusqu'à ce qu'elle sème (l'arrosage est remis à chaque fois) */
     const voisines = () => [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]].filter(([a, b]) => map.obj[idx(t.x + a, t.z + b)] === k).length;

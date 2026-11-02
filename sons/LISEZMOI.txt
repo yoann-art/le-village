@@ -27,4 +27,18 @@ interface/ (étape 1 des sons, v2.1.114) :
     clic.ogg        « Interface Sounds », click_005
     choisir.ogg     « UI Audio », click2
 
+gestes/ (étape 2a des sons, récolter, v2.1.115) : Freesound (licence CC0) :
+    hache.mp3       452554  « axe chop into wood little debris.wav », kyles
+    arbre.mp3       645349  « tree-crack.mp3 », studio-cill
+    feuillage.mp3   106130  « leafpilehit.wav », j1987
+    pioche.mp3      638696  « Pickaxe », CaptainYulef
+    minerai.mp3     96135   « Clink2.wav », BMacZero
+    cristal.mp3     404477  « Glass Clink.wav », Trainscough5407
+    geode.mp3       422633  « Break something (ice/glass/...) », Aurelon
+    cueillir.mp3    699491  « Plant_Harvest_02 », Valenspire (fleur, fruit, herbe, thym)
+    planter.mp3     542752  « Seeds.wav », PanPiper5
+    arroser.mp3     235779  « Quick Pour », elliotlp
+    remplir.mp3     398032  « Splash », swordofkings128
+  (une branche ou un caillou ramassé : le petit pop de l'interface, ramasser.mp3)
+
 Merci à eux.

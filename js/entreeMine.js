@@ -13,6 +13,7 @@ import { player, dir4 } from "./monde/personnage.js";
 import { syncBarre, tenu, outilPour, prendreAction } from "./barre.js";
 import { toast, renderHUD, closeSheet, wrap } from "./interface.js";
 import { user } from "./usure.js";
+import { jouer } from "./sons.js";
 
 const mine = () => state.buildings.find(b => b.type === "mine");
 const nomDe = (k, n) => (n > 1 && objet(k).pluriel || objet(k).nom).toLowerCase();
@@ -22,6 +23,7 @@ const reste = () => ENTREE_MINE.coups - (state.deblai || 0);
 export function deblayer(){
   const k = tenu("pioche");                          // la pioche en main (demande de Yo : seulement ce qu'on tient)
   if(!k) return;
+  jouer("pioche");
   state.deblai = (state.deblai || 0) + 1;
   const n = ENTREE_MINE.pierres, place = sacPlace("pierre") >= n;
   if(place) sacAdd("pierre", n);

@@ -164,7 +164,7 @@ function livrer(){
       : a.vente ? `${a.emoji} Vendu : tu gagnes ${list(d.bourse)}`
       : sac && coffre ? `${a.emoji} C'est prêt : ${sac} dans ton sac, ${coffre} dans un coffre (sac plein)`
       : sac ? `${a.emoji} ${sac} : c'est prêt, dans ton sac`
-      : `${a.emoji} ${coffre} : c'est prêt, dans un coffre (ton sac est plein)`, 3200);
+      : `${a.emoji} ${coffre} : c'est prêt, dans un coffre (ton sac est plein)`, 3200, d.geode ? "geode" : undefined);   // la géode qui s'ouvre a son son
   }
   return true;
 }

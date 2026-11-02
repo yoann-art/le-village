@@ -52,6 +52,7 @@ import { marais, maraisObj, maraisMesh, setMaraisObj, mtile, W as W_MARAIS, mara
 import { nuitIci } from "./monde/ciel.js";
 import { currentPlace, currentScene } from "./lieux.js";
 import { toast, renderHUD } from "./interface.js";
+import { jouer } from "./sons.js";
 import { hold, barreAuto, syncBarre, renderBarre, tenu, outilPour, prendreAction } from "./barre.js";
 import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
 import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
@@ -422,7 +423,7 @@ function ramasser(t){
 function cueillirFruits(t, k){
   const R = RECOLTE[t.o];
   if(!sacOk(k, R.n)) return;
-  sacAdd(k, R.n);
+  sacAdd(k, R.n); jouer("cueillir");
   if(t.w === FORET) cueillirForet(t.i); else if(t.w === MARAIS) cueillirMarais(t.i); else setEtat(t.i, {cueilli: Date.now()});
   save();
   toast(`${objet(k).emoji} +${R.n} ${nomDe(k, R.n)}. De retour ici dans ${duree(R.retour)}`, 3000);
@@ -440,7 +441,7 @@ function planteAction(t){
 function cueillirPlante(t){
   const k = t.o, p = PRODUITS[k];
   if(!planteDispo(t.i) || !sacOk(k, p.n)) return;
-  sacAdd(k, p.n);
+  sacAdd(k, p.n); jouer("cueillir");
   cueillirMarais(t.i);
   if(k === "mandragore") try{ if(navigator.userActivation && navigator.userActivation.hasBeenActive && navigator.vibrate) navigator.vibrate([60, 40, 120]); }catch(_){}
   toast(k === "mandragore" ? "😱 « AAAAAAH ! » La mandragore crie quand on l'arrache… +1 mandragore, pour les potions puissantes"
@@ -449,14 +450,14 @@ function cueillirPlante(t){
 function cueillirHerbe(t){
   const R = RECOLTE.herbe, n = gain(R.n, R.cueille);
   if(!sacOk(R.cueille, n)) return;
-  sacAdd(R.cueille, n);
+  sacAdd(R.cueille, n); jouer("cueillir");
   setEtat(t.i, {coupe: Date.now()}); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Elles repoussent dans ${duree(R.repousse)} ; cueille encore pour avoir la graine`, 3200);
 }
 function arracher(t){
   const R = RECOLTE.herbe, n = gain(R.n, R.cueille);
   if(!sacOk(R.cueille, n)) return;
-  sacAdd(R.cueille, n);
+  sacAdd(R.cueille, n); jouer("cueillir");
   setObj(t.i, null);
   const ou = giveSeed(R.graine); save();
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}, +1 ${nomDe(R.graine, 1)} ${ou} : elles ne repousseront pas ici`, 3200);
@@ -467,7 +468,7 @@ const grainesTexte = (k, n, ou) => n ? `, +${n} ${nomDe(k, n)} ${ou}` : "";
 function cueillirThym(t){
   const R = RECOLTE.thym;
   if(!sacOk(R.cueille, R.n)) return;
-  sacAdd(R.cueille, R.n);
+  sacAdd(R.cueille, R.n); jouer("cueillir");
   setObj(t.i, null);
   const n = grainesDe(R.rarete), ou = n ? giveSeed(R.graine, n) : "";
   save();
@@ -478,7 +479,7 @@ function cueillirThym(t){
 function cueillirFleur(t){
   const f = FLEURS[t.o], k = graineDeFleur(t.o);
   if(!sacOk(t.o, 1)) return;
-  sacAdd(t.o, 1);
+  sacAdd(t.o, 1); jouer("cueillir");
   setObj(t.i, null);
   const n = grainesDe(f.rarete), ou = n ? giveSeed(k, n) : "";
   save();
@@ -487,7 +488,7 @@ function cueillirFleur(t){
 function cueillirBaies(t){
   const R = RECOLTE.buisson, n = gain(R.n, R.cueille);
   if(!sacOk(R.cueille, n)) return;
-  sacAdd(R.cueille, n);
+  sacAdd(R.cueille, n); jouer("cueillir");
   setEtat(t.i, {vide: Date.now(), arrose: undefined}); save();      // l'heure de la cueillette : la pluie qui tombe ensuite l'arrose
   toast(`${objet(R.cueille).emoji} +${n} ${nomDe(R.cueille, n)}. Arrose le groseillier pour qu'elles reviennent (la pluie l'arrose aussi)`, 3000);
 }
@@ -495,7 +496,7 @@ function arroser(t){
   const k = tenu("arrosoir");
   if(!k) return;
   if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
-  state.eau--;
+  state.eau--; jouer("arroser");
   const cases = [t.i];
   if(OUTILS[k].autour){                              // l'arrosoir en bronze : les groseilliers vides tout près, 3 au plus d'un coup
     for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++){
@@ -516,7 +517,7 @@ function arroserPlante(t){
   const k = tenu("arrosoir");
   if(!k) return;
   if(state.eau <= 0){ toast(`🪣 Ton arrosoir est vide : remplis-le au bord de l'eau (mer ou étang)`, 3000); return; }
-  state.eau--;
+  state.eau--; jouer("arroser");
   const cases = [t.i], plante = j => (FLEURS[map.obj[j]] || map.obj[j] === "thym") && growth(j) >= 1;
   if(OUTILS[k].autour) for(let dz = -1; dz <= 1; dz++) for(let dx = -1; dx <= 1; dx++){
     if(!inb(t.x + dx, t.z + dz)) continue;
@@ -531,7 +532,7 @@ function arroserPlante(t){
 }
 function remplir(){
   const max = OUTILS[state.main].eau;
-  state.eau = max; renderBarre(); save();
+  state.eau = max; renderBarre(); save(); jouer("remplir");
   toast(`💧 Arrosoir rempli : ${max} arrosages`, 2000);
 }
 
@@ -546,6 +547,9 @@ const TROP_DUR = {
   hache: (f, nom) => { const n = nom[0].toUpperCase() + nom.slice(1);
     return f >= 3 ? `🌳 ${n}, un géant millénaire : il te faut une hache en bronze` : `🪵 ${n}, un bois dur : il te faut une hache en cuivre`; }};
 
+/* La pioche sonne sur le métal des minerais, sur le verre des cristaux ; sur le reste, la pierre (sons, étape 2a) */
+const SON_ROCHE = {rockCuivre: "minerai", rockEtain: "minerai", rockCharbon: "minerai", rockArgent: "minerai", rockOr: "minerai",
+  rockQuartz: "cristal", rockAmethyste: "cristal", rockGrenat: "cristal"};
 function couper(t){
   const R = RECOLTE[t.o], k = tenu(R.outil, R.force || 0);           // seulement l'outil en main (le bouton l'a demandé)
   if(!k) return;
@@ -554,6 +558,8 @@ function couper(t){
   const n = R.res && !R.auBout ? gain(R.parCoup, R.res) : 0;         // une ressource par coup, quel que soit l'outil (demande de Yo)
   if(n){ if(R.res === "or") addOwned("or", n); else { if(!sacOk(R.res, n)) return; sacAdd(R.res, n); trouve(R.res, n); } renderHUD(); }   // l'or va dans la bourse
   const arbre = R.outil === "hache" && !t.o.startsWith("rock");   // un arbre : quelques feuilles tombent à chaque coup (étape 2.1)
+  jouer(R.outil === "hache" ? "hache" : SON_ROCHE[t.o] || "pioche");   // le coup : la hache dans le bois, la pioche sur la roche (sons, étape 2a)
+  if(arbre && h >= R.coups) jouer("arbreTombe");                 // le dernier coup : l'arbre craque et tombe
   if(arbre && saison() !== "hiver") lacherFeuilles(currentScene(), t.w.cx(t.x), t.w.cx(t.z), h < R.coups ? 3 : 14, tonsFeuilles(saison(), t.i % 3, t.o), 1.6, 3.2, h < R.coups ? .8 : 1.2);
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {
@@ -581,6 +587,7 @@ function coeurAction(){
 function degagerCoeur(){
   const k = tenu("pioche", COEUR_MINE.force);
   if(!k || !coeurEveille()) return;
+  jouer("pioche");
   const h = (state.coeurCoups || 0) + 1;
   if(h < COEUR_MINE.coups){ state.coeurCoups = h; save(); toast(`⛏️ La roche s'effrite autour du Cœur… (encore ${COEUR_MINE.coups - h})`, 1600); user(k); return; }
   if(!sacOk("coeurMine", 1)) return;
@@ -599,6 +606,7 @@ function galerieAction(g){
 function creuserGalerie(g){
   const c = GALERIES[g], k = tenu("pioche", c.force);
   if(!k) return;
+  jouer("pioche");
   const r = creuser(g), place = sacPlace("pierre") >= 1;
   if(place) sacAdd("pierre", 1);
   renderHUD(); save();
@@ -627,6 +635,7 @@ function animate(dt){
 function tombe(){
   const {w, i, o, R, n} = anim;
   anim = null;
+  if(!o.startsWith("rock")) jouer("feuillage");             // l'arbre touche le sol
   /* sur l'île, un arbre coupé laisse sa souche (étape 2.1 ; décidé avec Yo : elle reste, la pelle l'enlève) */
   if(w === ILE && (o === "tree" || ESSENCES.includes(o))){ w.set(i, "souche"); setEtat(i, {de: o}); }
   else w.set(i, null);
@@ -720,7 +729,7 @@ function planter(t){
   const why = plantProblem(t, gr.plante);
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
-  setObj(t.i, gr.plante, Date.now());
+  setObj(t.i, gr.plante, Date.now()); jouer("planter");
   syncBarre(); save();
   const f = FLEURS[gr.plante], v = vitessePousse(), hiver = v < 1 ? " (l'hiver, ça pousse deux fois moins vite)" : "";   // étape 1.10, morceau 4
   if(f){ toast(`🌱 ${gr.nom} plantée : ${f.une ? "elle" : "il"} sera grand${f.une ? "e" : ""} dans ${duree(gr.pousse / v)}${hiver}, et fleurira ${quandFleur(f)}`, 3800); return; }

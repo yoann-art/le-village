@@ -39,7 +39,21 @@ export const SONS = {
   coffre:     {f: "interface/coffre.mp3",     v: .75},
   casse:      {f: "interface/casse.mp3",      v: .7},
   porte:      {f: "interface/porte.mp3",      v: .65},
-  porteFerme: {f: "interface/porteFerme.mp3", v: .65}
+  porteFerme: {f: "interface/porteFerme.mp3", v: .65},
+  /* Étape 2a, récolter (choix de Yo, 2 novembre 2026) : cueillir sert à la fleur, au fruit, à l'herbe et au thym (son choix) ;
+     une branche ou un caillou ramassé fait le petit pop de l'interface (ramasser, joué par le message « +1 ») ; le rocher qui
+     se brise attend son choix */
+  hache:      {f: "gestes/hache.mp3",         v: .7},
+  arbreTombe: {f: "gestes/arbre.mp3",         v: .75},
+  feuillage:  {f: "gestes/feuillage.mp3",     v: .6},
+  pioche:     {f: "gestes/pioche.mp3",        v: .7},
+  minerai:    {f: "gestes/minerai.mp3",       v: .6},
+  cristal:    {f: "gestes/cristal.mp3",       v: .6},
+  geode:      {f: "gestes/geode.mp3",         v: .7},
+  cueillir:   {f: "gestes/cueillir.mp3",      v: .6},
+  planter:    {f: "gestes/planter.mp3",       v: .65},
+  arroser:    {f: "gestes/arroser.mp3",       v: .6},
+  remplir:    {f: "gestes/remplir.mp3",       v: .6}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
