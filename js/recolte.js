@@ -560,6 +560,7 @@ function couper(t){
   const arbre = R.outil === "hache" && !t.o.startsWith("rock");   // un arbre : quelques feuilles tombent à chaque coup (étape 2.1)
   jouer(R.outil === "hache" ? "hache" : SON_ROCHE[t.o] || "pioche");   // le coup : la hache dans le bois, la pioche sur la roche (sons, étape 2a)
   if(arbre && h >= R.coups) jouer("arbreTombe");                 // le dernier coup : l'arbre craque et tombe
+  if(t.o.startsWith("rock") && h >= R.coups) jouer("rocher");    // ... ou le rocher se brise
   if(arbre && saison() !== "hiver") lacherFeuilles(currentScene(), t.w.cx(t.x), t.w.cx(t.z), h < R.coups ? 3 : 14, tonsFeuilles(saison(), t.i % 3, t.o), 1.6, 3.2, h < R.coups ? .8 : 1.2);
   if(h < R.coups){ hits.set(hk(t), h); anim = {w: t.w, i: t.i, t: 0, kind: "shake"}; if(n) toast(`${objet(R.res).emoji} +${n} ${nomDe(R.res, n)}`, 1200); }
   else {

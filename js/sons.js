@@ -42,7 +42,7 @@ export const SONS = {
   porteFerme: {f: "interface/porteFerme.mp3", v: .65},
   /* Étape 2a, récolter (choix de Yo, 2 novembre 2026) : cueillir sert à la fleur, au fruit, à l'herbe et au thym (son choix) ;
      une branche ou un caillou ramassé fait le petit pop de l'interface (ramasser, joué par le message « +1 ») ; le rocher qui
-     se brise attend son choix */
+     se brise, plus grave (Yo : « Plus grave ») : son éboulement joué plus bas (h, la hauteur : 0,7) */
   hache:      {f: "gestes/hache.mp3",         v: .7},
   arbreTombe: {f: "gestes/arbre.mp3",         v: .75},
   feuillage:  {f: "gestes/feuillage.mp3",     v: .6},
@@ -53,7 +53,8 @@ export const SONS = {
   cueillir:   {f: "gestes/cueillir.mp3",      v: .6},
   planter:    {f: "gestes/planter.mp3",       v: .65},
   arroser:    {f: "gestes/arroser.mp3",       v: .6},
-  remplir:    {f: "gestes/remplir.mp3",       v: .6}
+  remplir:    {f: "gestes/remplir.mp3",       v: .6},
+  rocher:     {f: "gestes/rocher.mp3",        v: .8, h: .7}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
@@ -131,7 +132,7 @@ export function jouer(k, {vol = 1, hauteur = 1, voie = "bruitages", discret = fa
   derniers[k] = t;
   const src = ctx.createBufferSource(), g = ctx.createGain();
   src.buffer = b;
-  src.playbackRate.value = hauteur * (.96 + Math.random() * .08);
+  src.playbackRate.value = (s.h || 1) * hauteur * (.96 + Math.random() * .08);
   g.gain.value = s.v * force[k] * vol;
   src.connect(g).connect(voies[voie]);
   src.start(0, bornes[k].t, bornes[k].dur);

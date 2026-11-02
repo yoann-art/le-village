@@ -39,6 +39,7 @@ gestes/ (étape 2a des sons, récolter, v2.1.115) : Freesound (licence CC0) :
     planter.mp3     542752  « Seeds.wav », PanPiper5
     arroser.mp3     235779  « Quick Pour », elliotlp
     remplir.mp3     398032  « Splash », swordofkings128
+    rocher.mp3      389618  « Rock Tumble 2.wav », _stubb, joué plus grave dans le jeu (hauteur 0,7)
   (une branche ou un caillou ramassé : le petit pop de l'interface, ramasser.mp3)
 
 Merci à eux.
