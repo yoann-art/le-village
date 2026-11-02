@@ -29,7 +29,7 @@ let toastT = 0;
 /* son : le son du message (par défaut, d'après ce qu'il dit : sons.js, sonDuMessage) */
 export function toast(msg, ms=2400, son){
   const k = son || sonDuMessage(msg);
-  jouer(k, {discret: k === "message" || k === "ramasser"});
+  if(k) jouer(k, {discret: k === "ramasser"});
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), ms);
 }

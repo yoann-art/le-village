@@ -283,6 +283,7 @@ export async function verifier(){
     await wait(300);
     for(const [msg, k] of [["🪵 +3 bois", "ramasser"], ["🎒 Ton sac est plein : range tes affaires", "refus"], ["🐟 Le gardon ! Nouveau poisson pour ton carnet", "nouveau"], ["Scierie construite", "fini"], ["🪚 Planches : c'est prêt, dans ton sac", "pret"], ["💥 Ta hache en pierre s'est cassée", "casse"]])
       if(S.sonDuMessage(msg) !== k) throw new Error(`« ${msg} » sonne ${S.sonDuMessage(msg)} au lieu de ${k}`);
+    if(S.sonDuMessage("🧭 La caméra regarde à nouveau vers le nord") !== null) throw new Error("un message simple sonne (Yo : plus de son pour les messages simples)");
     const or = state.res.or;
     try { state.res.or += 3; await attendu(() => I.renderHUD(), "pieces"); state.res.or -= 3; await attendu(() => I.renderHUD(), "payer"); }
     finally { state.res.or = or; I.renderHUD(); }

@@ -13,7 +13,6 @@ interface/ (étape 1 des sons, v2.1.114) :
     page.mp3        397548  « Page Turn 01 », LilMati
     coffre.mp3      676426  « Open Chest », leongameryt
     ramasser.mp3    665183  « Item or Material Pickup Pop 1 of 3 », el_boss
-    message.mp3     242502  « Pop-up/notification.wav », GabrielAraujo
     refus.mp3       458572  « Bonk.wav », facklere
     nouveau.mp3     486952  « harp flourish », nathanmanaker
     pret.mp3        127149  « ding.wav », Daphne_in_Wonderland

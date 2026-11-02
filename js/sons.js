@@ -28,7 +28,6 @@ export const SONS = {
   sacFerme:   {f: "interface/sac.mp3",        v: .6},
   page:       {f: "interface/page.mp3",       v: .65},
   ramasser:   {f: "interface/ramasser.mp3",   v: .55},
-  message:    {f: "interface/message.mp3",    v: .45},
   refus:      {f: "interface/refus.mp3",      v: .6},
   pieces:     {f: "interface/pieces.mp3",     v: .75},
   payer:      {f: "interface/pieces.mp3",     v: .7},
@@ -158,7 +157,8 @@ export function sonDuMessage(msg){
   if(/ construit| amélioré au niveau|est prête, amarrée/.test(m)) return "fini";
   if(/c'est prêt|C'est prêt|nouveau sac est prêt/.test(m)) return "pret";
   if(/\+\d/.test(m)) return "ramasser";
-  return "message";
+  return null;          // un message simple ne sonne pas (Yo, 2 novembre 2026 : « Il apparaît trop de fois » ; un son viendra
+                        // peut-être quand on aura décidé quels messages restent dans le jeu)
 }
 
 /* ----- Le réglage : le bouton 🔊 et son panneau ----- */
