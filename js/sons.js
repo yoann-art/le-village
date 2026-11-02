@@ -54,16 +54,17 @@ export const SONS = {
   arroser:    {f: "gestes/arroser.mp3",       v: .6},
   remplir:    {f: "gestes/remplir.mp3",       v: .6},
   rocher:     {f: "gestes/rocher.mp3",        v: .8, h: .7},
-  /* Étape 2b, les pas (choix de Yo, 2 novembre 2026) : un par sol, joué à chaque pas (pas.js), doucement */
-  pasHerbe:   {f: "pas/herbe.mp3",            v: .3},
-  pasSable:   {f: "pas/sable.mp3",            v: .3},
-  pasTerre:   {f: "pas/terre.mp3",            v: .3},
-  pasGravier: {f: "pas/gravier.mp3",          v: .3},
-  pasBois:    {f: "pas/bois.mp3",             v: .3},
-  pasPierre:  {f: "pas/pierre.mp3",           v: .3},
-  pasEau:     {f: "pas/boue.mp3",             v: .3},
-  pasNeige:   {f: "pas/neige.mp3",            v: .3},
-  pasFeuilles:{f: "pas/feuilles.mp3",         v: .3}
+  /* Étape 2b, les pas (choix de Yo, 2 novembre 2026) : un par sol, joué à chaque pas (pas.js), très léger (Yo : « C'est vraiment
+     très fort […] le bruit permanent des pas risque de déranger les joueurs » : 0,3 → 0,08) */
+  pasHerbe:   {f: "pas/herbe.mp3",            v: .08},
+  pasSable:   {f: "pas/sable.mp3",            v: .08},
+  pasTerre:   {f: "pas/terre.mp3",            v: .08},
+  pasGravier: {f: "pas/gravier.mp3",          v: .08},
+  pasBois:    {f: "pas/bois.mp3",             v: .08},
+  pasPierre:  {f: "pas/pierre.mp3",           v: .08},
+  pasEau:     {f: "pas/boue.mp3",             v: .08},
+  pasNeige:   {f: "pas/neige.mp3",            v: .08},
+  pasFeuilles:{f: "pas/feuilles.mp3",         v: .08}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
