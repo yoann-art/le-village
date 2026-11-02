@@ -57,7 +57,7 @@ export const SONS = {
   /* Étape 2b, les pas (choix de Yo, 2 novembre 2026) : un par sol, joué à chaque pas (pas.js), très léger (Yo : « C'est vraiment
      très fort […] le bruit permanent des pas risque de déranger les joueurs » : 0,3 → 0,08) */
   pasHerbe:   {f: "pas/herbe.mp3",            v: .08},
-  pasSable:   {f: "pas/sable.mp3",            v: .08},
+  pasSable:   {f: "pas/sable.mp3",            v: .04},   // le sable, encore plus léger (Yo : « il reste trop fort par rapport aux autres »)
   pasTerre:   {f: "pas/terre.mp3",            v: .08},
   pasGravier: {f: "pas/gravier.mp3",          v: .08},
   pasBois:    {f: "pas/bois.mp3",             v: .08},
