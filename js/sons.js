@@ -53,7 +53,17 @@ export const SONS = {
   planter:    {f: "gestes/planter.mp3",       v: .65},
   arroser:    {f: "gestes/arroser.mp3",       v: .6},
   remplir:    {f: "gestes/remplir.mp3",       v: .6},
-  rocher:     {f: "gestes/rocher.mp3",        v: .8, h: .7}
+  rocher:     {f: "gestes/rocher.mp3",        v: .8, h: .7},
+  /* Étape 2b, les pas (choix de Yo, 2 novembre 2026) : un par sol, joué à chaque pas (pas.js), doucement */
+  pasHerbe:   {f: "pas/herbe.mp3",            v: .3},
+  pasSable:   {f: "pas/sable.mp3",            v: .3},
+  pasTerre:   {f: "pas/terre.mp3",            v: .3},
+  pasGravier: {f: "pas/gravier.mp3",          v: .3},
+  pasBois:    {f: "pas/bois.mp3",             v: .3},
+  pasPierre:  {f: "pas/pierre.mp3",           v: .3},
+  pasEau:     {f: "pas/boue.mp3",             v: .3},
+  pasNeige:   {f: "pas/neige.mp3",            v: .3},
+  pasFeuilles:{f: "pas/feuilles.mp3",         v: .3}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
@@ -120,10 +130,10 @@ document.addEventListener("visibilitychange", () => {
    le son propre d'un bouton) */
 const derniers = {};
 let dernier = 0;
-export function jouer(k, {vol = 1, hauteur = 1, voie = "bruitages", discret = false} = {}){
+export function jouer(k, {vol = 1, hauteur = 1, voie = "bruitages", discret = false, fond = false} = {}){
   const s = SONS[k], b = tampons[k], maintenant = performance.now();
   if(!s || discret && maintenant - dernier < 80) return;          // un son discret se tait si un autre vient de sonner
-  dernier = maintenant;
+  if(!fond) dernier = maintenant;                                 // un son de fond (un pas) ne fait taire ni le clic ni un message
   etat.joues.push(k); if(etat.joues.length > 12) etat.joues.shift();   // les derniers sons demandés (la vérification les lit)
   if(!ctx || !b || reglage.coupe || ctx.state !== "running") return;
   const t = ctx.currentTime;

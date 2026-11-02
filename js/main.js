@@ -46,6 +46,7 @@ import { vuePremiere, activerVue, tangageVue, horizon, premiereActive } from "./
 import { updateMains, dessinerMains, mainsInactives } from "./monde/mains.js";
 import { enBarque } from "./barque.js";
 import "./sac.js";
+import "./pas.js";                                       // les pas, selon le sol (les sons, étape 2b)
 import "./barre.js";
 import "./saisons.js";
 import "./station.js";

@@ -147,6 +147,10 @@ const SPEED = 3.4;
 const TOURNE = 2, MORT = .15, RECUL = .7;
 const doux = v => { const a = Math.abs(v); return a < MORT ? 0 : Math.sign(v) * Math.min(1, (a - MORT) / (1 - MORT)); };
 let walkT = 0;
+/* Les pas (les sons, étape 2b) : surPas est appelé chaque fois qu'un pied touche le sol (au plus bas du balancement de la
+   jambe), seulement si le personnage avance vraiment (pas contre un mur) ; pas.js choisit le son selon le sol */
+let surPas = null, pasK = 0;
+export function quandPas(fn){ surPas = fn; }
 /* La direction où regarde le personnage (vecteur de longueur 1 ; la pêche vise avec) */
 export const regard = () => ({x: facing.x, z: facing.z});
 export function dir4(){ return Math.abs(facing.x) > Math.abs(facing.z) ? {x:Math.sign(facing.x), z:0} : {x:0, z:Math.sign(facing.z) || 1}; }
@@ -202,6 +206,7 @@ export function updatePlayer(dt){
   if(clign > 0){ clign -= dt; body.visible = clign <= 0 || Math.floor(clign * 12) % 2 === 0; }
   else if(!body.visible) body.visible = true;
   if(elanEnCours){ bouger(dt); allureNow = 0; return false; }
+  const x0 = player.position.x, z0 = player.position.z;
   let ix = jv.x, iz = jv.z;
   if(!ix && !iz){
     ix = (keys.r||0) - (keys.l||0); iz = (keys.d||0) - (keys.u||0);
@@ -239,6 +244,8 @@ export function updatePlayer(dt){
   let d = target - player.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
   player.rotation.y += d * Math.min(1, dt * 14);
   const sw = mag > 0 ? Math.sin(walkT) : 0;
+  const k = Math.floor(walkT / Math.PI + .5);           // un pied touche le sol quand la jambe est au bout de son balancement
+  if(k !== pasK){ pasK = k; if(surPas && Math.hypot(player.position.x - x0, player.position.z - z0) > dt * .3) surPas(mag); }
   body.position.y = mag > 0 ? Math.abs(sw) * .05 : 0;
   legL.rotation.x = sw * .6; legR.rotation.x = -sw * .6;
   placerMains(sw * .45);

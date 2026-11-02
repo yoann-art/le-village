@@ -302,6 +302,26 @@ export async function verifier(){
     }
     return `${S.etat.total} sons prêts, ${Math.round(poids / 1000)} Ko ; le sac, la page, les pièces, les messages et le réglage sonnent`;
   });
+  /* Les pas (les sons, étape 2b, choix de Yo) : en marchant, un pas à chaque pied posé ; le son suit le sol */
+  await etape("Les pas : un son à chaque pas, selon le sol (herbe, sable, bois du ponton, gravier, pierre)", async () => {
+    const S = await import("../js/sons.js"), P = await import("../js/pas.js"), {passageCases} = await import("../js/monde/ponton.js");
+    const avant = {x: player.position.x, z: player.position.z};
+    const sur = i => { placePlayer(centerOf(i % N), centerOf(Math.floor(i / N)), 0, 1); return P.solSousLesPieds(); };
+    try {
+      const herbe = map.type.findIndex((t, i) => t === "grass" && !map.obj[i] && !state.chemins[i] && !passageCases.has(i));
+      if(sur(herbe) !== "Herbe" && sur(herbe) !== "Neige") throw new Error(`sur l'herbe, le sol est « ${sur(herbe)} »`);
+      S.etat.joues.length = 0;
+      jv.x = 0; jv.z = 1; for(let k = 0; k < 40; k++) updatePlayer(1 / 30); jv.z = 0; updatePlayer(1 / 30);
+      const pas = S.etat.joues.filter(k => k.startsWith("pas")).length;
+      if(pas < 3) throw new Error(`${pas} pas en 1,3 s de marche`);
+      const sable = map.type.findIndex((t, i) => t === "sand" && !passageCases.has(i) && !state.chemins[i]);
+      if(sur(sable) !== "Sable") throw new Error(`sur le sable, le sol est « ${sur(sable)} »`);
+      if(sur([...passageCases][0]) !== "Bois") throw new Error("sur le ponton, le pas n'est pas sur le bois");
+      state.chemins[herbe] = "gravier"; const g = sur(herbe); state.chemins[herbe] = "paves"; const pv = sur(herbe); delete state.chemins[herbe];
+      if(g !== "Gravier" || pv !== "Pierre") throw new Error(`chemin de gravier : « ${g} », de pavés : « ${pv} »`);
+      return `${pas} pas en 1,3 s dans l'herbe ; sable, ponton (bois), gravier, pavés (pierre) reconnus`;
+    } finally { jv.x = jv.z = 0; placePlayer(avant.x, avant.z, 0, 1); }
+  });
   let scierie = null;
   await etape("Bâtir la Scierie", async () => {
     sacAdd("bois", 30); sacAdd("pierre", 15); sacAdd("fibre", 10);

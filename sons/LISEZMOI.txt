@@ -41,4 +41,15 @@ gestes/ (étape 2a des sons, récolter, v2.1.115) : Freesound (licence CC0) :
     rocher.mp3      389618  « Rock Tumble 2.wav », _stubb, joué plus grave dans le jeu (hauteur 0,7)
   (une branche ou un caillou ramassé : le petit pop de l'interface, ramasser.mp3)
 
+pas/ (étape 2b des sons, les pas, v2.1.117) : Freesound (licence CC0) :
+    herbe.mp3       390760  « FX_001_footstep_grass_l.wav », d00121058 (l'herbe, la mousse de la forêt)
+    sable.mp3       516252  « STEP SAND 02.mp3 », wyronroberth
+    terre.mp3       487862  « Footsteps_Dirt_Single_05.wav », BenDrain
+    gravier.mp3     488070  « Footsteps_Gravel_Single_02.wav », BenDrain
+    bois.mp3        340983  « Footstep on wood », SoundsAreGr8
+    pierre.mp3      166507  « concrete footstep 3 », Yoyodaman234
+    boue.mp3        488077  « Footsteps_Mud_Single_01.wav », BenDrain (le Marais)
+    neige.mp3       516255  « STEPS SNOW 02.mp3 », wyronroberth
+    feuilles.mp3    842187  « Footstep Leaves 2 », AardsReal (la forêt en automne)
+
 Merci à eux.
