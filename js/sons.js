@@ -75,23 +75,23 @@ export const SONS = {
   ranger:     {f: "construire/ranger.mp3",    v: .55},
   peindre:    {f: "construire/peindre.mp3",   v: .55},
   revetement: {f: "construire/revetement.ogg", v: .6},
-  /* Étape 3, l'ambiance de l'île (choix de Yo, 3 novembre 2026) : des boucles (boucle : leur durée en secondes, 10 s prises
-     au milieu de l'enregistrement, raccord fondu, fabriquées une fois sur le PC), sur la voie « ambiance » ; ambiance.js règle
+  /* Étape 3, l'ambiance de l'île (choix de Yo, 3 novembre 2026 ; leurs volumes 2,5 fois plus doux à sa demande, « les bruits sont trop forts ») :
+     des boucles (boucle : leur durée en secondes, 10 s prises au milieu de l'enregistrement, raccord fondu, fabriquées une fois sur le PC), sur la voie « ambiance » ; ambiance.js règle
      leur force selon l'endroit, l'heure, la saison et le temps qu'il fait. Le tonnerre est un son simple. */
-  ambVent:    {f: "ambiance/vent.webm",       v: .35, boucle: 10, voie: "ambiance"},
-  ambFeuilles:{f: "ambiance/feuilles.webm",   v: .35, boucle: 10, voie: "ambiance"},
-  ambHiver:   {f: "ambiance/hiver.webm",      v: .35, boucle: 10, voie: "ambiance"},
-  ambMer:     {f: "ambiance/mer.webm",        v: .45, boucle: 10, voie: "ambiance"},
-  ambEtang:   {f: "ambiance/etang.webm",      v: .4,  boucle: 10, voie: "ambiance"},
-  ambPonton:  {f: "ambiance/ponton.webm",     v: .4,  boucle: 10, voie: "ambiance"},
-  ambPluie:   {f: "ambiance/pluie.webm",      v: .45, boucle: 10, voie: "ambiance"},
-  ambPluieToit:{f: "ambiance/pluieToit.webm", v: .4,  boucle: 10, voie: "ambiance"},
-  ambMatin:   {f: "ambiance/matin.webm",      v: .3,  boucle: 10, voie: "ambiance"},
-  ambGrillons:{f: "ambiance/grillons.webm",   v: .25, boucle: 10, voie: "ambiance"},
-  ambNuit:    {f: "ambiance/nuit.webm",       v: .25, boucle: 10, voie: "ambiance"},
-  ambRoue:    {f: "ambiance/roue.webm",       v: .4,  boucle: 10, voie: "ambiance"},
-  ambFeu:     {f: "ambiance/feu.webm",        v: .4,  boucle: 10, voie: "ambiance"},
-  ambTonnerre:{f: "ambiance/tonnerre.mp3",    v: .7,  voie: "ambiance"}
+  ambVent:    {f: "ambiance/vent.webm",       v: .14, boucle: 10, voie: "ambiance"},
+  ambFeuilles:{f: "ambiance/feuilles.webm",   v: .14, boucle: 10, voie: "ambiance"},
+  ambHiver:   {f: "ambiance/hiver.webm",      v: .14, boucle: 10, voie: "ambiance"},
+  ambMer:     {f: "ambiance/mer.webm",        v: .18, boucle: 10, voie: "ambiance"},
+  ambEtang:   {f: "ambiance/etang.webm",      v: .16,  boucle: 10, voie: "ambiance"},
+  ambPonton:  {f: "ambiance/ponton.webm",     v: .16,  boucle: 10, voie: "ambiance"},
+  ambPluie:   {f: "ambiance/pluie.webm",      v: .18, boucle: 10, voie: "ambiance"},
+  ambPluieToit:{f: "ambiance/pluieToit.webm", v: .16,  boucle: 10, voie: "ambiance"},
+  ambMatin:   {f: "ambiance/matin.webm",      v: .12,  boucle: 10, voie: "ambiance"},
+  ambGrillons:{f: "ambiance/grillons.webm",   v: .1, boucle: 10, voie: "ambiance"},
+  ambNuit:    {f: "ambiance/nuit.webm",       v: .1, boucle: 10, voie: "ambiance"},
+  ambRoue:    {f: "ambiance/roue.webm",       v: .16,  boucle: 10, voie: "ambiance"},
+  ambFeu:     {f: "ambiance/feu.webm",        v: .16,  boucle: 10, voie: "ambiance"},
+  ambTonnerre:{f: "ambiance/tonnerre.mp3",    v: .28,  voie: "ambiance"}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
