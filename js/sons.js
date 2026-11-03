@@ -64,7 +64,17 @@ export const SONS = {
   pasPierre:  {f: "pas/pierre.mp3",           v: .08},
   pasEau:     {f: "pas/boue.mp3",             v: .08},
   pasNeige:   {f: "pas/neige.mp3",            v: .08},
-  pasFeuilles:{f: "pas/feuilles.mp3",         v: .08}
+  pasFeuilles:{f: "pas/feuilles.mp3",         v: .08},
+  /* Étape 2c, construire et décorer (choix de Yo, 3 novembre 2026) : creuser prend le son de combler, soulever un meuble
+     celui de le poser (ses choix) ; tourner un meuble ne sonne pas (son choix) */
+  pelle:      {f: "construire/pelle.mp3",     v: .6},
+  chemin:     {f: "construire/chemin.mp3",    v: .5},
+  batSoulever:{f: "construire/soulever.mp3",  v: .6},
+  batPoser:   {f: "construire/poser.mp3",     v: .7},
+  meuble:     {f: "construire/meuble.mp3",    v: .6},
+  ranger:     {f: "construire/ranger.mp3",    v: .55},
+  peindre:    {f: "construire/peindre.mp3",   v: .55},
+  revetement: {f: "construire/revetement.ogg", v: .6}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */

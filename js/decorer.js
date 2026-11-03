@@ -18,6 +18,7 @@ import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
 import { openAtelier } from "./ateliers.js";
 import { premiereActive } from "./vue.js";
+import { jouer } from "./sons.js";
 
 let deco = null;                     // la pièce qu'on décore : {b, room}
 let sel = null;                      // le meuble choisi
@@ -217,7 +218,7 @@ export function addMeuble(type){
     toast(`${a.emoji} ${a.le[0].toUpperCase() + a.le.slice(1)} est construit${a.fem ? "e : fais-la" : " : fais-le"} glisser où tu veux`, 3200);
   }
   else if(craftable(type)) addOwned(type, -1);                         // pris dans le sac, ou dans un coffre
-  items().push(it); addItemMesh(it);
+  items().push(it); addItemMesh(it); jouer("meuble");
   sel = it; showSel(); save();
 }
 /* Ce qui s'accroche au mur : « Tourner » le fait passer au mur suivant (le fond, la droite, la gauche), à la place
@@ -257,7 +258,7 @@ $("#deco-store").addEventListener("click", () => {
   if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
   if(sel.pierre){ addOwned(sel.pierre, 1); ou += `, et sa pierre (${objet(sel.pierre).nom.toLowerCase()})`; }   // la pierre exposée dans une vitrine revient aussi
   if(sel.torche){ addOwned("torche", 1); ou += ", et sa torche"; }                        // la torche posée sur une torchère aussi
-  toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`);
+  toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`, 2400, "ranger");
   sel = null; showSel(); save();
 });
 /* ----- Couleurs : du meuble choisi, ou des murs et du sol de la pièce (palette gratuite) ----- */
@@ -309,7 +310,7 @@ function poser(cle){
     payer({[pose.k]: 1}); table[cle] = pose.k;
   } else delete table[cle];
   if(avant) addOwned(avant, 1);                                     // l'ancien revient dans le sac
-  buildRoom(deco.b); montrerPose(); renderHUD(); save();
+  buildRoom(deco.b); montrerPose(); renderHUD(); save(); jouer("revetement");
   return true;
 }
 const caseSous = (x, y) => { if(!groundAt(x, y, hit)) return null; const {w, d} = deco.room, ix = Math.floor(hit.x + w/2), iz = Math.floor(hit.z + d/2);
@@ -326,6 +327,7 @@ wrap.addEventListener("click", e => {
   const key = btn.dataset.couleur || undefined, target = btn.dataset.cible, d = deco.b.deco;
   if(target === "item"){ if(!sel) return; sel.color = key; refreshItemMesh(sel); }
   else { d[target] = key; buildRoom(deco.b); }                        // murs ou sol : on refait la pièce
+  jouer("peindre");
   btn.closest(".swatches").querySelectorAll(".swatch").forEach(s => s.classList.toggle("on", s === btn));
   showSel(); save();
 });
@@ -341,6 +343,7 @@ let press = null;                    // appui long en cours sur un meuble : {id,
 function endDrag(){
   if(!drag) return;
   if(problem(sel)){ sel.x = drag.last.x; sel.z = drag.last.z; placeItemMesh(sel); }   // place refusée : il revient
+  if(drag.bouge) jouer("meuble");                                 // le meuble déplacé est reposé
   drag = null; showSel(); save();
 }
 function cancelPress(){ if(press){ clearTimeout(press.timer); press = null; } }
@@ -354,7 +357,7 @@ function startLift(){
   view.target.set(0, 0, 0); view.width = place.room.w + 1;
   resetJoy();
   $("#actions").hidden = true; $("#joy").hidden = true;
-  raiseItemMesh(it.id, .15);
+  raiseItemMesh(it.id, .15); jouer("meuble");               // le meuble soulevé (Yo : le même son que pour le poser)
   showLift();
 }
 function showLift(){
@@ -374,7 +377,7 @@ export function updateLift(){
 function endLift(){
   const it = lift.it;
   if(problem(it)){ it.x = lift.last.x; it.z = lift.last.z; }     // place refusée : il revient à la dernière bonne place
-  raiseItemMesh(it.id, 0); placeItemMesh(it);
+  raiseItemMesh(it.id, 0); placeItemMesh(it); jouer("meuble");
   lift = null; plate.visible = false;
   $("#place-hint").hidden = true; $("#place-hint").classList.remove("bad");
   $("#actions").hidden = false; $("#joy").hidden = false;
@@ -408,6 +411,7 @@ canvas.addEventListener("pointermove", e => {
   if(lift && e.pointerId === lift.pid){ lift.x = e.clientX; lift.y = e.clientY; updateLift(); }
   if(peint && e.pointerId === peint.pid && pose){ const c = caseSous(e.clientX, e.clientY); if(c && c !== peint.dernier){ peint.dernier = c; poser(c); } return; }   // le doigt glisse : case après case
   if(!deco || !drag || e.pointerId !== drag.pid || !groundAt(e.clientX, e.clientY, hit)) return;
+  if(!drag.bouge){ drag.bouge = true; jouer("meuble"); }          // le meuble choisi commence à glisser : il se soulève
   settle(sel, hit.x + drag.ox, hit.z + drag.oz);
   if(!problem(sel)) drag.last = {x: sel.x, z: sel.z};
   placeItemMesh(sel); showSel();

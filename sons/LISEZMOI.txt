@@ -52,4 +52,16 @@ pas/ (étape 2b des sons, les pas, v2.1.117) : Freesound (licence CC0) :
     neige.mp3       516255  « STEPS SNOW 02.mp3 », wyronroberth
     feuilles.mp3    842187  « Footstep Leaves 2 », AardsReal (la forêt en automne)
 
+construire/ (étape 2c des sons, construire et décorer, v2.1.120) :
+  Freesound (licence CC0) :
+    pelle.mp3       488400  « PotFill.wav », wobesound (creuser et combler)
+    chemin.mp3      434130  « place.wav », 89o (une case de chemin)
+    soulever.mp3    422972  « SFXJumpLiftOffGround.wav », WakuWakuWakuWaku (soulever un bâtiment)
+    poser.mp3       332668  « big thud2.wav », Reitanna (poser un bâtiment)
+    meuble.mp3      759826  « QuietThud », NoisyRedFox (poser et soulever un meuble, une lumière, un coffre)
+    ranger.mp3      651515  « grab-item », 1bob
+    peindre.mp3     408579  « 28.Brush.wav », miguelab1998
+  Kenney (licence CC0) :
+    revetement.ogg  « Impact Sounds », impactPlank_medium_003 (poser un sol ou un mur)
+
 Merci à eux.

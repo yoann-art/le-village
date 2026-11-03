@@ -1451,7 +1451,9 @@ export async function verifier(){
     if(!t) throw new Error("pas de case d'herbe libre sur la place");
     placePlayer(centerOf(t.x), centerOf(t.z + 1), 0, -1); frames(1);
     if(!$("#btn-act").dataset.action.includes("Creuser")) throw new Error(`face à l'herbe, la pelle en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    const S = await import("../js/sons.js"); S.etat.joues.length = 0;
     for(let k = 0; k < OUTILS.pelleBois.coups; k++){ $("#btn-act").click(); frames(1); }
+    if(!S.etat.joues.includes("pelle")) throw new Error("creuser à la pelle ne fait pas son son");
     if(map.type[t.i] !== "water" || state.terrain[t.i] !== "water") throw new Error(`après ${OUTILS.pelleBois.coups} coups de pelle, la case n'est pas de l'eau`);
     if(!$("#btn-act").dataset.action.includes("Combler")) throw new Error(`face à l'eau creusée, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click(); frames(1);
@@ -1478,6 +1480,8 @@ export async function verifier(){
     bt.click();
     const poses = [0, 1, 2, 3, 4].filter(k => state.chemins[idx(c - 2 + k, rang)] === "planches").length;
     if(poses < 2) throw new Error(`${poses} case de chemin en marchant`);
+    const S = await import("../js/sons.js");
+    if(!S.etat.joues.includes("chemin")) throw new Error("poser une case de chemin ne fait pas son son");
     if(owned("planche") !== avant - poses) throw new Error("les planches ne sont pas prises une par case");
     /* la pelle, tournée vers le chemin derrière soi, enlève une case et rend sa planche */
     enMain("pelleBois");

@@ -25,6 +25,7 @@ import { passageCases, entrees } from "./monde/ponton.js";
 import { player, frontTile, pencheMain } from "./monde/personnage.js";
 import { toast, renderHUD } from "./interface.js";
 import { user } from "./usure.js";
+import { jouer } from "./sons.js";
 
 const pelleTenue = () => !!(state.main && OUTILS[state.main] && OUTILS[state.main].famille === "pelle");
 /* Ce que vise la pelle : la case juste devant ; null si ce n'est ni de la terre libre ni de l'eau */
@@ -88,7 +89,7 @@ export function actionTerrain(t){
   const n = coups.get(t.i) || 0, reste = (OUTILS[state.main].coups || 1) - n;
   return {label: `🪏 Creuser${n ? ` (${reste})` : ""}`, run: () => creuser(t)};
 }
-function geste(){ pencheMain(1.3); setTimeout(() => pencheMain(), 220); user(state.main); }   // chaque coup de pelle l'use (usure.js)
+function geste(){ pencheMain(1.3); setTimeout(() => pencheMain(), 220); jouer("pelle"); user(state.main); }   // chaque coup de pelle l'use (usure.js)
 function creuser(t){
   const pourquoi = terrainProbleme(t);
   if(pourquoi){ toast(pourquoi, 2600); return; }
@@ -171,7 +172,7 @@ function poser(i){
   }
   const rend = ancien && CHEMINS[ancien].avec;           // on change la sorte d'une case : l'ancienne pièce revient
   if(rend && sacPlace(rend) > 0) sacAdd(rend, 1);
-  state.chemins[i] = trace.sorte; trace.n++;
+  state.chemins[i] = trace.sorte; trace.n++; jouer("chemin");
   if(trace.sorte === "terre") user(state.main);          // un chemin de terre : un coup de pelle par case
   syncBarre(); dessinerChemins();
 }

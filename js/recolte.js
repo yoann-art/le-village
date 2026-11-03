@@ -670,7 +670,7 @@ function poserDehors(t){
   const k = state.main, m = MEUBLES[k], why = poseProblem(t.i);
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
-  setObj(t.i, k);
+  setObj(t.i, k); jouer("meuble");
   syncBarre(); save();
   toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais" : ""}`, 3200);
 }
@@ -703,7 +703,7 @@ function accrocher(t){
   const k = state.main, m = MEUBLES[k];
   if(!m || !m.facade || (t.b.facade || []).some(v => v.col === t.col) || !sacTake(k, 1)) return;
   (t.b.facade || (t.b.facade = [])).push({type: k, col: t.col});
-  placeMesh(t.b); syncBarre(); save();
+  placeMesh(t.b); syncBarre(); save(); jouer("meuble");
   toast(`${m.emoji} ${m.nom} accrochée à la façade${m.support ? " : approche-toi avec une torche pour l'allumer" : " : elle s'allumera seule à la nuit tombée"}`, 3400);
 }
 function decrocher(t){

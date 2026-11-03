@@ -18,6 +18,7 @@ import { player, R, dir4, frontTile } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
 import { renderHUD, toast, openSheet, closeSheet } from "./interface.js";
 import { ligneEntree } from "./entreeMine.js";
+import { jouer } from "./sons.js";
 
 /* ----- Pose d'un bâtiment : nouveau (menu Construire) ou déjà posé (appui long) ----- */
 export let placing = null;           // type du bâtiment en cours de pose
@@ -97,7 +98,7 @@ function liftBuilding(){
   press = null;
   if(!b || B[b.type].fixe || placing || !outside()) return;           // la mine ne se déplace pas
   try{ if(navigator.vibrate) navigator.vibrate(30); }catch(_){}
-  soulever(b);
+  soulever(b); jouer("batSoulever");
   startDrag(pid);
 }
 /* Soulever un bâtiment posé pour le déplacer (aussi pour la vérification automatique) */
@@ -187,7 +188,7 @@ $("#btn-place").addEventListener("click", () => {
     b.x = ax; b.z = az; delete b.rot;                // déplacé, un bâtiment tourné pendant l'essai reprend sa porte en bas
     clearHerbes(b.type, ax, az);
     footprint(b.type, ax, az).forEach(([x,z]) => occ.set(idx(x,z), b.id));
-    placeMesh(b);
+    placeMesh(b); jouer("batPoser");
     stopPlacing(); save();
     toast(`${B[b.type].emoji} ${B[b.type].nom} : nouvelle place`);
     return;
@@ -200,7 +201,7 @@ $("#btn-place").addEventListener("click", () => {
   state.buildings.push(b);
   clearHerbes(type, ax, az);
   footprint(type, ax, az).forEach(([x,z]) => occ.set(idx(x,z), b.id));
-  placeMesh(b);
+  placeMesh(b); jouer("batPoser");                 // le bâtiment posé, puis le banjo du bâtiment terminé (son message)
   stopPlacing(); save(); renderHUD();
   toast(`${d.nom} construit`);
   if(type === "chateau" && !state.crowned){

@@ -27,6 +27,7 @@ import { currentPlace } from "./lieux.js";
 import { placerDans } from "./decorer.js";
 import { openSheet, closeSheet, toast, wrap, renderHUD } from "./interface.js";
 import { syncBarre, barreAuto, utilisable, enCaseAuto, jauge, enCase, hold } from "./barre.js";
+import { jouer } from "./sons.js";
 
 const coffreOf = id => state.coffres.find(c => c.id === id);
 const nomCoffre = co => `Coffre ${state.coffres.indexOf(co) + 1}`;
@@ -90,7 +91,7 @@ export function poserCoffre(i){
   if(!m) return;
   const co = newCoffre({i}, m.plein);
   setObj(i, "coffre"); setEtat(i, {id: co.id});
-  syncBarre(); save(); pose(co, m.plein);
+  syncBarre(); save(); pose(co, m.plein); jouer("meuble");
 }
 /* Poser le coffre tenu en main dans la pièce d'un bâtiment, juste devant soi, aligné comme un meuble */
 export function poserDansPiece(place){
@@ -103,7 +104,7 @@ export function poserDansPiece(place){
   const co = newCoffre({b: b.id}, m.plein);
   it.id = b.deco.next++; it.reserve = co.id;
   b.deco.items.push(it); addItemMesh(it);
-  syncBarre(); save(); pose(co, m.plein);
+  syncBarre(); save(); pose(co, m.plein); jouer("meuble");
 }
 /* Enlève un coffre de là où il est posé (l'île, ou la pièce d'un bâtiment) */
 function enlever(co){

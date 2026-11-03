@@ -16,6 +16,7 @@ import { resetJoy } from "./commandes.js";
 import { wrap } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
 import { premiereActive } from "./vue.js";
+import { jouer } from "./sons.js";
 
 const canvas = renderer.domElement;
 let press = null;          // appui en cours sur une lumière : {cible, pid, x, y, sx, sy, timer}
@@ -55,7 +56,7 @@ function soulever(){
   try{ if(navigator.vibrate) navigator.vibrate(30); }catch(_){}
   const c = p.cible;
   lift = c.b ? {b: c.b, f: c.f, mesh: c.mesh, type: c.f.type, col: c.f.col} : {i: c.i, type: map.obj[c.i], dest: c.i, mesh: objMesh(c.i)};
-  Object.assign(lift, {pid: p.pid, x: p.x, y: p.y, ok: true});
+  Object.assign(lift, {pid: p.pid, x: p.x, y: p.y, ok: true}); jouer("meuble");
   resetJoy();
   $("#actions").hidden = true; $("#joy").hidden = true;
   suivre();
@@ -97,7 +98,7 @@ function lacher(){
     setObj(L.i, null); setObj(L.dest, L.type);
     if(etat.torche) setEtat(L.dest, {torche: true});
   } else L.mesh.position.set(centerOf(L.i % N), 0, centerOf(Math.floor(L.i / N)));   // elle revient à sa place
-  save();
+  jouer("meuble"); save();
 }
 
 canvas.addEventListener("pointerdown", e => {
