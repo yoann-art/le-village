@@ -129,14 +129,15 @@ function porte(g){
   boite(g, FONCE, w + .3, .12, .14, PORTE_X, h + .12, FACADE + .07);
   bloc(g, ROCHE[2], 1.05, .14, .42, PORTE_X, .07, FACADE + .33); bloc(g, ROCHE[0], .9, .12, .3, PORTE_X + .05, .17, FACADE + .2);
 }
-/* contre le mur, à gauche de la porte : la pioche appuyée et le seau de bois cerclé de fer */
+/* contre le mur, près du coin gauche (loin de la porte, à la demande de Yo le 3 novembre 2026) : la pioche appuyée et le
+   seau de bois cerclé de fer */
 function outils(g){
-  const xp = .32, zp = FACADE + .12;
+  const xp = .22, zp = FACADE + .12;
   planche(g, 0xB06A2A, .07, 1.05, .07, xp, .52, zp, -.05, 0, -.28);                         // le manche, penché contre le mur
   const tete = new THREE.Group(); tete.position.set(xp + .15, 1.02, zp + .02); tete.rotation.z = -.28; g.add(tete);
   for(const s of [-1, 1]) planche(tete, FER, .32, .07, .06, s * .16, -.02 - .03, 0, 0, 0, s * .32);
   boite(tete, FER, .1, .12, .08, 0, 0, 0);
-  const xs = .78, zs = FACADE + .26, r = .2, hs = .36;
+  const xs = .4, zs = FACADE + .26, r = .2, hs = .36;
   for(let k = 0; k < 10; k++){ const an = k / 10 * Math.PI * 2;                               // les douelles
     planche(g, ton(k), .13, hs, .04, xs + Math.sin(an) * r, hs / 2 + .03, zs + Math.cos(an) * r, 0, an, 0); }
   ajoute(g, part(G.cyl, 0x9A5A26, r * 2, .04, r * 2, xs, .06, zs));
