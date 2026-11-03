@@ -273,7 +273,7 @@ export async function verifier(){
     if(S.etat.prets !== S.etat.total) throw new Error(`${S.etat.prets} sons prêts sur ${S.etat.total}`);
     let poids = 0;
     for(const f of new Set(Object.values(S.SONS).map(s => s.f))) poids += (await (await fetch(`sons/${f}`)).arrayBuffer()).byteLength;
-    if(poids > 1000000) throw new Error(`les sons pèsent ${Math.round(poids / 1000)} Ko (limite 1 000 : ils sont tous préparés au chargement)`);
+    if(poids > 2500000) throw new Error(`les sons pèsent ${Math.round(poids / 1000)} Ko (limite 2 500 : ils sont tous préparés au chargement)`);
     const attendu = async (geste, k) => { S.etat.joues.length = 0; geste(); await wait(250); if(!S.etat.joues.includes(k)) throw new Error(`${k} attendu, entendu : ${S.etat.joues.join(", ") || "rien"}`); };
     await attendu(() => $("#btn-sac").click(), "sac");
     if(S.etat.joues.includes("clic")) throw new Error("le bouton du sac fait aussi un clic");
@@ -321,6 +321,29 @@ export async function verifier(){
       if(g !== "Gravier" || pv !== "Pierre") throw new Error(`chemin de gravier : « ${g} », de pavés : « ${pv} »`);
       return `${pas} pas en 1,3 s dans l'herbe ; sable, ponton (bois), gravier, pavés (pierre) reconnus`;
     } finally { jv.x = jv.z = 0; placePlayer(avant.x, avant.z, 0, 1); }
+  });
+  /* L'ambiance de l'île (les sons, étape 3, choix de Yo) : les boucles suivent l'endroit, l'heure, la saison et le temps */
+  await etape("L'ambiance : les vagues près de la mer, les oiseaux du matin au printemps, les grillons d'un soir d'été, la pluie, et rien l'hiver pour les oiseaux", async () => {
+    const A = await import("../js/ambiance.js"), S = await import("../js/sons.js");
+    const avant = {x: player.position.x, z: player.position.z};
+    const regle = () => { A.updateAmbiance(1); return A.ciblesAmbiance(); };
+    try {
+      const plage = map.type.findIndex((t, i) => t === "sand" && [1, -1, N, -N].some(d => map.type[i + d] === "water" && lieuEau(i + d) === "mer"));
+      if(plage < 0) throw new Error("pas de plage au bord de la mer");
+      placePlayer(centerOf(plage % N), centerOf(Math.floor(plage / N)), 0, 1);
+      forcerMeteo("beau"); forcerSaison("printemps"); forcerHeure(7);
+      let c = regle();
+      if(!(c.ambMer > .7)) throw new Error(`sur la plage, les vagues à ${(c.ambMer || 0).toFixed(2)}`);
+      if(!(c.ambMatin > .5)) throw new Error(`un matin de printemps, les oiseaux à ${(c.ambMatin || 0).toFixed(2)}`);
+      if(!(c.ambVent > 0) || c.ambPluie) throw new Error("par beau temps, pas de vent ou de la pluie");
+      placePlayer(0, 0, 0, 1); forcerSaison("ete"); forcerHeure(21.5); c = regle();
+      if(!(c.ambGrillons > .5) || c.ambMatin) throw new Error(`un soir d'été : grillons ${(c.ambGrillons || 0).toFixed(2)}, oiseaux du matin ${(c.ambMatin || 0).toFixed(2)}`);
+      forcerMeteo("pluie"); c = regle();
+      if(!(c.ambPluie > .5) || !(c.ambGrillons < .5)) throw new Error("sous la pluie, pas de pluie ou les grillons ne se taisent pas");
+      forcerMeteo("beau"); forcerSaison("hiver"); forcerHeure(7); c = regle();
+      if(c.ambMatin || !(c.ambHiver > 0) || c.ambVent) throw new Error("l'hiver : des oiseaux du matin, ou le vent ordinaire au lieu du vent d'hiver");
+      return `les vagues sur la plage, les oiseaux d'un matin de printemps, les grillons d'un soir d'été, la pluie, l'hiver : bien réglés ; ${S.etat.prets} sons prêts`;
+    } finally { forcerMeteo(null); forcerSaison(null); forcerHeure(null); rafraichirSaison(); placePlayer(avant.x, avant.z, 0, 1); A.updateAmbiance(1); }
   });
   let scierie = null;
   await etape("Bâtir la Scierie", async () => {

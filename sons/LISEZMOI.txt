@@ -64,4 +64,21 @@ construire/ (étape 2c des sons, construire et décorer, v2.1.120) :
   Kenney (licence CC0) :
     revetement.ogg  « Impact Sounds », impactPlank_medium_003 (poser un sol ou un mur)
 
+ambiance/ (étape 3 des sons, l'ambiance de l'île, v2.1.121) : Freesound (licence CC0). Pour chaque boucle (.webm, Opus) :
+  10 secondes prises au milieu de l'enregistrement, en mono, le raccord fondu sur 1,5 s, fabriquées une fois sur le PC.
+    vent.webm       26714   « stereowind01.wav », klangfabrik
+    feuilles.webm   402794  « breeze tree.wav », Lisework
+    hiver.webm      117136  « Wind__Artic__Cold.wav », cobratronik
+    mer.webm        530699  « Water wave Beach Field-recording 200815_0036.wav », szegvari
+    etang.webm      524688  « Water-lap-against-rocks-lake.wav », salilnair
+    ponton.webm     574869  « Water lapping gurgling under dock 05.mp3 », TRP
+    pluie.webm      231687  « rain 1.wav », FenrirFangs
+    pluieToit.webm  161705  « Rain from inside.wav », allrealsound
+    matin.webm      852999  « Birdsong and Chirping in a Quiet Natural Setting », hoshisato
+    grillons.webm   533841  « crickets chirping (with other bugs).wav », ultraaxvii
+    nuit.webm       585480  « Night insects », tender_sounds
+    roue.webm       829631  « Ambiance_Old_Mill_Ribeira_dos_Caldeirões_Loop_Stereo_02 », Nox_Sound
+    feu.webm        350757  « campfire.wav », aerror
+    tonnerre.mp3    188767  « Thunder (Kraków, Poland, 20.05.2013) », vonz
+
 Merci à eux.

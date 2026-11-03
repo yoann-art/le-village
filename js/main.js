@@ -46,6 +46,7 @@ import { vuePremiere, activerVue, tangageVue, horizon, premiereActive } from "./
 import { updateMains, dessinerMains, mainsInactives } from "./monde/mains.js";
 import { enBarque } from "./barque.js";
 import "./sac.js";
+import { updateAmbiance } from "./ambiance.js";
 import "./pas.js";                                       // les pas, selon le sol (les sons, étape 2b)
 import "./barre.js";
 import "./saisons.js";
@@ -218,6 +219,7 @@ function camera_(now, dt, marche){
   if(foret || isInside() && currentPlace().b.type === "mine") lampeSur(camT.x, camT.z);   // la lumière suit, dans les grands lieux
   const sousLeCiel = !isInside() || ["foret", "marais"].includes(currentPlace().b.type);
   garde("météo", () => updateMeteo(dt, sousLeCiel ? currentScene() : null, camT.x, camT.z));   // la pluie, la neige, les éclairs (étape 1.10)
+  garde("ambiance", () => updateAmbiance(dt));               // l'ambiance de l'île : le vent, la mer, la pluie, les bêtes du matin et du soir (les sons, étape 3)
   updateCiel(camT.x, camT.z);                              // le jour et la nuit (étape 1.10) : le ciel, le soleil, les vitres
   if(foret && ["foret", "marais"].includes(currentPlace().b.type)) nuitForet(Math.max(nuitIci(), couvertIci() * .6));   // la forêt et le Marais s'assombrissent aussi sous la pluie
   lueurLanternes(nuitIci());                               // les fruits des arbres-lanternes s'allument la nuit (étape 1.13)

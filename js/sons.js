@@ -74,7 +74,24 @@ export const SONS = {
   meuble:     {f: "construire/meuble.mp3",    v: .6},
   ranger:     {f: "construire/ranger.mp3",    v: .55},
   peindre:    {f: "construire/peindre.mp3",   v: .55},
-  revetement: {f: "construire/revetement.ogg", v: .6}
+  revetement: {f: "construire/revetement.ogg", v: .6},
+  /* Étape 3, l'ambiance de l'île (choix de Yo, 3 novembre 2026) : des boucles (boucle : leur durée en secondes, 10 s prises
+     au milieu de l'enregistrement, raccord fondu, fabriquées une fois sur le PC), sur la voie « ambiance » ; ambiance.js règle
+     leur force selon l'endroit, l'heure, la saison et le temps qu'il fait. Le tonnerre est un son simple. */
+  ambVent:    {f: "ambiance/vent.webm",       v: .35, boucle: 10, voie: "ambiance"},
+  ambFeuilles:{f: "ambiance/feuilles.webm",   v: .35, boucle: 10, voie: "ambiance"},
+  ambHiver:   {f: "ambiance/hiver.webm",      v: .35, boucle: 10, voie: "ambiance"},
+  ambMer:     {f: "ambiance/mer.webm",        v: .45, boucle: 10, voie: "ambiance"},
+  ambEtang:   {f: "ambiance/etang.webm",      v: .4,  boucle: 10, voie: "ambiance"},
+  ambPonton:  {f: "ambiance/ponton.webm",     v: .4,  boucle: 10, voie: "ambiance"},
+  ambPluie:   {f: "ambiance/pluie.webm",      v: .45, boucle: 10, voie: "ambiance"},
+  ambPluieToit:{f: "ambiance/pluieToit.webm", v: .4,  boucle: 10, voie: "ambiance"},
+  ambMatin:   {f: "ambiance/matin.webm",      v: .3,  boucle: 10, voie: "ambiance"},
+  ambGrillons:{f: "ambiance/grillons.webm",   v: .25, boucle: 10, voie: "ambiance"},
+  ambNuit:    {f: "ambiance/nuit.webm",       v: .25, boucle: 10, voie: "ambiance"},
+  ambRoue:    {f: "ambiance/roue.webm",       v: .4,  boucle: 10, voie: "ambiance"},
+  ambFeu:     {f: "ambiance/feu.webm",        v: .4,  boucle: 10, voie: "ambiance"},
+  ambTonnerre:{f: "ambiance/tonnerre.mp3",    v: .7,  voie: "ambiance"}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */
@@ -158,6 +175,30 @@ export function jouer(k, {vol = 1, hauteur = 1, voie = "bruitages", discret = fa
   src.start(0, bornes[k].t, bornes[k].dur);
 }
 
+/* Les boucles d'ambiance (étape 3) : regler(k, f) amène doucement la force de la boucle k vers f (0 à 1, en une ou deux
+   secondes) ; la boucle démarre quand on la demande et s'arrête quand elle s'est tue (rien ne tourne pour rien). Elle
+   reprend là où le son commence vraiment (bornes), sur exactement sa durée de boucle (le raccord fondu se rejoint) */
+const boucles = {};
+export const forceBoucle = k => boucles[k] ? boucles[k].cible : 0;     // pour la vérification
+export function regler(k, f){
+  const s = SONS[k], b = tampons[k];
+  if(!ctx || !s || !b) return;
+  let e = boucles[k];
+  if(f > .001 && !e){
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = b; src.loop = true;
+    src.loopStart = bornes[k].t; src.loopEnd = Math.min(b.duration, bornes[k].t + (s.boucle || bornes[k].dur));
+    g.gain.value = 0;
+    src.connect(g).connect(voies[s.voie || "ambiance"]);
+    src.start(0, bornes[k].t);
+    e = boucles[k] = {src, g, cible: 0, muet: 0};
+  }
+  if(!e) return;
+  if(Math.abs(f - e.cible) > .005){ e.cible = f; e.g.gain.setTargetAtTime(f * s.v * force[k], ctx.currentTime, .6); }
+  if(f <= .001){ e.muet += 1; if(e.muet > 20){ try { e.src.stop(); } catch(_){} delete boucles[k]; } }   // tue depuis un moment : arrêtée
+  else e.muet = 0;
+}
+
 /* Les boutons : un petit clic, joué juste après le geste, sauf si le bouton a déjà fait son propre son ; les cases
    rapides ont le leur (on choisit un outil) */
 document.addEventListener("click", e => {
@@ -183,7 +224,7 @@ export function sonDuMessage(msg){
 }
 
 /* ----- Le réglage : le bouton 🔊 et son panneau ----- */
-const CURSEURS = [["general", "Volume général"], ["bruitages", "Bruitages"], ["ambiance", "Ambiance (bientôt)"], ["musique", "Musique (bientôt)"]];
+const CURSEURS = [["general", "Volume général"], ["bruitages", "Bruitages"], ["ambiance", "Ambiance"], ["musique", "Musique (bientôt)"]];
 export function htmlReglage(){
   return `<div class="sh-head"><h2 class="display">🔊 Le son</h2><button class="btn ghost" data-close>Fermer</button></div>
     <div class="sons-reglage">
