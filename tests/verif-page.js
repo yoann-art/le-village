@@ -452,7 +452,7 @@ export async function verifier(){
     if(saison() !== "hiver" && bg.nenuphars < 2) throw new Error(`seulement ${bg.nenuphars} feuilles de nénuphar sur l'étang`);
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
-  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026), la Scierie, la Carrière et la Forge d'après ses images", async () => {
+  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026), la Scierie, la Carrière, la Forge et la Taverne d'après ses images", async () => {
     const tailles = {scierie: 5, chaumiere: 4, carriere: 5, forge: 5, marche: 5, taverne: 5, chateau: 6};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
@@ -480,7 +480,12 @@ export async function verifier(){
     let fumee = 0; f1.traverse(o => { if(o.isInstancedMesh && o.material.transparent) fumee++; });
     if(!(B.forge.door > .5) || !fumee) throw new Error(`la Forge du niveau 1 n'a pas son nouveau modèle (porte en ${B.forge.door}, ${fumee} fumée)`);
     if(bf.min.x < -2.6 || bf.max.x > 2.6 || bf.min.z < -2.6 || bf.max.z > 2.6) throw new Error(`la Forge déborde de son carré (${bf.min.x.toFixed(2)} à ${bf.max.x.toFixed(2)}, ${bf.min.z.toFixed(2)} à ${bf.max.z.toFixed(2)})`);
-    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P ; la Forge : sa porte à droite, sa fumée`;
+    /* la Taverne niveau 1 d'après l'image de Yo (4 novembre 2026) : sa porte à droite, dans son carré, sa fumée, ses deux toits de chaume */
+    const t1 = makeBuilding("taverne", 1), bt = new THREE.Box3().setFromObject(t1);
+    let ft = 0, mt = 0; t1.traverse(o => { if(o.isMesh) mt++; if(o.isInstancedMesh && o.material.transparent) ft++; });
+    if(!(B.taverne.door > .5) || !ft || mt < 300) throw new Error(`la Taverne du niveau 1 n'a pas son nouveau modèle (porte en ${B.taverne.door}, ${ft} fumée, ${mt} morceaux)`);
+    if(bt.min.x < -2.6 || bt.max.x > 2.6 || bt.min.z < -2.6 || bt.max.z > 2.6) throw new Error(`la Taverne déborde de son carré (${bt.min.x.toFixed(2)} à ${bt.max.x.toFixed(2)}, ${bt.min.z.toFixed(2)} à ${bt.max.z.toFixed(2)})`);
+    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P ; la Forge : sa porte à droite, sa fumée ; la Taverne : ${mt} morceaux, sa porte à droite, sa fumée`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);
