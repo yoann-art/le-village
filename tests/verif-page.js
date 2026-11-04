@@ -27,7 +27,7 @@
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
 import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, OISEAUX, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet } from "../js/donnees.js";
-import { state, agrandirIle } from "../js/sauvegarde.js";
+import { state, agrandirIle, remiseAZero } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol, plageIci, eauIci, bergeIci } from "../js/monde/ile.js";
@@ -491,6 +491,19 @@ export async function verifier(){
     if(!(B.chaumiere.door > .3) || !fh || mh < 250) throw new Error(`la Chaumière du niveau 1 n'a pas son nouveau modèle (porte en ${B.chaumiere.door}, ${fh} fumée, ${mh} morceaux)`);
     if(bh.min.x < -2.1 || bh.max.x > 2.1 || bh.min.z < -2.1 || bh.max.z > 2.1) throw new Error(`la Chaumière déborde de son carré (${bh.min.x.toFixed(2)} à ${bh.max.x.toFixed(2)}, ${bh.min.z.toFixed(2)} à ${bh.max.z.toFixed(2)})`);
     return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P ; la Forge : sa porte à droite, sa fumée ; la Taverne : ${mt} morceaux, sa porte à droite, sa fumée ; la Chaumière : ${mh} morceaux, sa porte à droite, sa fumée`;
+  });
+  await etape("La remise à zéro de Yo (4 novembre 2026) : les bâtiments au niveau 1, les coffres vides, seulement les outils sur soi", async () => {
+    const p = {buildings: [{type: "taverne", lvl: 3, deco: {items: [{type: "lit", x: 4.6, z: -4.4, rot: 0}]}}, {type: "mine", lvl: 1}],
+      coffres: [{id: 1, items: [{k: "bois", n: 5}]}], sac: [{k: "hachePierre", n: 1}, {k: "bois", n: 9}, {k: "torche", n: 1}, {k: "coffrePlein", n: 1, items: [{k: "pierre", n: 2}]}],
+      barre: [{k: "piochePierre", n: 1}, {k: "pierre", n: 3}, null], main: "pierre", res: {or: 50}, aRendre: ["bois"]};
+    remiseAZero(p);
+    const lit = p.buildings[0].deco.items[0];
+    if(p.buildings[0].lvl !== 1) throw new Error(`la Taverne reste au niveau ${p.buildings[0].lvl}`);
+    if(Math.abs(lit.x) > 4 - .7 || Math.abs(lit.z) > 4 - 1.1) throw new Error(`le lit reste dans le mur (${lit.x}, ${lit.z})`);
+    if(p.coffres[0].items.length) throw new Error("un coffre n'est pas vide");
+    if(p.sac.map(it => it.k).join() !== "hachePierre,torche") throw new Error(`le sac garde ${p.sac.map(it => it.k).join(", ")}`);
+    if(!p.barre[0] || p.barre[1] || p.main || p.res.or !== 50 || p.aRendre.length) throw new Error("les cases rapides, la main, l'or ou ce qui revient au sac ne sont pas comme il faut");
+    return `le lit ramené en (${lit.x}, ${lit.z}), le sac : hache et torche, l'or gardé`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);

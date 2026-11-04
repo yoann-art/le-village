@@ -2,12 +2,12 @@
    La partie est gardée dans le navigateur du téléphone.
    Format 4 (1er octobre 2026, décidé avec Yo) : une île plus grande et une partie qui commence sans rien ;
    les parties plus anciennes repartent de zéro (le jeu le dit une fois). */
-import { OUTILS, POSABLES, MEUBLES, SAC, reglerHemisphere } from "./donnees.js";
+import { OUTILS, POSABLES, MEUBLES, SAC, B, reglerHemisphere } from "./donnees.js";
 const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
-    buildings:[], nextId:1, scierie5:true, carriere5:true, forge5:true, taverne5:true, chaumiere4:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
+    buildings:[], nextId:1, scierie5:true, carriere5:true, forge5:true, taverne5:true, chaumiere4:true, remise1:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
     entreeMine:"eboulee",                                    // l'entrée de la mine à déblayer puis construire (étape 1.11)
     ileN: ILE};                                              // la taille de l'île (étape 2.1 : la grande île)
 }
@@ -37,6 +37,27 @@ function read(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e)
 export function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
 export function eraseSave(){ try{ localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); }catch(_){} }
 
+/* La remise à zéro de Yo (4 novembre 2026, voir plus bas) : les bâtiments au niveau 1, leurs meubles entre les murs de la
+   pièce plus petite ; les coffres vides ; sur soi, seulement les outils ; l'or et ce qui est posé ne changent pas */
+export function remiseAZero(s){
+  const ROOM = {petite:4, moyenne:6, grande:8}, cm = v => Math.round(v * 100) / 100;
+  for(const b of s.buildings) if(!B[b.type].fixe && b.lvl > 1){
+    b.lvl = 1;
+    const demi = (ROOM[B[b.type].taille] || 4) / 2;
+    for(const it of (b.deco && b.deco.items) || []){
+      const m = MEUBLES[it.type]; if(!m) continue;
+      const [w, d] = it.rot % 2 ? [m.d, m.w] : [m.w, m.d];
+      it.x = cm(Math.max(-demi + w / 2, Math.min(demi - w / 2, it.x)));
+      it.z = cm(Math.max(-demi + d / 2, Math.min(demi - d / 2, it.z)));
+    }
+  }
+  for(const co of s.coffres) co.items = [];
+  const outil = it => it && OUTILS[it.k] && !it.items;
+  s.sac = s.sac.filter(outil);
+  s.barre = s.barre.map(it => outil(it) ? it : null);
+  if(s.main && !OUTILS[s.main]) s.main = null;
+  s.aRendre = [];
+}
 export let state, migrationMsg = null;
 {
   const s = read(SAVE_KEY);
@@ -180,6 +201,20 @@ export let state, migrationMsg = null;
       for(const i of choix[1]){ const c = state.ile[i]; if(c && c.o){ state.aRendre.push(c.o); delete state.ile[i]; } delete state.chemins[i]; }
     }
     state.chaumiere4 = true;
+  }
+  /* La remise à zéro demandée par Yo (4 novembre 2026 : « Peux tu me remettre tous les bâtiments au niveau 1 dans le jeu ?
+     Vider tous les coffres et sac à dos. Je veux juste qu'il reste les outils » ; ses choix : il garde les outils, les
+     épées, l'arc, la torche et la lanterne à main, il garde l'or, « Ne touche pas à ce qui est posé »). Une seule fois,
+     sur la partie en cours ; la partie d'avant est gardée à côté (SAVE_KEY + "-avant-remise"). Les bâtiments repassent
+     au niveau 1, à leur place ; les meubles d'une pièce devenue plus petite sont rapprochés juste assez pour rester entre
+     ses murs. Les coffres posés restent posés, vides. Sur soi (le sac, les cases rapides, la main) : seulement les outils,
+     avec leur usure */
+  if(!state.remise1){
+    try{ localStorage.setItem(SAVE_KEY + "-avant-remise", JSON.stringify(state)); }catch(e){}
+    remiseAZero(state);
+    state.remise1 = true;
+    migrationMsg = "Ta partie est remise à zéro : tous les bâtiments au niveau 1, les coffres vides ; tu gardes tes outils et ton or.";
+    save();
   }
   /* Les pièces repartent en terre battue et torchis clair (Yo, 29 octobre 2026 : « Les parties en cours repartent en terre
      battue et torchis (les meubles restent en place) ») : les couleurs de l'ancienne palette s'en vont */
