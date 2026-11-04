@@ -452,7 +452,7 @@ export async function verifier(){
     if(saison() !== "hiver" && bg.nenuphars < 2) throw new Error(`seulement ${bg.nenuphars} feuilles de nénuphar sur l'étang`);
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
-  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026) et la Scierie aux niveaux 1 et 2 d'après ses images", async () => {
+  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026), la Scierie et la Carrière d'après ses images", async () => {
     const tailles = {scierie: 5, chaumiere: 4, carriere: 5, forge: 4, marche: 5, taverne: 5, chateau: 6};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
@@ -470,7 +470,12 @@ export async function verifier(){
     const g3 = makeBuilding("scierie", 3), b3 = new THREE.Box3().setFromObject(g3), nb = s => { let n = 0; makeBuilding("scierie", 3).traverse(o => { if(o.isMesh) n++; }); return n; };
     if(!(g3.userData.toit > g2.userData.toit)) throw new Error("le niveau 3 de la Scierie n'est pas plus haut que le niveau 2");
     if(b3.min.x < -2.52 || b3.max.x > 2.52 || b3.min.z < -2.52 || b3.max.z > 2.52) throw new Error(`la Scierie du niveau 3 déborde de son carré (${b3.min.x.toFixed(2)} à ${b3.max.x.toFixed(2)})`);
-    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue`;
+    /* la Carrière niveau 2 d'après l'image de Yo (4 novembre 2026) : plus haute que le niveau 1, dans son carré, sa brouette */
+    const c1 = makeBuilding("carriere", 1), c2 = makeBuilding("carriere", 2), bc = new THREE.Box3().setFromObject(c2);
+    let mc = 0; c2.traverse(o => { if(o.isMesh) mc++; });
+    if(!(c2.userData.toit > c1.userData.toit) || mc < 300) throw new Error(`la Carrière du niveau 2 n'a pas son nouveau modèle (${mc} morceaux, faîte à ${c2.userData.toit})`);
+    if(bc.min.x < -2.55 || bc.max.x > 2.55 || bc.min.z < -2.55 || bc.max.z > 2.55) throw new Error(`la Carrière du niveau 2 déborde de son carré (${bc.min.x.toFixed(2)} à ${bc.max.x.toFixed(2)}, ${bc.min.z.toFixed(2)} à ${bc.max.z.toFixed(2)})`);
+    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P`;
   });
   await etape("L'île agrandie (étape 2.1) : 96 × 96 cases, moins de chênes, le ponton et le pont sur la nouvelle côte, une partie d'avant gardée", async () => {
     if(N !== 96) throw new Error(`l'île fait ${N} × ${N} cases`);

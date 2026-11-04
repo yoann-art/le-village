@@ -165,3 +165,172 @@ export function carriereNiveau1(g){
   outils(g);
   lanterneCabane(g);
 }
+
+/* ================= La Carrière, niveau 2 =================
+   D'après l'image de Yo (4 novembre 2026 : « Voici la carrière de niveau 2 »), au plus près de l'image, avec ses choix : la
+   même taille (5 × 5) et la porte au même endroit, la lanterne qui s'allume la nuit, et « Garde la pioche et le seau en plus
+   de la brouette ». Le front de roche plus haut, taillé en deux grandes marches aux traits de découpe droits ; de gros
+   rochers ronds traversés de veines orange, dessus et sur la gauche ; une échelle de bois contre la marche du haut ; sur
+   la marche du milieu, un bloc à moitié détaché, ses coins de bois enfoncés ; devant à gauche, les blocs taillés sur
+   leur palette, en deux étages ; la brouette pleine de pierres ; beaucoup de cailloux sur le sable. La cabane : un socle
+   de pierre, des murs de planches couchées, le toit d'ardoises clouées qui descend vers l'avant et l'arrière, ses pignons
+   sur les côtés, la poutre de faîte et ses deux blocs ; la porte, ses marches et la lanterne comme au niveau 1. */
+const ARDOISE = [0x6B6678, 0x5F5B6E, 0x77728A], VEINE = [0xD9822B, 0xE8973A], ROUE = 0x7A4A26, GROS = [0xA89C8A, 0x9E9282, 0xB0A492];
+/* un rocher rond, un peu bosselé, et sa veine orange qui le traverse en biais sur sa face de devant */
+const BOSSE = (() => {
+  const g = new THREE.SphereGeometry(.5, 12, 9), p = g.attributes.position;
+  for(let i = 0; i < p.count; i++){ const x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = 1 + .05 * Math.sin(x * 9 + z * 7) * Math.cos(y * 8);
+    p.setXYZ(i, x * k, y * Math.min(k, 1) * (y < 0 ? .85 : 1), z * k); }
+  g.computeVertexNormals(); return g;
+})();
+function rocher(g, x, y, z, sx, sy, sz, pente = .6){
+  ajoute(g, part(BOSSE, GROS[Math.floor(hasard() * 3)], sx, sy, sz, x, y, z));
+  const n = 15;
+  for(let k = 0; k < n; k++){
+    const t = (k + .5) / n * 2 - 1, th = t * 1.05, ph = t * pente + Math.sin(t * 5) * .08;      // la veine, de biais et un peu ondulée
+    const px = x + sx / 2 * Math.cos(ph) * Math.sin(th), py = y + sy / 2 * Math.sin(ph) * .96, pz = z + sz / 2 * Math.cos(ph) * Math.cos(th);
+    const m = boite(g, VEINE[k % 2], sx * .11, .045, .035, px, py, pz);
+    m.rotation.set(0, th, Math.atan2(pente * sy, sx * Math.cos(th) + .001));
+  }
+}
+/* les deux grandes marches taillées : des rangs de gros blocs, le coeur qui comble les joints, des traits de découpe */
+function roche2(g){
+  /* [z du devant, profondeur, hauteur, de x0 à x1] : la marche du haut (elle passe derrière la cabane), celle du milieu */
+  const MARCHES = [[-1.05, 1.35, 2.2, -2.45, 1.5], [-.05, 1, 1.15, -2.45, -.24]];
+  for(const [zf, prof, haut, x0, x1] of MARCHES){
+    const rangs = Math.max(1, Math.round(haut / .6)), hr = haut / rangs;
+    for(let r = 0; r < rangs; r++){
+      let x = x0 + (r % 2) * .2;
+      if(r % 2) bloc(g, ROCHE[r % 4], .18, hr - .04, prof - .06, x0 + .1, r * hr + hr / 2, zf - prof / 2);
+      while(x < x1 - .1){
+        const l = Math.min(x1 - x, .58 + hasard() * .3), c = x + l / 2, hex = ROCHE[Math.floor(hasard() * 4)];
+        const dh = r === rangs - 1 ? (hasard() - .5) * .14 : 0, hh = hr - .04 + dh, y = r * hr + hh / 2 + .02;
+        bloc(g, hex, l - .04, hh, prof - hasard() * .06, c, y, zf - prof / 2 - hasard() * .03, (hasard() - .5) * .03);
+        if(hasard() < .5) boite(g, ROCHE_S, .03, hh * .7, .02, c + (hasard() - .5) * l * .5, y, zf + .005);   // un trait de découpe
+        x += l;
+      }
+    }
+    boite(g, ROCHE_S, x1 - x0 - .2, haut - .2, prof - .12, (x0 + x1) / 2, (haut - .2) / 2, zf - prof / 2);
+    for(let k = 0; k < 9; k++){ const s = .06 + hasard() * .09;                                 // des éclats au pied de la marche
+      const p = ajoute(g, part(CAILLOU, ROCHE[k % 4], s * 1.3, s, s * 1.2, x0 + .2 + hasard() * (x1 - x0 - .4), s * .4, zf + .08 + hasard() * .22));
+      p.rotation.set(hasard() * 3, hasard() * 3, 0);
+      if(zf < -1 && p.position.x < MARCHES[1][4]) p.position.y = MARCHES[1][2] + s * .4;        // sur la marche du milieu
+    }
+    for(let k = 0; k < 6; k++){ const s = .06 + hasard() * .07;                                 // et sur le dessus
+      const p = ajoute(g, part(CAILLOU, ROCHE[k % 4], s * 1.3, s, s * 1.2, x0 + .3 + hasard() * (x1 - x0 - .6), haut + s * .3, zf - .15 - hasard() * (prof - .4)));
+      p.rotation.set(hasard() * 3, hasard() * 3, 0);
+    }
+  }
+  /* les rochers aux veines orange : trois dessus, deux sur la gauche */
+  rocher(g, -.05, 2.62, -1.75, 1.25, 1.05, 1.05, .7);
+  rocher(g, 1.0, 2.55, -1.65, 1.15, .95, .95, .5);
+  rocher(g, -1.45, 2.4, -1.95, .7, .6, .6, .6);
+  rocher(g, -2.05, 1.55, -.55, .9, .95, .85, .5);
+  rocher(g, -2.1, .45, .45, .8, .9, .8, .7);
+  /* l'échelle contre la marche du haut, du dessus de la marche du milieu au sommet */
+  const ex = -.7, bas = [1.15, -.45], haut = [2.3, -1.0], dy = haut[0] - bas[0], dz = haut[1] - bas[1], L = Math.hypot(dy, dz) + .25, a = Math.atan2(-dz, dy);
+  for(const s of [-1, 1]) planche(g, BOIS[0], .07, L, .07, ex + s * .2, bas[0] + dy / 2 + .05, bas[1] + dz / 2, -a, 0, 0);
+  for(let k = 0; k < 5; k++){ const t = (k + .7) / 5.6;
+    planche(g, BOIS[2], .4, .05, .06, ex, bas[0] + dy * t + .05, bas[1] + dz * t + .02, -a, 0, 0); }
+  /* sur la marche du milieu, le bloc à moitié détaché : sa fente et ses deux coins de bois */
+  const bx = -1.35, by = 1.15, bz = -.5;
+  bloc(g, ROCHE[2], .95, .78, .72, bx, by + .39, bz, .05);
+  boite(g, ROCHE_S, .05, .7, .03, bx + .2, by + .4, bz + .37);
+  boite(g, ROCHE_S, .03, .04, .7, bx + .2, by + .79, bz);
+  boite(g, FONCE, .1, .2, .1, bx + .2, by + .86, bz + .05); boite(g, CLAIR, .14, .06, .12, bx + .2, by + .95, bz + .05);
+  boite(g, FONCE, .1, .1, .16, bx + .2, by + .22, bz + .42); boite(g, CLAIR, .12, .12, .05, bx + .2, by + .22, bz + .5);
+}
+/* devant à gauche : la palette de planches, les blocs taillés dessus en deux étages ; un bloc tombé devant */
+function blocs2(g){
+  const x0 = -2.42, x1 = -1.0, z0 = .95, z1 = 2.15;
+  for(const z of [z0 + .1, (z0 + z1) / 2, z1 - .1]) boite(g, FONCE, x1 - x0, .08, .16, (x0 + x1) / 2, .05, z);   // les traverses
+  for(let k = 0; k < 6; k++) boite(g, ton(k), (x1 - x0) / 6 - .03, .06, z1 - z0, x0 + (k + .5) * (x1 - x0) / 6, .12, (z0 + z1) / 2);   // le plateau
+  const T = .6, H1 = .42;
+  for(const [x, z, hex] of [[-2.1, 1.25, 2], [-1.42, 1.27, 0], [-2.08, 1.86, 1], [-1.4, 1.85, 3]]) bloc(g, ROCHE[hex], T, H1, .56, x, .15 + H1 / 2, z, (hasard() - .5) * .04);
+  for(const [x, z, hex] of [[-2.08, 1.3, 0], [-1.42, 1.32, 2]]) bloc(g, ROCHE[hex], T, .4, .56, x, .15 + H1 + .2, z, (hasard() - .5) * .04);
+  bloc(g, ROCHE[1], .46, .3, .3, -1.7, .15, 2.3, .3);
+}
+/* la brouette de bois pleine de pierres : sa roue devant, ses deux bras, ses deux pieds */
+function brouette(g){
+  const b = new THREE.Group(); b.position.set(-.6, 0, 1.85); b.rotation.y = -.6; g.add(b);
+  const yb = .36;
+  boite(b, BOIS[1], .44, .05, .5, 0, yb, 0);                                                    // le fond
+  for(const s of [-1, 1]) planche(b, ton(s + 2), .05, .26, .62, s * .27, yb + .13, 0, 0, 0, s * .35);   // les côtés, évasés
+  planche(b, BOIS[2], .56, .26, .05, 0, yb + .13, .3, -.4, 0, 0);                              // le devant
+  planche(b, BOIS[0], .56, .22, .05, 0, yb + .11, -.27, .25, 0, 0);                            // l'arrière
+  for(const s of [-1, 1]){
+    planche(b, FONCE, .06, .06, 1.0, s * .2, yb - .03, -.2, -.08, s * .06, 0);               // les bras
+    boite(b, FONCE, .06, yb, .06, s * .2, yb / 2, -.28);                                         // les pieds
+  }
+  const roue = ajoute(b, part(G.cyl, ROUE, .38, .07, .38, 0, .19, .5)); roue.rotation.z = Math.PI / 2;
+  const moyeu = ajoute(b, part(G.cyl, FER, .1, .1, .1, 0, .19, .5)); moyeu.rotation.z = Math.PI / 2;
+  for(const [x, z, s] of [[-.1, -.08, .22], [.1, .05, .24], [-.05, .15, .2], [.08, -.15, .18], [0, 0, .2]]){
+    const p = ajoute(b, part(CAILLOU, ROCHE[Math.floor(hasard() * 4)], s * 1.2, s, s * 1.1, x, yb + .14 + (x === 0 ? .1 : 0), z)); p.rotation.set(hasard() * 3, hasard() * 3, 0); }
+}
+/* les cailloux semés sur le sable, plus nombreux qu'au niveau 1, loin de la porte */
+function cailloux2(g){
+  for(let k = 0; k < 34; k++){
+    const x = -2.3 + hasard() * 4.6, z = .2 + hasard() * 2.25;
+    if(Math.abs(x - PORTE_X) < .7 && z > 1.6) continue;                                            // le passage devant la porte reste libre
+    if(x > -.2 && x < 2.4 && z < 1.9) continue;                                                    // pas dans la cabane
+    if(x < -.95 && z > .9 && z < 2.2) continue;                                                    // pas sur la palette
+    const s = .05 + hasard() * .08, p = ajoute(g, part(CAILLOU, ROCHE[k % 4], s * 1.3, s, s * 1.2, x, s * .4, z));
+    p.rotation.set(hasard() * 3, hasard() * 3, 0);
+  }
+}
+/* la cabane : un socle de pierre, des murs de planches couchées, les poteaux, le toit d'ardoises clouées et ses pignons
+   sur les côtés, la poutre de faîte et ses deux blocs */
+const HM2 = 1.75, SOC = .36, HR2 = .9;
+function cabane2(g){
+  const W = X1 - X0, D = FACADE - Z0, ZC = (Z0 + FACADE) / 2;
+  /* le socle de pierre : de gros blocs devant et sur les côtés, l'arrière d'un seul tenant */
+  for(const [a, b] of [[X0, .8], [1.8, X1]]){ const n = Math.max(1, Math.round((b - a) / .42)), l = (b - a) / n;
+    for(let k = 0; k < n; k++) bloc(g, ROCHE[(k + 1) % 4], l - .03, SOC, .24, a + (k + .5) * l, SOC / 2, FACADE - .02); }
+  for(const x of [X0, X1]) for(let k = 0; k < 4; k++){ const l = D / 4; bloc(g, ROCHE[(k + 2) % 4], .24, SOC, l - .03, x, SOC / 2, Z0 + (k + .5) * l); }
+  boite(g, ROCHE_S, W, SOC, .2, CX, SOC / 2, Z0);
+  /* les planches couchées */
+  const nr = 6, hr = (HM2 - SOC) / nr;
+  for(let r = 0; r < nr; r++){ const y = SOC + (r + .5) * hr;
+    boite(g, ton(r), .8 - X0, hr - .025, .1, (X0 + .8) / 2, y, FACADE);                              // devant, à gauche de la porte
+    boite(g, ton(r + 1), X1 - 1.8, hr - .025, .1, (1.8 + X1) / 2, y, FACADE);                         // devant, à droite
+    boite(g, ton(r + 2), W, hr - .025, .1, CX, y, Z0);                                               // l'arrière
+    for(const x of [X0, X1]) boite(g, ton(r + (x > 0 ? 1 : 0)), .1, hr - .025, D, x, y, ZC);         // les côtés
+  }
+  boite(g, ton(4), 1.0, HM2 - 1.43, .1, PORTE_X, (1.43 + HM2) / 2, FACADE);                         // au-dessus de la porte
+  for(const x of [X0, X1]) for(const z of [Z0, FACADE]) boite(g, FONCE, .18, HM2 + .04, .18, x, (HM2 + .04) / 2, z);   // les poteaux d'angle
+  boite(g, FONCE, .14, HM2 - SOC, .14, .8, SOC + (HM2 - SOC) / 2, FACADE + .04);                    // le poteau du milieu
+  boite(g, FONCE, W + .2, .14, .16, CX, HM2 - .04, FACADE + .03);                                   // la poutre du haut
+  /* les pignons, sur les côtés : des planches debout, de plus en plus courtes ; leurs rives */
+  const nz = Math.round(D / .26), lz = D / nz;
+  for(let k = 0; k < nz; k++){ const z = Z0 + (k + .5) * lz, h = HR2 * (1 - Math.abs(z - ZC) / (D / 2 + .12)) - .02;
+    if(h > .04) for(const x of [X0, X1]) boite(g, ton(k + 1), .08, h, lz - .025, x, HM2 + h / 2, z); }
+  const a = Math.atan2(HR2, D / 2), demi = D / 2 + .16, L = demi / Math.cos(a), sommet = HM2 + HR2 + .06;
+  for(const x of [X0 - .1, X1 + .1]) for(const s of [-1, 1])
+    planche(g, FONCE, .1, .14, L + .2, x, sommet - Math.sin(a) * (L / 2 - .1) + .02, ZC + s * Math.cos(a) * (L / 2 - .1), s * a, 0, 0);
+  /* le toit : sur chaque pente, des voliges, puis quatre rangs d'ardoises qui se chevauchent, une sur deux clouée */
+  const x0 = X0 - .22, x1 = X1 + .18, nrA = 4, pas = L / nrA;
+  for(const s of [-1, 1]){
+    planche(g, FONCE, x1 - x0, .05, L, CX, sommet - Math.sin(a) * L / 2 - .03, ZC + s * Math.cos(a) * L / 2, s * a, 0, 0);
+    for(let r = 0; r < nrA; r++){
+      const nc = r % 2 ? 6 : 7, lc = (x1 - x0) / nc, t = (r + .55) * pas, y = sommet - Math.sin(a) * t + .02 + (nrA - r) * .008, z = ZC + s * Math.cos(a) * t;
+      for(let k = 0; k < nc; k++){ const x = x0 + (k + .5) * lc;
+        planche(g, ARDOISE[(k + r * 2 + (s > 0 ? 0 : 1)) % 3], lc - .04, .05, pas + .04, x, y, z, s * (a + .05), 0, 0);
+        if((k + r) % 2 === 0) ajoute(g, part(G.head, CLOU, .06, .04, .06, x, y + .04, z + s * Math.cos(a) * pas * .2)); }
+    }
+  }
+  boite(g, BOIS[1], W + .44, .2, .22, CX - .04, sommet + .07, ZC);                                        // la poutre de faîte
+  for(const x of [X0 - .25, X1 + .07]) boite(g, CLAIR, .26, .3, .3, x, sommet + .07, ZC);          // ses deux blocs
+  g.userData.toit = sommet + .25;
+}
+export function carriereNiveau2(g){
+  alea = 23;
+  sable(g);
+  roche2(g);
+  blocs2(g);
+  cabane2(g);
+  porte(g);
+  outils(g);
+  brouette(g);
+  cailloux2(g);
+  lanterneCabane(g);
+}
