@@ -56,7 +56,7 @@ import { allumerCompteur, rapportPerf, mesures, mettreDeCote, releve, regularite
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
 import { player, placePlayer, updatePlayer, R, islandWalkable, regard, tenirTorche } from "../js/monde/personnage.js";
-import { mainsIci, gesteOutil } from "../js/monde/mains.js";
+import { mainsIci, gesteOutil, dessinerMains } from "../js/monde/mains.js";
 import { choisirVue, premiereActive, vuePremiere, pencherVue } from "../js/vue.js";
 import { frontTile } from "../js/monde/personnage.js";
 import { decorating } from "../js/decorer.js";
@@ -498,6 +498,13 @@ export async function verifier(){
     if(!(B.marche.door > .5) || parSaison.automne < 250) throw new Error(`le Marché du niveau 1 n'a pas son nouveau modèle (porte en ${B.marche.door}, ${parSaison.automne} morceaux)`);
     if(new Set(Object.values(parSaison)).size < 3) throw new Error(`les cagettes du Marché ne changent pas avec la saison (${JSON.stringify(parSaison)})`);
     return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P ; la Forge : sa porte à droite, sa fumée ; la Taverne : ${mt} morceaux, sa porte à droite, sa fumée ; la Chaumière : ${mh} morceaux, sa porte à droite, sa fumée ; le Marché : sa porte à droite, ses cagettes selon la saison (${Object.values(parSaison).join(", ")} morceaux)`;
+  });
+  await etape("Les mains préparées au chargement (session ⏱️ de Yo, 5 novembre 2026) : la première vue à la première personne ne compile rien", async () => {
+    const n0 = renderer.info.programs.length;
+    dessinerMains();
+    const n1 = renderer.info.programs.length;
+    if(n1 !== n0) throw new Error(`dessiner les mains a compilé ${n1 - n0} programme(s) pendant le jeu`);
+    return `${n0} programmes prêts dès le chargement`;
   });
   await etape("La remise à zéro de Yo (4 novembre 2026) : les bâtiments au niveau 1, les coffres vides, seulement les outils sur soi", async () => {
     const p = {buildings: [{type: "taverne", lvl: 3, deco: {items: [{type: "lit", x: 4.6, z: -4.4, rot: 0}]}}, {type: "mine", lvl: 1}],

@@ -17,7 +17,7 @@
    - À la pêche, le fil part du bout de la canne qu'on voit à l'écran (boutFPS, pour peche.js). */
 import { G, part, toon } from "./formes.js";
 import { makeOutil } from "./outils3d.js";
-import { OUTILS } from "../donnees.js";
+import { OUTILS, GRAINES, POSABLES } from "../donnees.js";
 import { renderer, camera, hemi as hemiIle, sun } from "./scene.js";
 import { hemiDedans, lampeDedans } from "./interieurs.js";
 import { outilTenu, angleMain, mainGauche, allure } from "./personnage.js";
@@ -171,6 +171,23 @@ export function dessinerMains(){
   renderer.clearDepth();
   renderer.render(scene, cam);
   renderer.autoClear = auto;
+}
+/* Préparer les mains au chargement (session ⏱️ de Yo, 5 novembre 2026 : la première vue à la première personne compilait
+   un programme et envoyait une douzaine de formes, un à-coup de 52 ms ; sa règle : rien ne se prépare en jouant) : comme
+   preparer (scene.js), un dessin dans une toute petite image qu'on ne voit jamais, les deux bras, chaque outil, la torche et
+   la lanterne (une graine et ce qui se pose aussi) montrés une fois ; rien ne change à l'écran */
+export function preparerMains(){
+  const vus = [D.g.visible, Gc.g.visible], tous = new THREE.Group();
+  D.g.visible = Gc.g.visible = true;
+  let x = 0;
+  for(const k of [...Object.keys(OUTILS), Object.keys(GRAINES)[0], ...Object.keys(POSABLES)]){ if(MODELES_G[famille(k)]) continue; const o = makeOutil(k); if(o){ o.position.set((x++ % 6) * .1 - .25, 0, -.6); tous.add(o); } }
+  for(const faire of Object.values(MODELES_G)){ const o = faire(); o.position.z = -.6; tous.add(o); }
+  tous.traverse(o => { o.frustumCulled = false; });
+  scene.add(tous);
+  const cible = new THREE.WebGLRenderTarget(4, 4);
+  renderer.setRenderTarget(cible);
+  try { for(const lueur of [0, 1]){ feu.intensity = lueur; renderer.render(scene, cam); } }   // sans la lueur de la torche (elle ne compte pas, éteinte) et avec
+  finally { feu.intensity = 0; renderer.setRenderTarget(null); cible.dispose(); scene.remove(tous); [D.g.visible, Gc.g.visible] = vus; }
 }
 export function mainsInactives(){ actif = false; lacet = null; geste = null; }
 /* À la pêche : le bout de la canne vu à l'écran, ramené dans le monde à un pas devant les yeux (peche.js) */
