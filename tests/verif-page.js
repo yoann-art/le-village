@@ -506,7 +506,7 @@ export async function verifier(){
     if(n1 !== n0) throw new Error(`dessiner les mains a compilé ${n1 - n0} programme(s) pendant le jeu`);
     return `${n0} programmes prêts dès le chargement`;
   });
-  await etape("Le Château niveau 1 d'après l'image de Yo (5 novembre 2026) : passer la grande porte, marcher dans la cour (le mur de devant à moitié transparent), entrer par la porte de la tour, ressortir dans la cour", async () => {
+  await etape("Le Château niveau 1 d'après l'image de Yo (5 novembre 2026) : passer la grande porte, marcher dans la cour (la grande porte s'ouvre devant soi et se referme), entrer par la porte de la tour, ressortir dans la cour", async () => {
     const c1 = makeBuilding("chateau", 1), bc = new THREE.Box3().setFromObject(c1);
     if(bc.min.x < -3.6 || bc.max.x > 3.6 || bc.min.z < -3.6 || bc.max.z > 3.85) throw new Error(`le Château déborde de son carré (${bc.min.x.toFixed(2)} à ${bc.max.x.toFixed(2)}, ${bc.min.z.toFixed(2)} à ${bc.max.z.toFixed(2)})`);
     /* une place libre de 7 × 7 sur la terre, et la case devant sa porte */
@@ -519,19 +519,20 @@ export async function verifier(){
     if(!place) throw new Error("pas de place libre pour essayer le Château");
     const b = {id: -7, type: "chateau", lvl: 1, x: place.x, z: place.z};
     state.buildings.push(b); footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.set(idx(x, z), b.id)); placeMesh(b);
-    const { courVue } = await import("../js/monde/chateau.js");
+    const { porteOuverte } = await import("../js/monde/chateau.js");
     try {
       placePlayer(b.x + 3 - H + .5, b.z + 7 - H + .5, 0, -1);                         // devant la grande porte, dehors
+      if(!await attendre(() => porteOuverte() > .99, 3000)) throw new Error(`devant elle, la grande porte ne s'ouvre pas (${porteOuverte().toFixed(2)})`);
       keys.u = 1; for(let k = 0; k < 200 && tileOf(player.position.z) > b.z + 4; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
       if(tileOf(player.position.z) > b.z + 4) throw new Error(`on ne passe pas la grande porte (case ${tileOf(player.position.x) - b.x}, ${tileOf(player.position.z) - b.z})`);
-      if(!await attendre(() => courVue(), 3000)) throw new Error("dans la cour, le mur de devant ne devient pas transparent");
       keys.u = 1; for(let k = 0; k < 200; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
       if(tileOf(player.position.z) < b.z + 2) throw new Error("on traverse le fond de la cour");
       await entrer(b);
       await sortir();
       const x = tileOf(player.position.x) - b.x, z = tileOf(player.position.z) - b.z;
       if(x !== 1 || z !== 3) throw new Error(`en sortant de la tour, on n'est pas dans la cour devant sa porte (case ${x}, ${z})`);
-      return `on passe la grande porte, le mur de devant devient transparent dans la cour, on entre par la tour et on ressort devant elle`;
+      if(!await attendre(() => porteOuverte() < .01, 3000)) throw new Error(`loin d'elle, la grande porte ne se referme pas (${porteOuverte().toFixed(2)})`);
+      return `la grande porte s'ouvre devant soi, on la passe, on entre par la tour, on ressort devant elle, la grande porte s'est refermée`;
     } finally {
       keys.u = 0; footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.delete(idx(x, z))); removeMesh(b.id); state.buildings.splice(state.buildings.indexOf(b), 1);
       placePlayer(.5, .5, 0, 1);

@@ -1,10 +1,10 @@
 /* ================= Le Château, niveau 1 =================
    D'après l'image de Yo (5 novembre 2026 : « Voici le château niveau 1. Par contre j'aimerais que l'on passe par la porte
    principale du château et que l'on accède à la cour et ensuite la porte de la tour qui mène à l'intérieur du château ») ;
-   ses choix : « 7*7 », le mur de devant « À moitié transparent pour voir à quoi cela peut ressembler » quand on est dans la
-   cour, la cour seulement au niveau 1 pour l'instant, « Rien poser ni planter pour l'instant » dans la cour.
-   L'enceinte de grosses pierres claires et ses créneaux ; la grande porte en arc, ses deux battants ouverts contre le
-   passage, leurs pentures et leurs anneaux ; deux lanternes et deux bannières rouges à fleur de lys ; au fond à gauche, la
+   ses choix : « 7*7 », le mur de devant à moitié transparent dans la cour pour voir (puis : « il n'y a pas besoin d'avoir le
+   mur transparent tu peux le mettre normal »), la cour seulement au niveau 1 pour l'instant, « Rien poser ni planter pour l'instant » dans la cour.
+   L'enceinte de grosses pierres claires et ses créneaux ; la grande porte en arc, ses deux battants fermés qui s'ouvrent
+   quand on approche, leurs pentures et leurs anneaux ; deux lanternes et deux bannières rouges à fleur de lys ; au fond à gauche, la
    tour ronde, ses fenêtres allumées, son toit d'ardoises bleues, sa boule dorée et son drapeau rouge qui flotte au vent
    (VENT), sa petite porte en arc qui mène à la salle du trône ; dans la cour, l'abri à toile rouge, le tonneau, le râtelier
    de lances, un chemin de dalles ; autour, des rochers et des touffes d'herbe (sans tas de terre).
@@ -22,13 +22,15 @@ const PIERRE = [0xDCC2A4, 0xD2B798, 0xE4CEB4, 0xC8AC8E], PIERRE_S = 0xB09878, JO
 const LUEUR = toon({color: 0xFFE3A3, emissive: 0xFFB347, emissiveIntensity: .8});
 const VITRE = toon({color: 0xFFC860, emissive: 0xFF9A30, emissiveIntensity: .7});
 for(const m of [LUEUR, VITRE]) lanterne(null, 0, 0, m);
-/* le mur de devant, à moitié transparent quand on est dans la cour (voirCour) : ses morceaux gardent leurs couleurs */
-const MUR_DEVANT = toon({vertexColors: true});
-export function voirCour(oui){
-  if(MUR_DEVANT.transparent === oui) return;
-  MUR_DEVANT.transparent = oui; MUR_DEVANT.opacity = oui ? .5 : 1; MUR_DEVANT.depthWrite = !oui;
-}
-export const courVue = () => MUR_DEVANT.transparent;
+/* la grande porte fermée, qui s'ouvre quand on s'en approche et se referme derrière soi (Yo, 5 novembre 2026 : « que la porte
+   principale qui mène à la cour soit fermée et ouvre en entrant ») : ouverture va de 0 (fermée) à 1 (ouverte) ; chaque
+   battant est rassemblé en une forme, avec sa matière à lui (couleurs aux sommets, le même programme que le reste), pour
+   tourner sur ses gonds */
+const BATTANT = toon({vertexColors: true});
+let ouverture = 0;
+export const porteOuverte = () => ouverture;
+export function ouvrirPorte(dt, proche){ ouverture = Math.max(0, Math.min(1, ouverture + (proche ? 1 : -1) * dt / .45)); }
+const lisse = t => t * t * (3 - 2 * t);
 const DRAPEAU = toon({color: ROUGE, side: THREE.DoubleSide});
 
 const ajoute = (g, m) => { g.add(m); return m; };
@@ -106,14 +108,21 @@ function enceinte(g, devant){
   for(const s of [-1, 1]) bloc(devant, pierre(), .26, HP, E + .06, s * (LP / 2 + .12), HP / 2, A, 0, BLOC);
   for(let k = 0; k < 3; k++) bloc(g, PIERRE[k % 4], LP - .06, .05, E / 3 - .03, 0, .03, A - E / 3 + k * E / 3, 0);
 }
-/* la grande porte : deux battants de planches ouverts contre le passage (on passe), leurs pentures et leurs anneaux */
-function grandePorte(devant){
+/* la grande porte : deux battants de planches, leurs pentures et leurs anneaux ; fermés, ils s'ouvrent vers la cour
+   (ouvrirPorte) */
+function grandePorte(g){
   for(const s of [-1, 1]){
-    const b = new THREE.Group(); b.position.set(s * (LP / 2 - .04), 0, A + E / 2 - .06); b.rotation.y = s * -Math.PI / 2 * .92; devant.add(b);
+    const gond = new THREE.Group(), b = new THREE.Group(); gond.position.set(s * (LP / 2 - .04), 0, A + E / 2 - .06); g.add(gond); gond.add(b);
     const w = LP / 2 - .02;
     for(let k = 0; k < 3; k++) boite(b, k % 2 ? BOIS[1] : BOIS[0], w / 3 - .01, HP + .2, .06, -s * (k + .5) * w / 3, (HP + .2) / 2, 0);
     for(const y of [.3, HP - .05]){ boite(b, FER, w, .08, .03, -s * w / 2, y, .04); for(const k of [.2, .5, .8]) ajoute(b, part(G.head, CLOU, .12, .12, .08, -s * w * k, y, .06)); }
     ajoute(b, part(G.tore, FER, .2, .2, .3, -s * w * .75, .7, .07));
+    const {lots, pris} = formeUnie(b);
+    for(const o of pris) o.parent.remove(o);
+    for(const [, {geo}] of lots){
+      const m = new THREE.Mesh(geo, BATTANT); m.castShadow = m.receiveShadow = true; b.add(m);
+      m.onBeforeRender = () => { gond.rotation.y = s * -Math.PI / 2 * .92 * lisse(ouverture); gond.updateMatrixWorld(true); };
+    }
   }
 }
 /* une lanterne murale sur sa potence de fer, qui brille la nuit */
@@ -238,16 +247,11 @@ function dehors(g){
 }
 export function chateauNiveau1(g){
   alea = 23;
-  const devant = new THREE.Group(); g.add(devant);
   dehors(g);
   cour(g);
-  enceinte(g, devant);
-  grandePorte(devant);
-  for(const s of [-1, 1]){ banniere(devant, s * 2.05); lanterneMur(g, s * 1.0, 1.25, A + E / 2); }
+  enceinte(g, g);
+  grandePorte(g);
+  for(const s of [-1, 1]){ banniere(g, s * 2.05); lanterneMur(g, s * 1.0, 1.25, A + E / 2); }
   tour(g);
-  /* le mur de devant (et ce qui y est accroché) : ses morceaux unis rassemblés en une forme, avec sa matière à lui */
-  const {lots, pris} = formeUnie(devant);
-  for(const o of pris) o.parent.remove(o);
-  for(const [cle, {geo}] of lots){ const mm = new THREE.Mesh(geo, MUR_DEVANT); mm.castShadow = cle[0] === "1"; mm.receiveShadow = cle[1] === "1"; devant.add(mm); }
   g.userData.toit = HM + .4;
 }
