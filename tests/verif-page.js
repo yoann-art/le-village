@@ -522,7 +522,7 @@ export async function verifier(){
     const { porteOuverte } = await import("../js/monde/chateau.js");
     try {
       placePlayer(b.x + 3 - H + .5, b.z + 7 - H + .5, 0, -1);                         // devant la grande porte, dehors
-      if(!await attendre(() => porteOuverte() > .99, 3000)) throw new Error(`devant elle, la grande porte ne s'ouvre pas (${porteOuverte().toFixed(2)})`);
+      if(!await attendre(() => porteOuverte() > .99)) throw new Error(`devant elle, la grande porte ne s'ouvre pas (${porteOuverte().toFixed(2)})`);
       keys.u = 1; for(let k = 0; k < 200 && tileOf(player.position.z) > b.z + 4; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
       if(tileOf(player.position.z) > b.z + 4) throw new Error(`on ne passe pas la grande porte (case ${tileOf(player.position.x) - b.x}, ${tileOf(player.position.z) - b.z})`);
       keys.u = 1; for(let k = 0; k < 200; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
@@ -531,7 +531,7 @@ export async function verifier(){
       await sortir();
       const x = tileOf(player.position.x) - b.x, z = tileOf(player.position.z) - b.z;
       if(x !== 1 || z !== 3) throw new Error(`en sortant de la tour, on n'est pas dans la cour devant sa porte (case ${x}, ${z})`);
-      if(!await attendre(() => porteOuverte() < .01, 3000)) throw new Error(`loin d'elle, la grande porte ne se referme pas (${porteOuverte().toFixed(2)})`);
+      if(!await attendre(() => porteOuverte() < .01)) throw new Error(`loin d'elle, la grande porte ne se referme pas (${porteOuverte().toFixed(2)})`);
       return `la grande porte s'ouvre devant soi, on la passe, on entre par la tour, on ressort devant elle, la grande porte s'est refermée`;
     } finally {
       keys.u = 0; footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.delete(idx(x, z))); removeMesh(b.id); state.buildings.splice(state.buildings.indexOf(b), 1);
