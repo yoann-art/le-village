@@ -18,6 +18,7 @@
    Au Marais brumeux (étape 1.13, morceau 5) : on pêche dans les chenaux depuis les îlots, les passerelles et
    l'embarcadère (lieu « chenal ») ; l'ombre de l'anguille-lanterne s'allume quand elle mord, celle du poisson-brume
    est pâle et flotte au ras de l'eau ; le poisson-brume ne vient que par brouillard. */
+import { MODELES_POISSONS } from "./monde/poissons3d.js";
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part, toon } from "./monde/formes.js";
@@ -107,7 +108,9 @@ function calmar(g, c){
   for(const z of [-.12, .12]) g.add(part(G.eye, 0x1C2230, 1.4, 1.4, 1.4, -.24, .06, z));
 }
 export function poissonMesh(k, cm){
-  const p = POISSONS[k], g = new THREE.Group();
+  const p = POISSONS[k], fait = MODELES_POISSONS[k];
+  if(fait){ const m = fait.fabrique(); m.scale.setScalar((.65 + Math.min(1.4, cm / 100) * .55) * fait.echelle); return m; }   // refait d'après l'image de Yo (poissons3d.js)
+  const g = new THREE.Group();
   if(p.forme === "crustace" || p.forme === "calmar"){
     (p.forme === "crustace" ? crustace : calmar)(g, p.couleur);
     g.scale.setScalar(.8 + Math.min(1, cm / 40) * .5);

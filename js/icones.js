@@ -11,6 +11,7 @@ import { renderer } from "./monde/scene.js";
 import { objet } from "./donnees.js";
 import { MODELES_INSECTES } from "./monde/insectes3d.js";
 import { MODELES_OISEAUX } from "./monde/oiseaux3d.js";
+import { MODELES_POISSONS } from "./monde/poissons3d.js";
 import { paqueretteModele } from "./monde/paquerette.js";
 import { coquelicotModele } from "./monde/coquelicot.js";
 import { bleuetModele } from "./monde/bleuet.js";
@@ -28,6 +29,7 @@ const VERSION_ICONES = 4, CLE = "le-village-icones", TAILLE = 96;
 /* Ce qu'on photographie : la clé de l'objet, et comment faire son modèle (en été, en fleur, de face : un mâle) */
 const PHOTOS = {};
 for(const k of Object.keys(MODELES_INSECTES)) PHOTOS[k] = () => MODELES_INSECTES[k].fabrique({saison: "ete"});
+for(const k of Object.keys(MODELES_POISSONS)) PHOTOS[k] = () => MODELES_POISSONS[k].fabrique();
 for(const k of Object.keys(MODELES_OISEAUX)) PHOTOS[k] = () => MODELES_OISEAUX[k].fabrique({saison: "printemps", male: true});
 const coul = k => FLEURS[k].couleurs[0];
 Object.assign(PHOTOS, {
@@ -68,7 +70,7 @@ function monter(){
   return studio = {scene, cam, cible, pix, toile, petite};
 }
 const boite = new THREE.Box3(), morceau = new THREE.Box3(), centre = new THREE.Vector3(), sphere = new THREE.Sphere(), coin = new THREE.Vector3();
-const VUE = new THREE.Vector3(-.62, .5, -.9).normalize(), DESSUS = new THREE.Vector3(0, 1, -.42).normalize(), PROFIL = new THREE.Vector3(-1, .25, -.2).normalize();
+const VUE = new THREE.Vector3(-.62, .5, -.9).normalize(), DESSUS = new THREE.Vector3(0, 1, -.42).normalize(), PROFIL = new THREE.Vector3(-1, .25, -.2).normalize(), POISSON = new THREE.Vector3(-.2, .3, 1).normalize();   // un poisson : de côté, la tête à gauche
 /* les papillons et la libellule se voient d'en haut, ailes ouvertes ; le citron, de profil, ailes fermées comme toujours */
 const D_EN_HAUT = new Set(["pieride", "paonDuJour", "machaon", "vulcain", "sphinx", "phalene", "grandPaon", "libellule"]);
 /* La photo d'un modèle : cadré sur sa forme, de trois quarts devant (la tête des bêtes est vers −z) */
@@ -78,7 +80,7 @@ export function photographier(k){
   const ailes = m.userData.ailes || [], ferme = m.userData.toujoursFerme && m.userData.ferme;
   if(D_EN_HAUT.has(k)) for(const a of ailes) a.pivot.rotation.z = a.cote * .08;
   else if(ferme) for(const a of ailes) a.pivot.rotation.z = a.cote * ferme;
-  const vue = D_EN_HAUT.has(k) ? DESSUS : ferme ? PROFIL : VUE;
+  const vue = MODELES_POISSONS[k] ? POISSON : D_EN_HAUT.has(k) ? DESSUS : ferme ? PROFIL : VUE;
   S.scene.add(m);
   m.updateMatrixWorld(true);
   boite.makeEmpty();                                               // seulement ce qui se voit (pas les ailes de vol cachées)

@@ -793,8 +793,8 @@ export async function verifier(){
      bloque l'envoi ; les limites sont un peu au-dessus des plus lourds d'aujourd'hui (la Scierie niveau 3 37 800 triangles,
      le groseillier plein l'été 36 700, le Grand Paon 10 400, la chouette 6 200). Les dépasser se décide avec Yo, en le mesurant
      sur son téléphone (⏱️ 2 min), avant de relever la limite ici */
-  await etape("Le budget de la fluidité : aucun bâtiment, objet de l'île, insecte ou oiseau trop lourd pour le téléphone de Yo", async () => {
-    const BUDGET = {batiment: 45000, ile: 40000, insecte: 12000, oiseau: 8000, dessinsIle: 8, personnage: 25000};   // le personnage : 25 000, accord de Yo (30 octobre 2026)
+  await etape("Le budget de la fluidité : aucun bâtiment, objet de l'île, insecte, oiseau ou poisson trop lourd pour le téléphone de Yo", async () => {
+    const BUDGET = {batiment: 45000, ile: 40000, insecte: 12000, oiseau: 8000, poisson: 20000, dessinsIle: 8, personnage: 25000};   // le poisson : un seul à la fois, levé à deux mains (5 novembre 2026)   // le personnage : 25 000, accord de Yo (30 octobre 2026)
     const tri = o => { let t = 0, d = 0; o.traverse(m => { if(m.isMesh && m.geometry && !(m.parent && m.parent.isLOD && m !== m.parent.levels[0].object)){ const g = m.geometry; t += (g.index ? g.index.count : g.attributes.position.count) / 3; d++; } }); return {t: Math.round(t), d}; };
     const trop = [], pire = {};
     const noter = (sorte, nom, v) => { if(!pire[sorte] || v.t > pire[sorte].t) pire[sorte] = {nom, t: v.t};
@@ -804,6 +804,8 @@ export async function verifier(){
     for(const k of Object.keys(B)) for(const l of [1, 2, 3]) noter("batiment", `${k} niveau ${l}`, tri(makeBuilding(k, l)));
     for(const [k, f] of Object.entries(MODELES_INSECTES)) for(let n = 0; n < 6; n++) noter("insecte", k, tri(f.fabrique({saison: "ete", tronc: n % 2 === 1})));
     for(const [k, f] of Object.entries(MODELES_OISEAUX)) for(let n = 0; n < 4; n++) noter("oiseau", k, tri(f.fabrique({saison: "ete"})));
+    const {MODELES_POISSONS} = await import("../js/monde/poissons3d.js");
+    for(const [k, f] of Object.entries(MODELES_POISSONS)){ const v = tri(f.fabrique()); noter("poisson", k, v); if(v.d !== 1) trop.push(`${k} : ${v.d} dessins (un seul attendu)`); }
     const {fabriqueHeros} = await import("../js/monde/heros.js");
     for(const sexe of ["garcon", "fille"]){ const h = fabriqueHeros({sexe}), g = new THREE.Group(); g.add(h.corps, ...h.bras, ...h.jambes); noter("personnage", sexe, tri(g)); }
     try {
@@ -1236,6 +1238,13 @@ export async function verifier(){
     if(!/\d+ cm/.test($("#prise").textContent)) throw new Error("la bulle ne dit pas la taille du poisson");
     frames(40);
     if(priseEnCours() || !$("#prise").hidden) throw new Error("la prise montrée ne finit pas");
+    /* les poissons refaits d'après les images de Yo (poissons3d.js) : levés tels quels, et leur photo pour le sac */
+    const { MODELES_POISSONS } = await import("../js/monde/poissons3d.js"), { poissonMesh } = await import("../js/peche.js"), { iconesPhoto } = await import("../js/icones.js");
+    for(const f of Object.keys(MODELES_POISSONS)){
+      let n = 0; poissonMesh(f, 20).traverse(o => { if(o.isMesh) n += o.geometry.index.count / 3; });
+      if(n < 5000) throw new Error(`le ${f} pêché n'est pas son modèle refait (${n} triangles)`);
+      if(!iconesPhoto().includes(f)) throw new Error(`le ${f} n'a pas sa photo dans le sac`);
+    }
     return `${objet(p.k).nom.toLowerCase()}, mordu au bout de ${(k * .05).toFixed(1)} s`;
   });
   await etape("Pêcher depuis le ponton", async () => {

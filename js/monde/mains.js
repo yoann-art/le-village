@@ -23,6 +23,7 @@ import { hemiDedans, lampeDedans } from "./interieurs.js";
 import { outilTenu, angleMain, mainGauche, allure } from "./personnage.js";
 import { COULEURS_HEROS } from "./heros.js";
 import { leveePrise } from "../prise.js";
+import { MODELES_POISSONS } from "./poissons3d.js";
 
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(50, 1, .01, 5);
@@ -184,13 +185,14 @@ export function dessinerMains(){
 /* Préparer les mains au chargement (session ⏱️ de Yo, 5 novembre 2026 : la première vue à la première personne compilait
    un programme et envoyait une douzaine de formes, un à-coup de 52 ms ; sa règle : rien ne se prépare en jouant) : comme
    preparer (scene.js), un dessin dans une toute petite image qu'on ne voit jamais, les deux bras, chaque outil, la torche et
-   la lanterne (une graine et ce qui se pose aussi) montrés une fois ; rien ne change à l'écran */
+   la lanterne (une graine et ce qui se pose aussi, les poissons refaits qu'on lève à la pêche) montrés une fois ; rien ne change à l'écran */
 export function preparerMains(){
   const vus = [D.g.visible, Gc.g.visible], tous = new THREE.Group();
   D.g.visible = Gc.g.visible = true;
   let x = 0;
   for(const k of [...Object.keys(OUTILS), Object.keys(GRAINES)[0], ...Object.keys(POSABLES)]){ if(MODELES_G[famille(k)]) continue; const o = makeOutil(k); if(o){ o.position.set((x++ % 6) * .1 - .25, 0, -.6); tous.add(o); } }
   for(const faire of Object.values(MODELES_G)){ const o = faire(); o.position.z = -.6; tous.add(o); }
+  for(const p of Object.values(MODELES_POISSONS)){ const o = p.fabrique(); o.position.z = -.6; tous.add(o); }   // les poissons refaits : la prise montrée ne les envoie pas en jouant
   tous.traverse(o => { o.frustumCulled = false; });
   scene.add(tous);
   const cible = new THREE.WebGLRenderTarget(4, 4);
