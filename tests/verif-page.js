@@ -509,6 +509,15 @@ export async function verifier(){
   await etape("Le Château niveau 1 d'après l'image de Yo (5 novembre 2026) : passer la grande porte, marcher dans la cour (la grande porte s'ouvre devant soi et se referme), entrer par la porte de la tour, ressortir dans la cour", async () => {
     const c1 = makeBuilding("chateau", 1), bc = new THREE.Box3().setFromObject(c1);
     if(bc.min.x < -3.6 || bc.max.x > 3.6 || bc.min.z < -3.6 || bc.max.z > 3.85) throw new Error(`le Château déborde de son carré (${bc.min.x.toFixed(2)} à ${bc.max.x.toFixed(2)}, ${bc.min.z.toFixed(2)} à ${bc.max.z.toFixed(2)})`);
+    /* pas deux sols à la même hauteur dans la cour (ils scintillaient) : de haut en bas, les deux premiers dessus touchés
+       sont séparés d'au moins 1 cm */
+    c1.updateMatrixWorld(true);
+    const rayon = new THREE.Raycaster();
+    for(const [x, z] of [[1, 0], [1.5, 1.5], [-.8, 1.8], [2, -1]]){
+      rayon.set(new THREE.Vector3(x, 5, z), new THREE.Vector3(0, -1, 0));
+      const ys = rayon.intersectObject(c1, true).filter(h => h.face && h.face.normal.y > .5).map(h => h.point.y);
+      if(ys.length >= 2 && ys[0] - ys[1] < .01) throw new Error(`deux sols à la même hauteur dans la cour en (${x}, ${z}) : ${ys[0].toFixed(3)} et ${ys[1].toFixed(3)} (ils scintillent)`);
+    }
     /* une place libre de 7 × 7 sur la terre, et la case devant sa porte */
     let place = null;
     for(let z = 20; z < N - 20 && !place; z++) for(let x = 20; x < N - 20 && !place; x++){

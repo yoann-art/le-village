@@ -211,7 +211,9 @@ function tour(g){
 /* la cour : son sol de terre battue, le chemin de dalles de la grande porte à la tour ; au fond, l'abri à toile rouge et sa
    table, le tonneau, le râtelier de lances */
 function cour(g){
-  const sol = ajoute(g, part(G.box, TERRE, 2 * A - E, .04, 2 * A - E, 0, .03, 0)); sol.castShadow = false;
+  /* la terre battue un peu au-dessus de la plaque de sable (son dessus à .05) : à la même hauteur, les deux scintillaient
+     (Yo, 5 novembre 2026 : « le visuel dans la cour du château fait des flash, scintillement ») */
+  const sol = ajoute(g, part(G.box, TERRE, 2 * A - E, .04, 2 * A - E, 0, .045, 0)); sol.castShadow = false;
   for(const [x, z] of [[0, 2.1], [-.05, 1.35], [-.5, .65], [-1.2, .25], [-1.9, .15]]) bloc(g, PIERRE[Math.floor(hasard() * 4)], .62, .05, .5, x, .06, z, (hasard() - .5) * .3);
   /* l'abri : quatre poteaux, la toile rouge qui descend vers l'avant, la table et ses caisses */
   const ax = 0, az = -2.05;
