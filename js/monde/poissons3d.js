@@ -414,7 +414,92 @@ function carpeFait(){
 }
 export const carpeModele = () => modeleDe(carpeFait());
 
+/* ---------- L'écrevisse ----------
+   D'après l'image de Yo (5 novembre 2026 : « Voici l'écrevisse »), comme une vraie écrevisse de nos rivières, l'écrevisse
+   à pattes rouges (Astacus astacus ; choix de Yo : « A », comme la nature : elle n'est rouge vif qu'une fois cuite) :
+   brun-olive foncé dessus, le dessous des pinces et la base des pattes rouge orangé ; la carapace bosselée et son rostre
+   pointu, la queue en six anneaux et son éventail ; deux grosses pinces granuleuses et dentelées ; les yeux noirs et
+   brillants au bout de petits pédoncules ; deux grandes antennes et deux paires de petites ; quatre paires de pattes fines
+   pour marcher. La tête vers −x, comme les poissons. */
+const ECREVISSE = {brun: 0x4A3E26, brunClair: 0x6A5834, dessous: 0x96784A, rouge: 0xC4502A, rougeClair: 0xD8703A,
+  grain: 0x3A3020, oeil: 0x101010};
+const versX = d => new THREE.Quaternion().setFromUnitVectors(V(1, 0, 0), d.clone().normalize());
+/* un morceau ovale couché le long de a → b (sa largeur l, sa hauteur h) */
+function ovale(M, c, a, b, l, h, couleur){
+  const d = b.clone().sub(a), m = a.clone().add(b).multiplyScalar(.5), q = versX(V(d.x, d.y, d.z));
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(m, q, V(d.length() / 2, h, l)), c, couleur});
+}
+/* une patte articulée qui passe par les points pts, plus fine au bout */
+function articule(M, pts, r0, r1, couleur){
+  for(let i = 0; i < pts.length - 1; i++){ const r = r0 + (r1 - r0) * i / (pts.length - 2 || 1);
+    M.push({geo: TIGE, m: new THREE.Matrix4().compose(pts[i], new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), pts[i + 1].clone().sub(pts[i]).normalize()), V(r, pts[i + 1].distanceTo(pts[i]), r)), c: 0xFFFFFF, couleur});
+    M.push({geo: BOULE_P, m: new THREE.Matrix4().compose(pts[i + 1], q0, V(r * 1.15, r * 1.15, r * 1.15)), c: 0xFFFFFF, couleur}); }
+}
+let ecrevisseGeo = null;
+function ecrevisseFait(){
+  if(ecrevisseGeo) return ecrevisseGeo;
+  const C = ECREVISSE, M = [];
+  /* brun-olive dessus, plus clair sur les flancs, chamois dessous */
+  const dos = (y0, h) => (x, y) => { const t = (y - y0) / h; return t > .2 ? melange(C.brunClair, C.brun, (t - .2) / .7) : melange(C.dessous, C.brunClair, (t + .6) / .8); };
+  /* la carapace : bombée, bosselée, son sillon, le rostre pointu devant */
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(-.09, .02, 0), q0, V(.18, .1, .1)), c: 0xFFFFFF, couleur: dos(.02, .1),
+    ombre: (x, y) => .9 + .14 * Math.max(-1, Math.min(1, (y - .02) / .1))});
+  M.push({geo: new THREE.ConeGeometry(1, 1, 6).rotateZ(Math.PI / 2), m: new THREE.Matrix4().compose(V(-.29, .05, 0), q0, V(.06, .016, .02)), c: C.brun});
+  for(let k = 0; k < 9; k++){ const a = -1.1 + k / 8 * 2.2;                                                  // le sillon
+    boule(M, C.grain, -.045, .02 + Math.sin(a) * .095, Math.cos(a) * .095 * (k % 2 ? 1 : -1), .006, .012, .006, BOULE_P); }
+  for(let k = 0; k < 26; k++){ const a = (k * 2.39) % 6.28, u = (k * .37) % 1, x = -.22 + u * .26, r = Math.sqrt(Math.max(0, 1 - Math.pow((x + .09) / .18, 2)));   // les bosses
+    boule(M, C.grain, x, .02 + .1 * r * Math.abs(Math.sin(a)) * .98, .1 * r * Math.cos(a) * .98, .008, .006, .008, BOULE_P); }
+  /* la queue : six anneaux qui rétrécissent et se recourbent un peu, puis l'éventail (le telson et quatre palettes) */
+  let x = .08;
+  for(let k = 0; k < 6; k++){ const w = .085 - k * .007, h = .07 - k * .006, y = .02 - k * .006;
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(V(x + .03, y, 0), tourne(0, 0, -k * .04), V(.045, h, w)), c: 0xFFFFFF, couleur: dos(y, h)});
+    for(const s of [-1, 1]) boule(M, C.brun, x + .03, y - h * .45, s * w * .92, .03, .025, .012);           // le bord des anneaux
+    x += .052; }
+  const fx = x + .01, fy = -.02;
+  for(const [a, l, w] of [[0, .13, .05], [.5, .12, .045], [-.5, .12, .045], [1.0, .11, .04], [-1.0, .11, .04]]){
+    const d = V(Math.cos(a * .6), -.35, Math.sin(a * .6));
+    ovale(M, 0xFFFFFF, V(fx, fy, 0), V(fx, fy, 0).addScaledVector(d, l), w, .012, (x, y) => melange(C.brunClair, C.brun, .5));
+  }
+  /* les yeux : noirs et brillants, au bout d'un petit pédoncule */
+  for(const s of [-1, 1]){
+    const a = V(-.24, .055, s * .03), b = V(-.27, .07, s * .05);
+    baton(M, C.brunClair, a, b, .008);
+    boule(M, C.oeil, b.x, b.y, b.z, .016, .016, .016);
+    boule(M, 0xFFFFFF, b.x - .006, b.y + .008, b.z + s * .008, .004, .004, .004, BOULE_P);
+  }
+  /* les antennes : deux grandes, qui partent en avant et s'écartent ; deux paires de petites (les antennules) */
+  for(const s of [-1, 1]){
+    const pts = []; for(let k = 0; k <= 8; k++){ const t = k / 8; pts.push(V(-.27 - t * .5, .04 + Math.sin(t * 2.2) * .12, s * (.04 + t * .2))); }
+    articule(M, pts, .006, .003, () => melange(C.brunClair, C.brun, .4));
+    for(const e of [.0, .02]){ const q = [V(-.28, .03, s * (.015 + e)), V(-.36, .05, s * (.03 + e)), V(-.42, .07, s * (.04 + e * 2))];
+      articule(M, q, .004, .003, () => C.brunClair); }
+  }
+  /* les pinces : le bras, puis la grosse pince granuleuse, ses deux doigts dentelés un peu ouverts ; brun-olive dessus,
+     rouge orangé dessous */
+  for(const s of [-1, 1]){
+    const rouxDessous = cy => (x, y) => y < cy ? melange(C.rougeClair, C.rouge, (cy - y) / .02) : melange(C.brunClair, C.brun, Math.min(1, (y - cy) / .03));
+    articule(M, [V(-.14, -.03, s * .07), V(-.2, -.01, s * .15), V(-.29, .0, s * .17)], .026, .024, rouxDessous(-.015));
+    const p0 = V(-.3, .0, s * .17), p1 = V(-.47, .0, s * .15);
+    ovale(M, 0xFFFFFF, p0, p1, .06, .05, rouxDessous(-.012));                                              // la paume, grosse et bombée
+    for(let k = 0; k < 10; k++){ const t = k / 9, a = k * 1.7;                                             // ses grains
+      boule(M, C.grain, p0.x + (p1.x - p0.x) * t * .9, .045 * Math.abs(Math.cos(a)) * Math.sqrt(1 - Math.pow(2 * t - 1, 2) * .8), s * .16 + Math.sin(a) * .045, .008, .006, .008, BOULE_P); }
+    for(const [dy, dz, r] of [[.008, s * .018, .03], [-.006, -s * .026, .026]]){                          // les deux doigts, un peu ouverts
+      const a = V(-.44, dy, s * .15 + dz), b = V(-.62, dy * 1.5, s * .15 + dz * 2.4);
+      ovale(M, 0xFFFFFF, a, b, r, r * .85, rouxDessous(-.01 + dy));
+      for(let k = 1; k < 5; k++){ const p = a.clone().lerp(b, k / 5); boule(M, C.dessous, p.x, p.y, p.z - Math.sign(dz) * r * .7, .005, .005, .005, BOULE_P); }   // les dents
+    }
+  }
+  /* quatre paires de pattes pour marcher : la base rouge orangé, puis brun-olive, posées un peu en dessous */
+  for(const s of [-1, 1]) for(let k = 0; k < 4; k++){
+    const bx = -.11 + k * .05, pts = [V(bx, -.04, s * .06), V(bx + .01 * (k - 1.5), .02, s * .14), V(bx + .02 * (k - 1.5), -.04, s * .2), V(bx + .03 * (k - 1.5), -.1, s * .23)];
+    articule(M, pts, .014, .009, (x, y) => y > -.02 ? C.rouge : melange(C.brunClair, C.brun, .3));
+  }
+  return ecrevisseGeo = fusionner(M);
+}
+export const ecrevisseModele = () => modeleDe(ecrevisseFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
-  tanche: {fabrique: tancheModele, echelle: 1}, carpe: {fabrique: carpeModele, echelle: 1}};
+  tanche: {fabrique: tancheModele, echelle: 1}, carpe: {fabrique: carpeModele, echelle: 1},
+  ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
