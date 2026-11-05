@@ -18,6 +18,13 @@ const ECAILLE = (() => {
   g.setAttribute("teinte", new THREE.Float32BufferAttribute(t, 1));
   return g;
 })();
+/* une grande écaille (la carpe) : plus ronde au bord */
+const ECAILLE_GRANDE = (() => {
+  const g = new THREE.SphereGeometry(1, 10, 3, 0, Math.PI * 2, 0, Math.PI / 2), p = g.attributes.position, t = [];
+  for(let i = 0; i < p.count; i++) t.push(.74 + .3 * Math.sqrt(p.getY(i)));
+  g.setAttribute("teinte", new THREE.Float32BufferAttribute(t, 1));
+  return g;
+})();
 const boule = (M, c, x, y, z, sx, sy, sz, geo = ROND, q = q0) => M.push({geo, m: new THREE.Matrix4().compose(V(x, y, z), q, V(sx, sy, sz)), c});
 const tourne = (rx, ry, rz) => new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz));
 const TIGE = (() => { const g = new THREE.CylinderGeometry(1, 1, 1, 5, 1); g.translate(0, .5, 0); return g; })();
@@ -85,7 +92,7 @@ function corps(x0, x1, haut, bas, large){
 }
 const versN = n => new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), n);
 /* la peau et ses écailles : des rangées en quinconce de u0 à u1, du ventre au dos ; couleur(x, y) : celle du corps */
-function peauEtEcailles(M, F, couleur, {u0 = .33, u1 = .97, nu = 13, na = 11, taille = .033, relief = .0034} = {}){
+function peauEtEcailles(M, F, couleur, {u0 = .33, u1 = .97, nu = 13, na = 11, taille = .033, relief = .0034, geo = ECAILLE} = {}){
   M.push({geo: F.geo(), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur,
     ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .15))});          // l'ombre douce peinte : le dessous plus sombre
   M.push({geo: ROND, m: new THREE.Matrix4().compose(V(F.x1, 0, 0), q0, V(.03, F.haut(1) * .9, F.large(1) * .9)), c: 0xFFFFFF, couleur});   // le bout du pédoncule
@@ -94,7 +101,7 @@ function peauEtEcailles(M, F, couleur, {u0 = .33, u1 = .97, nu = 13, na = 11, ta
     if(u > u1) continue;
     const p = F.peau(u, a, s), n = F.normale(u, a, s), t = Math.min(F.haut(u), F.bas(u)) / .16, y = p.y;
     const e = taille * Math.max(.45, Math.min(1.1, t));
-    M.push({geo: ECAILLE, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.0008), versN(n), V(e * 1.1, relief, e * .95)), c: 0xFFFFFF, couleur});   // la couleur du corps à chaque sommet : les bandes passent sur les écailles
+    M.push({geo, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.0008), versN(n), V(e * 1.1, relief, e * .95)), c: 0xFFFFFF, couleur});   // la couleur du corps à chaque sommet : les bandes passent sur les écailles
   }
 }
 /* l'opercule : l'arc qui ferme les ouïes, vers u0 */
@@ -336,7 +343,78 @@ function tancheFait(){
 }
 export const tancheModele = () => modeleDe(tancheFait());
 
+/* ---------- La carpe ----------
+   D'après l'image de Yo (5 novembre 2026 : « Voici la carpe »), comme une vraie carpe commune (Cyprinus carpio ; choix de
+   Yo : « A », comme la nature) : le corps haut et puissant, le dos bronze-brun, les flancs dorés, le ventre jaune crème ;
+   de grandes écailles bien rangées ; l'œil doré ; les lèvres épaisses et deux barbillons de chaque côté (un long au coin,
+   un court sur la lèvre du haut) ; la longue nageoire du dos ; les nageoires brun-gris olive, celles du dessous et le bas
+   de la queue teintés de rouge orangé. */
+const r3 = u => Math.sqrt(Math.min(1, u / .05 + .14));
+const CARPE_F = corps(-.46, .34,
+  u => (.045 * u + .185 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .6)))) * r3(u) + .016,
+  u => (.042 * u + .135 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .7)))) * r3(u) + .016,
+  u => (.02 * u + .074 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .55)))) * r3(u) + .012);
+const CARPE = {dos: 0x664622, dosOr: 0x9A6E2E, flanc: 0xC8962E, ventre: 0xE8C870, tete: 0x86602C, joue: 0xCC9C46,
+  opercule: 0x765626, iris: 0xC8962A, cercle: 0x5A3E1A, levre: 0xCC9C4E, bouche: 0x5A3E1E, barbillon: 0xC09048,
+  nag: 0x6A5638, nagBout: 0x86704A, rouge: 0xC0602A, rougeBout: 0xD27A38};
+let carpeGeo = null;
+function carpeFait(){
+  if(carpeGeo) return carpeGeo;
+  const C = CARPE, F = CARPE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .45 ? melange(C.dosOr, C.dos, (h - .45) / .5) : h > -.15 ? melange(C.flanc, C.dosOr, (h + .15) / .6) : melange(C.flanc, C.ventre, (-.15 - h) / .55);
+    if(u < .28) c = melange(c, h > -.2 ? C.tete : C.joue, Math.min(1, (.28 - u) / .1));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .3, nu: 11, na: 9, taille: .043, relief: .0028, geo: ECAILLE_GRANDE});
+  opercule(M, F, C.opercule, .26, .05);
+  oeil(M, F, {u: .13, a: .38, r: .036, iris: C.iris, cercle: C.cercle, narine: 0x4A3418});
+  /* les lèvres épaisses ; deux barbillons de chaque côté : un long au coin de la bouche, un court sur la lèvre du haut */
+  boule(M, C.levre, X0 + .012, -.004, 0, .028, .017, .04);
+  boule(M, C.levre, X0 + .01, -.03, 0, .026, .015, .038);
+  boule(M, C.bouche, X0 - .006, -.017, 0, .011, .006, .03, BOULE_P);
+  for(const s of [-1, 1]){
+    const a = V(X0 + .03, -.03, s * .03), b = V(X0 + .008, -.08, s * .036);
+    baton(M, C.barbillon, a, b, .006); boule(M, C.barbillon, b.x, b.y, b.z, .007, .007, .007, BOULE_P);
+    const c = V(X0 + .006, -.006, s * .022), d = V(X0 - .006, -.036, s * .026);
+    baton(M, C.barbillon, c, d, .005); boule(M, C.barbillon, d.x, d.y, d.z, .006, .006, .006, BOULE_P);
+  }
+  const brun = d => (x, y) => melange(C.nag, C.nagBout, d(x, y)), roux = d => (x, y) => melange(C.nag, C.rouge, d(x, y));
+  /* la longue nageoire du dos : haute devant, puis longue et basse jusqu'au pédoncule, le bord un peu creusé */
+  const d0 = -.1, d1 = .25, y0 = HAUT(uDe(d0)) - .014, y1 = HAUT(uDe(d1)) - .012;
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t);
+      const haut = t < .12 ? .07 + t / .12 * .1 : .17 - (t - .12) * .1 - .025 * Math.sin(Math.PI * Math.min(1, (t - .12) / .88));
+      return V(b.x + .05, b.y + haut, 0); }, 22),
+    new THREE.Matrix4(), brun((x, y) => (y - y0) / .17));
+  /* la queue bien fourchue : le haut brun-gris, le bas teinté de rouge orangé */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .05, 0), V(qx, -.05, 0), t => {
+      const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .52, fourche = .1 + .18 * Math.pow(lobe, .8);
+      return V(qx + fourche + .03, y * (.8 + .2 * lobe), 0); }, 22),
+    new THREE.Matrix4(), (x, y) => melange(melange(C.nag, C.nagBout, (x - qx) / .3), C.rouge, Math.min(1, -y / .16) * .8));
+  /* l'anale : brun-gris, teintée de rouge orangé */
+  const anX = .2, anY = -BAS(uDe(anX)) + .012;
+  nageoire(M, nageoireGeo(V(anX - .06, anY, 0), V(anX + .06, anY + .02, 0), t => V(anX - .02 + t * .13, anY - .12 + t * .085, 0)),
+    new THREE.Matrix4(), roux((x, y) => (anY - y) / .12));
+  /* les ventrales : brun-gris, teintées de rouge orangé */
+  const peX = -.04;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .02, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.05, 0, 0), V(.03, 0, 0), t => V(-.01 + t * .13, -.13 + t * .08, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), roux((x, y) => (pY - y) / .12));
+  }
+  /* les pectorales : brun-gris, derrière l'opercule */
+  for(const s of [-1, 1]){
+    const p = F.peau(.33, -.55, s);
+    const g = nageoireGeo(V(0, .022, 0), V(0, -.022, 0), t => V(.18 - Math.abs(t - .35) * .1, -.07 + t * .055, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), brun(x => (x - p.x) / .16));
+  }
+  return carpeGeo = fusionner(M);
+}
+export const carpeModele = () => modeleDe(carpeFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
-  tanche: {fabrique: tancheModele, echelle: 1}};
+  tanche: {fabrique: tancheModele, echelle: 1}, carpe: {fabrique: carpeModele, echelle: 1}};
