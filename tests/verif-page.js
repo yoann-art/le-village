@@ -2152,9 +2152,13 @@ export async function verifier(){
     /* la cigogne : la tête renversée, elle claque du bec ; elle plane, le cou tendu */
     pauseOiseaux(true); pauseOiseaux(false);
     const ci = lacherOiseau("cigogne", player.position.x + 4, player.position.z + 4, 2.5); ci.pl.perche = true; frames(2);
-    ci.geste = 99; ci.claque = 2; let ciBec = 0;
-    for(let k = 0; k < 10; k++){ frames(1); ciBec = Math.min(ciBec, ci.mesh.userData.becBas.rotation.x); }
-    if(ci.mesh.userData.cou.rotation.x < .9 || ciBec > -.2) throw new Error("la cigogne ne renverse pas la tête pour claquer du bec");
+    /* posée, elle claque du bec (sur la machine de GitHub, une fois, elle ne l'a pas fait : on attend qu'elle soit posée, on
+       relance le claquement s'il s'arrête, et l'erreur dit où elle en était) */
+    ci.geste = 99; let ciBec = 0, ciCou = 0;
+    for(let k = 0; k < 40 && (ciCou < .9 || ciBec > -.2); k++){
+      if(ci.etat === "pose" && !(ci.claque > 0)){ ci.claque = 2; ci.geste = 99; }
+      frames(1); ciBec = Math.min(ciBec, ci.mesh.userData.becBas.rotation.x); ciCou = Math.max(ciCou, ci.mesh.userData.cou.rotation.x); }
+    if(ciCou < .9 || ciBec > -.2) throw new Error(`la cigogne ne renverse pas la tête pour claquer du bec (${ci.etat}, cou ${ciCou.toFixed(2)}, bec ${ciBec.toFixed(2)})`);
     ci.claque = 0; frames(10);
     const r7 = Math.random; Math.random = () => .001; frames(1); Math.random = r7;
     frames(12);
