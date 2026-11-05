@@ -17,6 +17,7 @@ import { carriereNiveau1, carriereNiveau2, FACADE as FACADE_CARRIERE } from "./c
 import { forgeNiveau1, FACADE as FACADE_FORGE } from "./forge.js";
 import { taverneNiveau1, FACADE as FACADE_TAVERNE } from "./taverne.js";
 import { chaumiereNiveau1, FACADE as FACADE_CHAUMIERE } from "./chaumiere.js";
+import { marcheNiveau1, FACADE as FACADE_MARCHE } from "./marche.js";
 const FACADE_SCIERIE = FACADE_MAISON + DECALE;            // la façade, dans le carré de 5 × 5
 
 const MUR = 2 * P, PORTE = 1.5 * P;
@@ -36,7 +37,7 @@ lanterne(null, 0, 0, LANTERNE);
    Yo (NOUVEAUX : la Scierie au niveau 1, scierie.js), leur ancien modèle est agrandi d'autant (echelle) */
 const ANCIEN = {chaumiere: 3, scierie: 3, carriere: 3, forge: 3, marche: 4, taverne: 4, chateau: 4};
 const ANCIENNE_PORTE = {chaumiere: 0, scierie: -.45, carriere: -.45, forge: -.4, marche: 0, taverne: 0, chateau: 0};
-const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE], 2: [carriereNiveau2, FACADE_CARRIERE]}, forge: {1: [forgeNiveau1, FACADE_FORGE]}, taverne: {1: [taverneNiveau1, FACADE_TAVERNE]}, chaumiere: {1: [chaumiereNiveau1, FACADE_CHAUMIERE]}};
+const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE], 2: [carriereNiveau2, FACADE_CARRIERE]}, forge: {1: [forgeNiveau1, FACADE_FORGE]}, taverne: {1: [taverneNiveau1, FACADE_TAVERNE]}, chaumiere: {1: [chaumiereNiveau1, FACADE_CHAUMIERE]}, marche: {1: [marcheNiveau1, FACADE_MARCHE]}};
 const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];   // les niveaux sans image gardent l'ancien modèle agrandi
 const echelle = (type, lvl) => nouveau(type, lvl) || !ANCIEN[type] ? 1 : sizeOf(type) / ANCIEN[type];
 const frontOf = (type, lvl) => nouveau(type, lvl) ? nouveau(type, lvl)[1] : ANCIEN[type] ? (ANCIEN[type] / 2 - .2) * echelle(type, lvl) : sizeOf(type) / 2 - .2;
@@ -589,10 +590,11 @@ state.buildings.forEach(b => {
   footprint(b.type, b.x, b.z).forEach(([x,z]) => occ.set(idx(x,z), b.id));
 });
 
-/* Les jardinières de la Scierie niveau 3 suivent la saison (comme la vraie nature, demande de Yo) : quand elle change, on la refait */
+/* Les jardinières de la Scierie niveau 3 et les cagettes du Marché niveau 1 suivent la saison (comme la vraie nature, demande
+   de Yo) : quand elle change, on les refait */
 let saisonVue = saison();
 setInterval(() => {
   if(saison() === saisonVue) return;
   saisonVue = saison();
-  for(const b of state.buildings) if(b.type === "scierie" && b.lvl >= 3) placeMesh(b);
+  for(const b of state.buildings) if((b.type === "scierie" && b.lvl >= 3) || (b.type === "marche" && b.lvl === 1)) placeMesh(b);
 }, 60000);

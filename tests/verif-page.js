@@ -452,7 +452,7 @@ export async function verifier(){
     if(saison() !== "hiver" && bg.nenuphars < 2) throw new Error(`seulement ${bg.nenuphars} feuilles de nénuphar sur l'étang`);
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
-  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026), la Scierie, la Carrière, la Forge, la Taverne et la Chaumière d'après ses images", async () => {
+  await etape("Les bâtiments agrandis (Yo, 22 octobre 2026), la Scierie, la Carrière, la Forge, la Taverne, la Chaumière et le Marché d'après ses images", async () => {
     const tailles = {scierie: 5, chaumiere: 4, carriere: 5, forge: 5, marche: 5, taverne: 5, chateau: 6};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
@@ -490,7 +490,14 @@ export async function verifier(){
     let fh = 0, mh = 0; h1.traverse(o => { if(o.isMesh) mh++; if(o.isInstancedMesh && o.material.transparent) fh++; });
     if(!(B.chaumiere.door > .3) || !fh || mh < 250) throw new Error(`la Chaumière du niveau 1 n'a pas son nouveau modèle (porte en ${B.chaumiere.door}, ${fh} fumée, ${mh} morceaux)`);
     if(bh.min.x < -2.1 || bh.max.x > 2.1 || bh.min.z < -2.1 || bh.max.z > 2.1) throw new Error(`la Chaumière déborde de son carré (${bh.min.x.toFixed(2)} à ${bh.max.x.toFixed(2)}, ${bh.min.z.toFixed(2)} à ${bh.max.z.toFixed(2)})`);
-    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P ; la Forge : sa porte à droite, sa fumée ; la Taverne : ${mt} morceaux, sa porte à droite, sa fumée ; la Chaumière : ${mh} morceaux, sa porte à droite, sa fumée`;
+    /* le Marché niveau 1 d'après l'image de Yo (5 novembre 2026) : sa porte à droite, dans son carré, les fruits de la saison */
+    const { marcheNiveau1 } = await import("../js/monde/marche.js"), parSaison = {};
+    for(const s of ["printemps", "ete", "automne", "hiver"]){ const m = new THREE.Group(); marcheNiveau1(m, {saison: s}); let n = 0; m.traverse(o => { if(o.isMesh) n++; }); parSaison[s] = n;
+      const bm = new THREE.Box3().setFromObject(m);
+      if(bm.min.x < -2.6 || bm.max.x > 2.6 || bm.min.z < -2.6 || bm.max.z > 2.6) throw new Error(`le Marché déborde de son carré en ${s} (${bm.min.x.toFixed(2)} à ${bm.max.x.toFixed(2)}, ${bm.min.z.toFixed(2)} à ${bm.max.z.toFixed(2)})`); }
+    if(!(B.marche.door > .5) || parSaison.automne < 250) throw new Error(`le Marché du niveau 1 n'a pas son nouveau modèle (porte en ${B.marche.door}, ${parSaison.automne} morceaux)`);
+    if(new Set(Object.values(parSaison)).size < 3) throw new Error(`les cagettes du Marché ne changent pas avec la saison (${JSON.stringify(parSaison)})`);
+    return `petits 4 × 4, grands et Scierie 5 × 5, Château 6 × 6, la Scierie dans son carré ; la Scierie : ${n} morceaux, son faîte à ${g.userData.toit.toFixed(1)} P ; niveau 2 : faîte à ${g2.userData.toit.toFixed(1)} P, ${eau} nappes d'eau à la roue ; la Carrière niveau 2 : ${mc} morceaux, faîte à ${c2.userData.toit.toFixed(1)} P ; la Forge : sa porte à droite, sa fumée ; la Taverne : ${mt} morceaux, sa porte à droite, sa fumée ; la Chaumière : ${mh} morceaux, sa porte à droite, sa fumée ; le Marché : sa porte à droite, ses cagettes selon la saison (${Object.values(parSaison).join(", ")} morceaux)`;
   });
   await etape("La remise à zéro de Yo (4 novembre 2026) : les bâtiments au niveau 1, les coffres vides, seulement les outils sur soi", async () => {
     const p = {buildings: [{type: "taverne", lvl: 3, deco: {items: [{type: "lit", x: 4.6, z: -4.4, rot: 0}]}}, {type: "mine", lvl: 1}],

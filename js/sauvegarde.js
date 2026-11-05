@@ -7,7 +7,7 @@ const SAVE_KEY = "le-village-v2-ile", OLD_KEY = "le-village-proto-v1";
 /* Une partie neuve : sac vide, bourse vide ; on ramasse ce qu'on trouve au sol pour commencer */
 function fresh(){
   return {v:4, seed:7, res:{or:0}, sac:[], coffres:[], barre:[null, null, null], main:null, eau:0, ile:{},
-    buildings:[], nextId:1, scierie5:true, carriere5:true, forge5:true, taverne5:true, chaumiere4:true, remise1:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
+    buildings:[], nextId:1, scierie5:true, carriere5:true, forge5:true, taverne5:true, chaumiere4:true, remise1:true, marche5:true, player:{x:.5, z:.5}, crowned:false, carnet:{poissons:{}, insectes:{}, oiseaux:{}, gibier:{}, monstres:{}}, terrain:{}, chemins:{},
     entreeMine:"eboulee",                                    // l'entrée de la mine à déblayer puis construire (étape 1.11)
     ileN: ILE};                                              // la taille de l'île (étape 2.1 : la grande île)
 }
@@ -201,6 +201,30 @@ export let state, migrationMsg = null;
       for(const i of choix[1]){ const c = state.ile[i]; if(c && c.o){ state.aRendre.push(c.o); delete state.ile[i]; } delete state.chemins[i]; }
     }
     state.chaumiere4 = true;
+  }
+  /* Le Marché garde son carré de 5 × 5, sa porte passe du milieu à droite comme sur l'image de Yo (5 novembre 2026 : la porte
+     « Comme sur l'image ») : comme la Taverne, il glisse d'une case à gauche pour que la case devant sa porte reste la même ;
+     ce qui était posé ou planté sur la colonne prise revient au sac (aRendre) */
+  if(!state.marche5){
+    const ILE_N = 96, cle = (x, z) => z * ILE_N + x, pris = new Set();
+    const taille = b => ({chaumiere:4, scierie:5, carriere:5, forge:5, taverne:5, chateau:6, mine:3, foret:3})[b.type] || 1;
+    for(const b of state.buildings) if(b.type !== "marche"){ const s = taille(b);
+      for(let dz = -1; dz <= s; dz++) for(let dx = 0; dx < s; dx++) pris.add(cle(b.x + dx, b.z + dz)); }
+    state.aRendre = state.aRendre || [];
+    for(const b of state.buildings) if(b.type === "marche" && !b.rot){
+      const ancien = new Set(); for(let dz = 0; dz < 5; dz++) for(let dx = 0; dx < 5; dx++) ancien.add(cle(b.x + dx, b.z + dz));
+      ancien.add(cle(b.x + 2, b.z + 5));                                    // son ancienne case de porte
+      const essai = ([ox, oz]) => { const t = [];
+        for(let dz = 0; dz <= 5; dz++) for(let dx = 0; dx < 5; dx++){ if(dz === 5 && dx !== 3) continue;   // le carré, et la case devant la nouvelle porte
+          const x = b.x + ox + dx, z = b.z + oz + dz;
+          if(x < 1 || z < 1 || x > ILE_N - 2 || z > ILE_N - 2) return null; if(!ancien.has(cle(x, z))) t.push(cle(x, z)); }
+        return t.some(i => pris.has(i)) ? null : t; };
+      const choix = [[-1, 0], [0, 0], [-2, 0], [-1, -1], [0, -1]].map(o => [o, essai(o)]).find(([, t]) => t);
+      if(!choix) continue;
+      b.x += choix[0][0]; b.z += choix[0][1];
+      for(const i of choix[1]){ const c = state.ile[i]; if(c && c.o){ state.aRendre.push(c.o); delete state.ile[i]; } delete state.chemins[i]; }
+    }
+    state.marche5 = true;
   }
   /* La remise à zéro demandée par Yo (4 novembre 2026 : « Peux tu me remettre tous les bâtiments au niveau 1 dans le jeu ?
      Vider tous les coffres et sac à dos. Je veux juste qu'il reste les outils » ; ses choix : il garde les outils, les
