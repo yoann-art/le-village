@@ -11,7 +11,9 @@ import { VERSION } from "./version.js";
 import { B } from "./donnees.js";
 import { renderer, camera, scene, sun, D, distanceFor, setDistance, setFov, FOV_DESSUS, preparer } from "./monde/scene.js";
 import { VENT } from "./monde/formes.js";
-import { water, montrerChamp } from "./monde/ile.js";
+import { water, montrerChamp, tileOf } from "./monde/ile.js";
+import { voirCour } from "./monde/chateau.js";
+import { dansCour } from "./regles.js";
 import { reglerRecul } from "./monde/chene.js";
 import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
@@ -125,6 +127,10 @@ function tick(now){
   const pushing = garde("marche", () => wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && !voyageEnCours() && updatePlayer(dt));   // pendant une pose, la déco ou un meuble soulevé, le personnage attend
   if(pushing) dirty = true;
   garde("portes", () => checkDoors(pushing));
+  garde("cour", () => {                                    // dans la cour du Château, son mur de devant à moitié transparent (Yo, 5 novembre 2026)
+    const x = tileOf(player.position.x), z = tileOf(player.position.z);
+    voirCour(!isInside() && state.buildings.some(b => dansCour(b, x, z)));
+  });
   garde("caméra", () => camera_(now, dt, pushing));
   garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser

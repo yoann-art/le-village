@@ -6,6 +6,7 @@ import { map, idx, inb, tileOf } from "./ile.js";
 import { occ } from "./batiments.js";
 import { state } from "../sauvegarde.js";
 import { traversable } from "../donnees.js";
+import { dansCour } from "../regles.js";
 import { jv, keys, view } from "../commandes.js";
 import { makeOutil } from "./outils3d.js";
 import { passageCases } from "./ponton.js";
@@ -89,6 +90,7 @@ export function islandWalkable(wx, wz){
   const x = tileOf(wx), z = tileOf(wz);
   if(!inb(x,z)) return false;
   const i = idx(x,z);
+  if(occ.has(i)){ const b = state.buildings.find(v => v.id === occ.get(i)); return !!b && dansCour(b, x, z); }   // la cour du Château (regles.js)
   return (map.type[i] !== "water" || passageCases.has(i)) && traversable(map.obj[i]) && !occ.has(i);   // on traverse les herbes hautes, le thym et les fleurs
 }
 let walkable = islandWalkable;

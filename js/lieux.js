@@ -10,7 +10,7 @@
 import { $ } from "./outils.js";
 import { B, ATELIERS } from "./donnees.js";
 import { state } from "./sauvegarde.js";
-import { sizeOf, porteDe, SENS, mineOuverte } from "./regles.js";
+import { sizeOf, porteDe, SENS, mineOuverte, avecCour } from "./regles.js";
 import { scene, halfViewWidth, renderer, camera } from "./monde/scene.js";
 import { H } from "./monde/ile.js";
 import { interior, buildRoom } from "./monde/interieurs.js";
@@ -40,6 +40,7 @@ export const currentScene = () => inside ? interior : scene;
 export function doorOf(b){
   const s = sizeOf(b.type), d = B[b.type].door || 0, r = (b.rot || 0) & 3;
   const cx = b.x - H + s/2, cz = b.z - H + s/2;
+  if(avecCour(b)) return {x: cx - 2, z: cz - .5, n: SENS[0]};   // le Château niveau 1 : la porte de la tour, dans la cour (monde/chateau.js : TOUR)
   return {x: cx + [d, s/2, -d, -s/2][r], z: cz + [s/2, -d, -s/2, d][r], n: SENS[r]};
 }
 /* Où l'on se retrouve en sortant : juste devant la porte, entièrement sur la case

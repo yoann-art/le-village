@@ -33,7 +33,7 @@ import { ressemerMaintenant } from "../js/monde/semis.js";
 import { map, idx, N, H, centerOf, tileOf, setObj, setEtat, growth, baiesLeft, rafraichirSaison, objMesh, lieuEau, montrerChamp, couleurSol, hauteurSol, plageIci, eauIci, bergeIci } from "../js/monde/ile.js";
 import { feuillesQuiVolent, MAT_OMBRE } from "../js/monde/chene.js";
 import { pinModele } from "../js/monde/pin.js";
-import { occ, toitDe, lumieresFacades, makeBuilding } from "../js/monde/batiments.js";
+import { occ, toitDe, lumieresFacades, makeBuilding, placeMesh, removeMesh, footprint } from "../js/monde/batiments.js";
 import { eauLibre, entreePonton, amarre } from "../js/monde/ponton.js";
 import { enBarque, auLarge, updateBarque, accosterBarque, barquePrete } from "../js/barque.js";
 import { voyageEnCours, passerTrajet } from "../js/voyage.js";
@@ -453,7 +453,7 @@ export async function verifier(){
     return `${terre} cases de terre à plat, ${eau} cases d'eau sous l'eau, l'herbe sans damier ; la plage : ${pl.mouilles} points de sable mouillé, le grain et les rides ; l'eau : ${ea.rivage} points de rivage à écume, ${ea.douce} d'eau douce sans écume ; la berge : ${bg.mottes} mottes, ${bg.mousses} moussues, ${bg.galets} groupes de galets, ${bg.massettes} touffes de massettes, ${bg.petites} petites plantes, ${bg.nenuphars} feuilles de nénuphar`;
   });
   await etape("Les bâtiments agrandis (Yo, 22 octobre 2026), la Scierie, la Carrière, la Forge, la Taverne, la Chaumière et le Marché d'après ses images", async () => {
-    const tailles = {scierie: 5, chaumiere: 4, carriere: 5, forge: 5, marche: 5, taverne: 5, chateau: 6};
+    const tailles = {scierie: 5, chaumiere: 4, carriere: 5, forge: 5, marche: 5, taverne: 5, chateau: 7};
     for(const [t, v] of Object.entries(tailles)) if(sizeOf(t) !== v) throw new Error(`${t} : ${sizeOf(t)} × ${sizeOf(t)} cases (${v} voulues)`);
     const g = makeBuilding("scierie", 1);
     let n = 0; g.traverse(o => { if(o.isMesh) n++; });
@@ -505,6 +505,37 @@ export async function verifier(){
     const n1 = renderer.info.programs.length;
     if(n1 !== n0) throw new Error(`dessiner les mains a compilé ${n1 - n0} programme(s) pendant le jeu`);
     return `${n0} programmes prêts dès le chargement`;
+  });
+  await etape("Le Château niveau 1 d'après l'image de Yo (5 novembre 2026) : passer la grande porte, marcher dans la cour (le mur de devant à moitié transparent), entrer par la porte de la tour, ressortir dans la cour", async () => {
+    const c1 = makeBuilding("chateau", 1), bc = new THREE.Box3().setFromObject(c1);
+    if(bc.min.x < -3.6 || bc.max.x > 3.6 || bc.min.z < -3.6 || bc.max.z > 3.85) throw new Error(`le Château déborde de son carré (${bc.min.x.toFixed(2)} à ${bc.max.x.toFixed(2)}, ${bc.min.z.toFixed(2)} à ${bc.max.z.toFixed(2)})`);
+    /* une place libre de 7 × 7 sur la terre, et la case devant sa porte */
+    let place = null;
+    for(let z = 20; z < N - 20 && !place; z++) for(let x = 20; x < N - 20 && !place; x++){
+      let ok = true;
+      for(let dz = -1; dz <= 8 && ok; dz++) for(let dx = -1; dx <= 7 && ok; dx++){ const i = idx(x + dx, z + dz); if(map.type[i] === "water" || occ.has(i) || (dz >= 7 && map.obj[i])) ok = false; }
+      if(ok) place = {x, z};
+    }
+    if(!place) throw new Error("pas de place libre pour essayer le Château");
+    const b = {id: -7, type: "chateau", lvl: 1, x: place.x, z: place.z};
+    state.buildings.push(b); footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.set(idx(x, z), b.id)); placeMesh(b);
+    const { courVue } = await import("../js/monde/chateau.js");
+    try {
+      placePlayer(b.x + 3 - H + .5, b.z + 7 - H + .5, 0, -1);                         // devant la grande porte, dehors
+      keys.u = 1; for(let k = 0; k < 200 && tileOf(player.position.z) > b.z + 4; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
+      if(tileOf(player.position.z) > b.z + 4) throw new Error(`on ne passe pas la grande porte (case ${tileOf(player.position.x) - b.x}, ${tileOf(player.position.z) - b.z})`);
+      if(!await attendre(() => courVue(), 3000)) throw new Error("dans la cour, le mur de devant ne devient pas transparent");
+      keys.u = 1; for(let k = 0; k < 200; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
+      if(tileOf(player.position.z) < b.z + 2) throw new Error("on traverse le fond de la cour");
+      await entrer(b);
+      await sortir();
+      const x = tileOf(player.position.x) - b.x, z = tileOf(player.position.z) - b.z;
+      if(x !== 1 || z !== 3) throw new Error(`en sortant de la tour, on n'est pas dans la cour devant sa porte (case ${x}, ${z})`);
+      return `on passe la grande porte, le mur de devant devient transparent dans la cour, on entre par la tour et on ressort devant elle`;
+    } finally {
+      keys.u = 0; footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.delete(idx(x, z))); removeMesh(b.id); state.buildings.splice(state.buildings.indexOf(b), 1);
+      placePlayer(.5, .5, 0, 1);
+    }
   });
   await etape("La remise à zéro de Yo (4 novembre 2026) : les bâtiments au niveau 1, les coffres vides, seulement les outils sur soi", async () => {
     const p = {buildings: [{type: "taverne", lvl: 3, deco: {items: [{type: "lit", x: 4.6, z: -4.4, rot: 0}]}}, {type: "mine", lvl: 1}],
