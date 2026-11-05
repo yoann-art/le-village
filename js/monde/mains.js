@@ -22,6 +22,7 @@ import { renderer, camera, hemi as hemiIle, sun } from "./scene.js";
 import { hemiDedans, lampeDedans } from "./interieurs.js";
 import { outilTenu, angleMain, mainGauche, allure } from "./personnage.js";
 import { COULEURS_HEROS } from "./heros.js";
+import { leveePrise } from "../prise.js";
 
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(50, 1, .01, 5);
@@ -116,7 +117,7 @@ function mouvement(){
 
 /* ----- Chaque image, à la première personne (main.js) ----- */
 let t = 0, pas = 0, change = 0, lacet = null, traine = 0, actif = false;
-const dir = new THREE.Vector3();
+const dir = new THREE.Vector3(), tmpV = new THREE.Vector3();
 export function updateMains(dt, dedans){
   actif = true;
   t += dt;
@@ -153,6 +154,14 @@ export function updateMains(dt, dedans){
   Gc.g.scale.setScalar(s);
   Gc.g.rotation.set(0, 0, arc ? -.05 : -.28);
   Gc.p.rotation.set(arc ? .1 : .3, Math.PI + (arc ? -.25 : 0), 0);
+  /* la prise montrée (prise.js) : les deux mains se lèvent et la tiennent devant soi, ce qu'elles tenaient s'efface */
+  const lp = leveePrise();
+  if(lp > 0){
+    D.g.visible = Gc.g.visible = true;
+    for(const b of [D, Gc]) if(b.objet) b.objet.visible = lp < .05;
+    D.g.position.lerp(tmpV.set(.42 * c, -.3 * c, -z), lp); Gc.g.position.lerp(tmpV.set(-.42 * c, -.3 * c, -z), lp);
+    D.g.rotation.z += (.6 - D.g.rotation.z) * lp; Gc.g.rotation.z += (-.6 - Gc.g.rotation.z) * lp;
+  } else for(const b of [D, Gc]) if(b.objet && !b.objet.visible) b.objet.visible = true;
   /* la torche vacille, et éclaire les mains */
   const fl = Gc.objet && Gc.objet.getObjectByName("flamme");
   if(fl){ const f = 1 + Math.sin(t * 17) * .12 + Math.sin(t * 9.3) * .08; fl.scale.set(.3 * f, .48 * (2 - f), .3 * f); }

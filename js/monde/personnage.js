@@ -73,9 +73,16 @@ export function pencheMain(rx){ hand.rotation.x = rx === undefined ? .35 : rx; }
 /* Les bras : ils se balancent en marchant (b : le balancement) ; un outil en main, le bras droit se lève devant et suit le geste
    (l'angle de la main) ; la torche ou la lanterne, le bras gauche se lève un peu ; la main (l'outil, la torche) est au bout */
 const bout = new THREE.Vector3();
+/* La prise montrée (prise.js) : de 0 à 1, les deux bras se lèvent au-dessus de la tête, ce qu'on tenait s'efface le temps de
+   la montrer, le personnage se tourne vers nous et ne bouge plus */
+let leve = 0;
+export function poserPrise(f){ leve = f; }
+const vers = (a, b, f) => a + (b - a) * f;
 function placerMains(b){
-  armR.rotation.x = hand.visible ? -.55 - (hand.rotation.x - .35) * .55 : b;
-  armL.rotation.x = torche.visible || lanterneG.visible ? -.65 : -b;
+  armR.rotation.x = vers(hand.visible ? -.55 - (hand.rotation.x - .35) * .55 : b, -3.0, leve);
+  armL.rotation.x = vers(torche.visible || lanterneG.visible ? -.65 : -b, -3.0, leve);
+  for(const bras of [armR, armL]){ const z0 = bras.userData.z0 === undefined ? (bras.userData.z0 = bras.rotation.z) : bras.userData.z0; bras.rotation.z = z0 * (1 + .5 * leve); }
+  for(const m of [hand, torche, lanterneG]) m.scale.setScalar(Math.max(.001, 1 - leve));
   for(const [bras, m] of [[armR, hand], [armL, torche], [armL, lanterneG]]){
     if(!m.visible) continue;
     bras.updateMatrix(); m.position.copy(bout.set(0, -heros.longBras, .01).applyMatrix4(bras.matrix));
@@ -210,7 +217,8 @@ export function updatePlayer(dt){
   if(elanEnCours){ bouger(dt); allureNow = 0; return false; }
   const x0 = player.position.x, z0 = player.position.z;
   let ix = jv.x, iz = jv.z;
-  if(!ix && !iz){
+  if(leve > 0) ix = iz = 0;                           // la prise montrée : on ne bouge pas
+  else if(!ix && !iz){
     ix = (keys.r||0) - (keys.l||0); iz = (keys.d||0) - (keys.u||0);
     const l = Math.hypot(ix, iz); if(l){ ix /= l * (keys.lent ? 2.5 : 1); iz /= l * (keys.lent ? 2.5 : 1); }   // Maj : à pas de loup
   }
@@ -242,7 +250,7 @@ export function updatePlayer(dt){
     walkT += dt * 11 * mag;
   }
   allureNow = mag;                                      // tourner sur place ne fait pas fuir les bêtes
-  const target = Math.atan2(facing.x, facing.z);
+  const target = leve > 0 && !fps ? view.lacetIci || 0 : Math.atan2(facing.x, facing.z);   // la prise montrée : tourné vers nous
   let d = target - player.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
   player.rotation.y += d * Math.min(1, dt * 14);
   const sw = mag > 0 ? Math.sin(walkT) : 0;

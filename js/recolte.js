@@ -58,6 +58,7 @@ import { openCoffre, poserCoffre, poseProblem } from "./coffres.js";
 import { enPeche, lancer, updatePeche, pecheAction } from "./peche.js";
 import { updateInsectes, insecteAction, attrapeEnCours } from "./insectes.js";
 import { updateOiseaux, oiseauAction, oiseauEnCours } from "./oiseaux.js";
+import { updatePrise, priseEnCours } from "./prise.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 import { entreeAction } from "./entreeMine.js";
@@ -374,7 +375,8 @@ export function updateRecolte(dt, active){
   updateInsectes(dt, active, milieu);
   updateOiseaux(dt, active, milieu);
   updateChasse(dt, active, milieu);                   // le gibier : seulement dans la forêt
-  cur = active && !anim && !enPeche() && !attrapeEnCours() && !oiseauEnCours() && !tirEnCours() ? target() : null;
+  updatePrise(dt);                                    // la prise montrée (prise.js)
+  cur = active && !anim && !priseEnCours() && !enPeche() && !attrapeEnCours() && !oiseauEnCours() && !tirEnCours() ? target() : null;
   showCase(cur);
   const bete = active && !anim && milieu && (insecteAction() || oiseauAction() || chasseAction());
   const entree = active && !anim && milieu === "ile" && entreeAction();   // devant l'entrée de la mine pas encore construite

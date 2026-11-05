@@ -13,6 +13,7 @@ import { renderer, camera, scene, sun, D, distanceFor, setDistance, setFov, FOV_
 import { VENT } from "./monde/formes.js";
 import { water, montrerChamp, H } from "./monde/ile.js";
 import { ouvrirPorte } from "./monde/chateau.js";
+import { leveePrise } from "./prise.js";
 import { avecCour } from "./regles.js";
 import { reglerRecul } from "./monde/chene.js";
 import "./monde/batiments.js";
@@ -200,7 +201,7 @@ function camera_(now, dt, marche){
   view.peutTourner = () => !decoView() && !placing && !deplaceEnCours() && !premiereActive() && (!isInside() || ["foret", "marais"].includes(currentPlace().b.type));
   if(!viseur.hidden) viseur.hidden = true;
   setFov(FOV_DESSUS);
-  setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom);
+  setDistance(distanceFor(dv ? dv.width : isInside() && !foret ? VIEW_IN : VIEW_OUT) * view.zoom * (1 - .3 * leveePrise()));   // la prise montrée : la caméra se rapproche (prise.js)
   ajusterBrume(D);                                         // la brume de la grotte du Marais suit la caméra (étape 1.13)
   const target = dv ? dv.target : (!isInside() && placementFocus()) || cameraTarget();
   const saut = takeJump();
@@ -218,7 +219,8 @@ function camera_(now, dt, marche){
   view.lacetIci = lacetVu;
   majNord(libre);
   const L = view.lacetIci;
-  camera.position.set(camT.x + Math.sin(L) * OFF.z * D, camT.y + OFF.y * D, camT.z + Math.cos(L) * OFF.z * D);
+  const bas = 1 - .3 * leveePrise();                       // la prise montrée : la caméra descend un peu, pour bien voir les bras levés
+  camera.position.set(camT.x + Math.sin(L) * OFF.z * D, camT.y + OFF.y * D * bas, camT.z + Math.cos(L) * OFF.z * D);
   camera.lookAt(camT.x, .4, camT.z);
   }
   updateLift();                                            // le meuble soulevé reste sous le doigt pendant que la caméra recule

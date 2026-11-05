@@ -35,6 +35,8 @@ import { meteo, mouille, brouillard } from "./monde/meteo.js";
 import { marais, maraisObj, mtile, mcx, mcz, W as WM } from "./monde/marais.js";
 import { user } from "./usure.js";
 import { enBarque, auLarge } from "./barque.js";
+import { montrerPrise } from "./prise.js";
+import { PHRASES } from "./phrases.js";
 
 /* ----- Quels poissons nagent ici et maintenant (vraie horloge du téléphone, l'hémisphère du joueur) ----- */
 export const saisonDe = saisonDu;
@@ -425,17 +427,12 @@ function prendre(){
   e.n++; e.max = Math.max(e.max, cm);
   save();
   vibre(60);
-  /* Le personnage montre le poisson au-dessus de sa tête */
-  ligne.phase = "montre"; ligne.t = 0;
-  ligne.poisson = poissonMesh(k, cm); sceneIci().add(ligne.poisson);
-  bouchon.visible = false; fil.visible = false;
+  /* Le personnage lève le poisson à deux mains, sa phrase dans une bulle (prise.js, demande de Yo du 5 novembre 2026) */
   remous(ligne.a.x, ligne.a.z);
-  const nom = `${leNom(k, true)} de ${cm} cm !`;
-  toast(POISSONS[k].rarete === "legendaire" ? `✨ ${nom} Un poisson légendaire, le seul de tout le jeu : dans ton sac`
-    : POISSONS[k].brille ? `✨ ${nom} Elle brille comme une pièce neuve ! ${nouveau ? "Nouveau poisson pour ton carnet, " : ""}dans ton sac`
-    : nouveau ? `🐟 ${nom} Nouveau poisson pour ton carnet, dans ton sac`
-    : record ? `🐟 ${nom} C'est ton record, dans ton sac`
-    : `🐟 ${nom} Dans ton sac`, 3200);
+  ligne = null; bouchon.visible = false; fil.visible = false; pencheMain();
+  const P = POISSONS[k];
+  montrerPrise({mesh: poissonMesh(k, cm), scene: sceneIci(), sorte: "poisson", phrase: PHRASES[k] || `${leNom(k, true)} !`, nouveau, record,
+    details: [`${cm} cm`, ...(P.rarete === "legendaire" ? ["✨ Un poisson légendaire, le seul de tout le jeu"] : P.brille ? ["✨ Elle brille comme une pièce neuve !"] : [])]});
   if(canne) user(canne);                              // un poisson pris use la canne (usure.js)
 }
 

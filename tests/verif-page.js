@@ -1219,7 +1219,14 @@ export async function verifier(){
     $("#btn-act").click();
     const p = state.sac.find(it => POISSONS[it.k]);
     if(!p) throw new Error("pas de poisson dans le sac");
+    /* la prise montrée (prise.js, Yo, 5 novembre 2026) : levée à deux mains, sa phrase dans la bulle, puis tout repart */
+    const { priseEnCours, leveePrise } = await import("../js/prise.js"), { PHRASES } = await import("../js/phrases.js");
+    frames(8);
+    if(!priseEnCours() || leveePrise() < .9) throw new Error(`le poisson n'est pas levé à deux mains (${leveePrise().toFixed(2)})`);
+    if($("#prise").hidden || !$("#prise").textContent.includes(PHRASES[p.k])) throw new Error(`la bulle ne dit pas la phrase du poisson (« ${$("#prise").textContent} »)`);
+    if(!/\d+ cm/.test($("#prise").textContent)) throw new Error("la bulle ne dit pas la taille du poisson");
     frames(40);
+    if(priseEnCours() || !$("#prise").hidden) throw new Error("la prise montrée ne finit pas");
     return `${objet(p.k).nom.toLowerCase()}, mordu au bout de ${(k * .05).toFixed(1)} s`;
   });
   await etape("Pêcher depuis le ponton", async () => {

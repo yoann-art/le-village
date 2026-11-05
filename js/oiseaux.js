@@ -34,6 +34,8 @@ import { toast } from "./interface.js";
 import { tenu } from "./barre.js";
 import { MODELES_OISEAUX } from "./monde/oiseaux3d.js";
 import { user } from "./usure.js";
+import { montrerPrise, priseEnCours } from "./prise.js";
+import { PHRASES } from "./phrases.js";
 
 /* Combien, où, combien de temps, la peur (à régler en jouant) */
 export const OISEAU = {max: 4, rayon: 10, vie: [60, 150], portee: 1.8, peur: 3.5, tropPres: .8, revient: .7};
@@ -437,7 +439,7 @@ function vivre(o, dt){
 
 /* ----- Lancer le filet ----- */
 let montre = null;
-export const oiseauEnCours = () => !!montre;
+export const oiseauEnCours = () => !!montre || priseEnCours();
 /* Le filet qu'on tient en main (demande de Yo : seulement ce qu'on tient) ; en cuivre ou en bronze, il attrape de plus loin */
 const filetDuSac = () => tenu("filet");
 function aPortee(){
@@ -455,14 +457,15 @@ function lancerFilet(o){
   const nouveau = !e.n; e.n++;
   save();
   retirer(o);
-  montre = {mesh: modele(o.k, {male: o.mesh.userData.male}), t: 0}; sceneIci().add(montre.mesh);   // le même (mâle ou femelle)
+  /* le personnage le lève à deux mains (le même, mâle ou femelle), sa phrase dans une bulle (prise.js, demande de Yo du
+     5 novembre 2026) */
   const p = OISEAUX[o.k];
-  toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(o.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
+  montrerPrise({mesh: modele(o.k, {male: o.mesh.userData.male}), scene: sceneIci(), sorte: "oiseau", phrase: PHRASES[o.k] || `${leNom(o.k, true)} !`, nouveau, details: p.rarete === "rare" ? ["✨ Un oiseau rare"] : []});
   user(k);                                            // une prise use le filet (usure.js)
 }
 /* Le bouton d'action pour l'oiseau à portée (recolte.js), avec un filet dans le sac */
 export function oiseauAction(){
-  if(montre) return {label: "🥅 …", run: () => {}};
+  if(montre || priseEnCours()) return {label: "🥅 …", run: () => {}};
   if(!filetDuSac()) return null;
   const o = aPortee();
   if(!o) return null;

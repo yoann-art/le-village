@@ -36,6 +36,8 @@ import { marais, maraisObj, plante, mcx, mcz, W as WM } from "./monde/marais.js"
 import { toast } from "./interface.js";
 import { tenu } from "./barre.js";
 import { user } from "./usure.js";
+import { montrerPrise, priseEnCours } from "./prise.js";
+import { PHRASES } from "./phrases.js";
 
 /* Combien, où, combien de temps (à régler en jouant) ; peur : à quelle distance une bête fuit qui nous voit arriver trop vite */
 export const INSECTE = {max: 6, rayon: 9, vie: [50, 110], portee: 1.3};
@@ -588,7 +590,7 @@ function vivre(b, dt){
 
 /* ----- Attraper ----- */
 let montre = null;                 // la bête attrapée, montrée au-dessus de la tête : {mesh, t}
-export const attrapeEnCours = () => !!montre;
+export const attrapeEnCours = () => !!montre || priseEnCours();
 /* Le filet ou le bocal qu'on tient en main (demande de Yo : seulement ce qu'on tient) */
 const filetDuSac = () => tenu("filet");
 /* La bête la plus proche, à portée de filet */
@@ -646,13 +648,14 @@ function attraper(b, k){
   const nouveau = !e.n; e.n++;
   save();
   retirer(b);
-  montre = {mesh: modele(b.k, b.base), t: 0}; montre.mesh.scale.multiplyScalar(1.8); sceneIci().add(montre.mesh);
-  toast(`${p.emoji} ${p.rarete === "rare" ? "✨ " : ""}Tu as attrapé ${leNom(b.k)} !${nouveau ? " Nouveau pour ton carnet," : ""} dans ton sac`, 3000);
+  /* le personnage la lève à deux mains, sa phrase dans une bulle (prise.js, demande de Yo du 5 novembre 2026) */
+  const m = modele(b.k, b.base); m.scale.multiplyScalar(1.8);
+  montrerPrise({mesh: m, scene: sceneIci(), sorte: "insecte", phrase: PHRASES[b.k] || `${leNom(b.k, true)} !`, nouveau, details: p.rarete === "rare" ? ["✨ Une bête rare"] : []});
   user(k);                                            // une prise use le filet ou le bocal (usure.js)
 }
 /* Le bouton d'action pour la bête à portée (recolte.js l'affiche, avant le reste) */
 export function insecteAction(){
-  if(montre || coup) return {label: "🥅 …", run: () => {}};
+  if(montre || coup || priseEnCours()) return {label: "🥅 …", run: () => {}};
   if(!filetDuSac() && !tenu("bocal")) return null;          // sans filet ni bocal en main, on ne prend pas la place des autres actions
   const b = aPortee();
   if(!b) return null;
