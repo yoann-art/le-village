@@ -85,7 +85,7 @@ function corps(x0, x1, haut, bas, large){
 }
 const versN = n => new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), n);
 /* la peau et ses écailles : des rangées en quinconce de u0 à u1, du ventre au dos ; couleur(x, y) : celle du corps */
-function peauEtEcailles(M, F, couleur, {u0 = .33, u1 = .97, nu = 13, na = 11, taille = .033} = {}){
+function peauEtEcailles(M, F, couleur, {u0 = .33, u1 = .97, nu = 13, na = 11, taille = .033, relief = .0034} = {}){
   M.push({geo: F.geo(), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur,
     ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .15))});          // l'ombre douce peinte : le dessous plus sombre
   M.push({geo: ROND, m: new THREE.Matrix4().compose(V(F.x1, 0, 0), q0, V(.03, F.haut(1) * .9, F.large(1) * .9)), c: 0xFFFFFF, couleur});   // le bout du pédoncule
@@ -94,7 +94,7 @@ function peauEtEcailles(M, F, couleur, {u0 = .33, u1 = .97, nu = 13, na = 11, ta
     if(u > u1) continue;
     const p = F.peau(u, a, s), n = F.normale(u, a, s), t = Math.min(F.haut(u), F.bas(u)) / .16, y = p.y;
     const e = taille * Math.max(.45, Math.min(1.1, t));
-    M.push({geo: ECAILLE, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.0008), versN(n), V(e * 1.1, .0034, e * .95)), c: 0xFFFFFF, couleur});   // la couleur du corps à chaque sommet : les bandes passent sur les écailles
+    M.push({geo: ECAILLE, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.0008), versN(n), V(e * 1.1, relief, e * .95)), c: 0xFFFFFF, couleur});   // la couleur du corps à chaque sommet : les bandes passent sur les écailles
   }
 }
 /* l'opercule : l'arc qui ferme les ouïes, vers u0 */
@@ -265,6 +265,78 @@ function percheFait(){
 }
 export const percheModele = () => modeleDe(percheFait());
 
+/* ---------- La tanche ----------
+   D'après l'image de Yo (5 novembre 2026 : « Voici la tanche »), comme une vraie tanche (Tinca tinca ; choix de Yo : « A »,
+   comme la nature) : le corps trapu et épais, le pédoncule large, vert-olive foncé au dos, olive doré aux flancs, jaune
+   doré au ventre ; la peau épaisse et lisse, ses écailles minuscules à peine visibles ; l'œil rouge-orangé ; la petite
+   bouche aux lèvres épaisses et un seul petit barbillon à chaque coin ; toutes les nageoires bien rondes, vert-olive foncé,
+   la queue presque droite, à peine échancrée. */
+const r2 = u => Math.sqrt(Math.min(1, u / .05 + .16));
+const TANCHE_F = corps(-.46, .34,
+  u => (.05 * u + .165 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .62)))) * r2(u) + .02,
+  u => (.048 * u + .14 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .72)))) * r2(u) + .02,
+  u => (.035 * u + .07 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .55)))) * r2(u) + .014);
+const TANCHE = {dos: 0x3E4A1E, flanc: 0x7E8228, flancOr: 0xA89A30, ventre: 0xD6B444, tete: 0x5E6626, joue: 0xB8A23C,
+  opercule: 0x5A6020, iris: 0xD8401A, cercle: 0xE48A2A, levre: 0xB89A3E, bouche: 0x5A4A22, barbillon: 0xA88E3A,
+  nag: 0x3E4622, nagBout: 0x56602E};
+let tancheGeo = null;
+function tancheFait(){
+  if(tancheGeo) return tancheGeo;
+  const C = TANCHE, F = TANCHE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .3 ? melange(C.flanc, C.dos, (h - .3) / .6) : h > -.3 ? melange(C.flancOr, C.flanc, (h + .3) / .6) : melange(C.flancOr, C.ventre, (-.3 - h) / .5);
+    if(u < .28) c = melange(c, h > -.25 ? C.tete : C.joue, Math.min(1, (.28 - u) / .1));
+    return c;
+  };
+  /* la peau épaisse et lisse, comme du velours mouillé : ses écailles minuscules ne se voient pas d'ici (en relief, même
+     très fines, elles dessinaient des rayures) */
+  peauEtEcailles(M, F, couleurCorps, {nu: 0});
+  opercule(M, F, C.opercule, .26, .05);
+  oeil(M, F, {u: .12, a: .42, r: .03, iris: C.iris, cercle: C.cercle, narine: 0x3A3A18});
+  /* la petite bouche aux lèvres épaisses ; un petit barbillon à chaque coin */
+  boule(M, C.levre, X0 + .01, -.008, 0, .024, .015, .034);
+  boule(M, C.levre, X0 + .008, -.03, 0, .024, .014, .034);
+  boule(M, C.bouche, X0 - .006, -.019, 0, .01, .006, .026, BOULE_P);
+  for(const s of [-1, 1]){
+    const a = V(X0 + .028, -.03, s * .028), b = V(X0 + .012, -.056, s * .034);
+    baton(M, C.barbillon, a, b, .0055); boule(M, C.barbillon, b.x, b.y, b.z, .006, .006, .006, BOULE_P);
+  }
+  const couleurNag = d => (x, y) => melange(C.nag, C.nagBout, d(x, y));
+  /* la nageoire du dos : ronde, en palette */
+  const d0 = .0, d1 = .17, y0 = HAUT(uDe(d0)) - .012, y1 = HAUT(uDe(d1)) - .012;
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), t => { const a = Math.PI * (.08 + t * .84);
+      return V((d0 + d1) / 2 + .03 - Math.cos(a) * .12, (y0 + y1) / 2 + Math.sin(a) * .15, 0); }, 16),
+    new THREE.Matrix4(), couleurNag((x, y) => (y - y0) / .15));
+  /* la queue : large, presque droite, à peine échancrée, aux coins arrondis */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .06, 0), V(qx, -.06, 0), t => {
+      const y = (.5 - t) * .42, coin = Math.pow(Math.abs(.5 - t) * 2, 4);
+      return V(qx + .2 - .03 * (1 - Math.abs(.5 - t) * 2) - .05 * coin, y * (1 - .1 * coin), 0); }, 22),
+    new THREE.Matrix4(), couleurNag(x => (x - qx) / .22));
+  /* l'anale : ronde */
+  const anX = .2, anY = -BAS(uDe(anX)) + .014;
+  nageoire(M, nageoireGeo(V(anX - .07, anY, 0), V(anX + .06, anY + .02, 0), t => { const a = Math.PI * (.1 + t * .8);
+      return V(anX - .005 - Math.cos(a) * .085, anY - Math.sin(a) * .11, 0); }, 12),
+    new THREE.Matrix4(), couleurNag((x, y) => (anY - y) / .11));
+  /* les ventrales : grandes et rondes */
+  const peX = -.04;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .022, base = s * LARGE(uDe(peX)) * .55;
+    const g = nageoireGeo(V(-.05, 0, 0), V(.03, 0, 0), t => { const a = Math.PI * (.1 + t * .8); return V(.0 - Math.cos(a) * .08, -Math.sin(a) * .12, 0).add(V(.03, 0, 0)); }, 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), couleurNag((x, y) => (pY - y) / .12));
+  }
+  /* les pectorales : rondes, derrière l'opercule */
+  for(const s of [-1, 1]){
+    const p = F.peau(.33, -.5, s);
+    const g = nageoireGeo(V(0, .02, 0), V(0, -.02, 0), t => { const a = Math.PI * (t - .5) * .9; return V(.02 + Math.cos(a) * .1, Math.sin(-a) * .055 - .02, 0); }, 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), couleurNag(x => (x - p.x) / .15));
+  }
+  return tancheGeo = fusionner(M);
+}
+export const tancheModele = () => modeleDe(tancheFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
-export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1}};
+export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
+  tanche: {fabrique: tancheModele, echelle: 1}};
