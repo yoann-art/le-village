@@ -1411,6 +1411,88 @@ function doradeFait(){
 }
 export const doradeModele = () => modeleDe(doradeFait());
 
+/* ---------- La sardine ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici la sardine »), comme une vraie sardine (Sardina pilchardus ; choix de
+   Yo : « A », comme la nature) : le corps fin et allongé, la tête pointue ; le dos bleu-vert, les flancs argentés aux
+   reflets dorés, le ventre blanc ; de grandes écailles. Sa marque : une rangée de petites taches sombres en haut du flanc,
+   derrière l'ouïe, et l'ouïe striée de fines lignes en éventail. L'œil sombre cerclé d'argent ; la petite bouche aux lèvres
+   fines, la mâchoire du bas un peu en avant. Une seule nageoire au milieu du dos ; dessous, les ventrales sous elle et
+   l'anale basse vers la queue (pas de nageoire sous la gorge) ; les pectorales basses ; la queue bien fourchue ; les
+   nageoires gris clair, presque transparentes, la queue plus sombre au bord. */
+const SARDINE_F = corps(-.48, .34,
+  courbe([[0, .018], [.05, .046], [.14, .078], [.28, .096], [.42, .1], [.58, .094], [.72, .077], [.86, .053], [1, .033]]),
+  courbe([[0, .014], [.05, .038], [.14, .068], [.28, .088], [.42, .092], [.58, .084], [.72, .065], [.86, .045], [1, .03]]),
+  courbe([[0, .012], [.06, .024], [.15, .036], [.28, .044], [.42, .045], [.58, .041], [.72, .033], [.86, .024], [1, .017]]));
+const SARDINE = {dos: 0x24607A, dosClair: 0x4C8C9C, reflet: 0xBCC2B2, flanc: 0xAAB6C0, ventre: 0xF0F2F0, tete: 0x3E7484,
+  joue: 0xD2D8DC, opercule: 0xB4BEC6, strie: 0x76828E, tache: 0x1E2A34, iris: 0x26282C, cercle: 0xC4CAD0, levre: 0xC8CED2,
+  bouche: 0x7A6E70, nag: 0xC8CED4, nagBord: 0x8E98A2};
+let sardineGeo = null;
+function sardineFait(){
+  if(sardineGeo) return sardineGeo;
+  const C = SARDINE, F = SARDINE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* le corps : bleu-vert au dos, un reflet doré pâle entre le dos et le flanc argenté, blanc au ventre */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .55 ? melange(C.dosClair, C.dos, (h - .55) / .3) : h > .25 ? melange(C.flanc, C.dosClair, (h - .25) / .3) : melange(C.flanc, C.ventre, (.25 - h) / .9);
+    const r = Math.abs(h - .3);
+    if(u > .26 && r < .08) c = melange(c, C.reflet, .35 * (1 - r / .08));
+    if(u < .27) c = melange(c, h > .4 ? C.tete : C.joue, Math.min(1, (.27 - u) / .08));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .29, u1: .97, nu: 13, na: 8, taille: .042, relief: .0024, geo: ECAILLE_GRANDE});
+  opercule(M, F, C.opercule, .26, .045);
+  for(const s of [-1, 1]){
+    /* l'ouïe striée : de fines lignes en éventail, du haut de l'ouïe vers le bas et l'arrière */
+    for(let k = 0; k < 5; k++){
+      const a1 = .45 - k * .26, p0 = F.peau(.205, .25, s), p1 = F.peau(.255, a1, s), n = F.normale(.23, (.25 + a1) / 2, s);
+      baton(M, C.strie, p0.addScaledVector(n, .006), p1.addScaledVector(n, .007), .0014);
+    }
+    /* la rangée de taches sombres en haut du flanc, la première juste derrière l'ouïe, la plus nette */
+    for(let k = 0; k < 6; k++){
+      const u = .3 + k * .055, a = .62 - k * .01, p = F.peau(u, a, s), n = F.normale(u, a, s), e = k ? .009 - k * .0006 : .012;
+      M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, .0012), versN(n), V(e, .003, e)), c: C.tache});
+    }
+  }
+  oeil(M, F, {u: .14, a: .38, r: .042, iris: C.iris, cercle: C.cercle, narine: 0x3A4A56, uNarine: .065, aNarine: .62});
+  /* la petite bouche aux lèvres fines, la mâchoire du bas un peu en avant */
+  ovale(M, C.levre, V(X0 + .006, .002, 0), V(X0 + .06, -.002, 0), .012, .004);
+  ovale(M, C.levre, V(X0 - .006, -.01, 0), V(X0 + .06, -.012, 0), .011, .0045);
+  ovale(M, C.bouche, V(X0, -.004, 0), V(X0 + .05, -.006, 0), .009, .0025);
+  const couleurNag = (y0, sens, h) => (x, y) => melange(C.nag, C.nagBord, Math.pow(Math.max(0, (y - y0) * sens / h), 1.8));
+  /* la nageoire du dos, au milieu : le bord avant raide, le haut pointu */
+  const d0 = -.07, d1 = .06, dy0 = HAUT(uDe(d0)) - .008, dy1 = HAUT(uDe(d1)) - .008, hD = .1;
+  nageoire(M, nageoireGeo(V(d0, dy0, 0), V(d1, dy1, 0), t => { const b = V(d0, dy0, 0).lerp(V(d1, dy1, 0), t);
+    const f = t < .15 ? .3 + .7 * t / .15 : 1 - .85 * (t - .15) / .85;
+    return V(b.x + .03 + .05 * f, b.y + .006 + hD * f, 0); }, 14), new THREE.Matrix4(), couleurNag(dy0, 1, hD));
+  /* l'anale, longue et basse, vers la queue */
+  const a0 = .13, a1 = .27, ay0 = -BAS(uDe(a0)) + .008, ay1 = -BAS(uDe(a1)) + .007;
+  nageoire(M, nageoireGeo(V(a0, ay0, 0), V(a1, ay1, 0), t => { const b = V(a0, ay0, 0).lerp(V(a1, ay1, 0), t);
+    const f = t < .12 ? .4 + .6 * t / .12 : 1 - .6 * (t - .12) / .88;
+    return V(b.x + .02 + .02 * f, b.y - .005 - .045 * f, 0); }, 14), new THREE.Matrix4(), couleurNag(ay0, -1, .05));
+  /* la queue bien fourchue, plus sombre au bord */
+  const qx = X1 - .015;
+  const bordQ = t => { const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .27, fourche = .04 + .12 * Math.pow(lobe, .85);
+    return V(qx + fourche + .02, y * (.75 + .25 * lobe), 0); };
+  nageoire(M, nageoireGeo(V(qx, .03, 0), V(qx, -.03, 0), bordQ, 24), new THREE.Matrix4(), (x, y) => {
+    const t = Math.max(0, Math.min(1, .5 - y / .27)), e = bordQ(t), k = (x - qx) / Math.max(.02, e.x - qx);
+    return melange(C.nag, C.nagBord, Math.pow(Math.max(0, Math.min(1, k)), 1.6)); });
+  /* les ventrales : au milieu du ventre, sous la nageoire du dos */
+  const peX = -.02;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .01, base = s * LARGE(uDe(peX)) * .45;
+    const g = nageoireGeo(V(-.025, 0, 0), V(.02, 0, 0), t => V(.03 + t * .05, -.055 + t * .045, 0), 8);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.3, 0, 0), V(1, 1, 1)), (x, y) => melange(C.nag, C.nagBord, (pY - y) / .07));
+  }
+  /* les pectorales, basses, juste derrière l'ouïe */
+  for(const s of [-1, 1]){
+    const p = F.peau(.29, -.6, s);
+    const g = nageoireGeo(V(0, .016, 0), V(0, -.016, 0), t => V(.13 - Math.abs(t - .25) * .08, .0 - t * .04, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .008), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.nag, C.nagBord, (x - p.x) / .16));
+  }
+  return sardineGeo = fusionner(M);
+}
+export const sardineModele = () => modeleDe(sardineFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1424,5 +1506,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   bar: {fabrique: barModele, echelle: 1},
   sole: {fabrique: soleModele, echelle: 1},
   dorade: {fabrique: doradeModele, echelle: 1},
+  sardine: {fabrique: sardineModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir

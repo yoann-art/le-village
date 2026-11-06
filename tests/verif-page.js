@@ -1290,7 +1290,8 @@ export async function verifier(){
     frames(2);
     if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0);
-    if(!lacherOmbre(player.position.x, player.position.z + 2)) throw new Error("pas d'ombre de poisson possible au bout du ponton");
+    const ici = presents("mer", "ponton");                                  // à certaines heures, aucun poisson du ponton (hors été, de 19 h à 21 h)
+    if(!lacherOmbre(player.position.x, player.position.z + 2, ici.length ? null : "mulet")) throw new Error("pas d'ombre de poisson possible au bout du ponton");
     $("#btn-act").click();
     let k = 0;
     while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
@@ -1299,6 +1300,7 @@ export async function verifier(){
     if(state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0) <= avant) throw new Error("pas de poisson dans le sac");
     /* ses poissons nagent autour du bout, plus loin de la côte que ceux de la plage (Yo, 6 novembre 2026) */
     const { distanceDuBord, ombresIci } = await import("../js/peche.js"), { PECHE } = await import("../js/donnees.js");
+    if(!ici.length) return `${P.n} cases dans l'eau ; à cette heure, aucun poisson du ponton : la nage autour du bout n'est pas vérifiée`;
     let vus = [];
     for(let n = 0; n < 6 && vus.length < 3; n++){ frames(200); vus = ombresIci().filter(o => o.ponton); }
     if(!vus.length) throw new Error("aucune ombre de poisson du ponton autour de son bout");
