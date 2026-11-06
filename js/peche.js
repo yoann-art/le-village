@@ -22,7 +22,7 @@ import { MODELES_POISSONS } from "./monde/poissons3d.js";
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { G, part, toon } from "./monde/formes.js";
-import { POISSONS, HEURES, PECHE, OUTILS, SAC, lieuxDe, saisonDu } from "./donnees.js";
+import { POISSONS, HEURES, PECHE, OUTILS, SAC, KOI_VARIETES, lieuxDe, saisonDu, tirerKoi } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, placesSac } from "./regles.js";
 import { idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
@@ -107,9 +107,9 @@ function calmar(g, c){
   for(let n = 0; n < 5; n++){ const t = part(G.cyl, c, .035, .3, .035, -.36, -.08 + n * .04, -.08 + n * .04); t.rotation.z = Math.PI/2; g.add(t); }
   for(const z of [-.12, .12]) g.add(part(G.eye, 0x1C2230, 1.4, 1.4, 1.4, -.24, .06, z));
 }
-export function poissonMesh(k, cm){
+export function poissonMesh(k, cm, couleur){
   const p = POISSONS[k], fait = MODELES_POISSONS[k];
-  if(fait){ const m = fait.fabrique(); m.scale.setScalar((.65 + Math.min(1.4, cm / 100) * .55) * fait.echelle); return m; }   // refait d'après l'image de Yo (poissons3d.js)
+  if(fait){ const m = fait.fabrique(couleur); m.scale.setScalar((.65 + Math.min(1.4, cm / 100) * .55) * fait.echelle); return m; }   // refait d'après l'image de Yo (poissons3d.js)
   const g = new THREE.Group();
   if(p.forme === "crustace" || p.forme === "calmar"){
     (p.forme === "crustace" ? crustace : calmar)(g, p.couleur);
@@ -428,14 +428,17 @@ function prendre(){
   const c = state.carnet.poissons, e = c[k] || (c[k] = {n: 0, max: 0});
   const nouveau = !e.n, record = e.n > 0 && cm > e.max;
   e.n++; e.max = Math.max(e.max, cm);
+  /* la koï : sa robe tirée au hasard ; le carnet garde une ligne, et la couleur de chaque koï pêchée (pour l'aquarium) */
+  const robe = k === "koi" ? tirerKoi() : null;
+  if(robe){ e.couleurs = e.couleurs || {}; e.couleurs[robe] = (e.couleurs[robe] || 0) + 1; }
   save();
   vibre(60);
   /* Le personnage lève le poisson à deux mains, sa phrase dans une bulle (prise.js, demande de Yo du 5 novembre 2026) */
   remous(ligne.a.x, ligne.a.z);
   ligne = null; bouchon.visible = false; fil.visible = false; pencheMain();
   const P = POISSONS[k];
-  montrerPrise({mesh: poissonMesh(k, cm), scene: sceneIci(), sorte: "poisson", phrase: PHRASES[k] || `${leNom(k, true)} !`, nouveau, record,
-    details: [`${cm} cm`, ...(P.rarete === "legendaire" ? ["✨ Un poisson légendaire, le seul de tout le jeu"] : P.brille ? ["✨ Elle brille comme une pièce neuve !"] : [])]});
+  montrerPrise({mesh: poissonMesh(k, cm, robe), scene: sceneIci(), sorte: "poisson", phrase: PHRASES[k] || `${leNom(k, true)} !`, nouveau, record,
+    details: [`${cm} cm`, ...(robe ? [`${KOI_VARIETES[robe].nom}, ${KOI_VARIETES[robe].desc}`] : []), ...(P.rarete === "legendaire" ? ["✨ Un poisson légendaire, le seul de tout le jeu"] : P.brille ? ["✨ Elle brille comme une pièce neuve !"] : [])]});
   if(canne) user(canne);                              // un poisson pris use la canne (usure.js)
 }
 

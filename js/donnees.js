@@ -387,7 +387,7 @@ export const POISSONS = {
   truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:"ruisseau", rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86, note:"Tachetée, elle remonte le courant"},
   brochet: {nom:"Brochet", pluriel:"brochets", lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"aube", taille:[50, 110], prix:3, couleur:0x6E7E4A, forme:"fin", note:"Des dents pointues, il chasse les petits poissons"},
   anguille:{nom:"Anguille", pluriel:"anguilles", une:true, lieu:"etang", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", meteo:"pluie", taille:[40, 100], prix:3, couleur:0x5B5642, forme:"long", note:"Elle glisse et se tortille"},
-  koi:     {nom:"Carpe koï", pluriel:"carpes koï", une:true, lieu:"etang", rarete:"rare", saisons:["printemps"], heures:"jour", meteo:"beau", taille:[30, 70], prix:8, couleur:0xF08A3C, forme:"rond", note:"Orange et blanche, splendide en bassin"},
+  koi:     {nom:"Carpe koï", pluriel:"carpes koï", une:true, lieu:"etang", rarete:"rare", saisons:["printemps"], heures:"jour", meteo:"beau", taille:[30, 70], prix:8, couleur:0xF08A3C, forme:"rond", note:"Dix robes, chacune une surprise : splendide en bassin"},
   carpeOr: {nom:"Vieille Carpe d'or", pluriel:"Vieilles Carpes d'or", une:true, lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"aube", taille:[90, 130], prix:30, couleur:0xF2C14E, forme:"rond", note:"Une carpe très ancienne, aux écailles d'or"},
   silure:  {nom:"Vieux Silure", pluriel:"Vieux Silures", lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"nuit", meteo:"orage", taille:[180, 250], prix:30, couleur:0x4A4A3E, note:"Le plus vieux poisson de l'île, long comme une barque"},
   /* La mer, depuis la plage */
@@ -454,6 +454,28 @@ export const quandPoisson = p => [p.saisons.length === 4 ? "toute l'année" : p.
   p.brouillard ? "par brouillard (le matin, ou quand le ciel n'est pas dégagé)" : ""].filter(Boolean).join(", ");
 /* Où, pour les bêtes des destinations (étape 1.13) */
 export const DANS_ZONE = {foret:"dans la Forêt profonde, ", marais:"au Marais brumeux, "};
+/* Les dix robes de la carpe koï (demande de Yo du 6 novembre 2026 : « J'aimerais que la koï est une dizaine de couleurs
+   aléatoire dans le jeu » ; les dix et leur rareté validées par Yo : « certaines plus rares ») : tirée au hasard à chaque
+   prise (poids : environ 2 sur 3 courantes, 1 sur 4 moins courantes, 1 sur 10 rares). Le carnet garde une seule ligne ;
+   la couleur de chaque koï pêchée est retenue (state.carnet.poissons.koi.couleurs) pour l'aquarium à venir (bible). */
+export const KOI_VARIETES = {
+  kohaku:      {nom: "Kohaku", desc: "blanche aux taches rouges", poids: 16.5},
+  sanke:       {nom: "Sanke", desc: "blanche, taches rouges et noires", poids: 16.5},
+  showa:       {nom: "Showa", desc: "noire, taches rouges et blanches", poids: 16.5},
+  chagoi:      {nom: "Chagoi", desc: "brun-thé", poids: 16.5},
+  shiroUtsuri: {nom: "Shiro Utsuri", desc: "noire et blanche", poids: 8.3},
+  asagi:       {nom: "Asagi", desc: "dos bleu-gris, ventre rouge orangé", poids: 8.3},
+  kigoi:       {nom: "Kigoi", desc: "jaune citron", poids: 8.3},
+  tancho:      {nom: "Tancho", desc: "blanche au rond rouge", poids: 3},
+  ogon:        {nom: "Ogon", desc: "toute en or", poids: 3},
+  platinum:    {nom: "Platinum", desc: "toute en argent", poids: 3}
+};
+export function tirerKoi(r = Math.random()){
+  const l = Object.entries(KOI_VARIETES), total = l.reduce((n, [, v]) => n + v.poids, 0);
+  let x = r * total;
+  for(const [k, v] of l){ x -= v.poids; if(x < 0) return k; }
+  return l[0][0];
+}
 /* Les lieux d'un poisson (un lieu, ou une liste de lieux d'une même zone : jamais de doublon d'une zone à l'autre, demande de Yo) */
 export const lieuxDe = p => [].concat(p.lieu);
 const OU_EAU = {etang:"à l'étang", mer:"en mer", ruisseau:"dans le ruisseau de la Forêt profonde", source:"à la source, au cœur de la Forêt profonde", chenal:"dans les chenaux du Marais brumeux"};

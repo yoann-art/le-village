@@ -1249,7 +1249,30 @@ export async function verifier(){
       if(n < 5000) throw new Error(`le ${f} pêché n'est pas son modèle refait (${n} triangles)`);
       if(!iconesPhoto().includes(f)) throw new Error(`le ${f} n'a pas sa photo dans le sac`);
     }
-    return `${objet(p.k).nom.toLowerCase()}, mordu au bout de ${(k * .05).toFixed(1)} s`;
+    /* la carpe koï et ses dix robes (Yo, 6 novembre 2026) : tirées au hasard, les rares plus rares ; chaque robe son modèle ;
+       trois koï pêchées : levées dans leur robe, son nom dans la bulle, le carnet garde une ligne et retient leurs couleurs */
+    const { KOI_VARIETES, tirerKoi } = await import("../js/donnees.js");
+    const robes = MODELES_POISSONS.koi.couleurs;
+    if(robes.length !== 10 || robes.some(r => !KOI_VARIETES[r])) throw new Error(`la koï n'a pas ses dix robes (${robes.join(", ")})`);
+    const geos = new Set(robes.map(r => { let g = null; MODELES_POISSONS.koi.fabrique(r).traverse(o => { if(o.isMesh) g = o.geometry; }); return g; }));
+    if(geos.size !== 10) throw new Error("des robes de koï partagent le même modèle");
+    const vu = {}; for(let i = 0; i < 20000; i++){ const r = tirerKoi(); vu[r] = (vu[r] || 0) + 1; }
+    const part = l => l.reduce((n, r) => n + (vu[r] || 0), 0) / 20000, rares = part(["tancho", "ogon", "platinum"]), courantes = part(["kohaku", "sanke", "showa", "chagoi"]);
+    if(Object.keys(vu).length !== 10 || rares < .06 || rares > .13 || courantes < .6) throw new Error(`le tirage des robes est faussé (rares ${(rares * 100).toFixed(1)} %, courantes ${(courantes * 100).toFixed(1)} %)`);
+    const avantKoi = (state.carnet.poissons.koi || {}).n || 0;
+    for(let n = 0; n < 3; n++){
+      if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2, "koi")) throw new Error("pas d'ombre de koï possible ici");
+      $("#btn-act").click();
+      let j = 0; while(!$("#btn-act").dataset.action.includes("Ferrer") && j < 400){ frames(1); j++; }
+      if(j >= 400) throw new Error("la koï ne mord jamais");
+      $("#btn-act").click(); frames(8);
+      if(!Object.values(KOI_VARIETES).some(v => $("#prise").textContent.includes(v.nom))) throw new Error(`la bulle ne dit pas la robe de la koï (« ${$("#prise").textContent} »)`);
+      frames(40);
+    }
+    const ek = state.carnet.poissons.koi, nRobes = Object.values(ek.couleurs || {}).reduce((a, b) => a + b, 0);
+    if(ek.n !== avantKoi + 3 || nRobes !== ek.n) throw new Error(`le carnet ne retient pas la robe de chaque koï (${ek.n} koï, ${nRobes} robes)`);
+    sacTake("koi", sacCount("koi"));                                                // les koï relâchées : le sac garde sa place pour la suite
+    return `${objet(p.k).nom.toLowerCase()}, mordu au bout de ${(k * .05).toFixed(1)} s ; trois koï : ${Object.keys(ek.couleurs).join(", ")} (rares ${(rares * 100).toFixed(0)} % des tirages)`;
   });
   await etape("Pêcher depuis le ponton", async () => {
     const P = state.ponton;

@@ -192,7 +192,7 @@ export function preparerMains(){
   let x = 0;
   for(const k of [...Object.keys(OUTILS), Object.keys(GRAINES)[0], ...Object.keys(POSABLES)]){ if(MODELES_G[famille(k)]) continue; const o = makeOutil(k); if(o){ o.position.set((x++ % 6) * .1 - .25, 0, -.6); tous.add(o); } }
   for(const faire of Object.values(MODELES_G)){ const o = faire(); o.position.z = -.6; tous.add(o); }
-  for(const p of Object.values(MODELES_POISSONS)){ const o = p.fabrique(); o.position.z = -.6; tous.add(o); }   // les poissons refaits : la prise montrée ne les envoie pas en jouant
+  for(const p of Object.values(MODELES_POISSONS)) for(const c of p.couleurs || [undefined]){ const o = p.fabrique(c); o.position.z = -.6; tous.add(o); }   // les poissons refaits : la prise montrée ne les envoie pas en jouant
   tous.traverse(o => { o.frustumCulled = false; });
   scene.add(tous);
   const cible = new THREE.WebGLRenderTarget(4, 4);

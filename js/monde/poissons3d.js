@@ -690,10 +690,139 @@ function anguilleFait(){
 }
 export const anguilleModele = () => modeleDe(anguilleFait());
 
+/* ---------- La carpe koï ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici la koï »), comme une vraie koï (Nishikigoi, une carpe d'ornement ; choix
+   de Yo : « A », comme la nature) : le corps de carpe, haut et plein, aux grandes écailles ; les longues nageoires qui
+   flottent de la koï « papillon » (comme sur l'image) ; l'œil sombre au fin cercle doré ; deux paires de courts
+   barbillons (une petite sur la lèvre du haut, une plus longue au coin de la bouche).
+   Dix variétés (Yo : « J'aimerais que la koï est une dizaine de couleurs aléatoire dans le jeu » ; les dix et leur rareté
+   validées par Yo : KOI_VARIETES dans donnees.js) : chacune ses vraies couleurs, ses taches et ses nageoires. */
+const r4 = u => Math.sqrt(Math.min(1, u / .05 + .14));
+const KOI_F = corps(-.46, .34,
+  u => (.045 * u + .17 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .6)))) * r4(u) + .018,
+  u => (.042 * u + .14 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .68)))) * r4(u) + .018,
+  u => (.022 * u + .078 * Math.sin(Math.PI * Math.min(1, Math.pow(u, .55)))) * r4(u) + .013);
+const BLANC = 0xF6ECDA, ROUGE = 0xEA5416, NOIR = 0x221E1E;
+/* une tache (en u le long du corps, h du ventre −1 au dos 1 ; ru, rh : ses rayons), au bord un peu ondulé, comme les vraies */
+const tache = (u, h, ru, rh) => ({u, h, ru, rh});
+const dans = (t, u, h, s) => { const du = (u - t.u + s * .008) / t.ru, dh = (h - t.h) / t.rh;
+  return du * du + dh * dh + .18 * Math.sin(u * 47 + h * 9 + t.u * 20) + .1 * Math.sin(h * 23 - u * 11) < 1; };
+/* les dix variétés : la couleur du corps (fond, puis les taches de chaque couleur) et des nageoires (base → bout) */
+const KOI = {
+  kohaku: {fond: BLANC, taches: [[ROUGE, [tache(.11, .85, .1, .8), tache(.37, .7, .14, 1), tache(.61, .75, .085, .85), tache(.84, .8, .055, .6)]]],
+    nag: [0xF07A2A, BLANC], pecto: [0xF08A3A, BLANC]},
+  tancho: {fond: BLANC, taches: [], rond: 0xE23A1A,                          // le rond rouge : une pastille posée sur la tête (koiFait)
+    nag: [BLANC, 0xFAF4E8], pecto: [BLANC, 0xFAF4E8]},
+  sanke: {fond: BLANC, taches: [[ROUGE, [tache(.12, .9, .09, .7), tache(.42, .75, .12, .9), tache(.7, .8, .08, .75)]],
+      [NOIR, [tache(.3, .85, .03, .25), tache(.52, .55, .028, .2), tache(.6, .95, .035, .3), tache(.78, .45, .025, .2), tache(.88, .9, .03, .3), tache(.47, .98, .025, .15)]]],
+    nag: [0xE8E0D0, BLANC], pecto: [0x3A3434, BLANC]},
+  showa: {fond: NOIR, taches: [[BLANC, [tache(.1, -.4, .1, .7), tache(.32, -.55, .16, .55), tache(.6, -.35, .1, .7), tache(.86, .1, .06, .6), tache(.5, .5, .04, .25)]],
+      [ROUGE, [tache(.13, .8, .07, .5), tache(.4, .7, .1, .55), tache(.7, .65, .07, .5)]]],
+    nag: [NOIR, 0xE8DCC8], pecto: [NOIR, 0xF0E4D0]},
+  shiroUtsuri: {fond: NOIR, taches: [[BLANC, [tache(.1, -.3, .1, .8), tache(.36, .15, .12, .9), tache(.38, -.8, .3, .4), tache(.68, -.05, .09, .75), tache(.9, .5, .05, .5)]]],
+    nag: [NOIR, 0xE8E2D8], pecto: [NOIR, 0xF2ECE2]},
+  asagi: {fond: 0xC8D8E2, dos: 0x5E7E98, rouge: 0xD8602A, nag: [0xD8602A, 0xD8E2EA], pecto: [0xD8602A, 0xE2EAF0]},
+  ogon: {fond: 0xEEB436, dos: 0xD8961E, ventre: 0xF6D46A, nag: [0xE8A42A, 0xF4D070], pecto: [0xE8A42A, 0xF4D070]},
+  platinum: {fond: 0xDCE2E8, dos: 0xA8B2BC, ventre: 0xF2F4F6, nag: [0xC4CCD4, 0xEEF0F2], pecto: [0xC4CCD4, 0xEEF0F2]},
+  chagoi: {fond: 0x9A7040, dos: 0x6E4C26, ventre: 0xC09A62, nag: [0x7A5630, 0xA88454], pecto: [0x7A5630, 0xA88454]},
+  kigoi: {fond: 0xF2D23E, dos: 0xE0B820, ventre: 0xF8E688, nag: [0xEAC836, 0xF8E68A], pecto: [0xEAC836, 0xF8E68A]}
+};
+/* une pastille ronde collée à la peau (le rond rouge de la Tancho : la peau de la tête est trop peu détaillée pour le
+   peindre rond) : centrée en (uc, ac), ses rayons ru le long du corps et ra autour */
+function pastille(M, F, uc, ac, ru, ra, c, nr = 4, nt = 20){
+  const pos = [], nor = [], idx = [], o = F.peau(uc, ac, 1), n0 = F.normale(uc, ac, 1);
+  pos.push(...o.addScaledVector(n0, .0016).toArray()); nor.push(...n0.toArray());
+  for(let i = 1; i <= nr; i++) for(let j = 0; j < nt; j++){
+    const r = i / nr, t = j / nt * Math.PI * 2, u = uc + r * ru * Math.cos(t), a = ac + r * ra * Math.sin(t), n = F.normale(u, a, 1);
+    pos.push(...F.peau(u, a, 1).addScaledVector(n, .0016).toArray()); nor.push(...n.toArray());
+  }
+  for(let j = 0; j < nt; j++) idx.push(0, 1 + j, 1 + (j + 1) % nt);
+  for(let i = 1; i < nr; i++) for(let j = 0; j < nt; j++){
+    const a = 1 + (i - 1) * nt + j, b = 1 + (i - 1) * nt + (j + 1) % nt, c2 = a + nt, d = b + nt;
+    idx.push(a, c2, b, b, c2, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  g.setIndex(idx);
+  const dehors = g.index.array.slice(0, 3), A = V(...pos.slice(dehors[0] * 3, dehors[0] * 3 + 3)), B = V(...pos.slice(dehors[1] * 3, dehors[1] * 3 + 3)), C2 = V(...pos.slice(dehors[2] * 3, dehors[2] * 3 + 3));
+  if(B.sub(A).cross(C2.sub(A)).dot(n0) < 0){ const ix = g.index.array; for(let k = 0; k < ix.length; k += 3){ const t = ix[k + 1]; ix[k + 1] = ix[k + 2]; ix[k + 2] = t; } }   // tournée vers le dehors
+  M.push({geo: g, m: new THREE.Matrix4(), c});
+}
+const koiGeos = {};
+function koiFait(v){
+  if(koiGeos[v]) return koiGeos[v];
+  const K = KOI[v], F = KOI_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* la couleur du corps : le fond (plus sombre au dos, plus clair au ventre pour les unies), puis les taches */
+  const couleurCorps = (x, y, z) => {
+    const u = uDe(x), h = F.h(x, y), s = z >= 0 ? 1 : -1;
+    if(v === "asagi"){                                            // dos bleu-gris en filet (le bord des écailles), joues et ventre rouge orangé
+      let c = h > .1 ? melange(K.fond, K.dos, (h - .1) / .4) : new THREE.Color(K.fond);
+      if(h < -.45 || u < .27 && h < .05) c = melange(c, K.rouge, Math.min(1, h < -.45 ? (-.45 - h) / .15 : (.05 - h) / .15));
+      return c; }
+    if(K.dos) return h > 0 ? melange(K.fond, K.dos, h * 1.2) : melange(K.fond, K.ventre, -h * 1.3);
+    let c = new THREE.Color(K.fond);
+    for(const [coul, liste] of K.taches) if(liste.some(t => dans(t, u, h, s))) c = new THREE.Color(coul);
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .29, nu: 11, na: 9, taille: .043, relief: .0028, geo: ECAILLE_GRANDE});
+  const tete = (x, y, z) => couleurCorps(x, y, z);
+  opercule(M, F, 0xFFFFFF, .26, .05);
+  for(let i = M.length - 36; i < M.length; i++){ const m = M[i]; m.couleur = (x, y, z) => couleurCorps(x, y, z).multiplyScalar(.9); }   // l'opercule : la couleur de la tête, un peu plus sombre
+  oeil(M, F, {u: .13, a: .36, r: .034, iris: 0x2A2016, cercle: 0xC8A040, narine: 0x5A4A3A});
+  if(K.rond) pastille(M, F, .16, Math.PI / 2, .075, .62, K.rond);
+  /* les lèvres épaisses, de la couleur de la tête ; les deux paires de courts barbillons */
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X0 + .012, -.004, 0), q0, V(.028, .017, .04)), c: 0xFFFFFF, couleur: tete});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X0 + .01, -.03, 0), q0, V(.026, .015, .038)), c: 0xFFFFFF, couleur: tete});
+  boule(M, 0x6A4A3A, X0 - .006, -.017, 0, .011, .006, .03, BOULE_P);
+  const barb = new THREE.Color(K.fond).multiplyScalar(.92).getHex();          // les barbillons, de la couleur du fond
+  for(const s of [-1, 1]){
+    const a = V(X0 + .03, -.03, s * .03), b = V(X0 + .014, -.068, s * .036);
+    baton(M, barb, a, b, .0055); boule(M, barb, b.x, b.y, b.z, .006, .006, .006, BOULE_P);
+    const c = V(X0 + .006, -.006, s * .022), d = V(X0 - .002, -.026, s * .025);
+    baton(M, barb, c, d, .0045); boule(M, barb, d.x, d.y, d.z, .005, .005, .005, BOULE_P);
+  }
+  const fin = ([a, b]) => d => melange(a, b, Math.pow(Math.max(0, d), .7));
+  const nag = fin(K.nag), pecto = fin(K.pecto);
+  /* la longue nageoire du dos, qui flotte vers l'arrière, le bord en festons */
+  const d0 = -.12, d1 = .22, y0 = HAUT(uDe(d0)) - .014, y1 = HAUT(uDe(d1)) - .012;
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t);
+      return V(b.x + .08 + t * .1, b.y + .15 - .02 * t - .022 * Math.abs(Math.sin(t * Math.PI * 3.5)) - .07 * Math.pow(t, 5), 0); }, 26),
+    new THREE.Matrix4(), (x, y) => nag((y - y0) / .17));
+  /* la grande queue qui flotte, à peine fourchue, aux lobes arrondis */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .05, 0), V(qx, -.05, 0), t => {
+      const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .62, long = .17 + .11 * Math.sin(Math.PI / 2 * Math.pow(lobe, .8)) - .09 * Math.pow(lobe, 4);
+      return V(qx + long, y * (.8 + .2 * lobe), 0); }, 26),
+    new THREE.Matrix4(), x => nag((x - qx) / .32));
+  /* l'anale */
+  const anX = .2, anY = -BAS(uDe(anX)) + .012;
+  nageoire(M, nageoireGeo(V(anX - .06, anY, 0), V(anX + .06, anY + .02, 0), t => { const a = Math.PI * (.1 + t * .8);
+      return V(anX + .03 - Math.cos(a) * .09, anY - Math.sin(a) * .13, 0); }, 12),
+    new THREE.Matrix4(), (x, y) => nag((anY - y) / .13));
+  /* les ventrales : grandes et rondes */
+  const peX = -.04;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .02, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.05, 0, 0), V(.03, 0, 0), t => { const a = Math.PI * (.1 + t * .8); return V(.04 - Math.cos(a) * .09, -Math.sin(a) * .15, 0); }, 12);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), (x, y) => pecto((pY - y) / .15));
+  }
+  /* les pectorales : grandes et rondes, derrière l'opercule */
+  for(const s of [-1, 1]){
+    const p = F.peau(.33, -.55, s);
+    const g = nageoireGeo(V(0, .024, 0), V(0, -.024, 0), t => { const a = Math.PI * (t - .5) * .95; return V(.03 + Math.cos(a) * .15, Math.sin(-a) * .08 - .03, 0); }, 12);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => pecto((x - p.x) / .17));
+  }
+  return koiGeos[v] = fusionner(M);
+}
+export const KOI_COULEURS = Object.keys(KOI);
+export const koiModele = (v = "kohaku") => modeleDe(koiFait(KOI[v] ? v : "kohaku"));
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
   tanche: {fabrique: tancheModele, echelle: 1}, carpe: {fabrique: carpeModele, echelle: 1},
   brochet: {fabrique: brochetModele, echelle: 1},
   anguille: {fabrique: anguilleModele, echelle: 1},
+  koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
