@@ -603,9 +603,97 @@ function brochetFait(){
 }
 export const brochetModele = () => modeleDe(brochetFait());
 
+/* ---------- L'anguille ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici l'anguille »), comme une vraie anguille d'Europe (Anguilla anguilla, au
+   stade « anguille jaune » de nos étangs ; choix de Yo : « A », comme la nature) : le long corps en serpent qui ondule, brun
+   olive foncé au dos, jaune doré aux flancs et au ventre ; la peau lisse et brillante, sans taches (ses écailles minuscules
+   sont cachées dessous) ; la petite tête pointue, la mâchoire du bas un peu plus longue, les narines en petits tubes au bout
+   du museau, le petit œil doré ; une petite pectorale ronde ; une seule longue nageoire, de la couleur du corps au bord
+   doré, qui part du milieu du dos, fait le tour de la queue et revient dessous. */
+/* un ruban de nageoire : de sa base (base(t)) à son bord (bord(t)), t de 0 à 1 ; ses rayons fins, comme nageoireGeo */
+function rubanGeo(base, bord, n, ep = .004){
+  const pos = [], tei = [], idx = [];
+  for(const f of [1, -1]){
+    const o = pos.length / 3;
+    for(let i = 0; i <= n; i++){
+      const t = i / n, b = base(t), e = bord(t), rayon = i % 2 === 0;
+      for(const k of [0, .5, 1]){ const p = b.clone().lerp(e, k); pos.push(p.x, p.y, f * ep * (1 - k * .7)); tei.push(rayon ? .95 : 1.03); }
+    }
+    for(let i = 0; i < n; i++) for(let k = 0; k < 2; k++){
+      const a = o + i * 3 + k, b = a + 3;
+      if(f > 0) idx.push(a, b, a + 1, a + 1, b, b + 1); else idx.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("teinte", new THREE.Float32BufferAttribute(tei, 1));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+const ANGUILLE_F = corps(-.6, .56,
+  courbe([[0, .008], [.03, .019], [.08, .03], [.14, .038], [.3, .046], [.5, .047], [.7, .04], [.85, .028], [1, .006]]),
+  courbe([[0, .008], [.03, .016], [.08, .027], [.14, .037], [.3, .048], [.5, .049], [.7, .041], [.85, .028], [1, .006]]),
+  courbe([[0, .01], [.03, .018], [.08, .027], [.14, .034], [.3, .038], [.5, .035], [.7, .025], [.85, .014], [1, .003]]));
+const ANGUILLE = {dos: 0x46351A, dosClair: 0x6E5626, flanc: 0xB8902E, ventre: 0xE2C462, levre: 0xB89A48, bouche: 0x4A3818,
+  iris: 0xD0A42C, cercle: 0x6A5220, nag: 0x6A5424, nagBout: 0xB8923A, pecto: 0x9A8238, pectoBout: 0xC0A04A};
+let anguilleGeo = null;
+function anguilleFait(){
+  if(anguilleGeo) return anguilleGeo;
+  const C = ANGUILLE, F = ANGUILLE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas;
+  const xDe = u => X0 + (X1 - X0) * u;
+  /* le corps, lisse et brillant : brun olive foncé au dos, jaune doré aux flancs et au ventre, sans taches */
+  const couleurCorps = (x, y) => { const h = F.h(x, y);
+    return h > .3 ? melange(C.dosClair, C.dos, (h - .3) / .4) : h > -.15 ? melange(C.flanc, C.dosClair, (h + .15) / .45) : melange(C.flanc, C.ventre, (-.15 - h) / .6); };
+  M.push({geo: corpsGeo(X0, X1, HAUT, BAS, F.large, 96, 26), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: couleurCorps,
+    ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .05))});
+  oeil(M, F, {u: .065, a: .5, r: .012, iris: C.iris, cercle: C.cercle, narine: C.dos, uNarine: .018, aNarine: .4});
+  /* les narines en petits tubes, au bout du museau */
+  for(const s of [-1, 1]){ const a = F.peau(.012, .35, s), b = a.clone().add(V(-.006, .006, s * .003)); baton(M, C.dosClair, a, b, .0025); }
+  /* la bouche : la mâchoire du bas un peu plus longue, la fente jusque sous l'œil */
+  boule(M, C.levre, X0 + .03, -.006, 0, .04, .007, .012);
+  boule(M, C.levre, X0 + .026, -.013, 0, .044, .007, .013);
+  boule(M, C.bouche, X0 + .035, -.0095, 0, .034, .0025, .0125, BOULE_P);
+  /* la fente des ouïes, petite, devant la pectorale */
+  for(const s of [-1, 1]) for(let k = 0; k < 5; k++){ const p = F.peau(.125, -.35 + k * .1, s), n = F.normale(.125, -.35 + k * .1, s);
+    M.push({geo: BOULE_P, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.001), versN(n), V(.0025, .003, .006)), c: C.dosClair}); }
+  /* la petite pectorale ronde */
+  for(const s of [-1, 1]){
+    const p = F.peau(.14, -.2, s);
+    const g = nageoireGeo(V(0, .01, 0), V(0, -.01, 0), t => { const a = Math.PI * (t - .5) * .95; return V(.008 + Math.cos(a) * .045, Math.sin(-a) * .03 - .006, 0); }, 10, .004);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .006), tourne(s * .1, s * -.4, 0), V(1, 1, 1)), x => melange(C.pecto, C.pectoBout, (x - p.x) / .05));
+  }
+  /* la longue nageoire : elle part du milieu du dos, fait le tour de la queue et revient dessous ; de la couleur du corps,
+     le bord doré */
+  const rubans = [[.36, 1], [.46, -1]];
+  for(const [u0, sens] of rubans){
+    const base = t => { const u = u0 + (1 - u0) * t, f = Math.max(0, (t - .8) / .2);   // au bout, les deux rubans se chevauchent un peu
+      return V(xDe(u), sens * ((sens > 0 ? HAUT(u) : BAS(u)) - .004 - .005 * f * f), 0); };
+    const hauteur = t => .03 * Math.min(1, t / .12) + .01 * t;
+    /* au bout, le bord s'arrondit jusqu'à la pointe de la queue : les deux rubans s'y rejoignent */
+    const tc = .8, bc = base(tc), xc = bc.x, ry = Math.abs(bc.y) + hauteur(tc), rx = X1 + .05 - xc;
+    const bord = t => { if(t <= tc) return base(t).add(V(0, sens * hauteur(t), 0));
+      const a = (t - tc) / (1 - tc) * Math.PI / 2; return V(xc + rx * Math.sin(a), sens * ry * Math.cos(a), 0); };
+    nageoire(M, rubanGeo(base, bord, 90), new THREE.Matrix4(), (x, y) => melange(C.nag, C.nagBout, (Math.abs(y) - (sens > 0 ? HAUT(uDe(x)) : BAS(uDe(x))) + .004) / .03));
+  }
+  /* le tout ondule, comme sur l'image : droit à la tête, des vagues de plus en plus amples vers la queue */
+  const g = fusionner(M), P = g.attributes.position, N = g.attributes.normal, k = Math.PI * 2 / .5;
+  const A = x => .065 * Math.max(0, Math.min(1, (x + .4) / .5));
+  const w = x => A(x) * Math.sin(k * (x + .2)), dw = x => (w(x + .001) - w(x - .001)) / .002;
+  for(let i = 0; i < P.count; i++){
+    const x = P.getX(i), y = P.getY(i), d = dw(x), L = Math.sqrt(1 + d * d);
+    P.setXY(i, x - y * d / L, w(x) + y / L);
+    const nx = N.getX(i), ny = N.getY(i), c = 1 / L, s = d / L;      // la normale tourne avec la courbe
+    N.setXY(i, nx * c - ny * s, nx * s + ny * c);
+  }
+  g.computeBoundingSphere();
+  return anguilleGeo = g;
+}
+export const anguilleModele = () => modeleDe(anguilleFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
   tanche: {fabrique: tancheModele, echelle: 1}, carpe: {fabrique: carpeModele, echelle: 1},
   brochet: {fabrique: brochetModele, echelle: 1},
+  anguille: {fabrique: anguilleModele, echelle: 1},
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
