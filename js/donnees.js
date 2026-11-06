@@ -373,17 +373,18 @@ export const DEGATS_FLECHE = {fleche: 1, flecheCuivre: 2, flecheBronze: 3};
    une : féminin (« une perche »). Vraie horloge du téléphone, hémisphère nord en attendant l'étape 1.10.
    La Forêt profonde (étape 1.7, morceau 4, carnet : « les ruisseaux de la Forêt profonde ») : lieu « ruisseau »
    (le ruisseau qui la traverse) ou « source » (la source au cœur de la forêt, où nagent aussi ceux du ruisseau) ;
-   la truite vit à l'étang et au ruisseau (décidé par Yo : lieu peut être une liste). lune : « pleine », seulement
+   la truite vit au ruisseau (Yo, 6 novembre 2026 : « Je ne veux pas de doublon de faune ou flore dans le jeu. Chaque lieu
+   aura sa faune et flore » : chaque espèce dans un seul lieu ; lieu peut quand même être une liste). lune : « pleine », seulement
    les nuits de pleine lune (la vraie lune). banc : il nage en petit groupe (« jamais seul »). */
 const TOUTE = ["printemps", "ete", "automne", "hiver"];
 export const POISSONS = {
   /* L'étang */
   gardon:  {nom:"Gardon", pluriel:"gardons", lieu:"etang", rarete:"commun", saisons:TOUTE, heures:"jour", taille:[10, 30], prix:1, couleur:0xB8C4CC, note:"Le premier poisson qu'on attrape"},
-  perche:  {nom:"Perche", pluriel:"perches", une:true, lieu:["etang", "chenal"], rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[15, 40], prix:1, couleur:0x8DA35A, note:"Rayée, des épines sur le dos"},
-  tanche:  {nom:"Tanche", pluriel:"tanches", une:true, lieu:["etang", "chenal"], rarete:"commun", saisons:["ete"], heures:"soir", taille:[20, 50], prix:1, couleur:0x9A9A3C, note:"Vert doré, elle aime la vase"},
+  perche:  {nom:"Perche", pluriel:"perches", une:true, lieu:"etang", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[15, 40], prix:1, couleur:0x8DA35A, note:"Rayée, des épines sur le dos"},
+  tanche:  {nom:"Tanche", pluriel:"tanches", une:true, lieu:"etang", rarete:"commun", saisons:["ete"], heures:"soir", taille:[20, 50], prix:1, couleur:0x9A9A3C, note:"Vert doré, elle aime la vase"},
   carpe:   {nom:"Carpe", pluriel:"carpes", une:true, lieu:"etang", rarete:"commun", saisons:["printemps", "ete", "automne"], heures:"toujours", taille:[30, 80], prix:1, couleur:0xB08A4A, forme:"rond", note:"Grosse et patiente, elle tire fort"},
   ecrevisse:{nom:"Écrevisse", pluriel:"écrevisses", une:true, lieu:"etang", rarete:"commun", saisons:["ete"], heures:"nuit", taille:[8, 15], prix:1, couleur:0xB5523B, forme:"crustace", note:"Elle pince quand on la décroche"},
-  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:["etang", "ruisseau"], rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86, note:"Tachetée, elle remonte le courant"},
+  truite:  {nom:"Truite", pluriel:"truites", une:true, lieu:"ruisseau", rarete:"peuCommun", saisons:["automne", "hiver", "printemps"], heures:"matinSoir", taille:[25, 60], prix:3, couleur:0x9C8F86, note:"Tachetée, elle remonte le courant"},
   brochet: {nom:"Brochet", pluriel:"brochets", lieu:"etang", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"aube", taille:[50, 110], prix:3, couleur:0x6E7E4A, forme:"fin", note:"Des dents pointues, il chasse les petits poissons"},
   anguille:{nom:"Anguille", pluriel:"anguilles", une:true, lieu:"etang", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", meteo:"pluie", taille:[40, 100], prix:3, couleur:0x5B5642, forme:"long", note:"Elle glisse et se tortille"},
   koi:     {nom:"Carpe koï", pluriel:"carpes koï", une:true, lieu:"etang", rarete:"rare", saisons:["printemps"], heures:"jour", meteo:"beau", taille:[30, 70], prix:8, couleur:0xF08A3C, forme:"rond", note:"Orange et blanche, splendide en bassin"},
@@ -411,7 +412,7 @@ export const POISSONS = {
      (Grand Carnet : « Énorme : il faut tenir longtemps ») */
   thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", depuis:"barque", rarete:"rare", saisons:["ete"], heures:"toujours", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond", tenir:6, note:"Énorme : il faut tenir longtemps"},
   /* Les chenaux du Marais brumeux (étape 1.13, morceau 5 ; Grand Carnet : « des eaux troubles, où l'on pêche surtout la
-     nuit ») ; le jour, la perche et la tanche y nagent aussi (choisi par Claude : les chenaux ne sont jamais vides).
+     nuit ») ; la perche et la tanche n'y nagent plus (pas de doublon, demande de Yo du 6 novembre 2026).
      lanterne : son ombre s'allume quand il mord ; brume : son ombre est pâle, au ras de l'eau ; brouillard : seulement par
      brouillard (brouillard dans meteo.js) */
   poissonChat:{nom:"Poisson-chat", pluriel:"poissons-chats", lieu:"chenal", rarete:"commun", saisons:TOUTE, heures:"nuit", taille:[30, 70], prix:1, couleur:0x4A3A2A, forme:"rond", note:"De longues moustaches"},
@@ -453,7 +454,7 @@ export const quandPoisson = p => [p.saisons.length === 4 ? "toute l'année" : p.
   p.brouillard ? "par brouillard (le matin, ou quand le ciel n'est pas dégagé)" : ""].filter(Boolean).join(", ");
 /* Où, pour les bêtes des destinations (étape 1.13) */
 export const DANS_ZONE = {foret:"dans la Forêt profonde, ", marais:"au Marais brumeux, "};
-/* Les lieux d'un poisson (une liste : la truite vit à l'étang et au ruisseau) */
+/* Les lieux d'un poisson (un lieu, ou une liste de lieux d'une même zone : jamais de doublon d'une zone à l'autre, demande de Yo) */
 export const lieuxDe = p => [].concat(p.lieu);
 const OU_EAU = {etang:"à l'étang", mer:"en mer", ruisseau:"dans le ruisseau de la Forêt profonde", source:"à la source, au cœur de la Forêt profonde", chenal:"dans les chenaux du Marais brumeux"};
 export const ouPoisson = p => lieuxDe(p).map(l => OU_EAU[l]).join(" ou ") + (p.depuis === "ponton" ? ", depuis le ponton" : p.depuis === "barque" ? ", au large en barque" : "");

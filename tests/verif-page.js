@@ -1211,6 +1211,10 @@ export async function verifier(){
     return `${RECOLTE[sorte].nom} coupé, +${owned(bois) - avant} ${objet(bois).nom.toLowerCase()}`;
   });
   await etape("Pêcher", async () => {
+    /* pas de doublon : chaque poisson vit dans une seule zone (demande de Yo, 6 novembre 2026) */
+    const ZONE = {etang: "ile", mer: "ile", ruisseau: "foret", source: "foret", chenal: "marais"};
+    for(const [k, p] of Object.entries(POISSONS)){ const z = new Set([].concat(p.lieu).map(l => ZONE[l]));
+      if(z.size !== 1 || z.has(undefined)) throw new Error(`le poisson ${k} vit dans plusieurs zones (ou une zone inconnue) : ${[].concat(p.lieu).join(", ")}`); }
     sacAdd("canneBois", 1); enMain("canneBois");
     let t = null;
     for(let z = 1; z < N - 1 && !t; z++) for(let x = 1; x < N - 1; x++){
