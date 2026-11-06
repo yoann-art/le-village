@@ -55,9 +55,9 @@ const dejaPris = k => { const e = state.carnet.poissons[k]; return !!e && e.n > 
 export function presents(lieu, depuis, d = new Date()){
   const s = saisonDe(d), h = d.getHours() + d.getMinutes() / 60, lune = pleineLune(d), dep = depuis === true ? "ponton" : depuis || null;
   return Object.keys(POISSONS).filter(k => { const p = POISSONS[k], l = lieuxDe(p);
-    return (l.includes(lieu) || lieu === "source" && l.includes("ruisseau")) && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
+    return (l.includes(lieu) || lieu === "source" && l.includes("ruisseau")) && (p.depuis || null) === dep && p.saisons.includes(s) && HEURES[p.heures].h.some(([a, b]) => h >= a && h < b)
       && (!p.lune || lune)
-      && temps(p) && (!p.depuis || p.depuis === dep) && (!p.brouillard || brouillard())
+      && temps(p) && (!p.brouillard || brouillard())
       && !(p.rarete === "legendaire" && (dejaPris(k) || ombres.some(o => o.k === k))); });
 }
 /* Un poisson : d'abord une rareté (PECHE.poids, parmi celles présentes), puis une espèce ; sa taille penche
@@ -150,7 +150,7 @@ function bordMarais(x, z){
 }
 const enEau = (x, z) => { if(ici === "foret") return eauForet(x, z); if(ici === "marais") return eauMarais(x, z); const a = tileOf(x), b = tileOf(z); return !inb(a, b) || eauLibre(idx(a, b)); };
 /* Une place où une ombre peut nager (en coordonnées du monde) */
-const nageable = (x, z) => ici === "foret" || (ici === "marais" ? bordMarais(x, z) : presDuBord(tileOf(x), tileOf(z)));
+const nageable = (x, z, o) => ici === "foret" || (ici === "marais" ? bordMarais(x, z) : o && o.plage ? auLargeDeLaPlage(tileOf(x), tileOf(z)) : presDuBord(tileOf(x), tileOf(z)));
 /* Près d'un bord (terre ou ponton à deux cases au plus) : on peut y lancer depuis la rive (le ruisseau et la
    source sont étroits : toujours) */
 function presDuBord(x, z){
@@ -158,6 +158,16 @@ function presDuBord(x, z){
   for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++){ const a = x + dx, b = z + dz; if(inb(a, b) && !eauLibre(idx(a, b))) return true; }
   return false;
 }
+/* Les poissons de la plage nagent au large de l'écume (Yo, 6 novembre 2026 : « un peu plus loin car là ils sont dans
+   l'écume ») : entre PECHE.plage[0] et PECHE.plage[1] cases de la terre la plus proche */
+function distanceBord(x, z){
+  const M = PECHE.plage[1] + 1; let d = Infinity;
+  for(let dz = -M; dz <= M; dz++) for(let dx = -M; dx <= M; dx++){ const a = x + dx, b = z + dz;
+    if(inb(a, b) && !eauLibre(idx(a, b))) d = Math.min(d, Math.hypot(dx, dz)); }
+  return d;
+}
+const auLargeDeLaPlage = (x, z) => { const d = distanceBord(x, z); return d >= PECHE.plage[0] && d <= PECHE.plage[1]; };
+export const distanceDuBord = (x, z) => distanceBord(tileOf(x), tileOf(z));   // pour la vérification
 const presDuPonton = (x, z) => ici === "ile" && [...pontonCases].some(j => Math.hypot(centerOf(j % N) - x, centerOf(Math.floor(j / N)) - z) < 2.2);
 function ajouterOmbre(k, cm, x, z, lieu){
   const p = POISSONS[k], L = .45 + .9 * Math.min(1, cm / 160), W = L * (FORMES[p.forme] || .42);
@@ -244,7 +254,9 @@ function pondre(){
   const R = PECHE.ombres.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), cand = [];
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
     const d = Math.hypot(x - px, z - pz);
-    if(d < 2 || d > R || !inb(x, z) || !eauLibre(idx(x, z)) || !presDuBord(x, z)) continue;
+    if(d < 2 || d > R || !inb(x, z) || !eauLibre(idx(x, z))) continue;
+    const plage = lieuEau(idx(x, z)) === "mer" && !presDuPonton(centerOf(x), centerOf(z));
+    if(plage ? !auLargeDeLaPlage(x, z) : !presDuBord(x, z)) continue;     // la plage : au large de l'écume ; ailleurs : près d'un bord
     cand.push(idx(x, z));
   }
   const nEtang = ombres.filter(o => o.lieu === "etang").length;
@@ -253,8 +265,8 @@ function pondre(){
     if(lieu === "etang" && nEtang >= PECHE.ombres.etang) continue;
     const x = centerOf(i % N) + (Math.random() - .5) * .6, z = centerOf(Math.floor(i / N)) + (Math.random() - .5) * .6;
     if(ombres.some(o => Math.hypot(o.x - x, o.z - z) < 1.3)) continue;
-    const f = tirer(lieu, presDuPonton(x, z));
-    if(f){ ajouterOmbre(f.k, f.cm, x, z, lieu); banc(f, x, z, lieu); }
+    const pont = presDuPonton(x, z), f = tirer(lieu, pont);
+    if(f){ const o = ajouterOmbre(f.k, f.cm, x, z, lieu); o.plage = lieu === "mer" && !pont; banc(f, x, z, lieu); }
     return;
   }
 }
@@ -301,7 +313,7 @@ function nager(o, dt){
       if(!o.cible){
         for(let essai = 0; essai < 5 && !o.cible; essai++){
           const a = Math.random() * 6.28, r = .6 + Math.random() * 1.4, x = o.x + Math.cos(a) * r, z = o.z + Math.sin(a) * r;
-          if(enEau(x, z) && (o.libre || nageable(x, z))) o.cible = {x, z};
+          if(enEau(x, z) && (o.libre || nageable(x, z, o))) o.cible = {x, z};
         }
         if(!o.cible) o.pause = 1;
       }
@@ -353,16 +365,17 @@ function boutDeCanne(){
 }
 /* Le sac a-t-il la place pour un poisson ? (un emplacement libre, ou une pile de poissons pas pleine) */
 const sacOk = () => state.sac.length < placesSac() || state.sac.some(it => POISSONS[it.k] && it.n < SAC.pile);
-/* Où tombe le bouchon en lançant dans une direction (dx, dz) : dans l'eau, entre le bord et 2,2 P ; null sinon */
+/* Où tombe le bouchon en lançant dans une direction (dx, dz) : dans l'eau, entre le bord et PECHE.fil.lancer P (Yo, 6 novembre
+   2026 : « Il faut que le fil de la canne ait une plus longue distance ») ; null sinon */
 function pointDevant(dx, dz){
   const p = player.position;
   let s0 = null, s1 = null;
-  for(let s = .5; s <= 3.01; s += .1){
+  for(let s = .5; s <= PECHE.fil.portee + .01; s += .1){
     if(enEau(p.x + dx * s, p.z + dz * s)){ if(s0 === null) s0 = s; s1 = s; }
     else if(s0 !== null) break;
   }
   if(s0 === null) return null;
-  const s = Math.max(s0 + .15, Math.min(2.2, s1 - .15));
+  const s = Math.max(s0 + .15, Math.min(PECHE.fil.lancer, s1 - .15));
   return {x: p.x + dx * s, z: p.z + dz * s};
 }
 
@@ -370,13 +383,13 @@ function pointDevant(dx, dz){
 export function lancer(){
   if(ligne) return;
   if(!sacOk()){ toast("🎒 Ton sac est plein : range tes affaires dans un coffre de réserve avant de pêcher", 3400); return; }
-  /* Une ombre devant soi, à portée (dans un cône de 40°, entre 0,9 et 3,4 P) : le bouchon tombe juste devant elle */
+  /* Une ombre devant soi, à portée (dans un cône de 40°, entre 0,9 P et PECHE.fil.portee) : le bouchon tombe juste devant elle */
   const p = player.position, f = regard();
   let vise = null, mieux = Infinity;
   for(const o of ombres){
     if(o.etat !== "nage") continue;
     const dx = o.x - p.x, dz = o.z - p.z, d = Math.hypot(dx, dz), cos = (dx * f.x + dz * f.z) / d;
-    if(d < .9 || d > 3.4 || cos < .766) continue;
+    if(d < .9 || d > PECHE.fil.portee || cos < .766) continue;
     if(d * (2 - cos) < mieux){ mieux = d * (2 - cos); vise = o; }
   }
   let a = null;
@@ -471,9 +484,9 @@ export function updatePeche(dt, actif, ou){
   ligne.t += dt; ligne.T += dt;
   const L = ligne;
   if(L.phase === "vol"){
-    const u = Math.min(1, L.t / .45);
+    const loin = Math.hypot(L.a.x - L.de.x, L.a.z - L.de.z), u = Math.min(1, L.t / (.35 + .06 * loin));   // plus loin, il vole plus longtemps
     pencheMain(u < .3 ? .35 - 1.1 * u / .3 : -.75 + 1.7 * (u - .3) / .7);           // la canne part en arrière, puis en avant
-    bouchon.position.lerpVectors(L.de, L.a, u); bouchon.position.y += Math.sin(u * Math.PI) * .9;
+    bouchon.position.lerpVectors(L.de, L.a, u); bouchon.position.y += Math.sin(u * Math.PI) * (.6 + .12 * loin);
     if(u >= 1){ L.phase = "attente"; L.t = 0; remous(L.a.x, L.a.z); attirer(L); }
   } else if(L.phase === "attente"){
     let y = EAU + .02 + Math.sin(L.T * 2.6) * .012;

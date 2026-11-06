@@ -369,7 +369,8 @@ export const DEGATS_FLECHE = {fleche: 1, flecheCuivre: 2, flecheBronze: 3};
    attendant la météo de l'étape 1.10, il fait toujours beau), sa rareté, sa particularité (note, du carnet),
    sa taille (cm), son prix en or au comptoir (étape 1.6, morceau 2), sa couleur et sa forme (son dessin).
    Un légendaire ne se prend qu'une fois dans tout le jeu (carnet). À toute heure et en toute saison, il reste
-   un poisson commun à l'étang (la perche) et en mer depuis la plage (maquereau, rouget, merlan…).
+   un poisson commun à l'étang (la perche), en mer depuis la plage (le rouget au printemps et l'été, le merlan l'automne
+   et l'hiver) et au large en barque (le lieu jaune).
    une : féminin (« une perche »). Vraie horloge du téléphone, hémisphère nord en attendant l'étape 1.10.
    La Forêt profonde (étape 1.7, morceau 4, carnet : « les ruisseaux de la Forêt profonde ») : lieu « ruisseau »
    (le ruisseau qui la traverse) ou « source » (la source au cœur de la forêt, où nagent aussi ceux du ruisseau) ;
@@ -390,27 +391,30 @@ export const POISSONS = {
   koi:     {nom:"Carpe koï", pluriel:"carpes koï", une:true, lieu:"etang", rarete:"rare", saisons:["printemps"], heures:"jour", meteo:"beau", taille:[30, 70], prix:8, couleur:0xF08A3C, forme:"rond", note:"Dix robes, chacune une surprise : splendide en bassin"},
   carpeOr: {nom:"Vieille Carpe d'or", pluriel:"Vieilles Carpes d'or", une:true, lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"aube", taille:[90, 130], prix:30, couleur:0xF2C14E, forme:"rond", note:"Une carpe très ancienne, aux écailles d'or"},
   silure:  {nom:"Vieux Silure", pluriel:"Vieux Silures", lieu:"etang", rarete:"legendaire", saisons:TOUTE, heures:"nuit", meteo:"orage", taille:[180, 250], prix:30, couleur:0x4A4A3E, note:"Le plus vieux poisson de l'île, long comme une barque"},
-  /* La mer, depuis la plage */
-  maquereau:{nom:"Maquereau", pluriel:"maquereaux", lieu:"mer", rarete:"commun", saisons:["printemps", "ete"], heures:"toujours", taille:[25, 45], prix:1, couleur:0x4F7FA0, forme:"fin", note:"Rayé de bleu, très rapide"},
-  rouget:  {nom:"Rouget", pluriel:"rougets", lieu:"mer", rarete:"commun", saisons:["ete"], heures:"toujours", taille:[15, 35], prix:1, couleur:0xD9604A, note:"Rouge, avec des moustaches"},
+  /* La mer, depuis la plage (Yo, 6 novembre 2026 : une meilleure répartition entre la plage, le ponton et la barque ;
+     chaque poisson de la mer se pêche d'un seul endroit) */
+  rouget:  {nom:"Rouget", pluriel:"rougets", lieu:"mer", rarete:"commun", saisons:["printemps", "ete"], heures:"toujours", taille:[15, 35], prix:1, couleur:0xD9604A, note:"Rouge, avec des moustaches"},
   merlan:  {nom:"Merlan", pluriel:"merlans", lieu:"mer", rarete:"commun", saisons:["automne", "hiver"], heures:"toujours", taille:[20, 40], prix:1, couleur:0xC2C8CF, forme:"fin", note:"Argenté, il aime les eaux froides"},
   bar:     {nom:"Bar", pluriel:"bars", lieu:"mer", rarete:"peuCommun", saisons:TOUTE, heures:"aube", taille:[35, 80], prix:3, couleur:0xA9B2B8, note:"Argenté et combatif"},
   dorade:  {nom:"Dorade", pluriel:"dorades", une:true, lieu:"mer", rarete:"peuCommun", saisons:["ete"], heures:"toujours", taille:[25, 50], prix:3, couleur:0xC9B98A, forme:"rond", note:"Un trait doré entre les yeux"},
   sole:    {nom:"Sole", pluriel:"soles", une:true, lieu:"mer", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", taille:[25, 50], prix:3, couleur:0xA08B6A, forme:"rond", note:"Plate, cachée dans le sable"},
-  congre:  {nom:"Congre", pluriel:"congres", lieu:"mer", rarete:"rare", saisons:TOUTE, heures:"nuit", taille:[80, 180], prix:8, couleur:0x5A5A5E, forme:"long", note:"Long et puissant, il sort la nuit"},
   /* La mer, depuis le ponton */
   sardine: {nom:"Sardine", pluriel:"sardines", une:true, lieu:"mer", depuis:"ponton", rarete:"commun", saisons:["ete"], heures:"toujours", taille:[12, 22], prix:1, couleur:0x9FB8D0, forme:"fin", note:"Elle nage en bancs argentés"},
   mulet:   {nom:"Mulet", pluriel:"mulets", lieu:"mer", depuis:"ponton", rarete:"commun", saisons:TOUTE, heures:"jour", taille:[30, 60], prix:1, couleur:0x8E9AA3, note:"Il tourne autour des pontons"},
   orphie:  {nom:"Orphie", pluriel:"orphies", une:true, lieu:"mer", depuis:"ponton", rarete:"peuCommun", saisons:["printemps"], heures:"jour", taille:[40, 80], prix:3, couleur:0x5FA39B, forme:"long", note:"Un long bec pointu, et des arêtes vertes"},
+  congre:  {nom:"Congre", pluriel:"congres", lieu:"mer", depuis:"ponton", rarete:"rare", saisons:TOUTE, heures:"nuit", taille:[80, 180], prix:8, couleur:0x5A5A5E, forme:"long", note:"Long et puissant, il sort la nuit"},
   encornet:{nom:"Encornet", pluriel:"encornets", lieu:"mer", depuis:"ponton", rarete:"peuCommun", saisons:["automne", "hiver"], heures:"nuit", taille:[15, 40], prix:3, couleur:0xE8C2B4, forme:"calmar", note:"Il sort la nuit, attiré par la lumière"},
   /* Les ruisseaux de la Forêt profonde (carnet) */
   goujon:  {nom:"Goujon", pluriel:"goujons", lieu:"ruisseau", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[8, 15], prix:1, couleur:0xA8A08A, forme:"fin", banc:true, note:"Petit, mais jamais seul"},
   ombre:   {nom:"Ombre", pluriel:"ombres", lieu:"ruisseau", rarete:"peuCommun", saisons:["automne"], heures:"toujours", taille:[30, 50], prix:3, couleur:0x8A9AA8, note:"Une grande nageoire en forme de voile"},
   saumon:  {nom:"Saumon", pluriel:"saumons", lieu:"ruisseau", rarete:"peuCommun", saisons:["automne"], heures:"toujours", taille:[50, 100], prix:3, couleur:0xC88A7A, note:"Il remonte la rivière en sautant"},
   truiteArgent:{nom:"Truite d'argent", pluriel:"truites d'argent", une:true, lieu:"source", rarete:"rare", saisons:TOUTE, heures:"nuit", lune:"pleine", taille:[30, 60], prix:8, couleur:0xD8E0EA, brille:true, note:"Elle brille comme une pièce neuve"},
-  /* La mer, au large en barque (étape 1.13, morceau 2) ; tenir : il faut mouliner autant de fois après l'avoir ferré
-     (Grand Carnet : « Énorme : il faut tenir longtemps ») */
+  /* La mer, au large en barque (étape 1.13, morceau 2 ; Yo, 6 novembre 2026 : plus d'un poisson en barque) ; tenir : il
+     faut mouliner autant de fois après l'avoir ferré (Grand Carnet : « Énorme : il faut tenir longtemps ») */
+  maquereau:{nom:"Maquereau", pluriel:"maquereaux", lieu:"mer", depuis:"barque", rarete:"commun", saisons:["printemps", "ete"], heures:"toujours", taille:[25, 45], prix:1, couleur:0x4F7FA0, forme:"fin", note:"Rayé de bleu, très rapide"},
   thon:    {nom:"Thon", pluriel:"thons", lieu:"mer", depuis:"barque", rarete:"rare", saisons:["ete"], heures:"toujours", taille:[100, 200], prix:8, couleur:0x2E4A6E, forme:"rond", tenir:6, note:"Énorme : il faut tenir longtemps"},
+  lieuJaune:{nom:"Lieu jaune", pluriel:"lieus jaunes", lieu:"mer", depuis:"barque", rarete:"commun", saisons:TOUTE, heures:"toujours", taille:[30, 80], prix:1, couleur:0x8A7A3A, note:"Il chasse au large, près des roches et des épaves"},
+  raie:    {nom:"Raie", pluriel:"raies", une:true, lieu:"mer", depuis:"barque", rarete:"peuCommun", saisons:TOUTE, heures:"nuit", taille:[40, 100], prix:3, couleur:0x8A7E6A, forme:"rond", note:"Plate comme une galette, elle glisse sur le sable du fond"},
   /* Les chenaux du Marais brumeux (étape 1.13, morceau 5 ; Grand Carnet : « des eaux troubles, où l'on pêche surtout la
      nuit ») ; la perche et la tanche n'y nagent plus (pas de doublon, demande de Yo du 6 novembre 2026).
      lanterne : son ombre s'allume quand il mord ; brume : son ombre est pâle, au ras de l'eau ; brouillard : seulement par
@@ -442,7 +446,9 @@ export const METEOS = {beau:"par beau temps", pluie:"sous la pluie", orage:"une 
    rayon cases, près des bords ; chacune reste vie secondes (de… à…) ; un poisson à moins de attire P du bouchon
    vient voir. À régler en jouant. */
 export const PECHE = {morsure:[1.5, 5], fenetre:1, poids:{commun:60, peuCommun:28, rare:10, legendaire:1},
-  ombres:{max:5, etang:2, rayon:8, vie:[45, 100], attire:2.5}, tenir:7};   // tenir : le temps pour mouliner (le thon)
+  ombres:{max:5, etang:2, rayon:8, vie:[45, 100], attire:2.5}, tenir:7,   // tenir : le temps pour mouliner (le thon)
+  plage:[3, 6],                // les poissons de la plage : entre 3 et 6 cases de la terre, hors de l'écume (Yo, 6 novembre 2026)
+  fil:{portee:6.5, lancer:4}}; // le fil : on vise une ombre jusqu'à 6,5 P ; sans viser, le bouchon tombe à 4 P (Yo, 6 novembre 2026)
 /* La barque (étape 1.13, morceau 2 ; décidé par Yo : construite au ponton ; Grand Carnet : « la Libellule ») : ses
    matières, ses travaux en temps réel (en secondes, même jeu fermé), et « au large » : à tant de cases de toute terre.
    Chiffres choisis par Claude, à régler en jouant. */
@@ -479,7 +485,7 @@ export function tirerKoi(r = Math.random()){
 /* Les lieux d'un poisson (un lieu, ou une liste de lieux d'une même zone : jamais de doublon d'une zone à l'autre, demande de Yo) */
 export const lieuxDe = p => [].concat(p.lieu);
 const OU_EAU = {etang:"à l'étang", mer:"en mer", ruisseau:"dans le ruisseau de la Forêt profonde", source:"à la source, au cœur de la Forêt profonde", chenal:"dans les chenaux du Marais brumeux"};
-export const ouPoisson = p => lieuxDe(p).map(l => OU_EAU[l]).join(" ou ") + (p.depuis === "ponton" ? ", depuis le ponton" : p.depuis === "barque" ? ", au large en barque" : "");
+export const ouPoisson = p => lieuxDe(p).map(l => OU_EAU[l]).join(" ou ") + (p.depuis === "ponton" ? ", depuis le ponton" : p.depuis === "barque" ? ", au large en barque" : lieuxDe(p).includes("mer") ? ", depuis la plage" : "");
 /* Le dessin d'un poisson, pour le sac, les coffres et le carnet (à la place d'un emoji, pour les reconnaître) ;
    l'écrevisse et l'encornet gardent leur emoji */
 const hex = c => "#" + c.toString(16).padStart(6, "0");

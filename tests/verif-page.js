@@ -87,6 +87,8 @@ const enMain = k => {
 };
 const $ = s => document.querySelector(s);
 const frames = (n, dt = .05) => { for(let k = 0; k < n; k++) updateRecolte(dt, true); };
+/* le fil porte loin (6,5 P) : les autres ombres s'en vont, pour que le lancer vise bien celle qu'on vient de lâcher */
+const seule = o => ombresIci().forEach(x => { if(x !== o && x.etat === "nage") x.etat = "part"; });
 /* Un doigt sur l'écran : la place à l'écran d'un point 3D, et un appui long qui glisse d'un point à un autre */
 const ecran = (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; };
 const doigt = (type, [x, y]) => renderer.domElement.dispatchEvent(new PointerEvent(type, {pointerId: 7, clientX: x, clientY: y, bubbles: true}));
@@ -1225,8 +1227,10 @@ export async function verifier(){
     placePlayer(centerOf(t[0]), centerOf(t[1]) + .2, 0, 1); frames(2);
     if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`le bouton dit « ${$("#btn-act").dataset.action} »`);
     /* une ombre devant soi, d'un poisson commun (tiré au hasard, ce pouvait être un légendaire, qui casse le fil de la canne en bois) */
-    const commun = lieuEau(idx(t[0], t[1] + 1)) === "mer" ? "maquereau" : "perche";
-    if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2, commun)) throw new Error("pas d'ombre de poisson possible ici");
+    const commun = lieuEau(idx(t[0], t[1] + 1)) === "mer" ? "rouget" : "perche";
+    const visee = lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2, commun);
+    if(!visee) throw new Error("pas d'ombre de poisson possible ici");
+    seule(visee);
     $("#btn-act").click();
     let k = 0;
     while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
@@ -1261,7 +1265,9 @@ export async function verifier(){
     if(Object.keys(vu).length !== 10 || rares < .06 || rares > .13 || courantes < .6) throw new Error(`le tirage des robes est faussé (rares ${(rares * 100).toFixed(1)} %, courantes ${(courantes * 100).toFixed(1)} %)`);
     const avantKoi = (state.carnet.poissons.koi || {}).n || 0;
     for(let n = 0; n < 3; n++){
-      if(!lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2, "koi")) throw new Error("pas d'ombre de koï possible ici");
+      const kv = lacherOmbre(centerOf(t[0]), centerOf(t[1]) + 2.2, "koi");
+      if(!kv) throw new Error("pas d'ombre de koï possible ici");
+      seule(kv);
       $("#btn-act").click();
       let j = 0; while(!$("#btn-act").dataset.action.includes("Ferrer") && j < 400){ frames(1); j++; }
       if(j >= 400) throw new Error("la koï ne mord jamais");
@@ -1291,6 +1297,54 @@ export async function verifier(){
     $("#btn-act").click(); frames(40);
     if(state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0) <= avant) throw new Error("pas de poisson dans le sac");
     return `${P.n} cases dans l'eau`;
+  });
+  /* La mer (Yo, 6 novembre 2026) : chaque poisson de la mer d'un seul endroit (plage, ponton, barque), un poisson commun en
+     toute saison à la plage et en barque ; les poissons de la plage hors de l'écume ; un fil plus long */
+  await etape("La pêche en mer : plage, ponton, barque", async () => {
+    const { distanceDuBord } = await import("../js/peche.js"), { PECHE } = await import("../js/donnees.js");
+    const mer = Object.keys(POISSONS).filter(k => [].concat(POISSONS[k].lieu).includes("mer"));
+    const de = d => mer.filter(k => (POISSONS[k].depuis || null) === d).sort().join(", ");
+    const attendu = {null: "bar, dorade, merlan, rouget, sole", ponton: "congre, encornet, mulet, orphie, sardine", barque: "lieuJaune, maquereau, raie, thon"};
+    for(const [d, l] of Object.entries(attendu)) if(de(d === "null" ? null : d) !== l) throw new Error(`depuis ${d === "null" ? "la plage" : d === "ponton" ? "le ponton" : "la barque"} : ${de(d === "null" ? null : d)}`);
+    for(const [mois, saison] of [[3, "printemps"], [6, "été"], [9, "automne"], [0, "hiver"]]) for(const h of [3, 12]){
+      const d = new Date(2026, mois, 15, h);
+      for(const [dep, nom] of [[false, "la plage"], ["barque", "la barque"]]){
+        const l = presents("mer", dep, d);
+        if(!l.some(k => POISSONS[k].rarete === "commun")) throw new Error(`pas de poisson commun depuis ${nom} (${saison}, ${h} h)`);
+        if(l.some(k => (POISSONS[k].depuis || false) !== dep)) throw new Error(`depuis ${nom}, un poisson d'ailleurs : ${l.join(", ")}`);
+      }
+    }
+    /* sur la plage, loin du ponton, face à la mer : les ombres naissent et nagent entre 3 et 6 cases de la terre */
+    if(!owned("canneBois")) sacAdd("canneBois", 1);
+    enMain("canneBois");                                                     // la canne de l'étape « Pêcher » (sans en prendre une autre : le sac garde sa place)
+    const P = state.ponton;
+    let t = null;
+    for(let z = 1; z < N - 7 && !t; z++) for(let x = 1; x < N - 1; x++){
+      const i = idx(x, z);
+      if(map.type[i] !== "water" && !map.obj[i] && !occ.has(i) && !state.sol[i] && eauLibre(idx(x, z + 1)) && lieuEau(idx(x, z + 1)) === "mer"
+        && eauLibre(idx(x, z + 5)) && (!P || Math.hypot(x - P.x, z - P.z) > 12)){ t = [x, z]; break; }
+    }
+    if(!t) throw new Error("pas de plage face à la mer");
+    placePlayer(centerOf(t[0]), centerOf(t[1]), 0, 1);
+    frames(320);
+    const plage = ombresIci().filter(o => o.plage);
+    if(!plage.length) throw new Error("aucune ombre de poisson au large de la plage");
+    const mal = plage.filter(o => { const d = distanceDuBord(o.x, o.z); return d < PECHE.plage[0] || d > PECHE.plage[1] + .5; });
+    if(mal.length) throw new Error(`des poissons de la plage nagent dans l'écume ou trop loin : ${mal.map(o => distanceDuBord(o.x, o.z).toFixed(1)).join(", ")} cases`);
+    if(plage.some(o => POISSONS[o.k].depuis)) throw new Error("un poisson du ponton ou de la barque nage au bord de la plage");
+    /* le fil plus long : une ombre à 5 P devant, le bouchon l'atteint et elle mord */
+    frames(2);
+    if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`face à la mer, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    const loin = lacherOmbre(player.position.x, player.position.z + 5, "rouget");
+    if(!loin) throw new Error("pas d'ombre possible à 5 P");
+    seule(loin);
+    $("#btn-act").click();
+    let k = 0;
+    while(!$("#btn-act").dataset.action.includes("Ferrer") && k < 400){ frames(1); k++; }
+    if(k >= 400) throw new Error("le fil ne va pas jusqu'à une ombre à 5 P");
+    $("#btn-act").click(); frames(50);
+    sacTake("rouget", sacCount("rouget"));
+    return `${plage.length} ombres au large de la plage (${plage.map(o => distanceDuBord(o.x, o.z).toFixed(1)).join(", ")} cases de la terre) ; un rouget pris à 5 P`;
   });
   await etape("Cueillir le thym", async () => {
     hold(null);

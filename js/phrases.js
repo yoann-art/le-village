@@ -32,6 +32,8 @@ export const PHRASES = {
   saumon: "Un saumon ! Il remontait la rivière en sautant.",
   truiteArgent: "Une truite d'argent ! Elle brille comme la pleine lune.",
   thon: "Un thon ! Quel combat, j'en ai mal aux bras.",
+  lieuJaune: "Un lieu jaune ! Il chassait au large, près des roches.",
+  raie: "Une raie ! Plate comme une galette.",
   poissonChat: "Un poisson-chat ! Il ne lui manque que le miaou.",
   lamproie: "Une lamproie ! Une bouche ronde, pleine de petites dents.",
   anguilleLanterne: "Une anguille-lanterne ! Elle éclaire le marais.",
