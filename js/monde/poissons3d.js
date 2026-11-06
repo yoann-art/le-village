@@ -906,6 +906,116 @@ function carpeOrFait(){
 /* elle luit doucement, comme les légendaires du jeu : la même matière jouet aux couleurs par sommet, sa lueur en plus */
 export const carpeOrModele = () => { const g = modeleDe(carpeOrFait()); g.children[0].material.emissive.setHex(0x2E1E00); return g; };
 
+/* ---------- Le Vieux Silure ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici le silure »), le poisson légendaire de l'étang, « le plus vieux poisson de
+   l'île » (choix de Yo : « B », comme son image ; Claude avait signalé ce qui s'écarte d'un vrai silure glane : ses
+   nageoires du dos et du dessous, ses barbillons du menton, sa queue, son œil) : l'énorme tête large et plate, la grande
+   bouche aux lèvres épaisses ; deux très longs barbillons sur la mâchoire du haut, une rangée de barbillons courts sous le
+   menton ; la peau sans écailles, marbrée d'olive sombre et de taches fauves, le ventre crème ; de la mousse verte sur le
+   dos, des cicatrices pâles sur le flanc, des verrues sur la tête, un sourcil plissé au-dessus du petit œil orange ; une
+   grande nageoire sur le dos et une seconde près de la queue, des nageoires dessous, la queue fourchue aux lobes ronds,
+   les nageoires brun-gris au bord fauve. Il luit doucement, comme la Vieille Carpe d'or. */
+const SILURE_F = corps(-.56, .36,
+  courbe([[0, .045], [.04, .075], [.1, .098], [.2, .118], [.32, .128], [.5, .128], [.7, .112], [.85, .094], [1, .07]]),
+  courbe([[0, .045], [.04, .072], [.1, .094], [.2, .114], [.32, .124], [.5, .124], [.7, .108], [.85, .09], [1, .066]]),
+  courbe([[0, .07], [.04, .1], [.1, .124], [.2, .134], [.32, .126], [.5, .106], [.7, .08], [.85, .06], [1, .04]]));
+const SILURE = {olive: 0x363C22, oliveClair: 0x4E5430, fauve: 0x9A8450, ventre: 0xC8AA70, mousse: 0x6A7426, cicatrice: 0xC8AE7A,
+  levre: 0xB08C5A, levreDessous: 0xC8A46A, bouche: 0x3A2618, iris: 0xE07A12, cercle: 0x3A2A12, sourcil: 0xB09460,
+  verrue: 0x5E5A34, barbeHaut: 0x7E6444, barbe: 0xD0B070, nag: 0x4A3C2C, nagBout: 0xB8874E};
+let silureGeo = null;
+function silureFait(){
+  if(silureGeo) return silureGeo;
+  const C = SILURE, F = SILURE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* la peau marbrée : olive sombre au dos, des taches fauves aux flancs, le ventre crème ; la mousse sur le dos */
+  const bruit = (x, y, z) => Math.sin(x * 47 + z * 13) * Math.sin(y * 39 + x * 19) + .5 * Math.sin(x * 83 - y * 61 + z * 29);
+  const couleurCorps = (x, y, z) => {
+    const u = uDe(x), h = F.h(x, y), n = bruit(x, y, z);
+    let c = h > .2 ? melange(C.oliveClair, C.olive, (h - .2) / .6) : h > -.45 ? melange(C.fauve, C.oliveClair, (h + .45) / .65) : melange(C.fauve, C.ventre, (-.45 - h) / .35);
+    if(h > -.55 && h < .7 && n > .4) c = melange(c, C.fauve, Math.min(1, (n - .4) / .2) * .8);       // les taches fauves
+    if(h > -.3 && n < -.8) c = melange(c, C.olive, .7);                                                  // les taches sombres
+    const m = Math.sin(x * 29 + z * 11) + .7 * Math.sin(x * 61 + z * 37 + y * 13);
+    if(h > .7 && m > .75 && u > .08 && u < .8) c = melange(c, C.mousse, Math.min(1, (m - .75) / .3) * .85);         // la mousse
+    return c;
+  };
+  M.push({geo: corpsGeo(X0, X1, HAUT, BAS, LARGE, 84, 36), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: couleurCorps,
+    ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .1))});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X1, 0, 0), q0, V(.03, HAUT(1) * .9, LARGE(1) * .9)), c: 0xFFFFFF, couleur: couleurCorps});
+  /* les cicatrices pâles sur le flanc */
+  for(const s of [-1, 1]) for(const [u0, u1, a0, a1] of [[.36, .46, .55, .7], [.55, .7, .1, .12], [.74, .8, .08, .1]]){
+    const a = F.peau(u0, a0, s), b = F.peau(u1, a1, s), n = F.normale((u0 + u1) / 2, (a0 + a1) / 2, s);
+    ovale(M, C.cicatrice, a.addScaledVector(n, .001), b.addScaledVector(n, .001), .008, .004);
+  }
+  /* les verrues de la tête */
+  for(const s of [-1, 1]) for(const [u, a, r] of [[.1, .9, .012], [.16, .8, .01], [.07, .7, .008], [.2, .95, .009], [.13, 1.1, .007]]){
+    const p = F.peau(u, a, s); boule(M, C.verrue, p.x, p.y, p.z, r, r * .7, r, BOULE_P); }
+  opercule(M, F, C.olive, .25, .05);                                              // le bord des ouïes
+  /* le petit œil orange et son sourcil plissé */
+  oeil(M, F, {u: .13, a: .5, r: .018, iris: C.iris, cercle: C.cercle, narine: C.verrue, uNarine: .05, aNarine: .8});
+  for(const s of [-1, 1]) for(let k = 0; k < 4; k++){
+    const t = k / 3, a = F.peau(.095 + t * .07, .66 + .03 * Math.sin(t * Math.PI), s), b = a.clone().add(V(.03, .006 - .004 * t, s * .004));
+    ovale(M, C.sourcil, a, b, .007 - t * .001, .006);
+  }
+  /* la grande bouche aux lèvres épaisses, entrouverte */
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X0 + .045, -.006, 0), q0, V(.06, .026, .1)), c: C.levre});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X0 + .04, -.06, 0), q0, V(.058, .026, .096)), c: C.levreDessous});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X0 + .045, -.033, 0), q0, V(.05, .016, .085)), c: C.bouche});
+  /* un barbillon : des bâtons fins le long d'une courbe, plus fins au bout */
+  const barbillon = (pts, r0, c) => { for(let i = 0; i < pts.length - 1; i++) baton(M, c, pts[i], pts[i + 1].clone().add(pts[i + 1].clone().sub(pts[i]).multiplyScalar(.12)), r0 * (1 - i / pts.length * .6)); };
+  for(const s of [-1, 1]){
+    /* les deux très longs : l'un se relève par-dessus la tête et retombe devant, l'autre pend et part vers l'arrière */
+    const o = V(X0 + .06, -.006, s * .1);
+    const p1 = [], p2 = [];
+    for(let i = 0; i <= 14; i++){ const t = i / 14;
+      p1.push(o.clone().add(V(-.1 * Math.sin(t * Math.PI * .9) + .12 * t * t, .11 * Math.sin(t * Math.PI * .85) - .06 * t * t, s * .04 * t)));
+      p2.push(o.clone().add(V(.02 + .5 * t, -.06 - .2 * Math.sin(t * Math.PI * .55) + .02 * t, s * (.03 + .08 * t)))); }
+    barbillon(s > 0 ? p1 : p2, .008, C.barbeHaut);
+    barbillon(s > 0 ? p2 : p1, .008, C.barbeHaut);
+    /* la rangée de barbillons courts sous le menton, qui pendent et se recourbent */
+    for(let k = 0; k < 4; k++){
+      const z = s * (.02 + k * .026), x = X0 + .035 + k * .035, a = V(x, -.08, z), pts = [];
+      const l = .07 + .03 * Math.sin(k * 1.7), avance = .02 + .01 * k;
+      for(let i = 0; i <= 6; i++){ const t = i / 6; pts.push(a.clone().add(V(-avance * Math.sin(t * Math.PI * .8), -l * t, s * .01 * t))); }
+      barbillon(pts, .0045, C.barbe);
+    }
+  }
+  const nag = d => melange(C.nag, C.nagBout, Math.pow(Math.max(0, d), .9));
+  /* la grande nageoire du dos, ronde, et la seconde près de la queue */
+  for(const [d0, d1, hh] of [[-.06, .1, .12], [.18, .3, .07]]){
+    const y0 = HAUT(uDe(d0)) - .012, y1 = HAUT(uDe(d1)) - .012;
+    nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), t => { const a = Math.PI * (.06 + t * .88);
+        return V((d0 + d1) / 2 + .05 - Math.cos(a) * (d1 - d0) * .6, (y0 + y1) / 2 + Math.sin(a) * hh * (1 - t * .3), 0); }, 14),
+      new THREE.Matrix4(), (x, y) => nag((y - y0) / hh));
+  }
+  /* les nageoires du dessous : une près du ventre, une longue vers la queue */
+  for(const [a0, a1, hh] of [[.06, .14, .07], [.17, .32, .07]]){
+    const y0 = -BAS(uDe(a0)) + .012, y1 = -BAS(uDe(a1)) + .012;
+    nageoire(M, nageoireGeo(V(a0, y0, 0), V(a1, y1, 0), t => { const a = Math.PI * (.06 + t * .88);
+        return V((a0 + a1) / 2 + .04 - Math.cos(a) * (a1 - a0) * .6, (y0 + y1) / 2 - Math.sin(a) * hh * (1 - t * .3), 0); }, 12),
+      new THREE.Matrix4(), (x, y) => nag((y0 - y) / hh));
+  }
+  /* la queue fourchue aux lobes ronds */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .055, 0), V(qx, -.055, 0), t => {
+      const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .44, long = .1 + .1 * Math.sin(Math.PI / 2 * Math.pow(lobe, .7)) - .05 * Math.pow(lobe, 5);
+      return V(qx + long, y * (.8 + .2 * lobe), 0); }, 24),
+    new THREE.Matrix4(), x => nag((x - qx) / .2));
+  /* les ventrales, petites */
+  const peX = -.02;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .02, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.04, 0, 0), V(.02, 0, 0), t => { const a = Math.PI * (.1 + t * .8); return V(.03 - Math.cos(a) * .06, -Math.sin(a) * .08, 0); }, 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), (x, y) => nag((pY - y) / .08));
+  }
+  /* les grosses pectorales arrondies, basses, derrière la tête */
+  for(const s of [-1, 1]){
+    const p = F.peau(.3, -.55, s);
+    const g = nageoireGeo(V(0, .026, 0), V(0, -.026, 0), t => { const a = Math.PI * (t - .5) * .95; return V(.03 + Math.cos(a) * .14, Math.sin(-a) * .08 - .04, 0); }, 12);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => nag((x - p.x) / .17));
+  }
+  return silureGeo = fusionner(M);
+}
+export const silureModele = () => { const g = modeleDe(silureFait()); g.children[0].material.emissive.setHex(0x140E04); return g; };
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -913,5 +1023,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   brochet: {fabrique: brochetModele, echelle: 1},
   anguille: {fabrique: anguilleModele, echelle: 1},
   carpeOr: {fabrique: carpeOrModele, echelle: 1},
+  silure: {fabrique: silureModele, echelle: 1.15},   // le plus grand de l'étang : un peu plus grand en main
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
