@@ -1334,6 +1334,83 @@ function soleFait(){
 }
 export const soleModele = () => modeleDe(soleFait());
 
+/* ---------- La dorade ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici la dorade »), comme une vraie dorade royale (Sparus aurata ; choix de
+   Yo : « A », comme la nature) : le corps haut et ovale, argenté, gris-bleu au dos, de fines lignes grises de la tête à la
+   queue ; de grandes écailles ; le front bombé et la bande dorée qui passe d'un œil à l'autre (son nom) ; la tache sombre
+   bien nette en haut de l'ouïe, au début de la ligne latérale, bordée d'un peu de rouge ; l'œil sombre cerclé d'argent ; les
+   lèvres assez épaisses (elle croque des coquillages). Une seule longue nageoire du dos, épineuse devant ; les nageoires
+   gris-bleu ; la queue fourchue au bord noir. */
+const DORADE_F = corps(-.44, .34,
+  courbe([[0, .032], [.04, .092], [.1, .156], [.2, .196], [.32, .212], [.45, .204], [.6, .174], [.73, .13], [.86, .084], [1, .046]]),
+  courbe([[0, .026], [.05, .058], [.14, .112], [.28, .156], [.42, .162], [.58, .14], [.72, .1], [.86, .064], [1, .04]]),
+  courbe([[0, .02], [.06, .04], [.15, .058], [.3, .068], [.45, .068], [.6, .058], [.75, .045], [.9, .032], [1, .023]]));
+const DORADE = {dos: 0x66748A, dosClair: 0x98A4B4, flanc: 0xC8CED6, ventre: 0xF0F0EA, ligne: 0x8C96A4, tete: 0x8A96A8,
+  joue: 0xD6DADE, or: 0xE2AA30, opercule: 0x96A0AE, tache: 0x26262C, rouge: 0xA8443A, iris: 0x3A3028, cercle: 0xC8CCD2,
+  levre: 0xC4C6C8, bouche: 0x7A6A66, nag: 0xA2AAB6, nagBout: 0x5C6470, noir: 0x1E2026};
+let doradeGeo = null;
+function doradeFait(){
+  if(doradeGeo) return doradeGeo;
+  const C = DORADE, F = DORADE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* le corps : gris-bleu au dos, argenté aux flancs, blanc au ventre ; les fines lignes grises ; la tête argentée et la
+     bande dorée qui passe sur le front, d'un œil à l'autre */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .5 ? melange(C.dosClair, C.dos, (h - .5) / .4) : h > 0 ? melange(C.flanc, C.dosClair, h / .5) : melange(C.flanc, C.ventre, -h / .7);
+    if(u > .28){ const f = ((h + 1) / .17) % 1, d = Math.min(f, 1 - f);
+      if(h > -.45 && h < .85 && d < .12) c = melange(c, C.ligne, .55 * (1 - d / .12) * Math.min(1, (u - .28) / .06)); }
+    if(u < .27) c = melange(c, h > .3 ? C.tete : C.joue, Math.min(1, (.27 - u) / .08));
+    const db = Math.abs(u - .125) / .028;
+    if(db < 1 && h > .6) c = melange(c, C.or, Math.min(1, (1 - db) * 2) * Math.min(1, (h - .6) / .1));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .29, u1: .97, nu: 14, na: 12, taille: .032, relief: .0018});
+  opercule(M, F, C.opercule, .27, .05);
+  /* la tache sombre en haut de l'ouïe, bordée d'un peu de rouge */
+  for(const s of [-1, 1]){
+    const p = F.peau(.285, .42, s), n = F.normale(.285, .42, s);
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, -.0012), versN(n), V(.03, .0032, .026)), c: C.rouge});
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, .0004), versN(n), V(.024, .0032, .02)), c: C.tache});
+  }
+  oeil(M, F, {u: .16, a: .36, r: .034, iris: C.iris, cercle: C.cercle, narine: 0x4A505C, uNarine: .075, aNarine: .58});
+  /* les lèvres assez épaisses, la bouche un peu basse */
+  boule(M, C.levre, X0 + .014, -.006, 0, .024, .012, .032);
+  boule(M, C.levre, X0 + .02, -.028, 0, .024, .012, .03);
+  boule(M, C.bouche, X0 + .002, -.017, 0, .01, .005, .022, BOULE_P);
+  const nagC = (y0, sens, h) => (x, y) => melange(C.nag, C.nagBout, Math.pow(Math.max(0, (y - y0) * sens / h), 1.6));
+  /* la longue nageoire du dos, épineuse devant (les épines dépassent un peu), molle et plus arrondie derrière */
+  const d0 = -.16, d1 = .2, y0 = HAUT(uDe(d0)) - .012, y1 = HAUT(uDe(d1)) - .01, hD = .11;
+  const bordD = t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t); return V(b.x + .04 + t * .02, b.y + .01 + hD * Math.pow(Math.sin(Math.PI * Math.min(1, .1 + t * .92)), .45) * (1 - t * .25), 0); };
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), bordD, 24), new THREE.Matrix4(), nagC(y0, 1, hD));
+  for(let k = 0; k <= 10; k++){ const t = k / 10 * .55, b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), e = bordD(t), bout = e.clone().add(e.clone().sub(b).multiplyScalar(.06));
+    baton(M, C.nag, b, bout, .003); }
+  /* l'anale */
+  const a0 = .08, a1 = .22, ay0 = -BAS(uDe(a0)) + .01, ay1 = -BAS(uDe(a1)) + .008;
+  nageoire(M, nageoireGeo(V(a0, ay0, 0), V(a1, ay1, 0), t => V(a0 + .035 + t * .15, ay0 - .09 + t * .075, 0), 12), new THREE.Matrix4(), nagC(ay0, -1, .09));
+  /* la queue fourchue, au bord noir */
+  const qx = X1 - .015;
+  const bordQ = t => { const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .4, fourche = .07 + .13 * Math.pow(lobe, .9);
+    return V(qx + fourche + .03, y * (.82 + .18 * lobe), 0); };
+  nageoire(M, nageoireGeo(V(qx, .042, 0), V(qx, -.042, 0), bordQ, 24), new THREE.Matrix4(), (x, y) => {
+    const t = Math.max(0, Math.min(1, .5 - y / .4)), e = bordQ(t), k = (x - qx) / Math.max(.02, e.x - qx);
+    return k > .88 ? C.noir : melange(C.nag, C.nagBout, k * .55); });
+  /* les ventrales, sous les pectorales */
+  const peX = -.14;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .014, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.035, 0, 0), V(.03, 0, 0), t => V(.0 + t * .1, -.11 + t * .08, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), (x, y) => melange(C.nag, C.nagBout, (pY - y) / .12));
+  }
+  /* les pectorales : longues et pointues, derrière l'ouïe */
+  for(const s of [-1, 1]){
+    const p = F.peau(.31, -.2, s);
+    const g = nageoireGeo(V(0, .022, 0), V(0, -.022, 0), t => V(.21 - Math.abs(t - .2) * .15, .02 - t * .06, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.nag, C.nagBout, (x - p.x) / .3));
+  }
+  return doradeGeo = fusionner(M);
+}
+export const doradeModele = () => modeleDe(doradeFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1346,5 +1423,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   merlan: {fabrique: merlanModele, echelle: 1},
   bar: {fabrique: barModele, echelle: 1},
   sole: {fabrique: soleModele, echelle: 1},
+  dorade: {fabrique: doradeModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
