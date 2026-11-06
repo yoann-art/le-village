@@ -1099,6 +1099,82 @@ function rougetFait(){
 }
 export const rougetModele = () => modeleDe(rougetFait());
 
+/* ---------- Le merlan ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici le merlan »), comme un vrai merlan (Merlangius merlangus ; choix de Yo :
+   « A », comme la nature) : le corps long et fin, la tête pointue ; le dos olive-sable, les flancs argentés, le ventre blanc,
+   la ligne latérale fine et dorée ; de petites écailles. L'œil argenté à la prunelle noire ; les lèvres fines, la mâchoire du
+   haut un peu plus longue ; pas de barbillon. Sa marque : la petite tache noire à la base de la nageoire de côté. Trois
+   nageoires sur le dos, deux dessous (la première longue, sous la première du dos) ; les ventrales sous la gorge, devant les
+   pectorales (comme toute la famille de la morue) ; la queue presque droite ; les nageoires pâles, gris-beige, plus foncées
+   au bord. */
+const MERLAN_F = corps(-.5, .38,
+  courbe([[0, .02], [.05, .05], [.14, .086], [.28, .11], [.42, .116], [.58, .106], [.72, .084], [.86, .058], [1, .036]]),
+  courbe([[0, .014], [.05, .036], [.14, .066], [.28, .09], [.42, .096], [.58, .086], [.72, .068], [.86, .047], [1, .032]]),
+  courbe([[0, .012], [.06, .024], [.15, .038], [.28, .048], [.42, .05], [.58, .046], [.72, .037], [.86, .027], [1, .019]]));
+const MERLAN = {dos: 0x76744A, dosClair: 0x9C9A68, flanc: 0xBCC2C4, ventre: 0xF0F2F0, ligne: 0xB4A464, tete: 0x86845A,
+  joue: 0xD6D8D4, opercule: 0xA8A88E, iris: 0xB4BAB8, cercle: 0x6E705C, levre: 0xE2DCCC, bouche: 0x8A6A5A, tache: 0x1A1A16,
+  nag: 0xD8CEB6, nagBord: 0xA49880};
+let merlanGeo = null;
+function merlanFait(){
+  if(merlanGeo) return merlanGeo;
+  const C = MERLAN, F = MERLAN_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* le corps : olive-sable au dos, argenté aux flancs, blanc au ventre ; la ligne latérale fine et dorée, qui s'abaisse vers
+     la queue ; la tête lisse */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .62 ? melange(C.dosClair, C.dos, (h - .62) / .3) : h > .3 ? melange(C.flanc, C.dosClair, (h - .3) / .32) : melange(C.flanc, C.ventre, (.3 - h) / .9);
+    const d = Math.abs(h - (.5 - .22 * Math.max(0, u - .4)));
+    if(u > .26 && d < .05) c = melange(c, C.ligne, .8 * (1 - d / .05));
+    if(u < .27) c = melange(c, h > .1 ? C.tete : C.joue, Math.min(1, (.27 - u) / .08));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .29, u1: .97, nu: 16, na: 10, taille: .03, relief: .0011});
+  opercule(M, F, C.opercule, .26, .05);
+  oeil(M, F, {u: .15, a: .42, r: .034, iris: C.iris, cercle: C.cercle, narine: 0x5A5A3A, uNarine: .07, aNarine: .6});
+  /* les lèvres fines, la mâchoire du haut un peu plus longue que celle du bas ; la fente de la bouche */
+  ovale(M, C.levre, V(X0 - .004, -.001, 0), V(X0 + .08, -.004, 0), .016, .006);
+  ovale(M, C.levre, V(X0 + .012, -.013, 0), V(X0 + .08, -.012, 0), .013, .005);
+  ovale(M, C.bouche, V(X0 + .002, -.007, 0), V(X0 + .075, -.008, 0), .012, .003);
+  const couleurNag = (y0, sens, h) => (x, y) => melange(C.nag, C.nagBord, Math.pow(Math.max(0, (y - y0) * sens / h), 2.2));
+  /* une nageoire du dos ou de dessous, de xa à xb, de hauteur h (sens : 1 en haut, −1 en bas), penchée vers l'arrière */
+  const nag = (xa, xb, h, sens, n = 12) => {
+    const ya = sens > 0 ? HAUT(uDe(xa)) - .008 : -BAS(uDe(xa)) + .008, yb = sens > 0 ? HAUT(uDe(xb)) - .008 : -BAS(uDe(xb)) + .008;
+    nageoire(M, nageoireGeo(V(xa, ya, 0), V(xb, yb, 0), t => { const b = V(xa, ya, 0).lerp(V(xb, yb, 0), t);
+      const f = t < .12 ? .25 + .75 * t / .12 : 1 - .82 * (t - .12) / .88;   // le bord avant raide, le haut pointu, puis droit jusqu'à l'arrière
+      return V(b.x + .02 + .05 * f + t * .015, b.y + sens * (.008 + h * f), 0); }, n),
+      new THREE.Matrix4(), couleurNag(ya, sens, h));
+  };
+  /* trois nageoires sur le dos, la première la plus haute */
+  nag(-.19, -.05, .14, 1);
+  nag(-.02, .14, .11, 1, 14);
+  nag(.17, .28, .09, 1);
+  /* deux dessous : la première longue, qui commence sous la première du dos ; la seconde en face de la troisième du dos */
+  nag(-.1, .13, .085, -1, 16);
+  nag(.17, .28, .08, -1);
+  /* la queue presque droite, à peine échancrée */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .034, 0), V(qx, -.034, 0), t => {
+      const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .38;
+      return V(qx + .12 + .05 * lobe, y * (.8 + .2 * lobe), 0); }, 20),
+    new THREE.Matrix4(), x => melange(C.nag, C.nagBord, Math.pow(Math.max(0, (x - qx) / .14), 2)));
+  /* les ventrales : sous la gorge, devant les pectorales, petites et pointues */
+  const peX = -.31;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .01, base = s * LARGE(uDe(peX)) * .45;
+    const g = nageoireGeo(V(-.025, 0, 0), V(.02, 0, 0), t => V(.01 + t * .06, -.085 + t * .065, 0), 8);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.3, 0, 0), V(1, 1, 1)), (x, y) => melange(C.nag, C.nagBord, (pY - y) / .1));
+  }
+  /* les pectorales, derrière l'opercule ; la petite tache noire à leur base (la marque du merlan) */
+  for(const s of [-1, 1]){
+    const p = F.peau(.3, -.1, s), n = F.normale(.3, -.1, s);
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, -.001), versN(n), V(.011, .003, .014)), c: C.tache});
+    const g = nageoireGeo(V(0, .02, 0), V(0, -.02, 0), t => V(.19 - Math.abs(t - .3) * .12, -.06 + t * .08, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x + .006, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.nag, C.nagBord, (x - p.x) / .2));
+  }
+  return merlanGeo = fusionner(M);
+}
+export const merlanModele = () => modeleDe(merlanFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1108,5 +1184,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   carpeOr: {fabrique: carpeOrModele, echelle: 1},
   silure: {fabrique: silureModele, echelle: 1.15},   // le plus grand de l'étang : un peu plus grand en main
   rouget: {fabrique: rougetModele, echelle: 1},
+  merlan: {fabrique: merlanModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
