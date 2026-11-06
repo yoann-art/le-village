@@ -5,19 +5,25 @@
    toujours libre : on n'y bâtit pas, rien n'y pousse, on n'y pose rien.
    state.ponton = {x, z, n} : sa colonne, sa première case sur l'eau, sa longueur (gardé, pour qu'il ne bouge plus).
    La barque (étape 1.13, morceau 2) s'amarre à droite du bout du ponton, contre la borne (amarre) ; son modèle :
-   barqueModele (barque.js la pose, ou la fait suivre le personnage quand il rame). */
-import { G, part, toon } from "./formes.js";
+   barqueModele (barque.js la pose, ou la fait suivre le personnage quand il rame).
+   Yo, 6 novembre 2026 : « plus grand pour que les poissons soient plus loin que ceux du bord » : 10 cases au lieu de 4 ;
+   le ponton d'une partie en cours s'allonge aussi (autant que la mer le permet), ses poissons nagent autour du bout,
+   plus loin de la côte que ceux de la plage (peche.js). */
+import { G, part, toon, rassembler } from "./formes.js";
 import { scene } from "./scene.js";
 import { state, save } from "../sauvegarde.js";
 import { map, idx, inb, N, centerOf, tileOf, setObj, lieuEau } from "./ile.js";
 import { occ } from "./batiments.js";
 import { lanterne } from "./ciel.js";
 
-const LONG = 4;
+const LONG = 10, AVANT = 4;                            // AVANT : sa longueur d'avant (s'il n'y a pas la place pour 10)
 const eau = (x, z) => inb(x, z) && map.type[idx(x, z)] === "water";
 const mer = (x, z) => eau(x, z) && lieuEau(idx(x, z)) === "mer";   // la mer, pas l'étang ni une mare (l'île agrandie, étape 2.1)
+/* La case k du ponton (colonne x, première case z) peut-elle être posée : de la mer, de l'eau des deux côtés (sauf la
+   première), rien de bâti dessus */
+const libre = (x, z, k) => eau(x, z + k) && !occ.has(idx(x, z + k)) && (!k || (eau(x - 1, z + k) && eau(x + 1, z + k)));
 /* La première colonne, en partant du milieu, où la terre finit sur une mer bien dégagée */
-function choisir(){
+function choisir(LONG){
   const c = Math.floor(N / 2);
   for(let d = 0; d <= 14; d++) for(const x of d ? [c + d, c - d] : [c]){
     let z = c + 9;
@@ -25,22 +31,25 @@ function choisir(){
     const entree = idx(x, z - 1);
     if(!mer(x, z) || map.type[entree] === "water" || occ.has(entree) || map.obj[entree] === "coffre") continue;   // jamais sur un bâtiment ni un coffre
     let ok = true;
-    for(let k = 0; k < LONG && ok; k++){
-      if(!eau(x, z + k)) ok = false;
-      if(k && (!eau(x - 1, z + k) || !eau(x + 1, z + k))) ok = false;   // il avance dans la mer, pas le long d'une plage
-    }
+    for(let k = 0; k < LONG && ok; k++) if(!libre(x, z, k)) ok = false;   // il avance dans la mer, pas le long d'une plage
     if(ok) return {x, z, n: LONG};
   }
   return null;
 }
 if(!state.ponton){
-  const p = choisir();
+  const p = choisir(LONG) || choisir(AVANT);
   if(p){
     state.ponton = p;
     const e = idx(p.x, p.z - 1);
     if(map.obj[e]) setObj(e, null);                   // la case d'où il part est libre
     save();
   }
+}
+/* Une partie d'avant (un ponton de 4 cases) : il s'allonge vers le large, case après case, tant que la mer le permet */
+if(state.ponton && state.ponton.n < LONG){
+  const p = state.ponton; let n = p.n;
+  while(n < LONG && mer(p.x, p.z + n) && libre(p.x, p.z, n)) n++;
+  if(n > p.n){ p.n = n; save(); }
 }
 const P = state.ponton;
 /* Les cases du ponton (de l'eau où l'on marche), et la case de terre d'où il part */
@@ -102,6 +111,7 @@ if(P){
   const l = part(G.box, glow, .18, .22, .18, x0 - .38, .95, bout); l.castShadow = false; g.add(l);
   lanternes.push({x: x0 - .38, y: .95, z: bout});
   lanterne(x0 - .38, .95, bout, glow);                 // la nuit, elle éclaire le bout du ponton (ciel.js)
+  rassembler(g);                                       // un seul dessin pour le bois (et un pour la lanterne), au lieu de dizaines
   scene.add(g);
 }
 /* ----- La barque (étape 1.13, morceau 2 ; Grand Carnet : « la Libellule ») -----

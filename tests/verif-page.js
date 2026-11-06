@@ -1284,8 +1284,9 @@ export async function verifier(){
     const P = state.ponton;
     if(!P) throw new Error("pas de ponton sur l'île");
     placePlayer(centerOf(P.x), centerOf(P.z - 1), 0, 1);                       // sur la terre, face au ponton
-    keys.d = 1; for(let k = 0; k < 120; k++) updatePlayer(.016); keys.d = 0;   // marcher jusqu'au bout
+    keys.d = 1; for(let k = 0; k < 600 && tileOf(player.position.z) < P.z + P.n - 1; k++) updatePlayer(.016); keys.d = 0;   // marcher jusqu'au bout
     if(tileOf(player.position.z) < P.z + P.n - 2) throw new Error("on ne marche pas sur le ponton");
+    if(P.n < 10) throw new Error(`le ponton ne fait que ${P.n} cases (Yo, 6 novembre 2026 : 10)`);
     frames(2);
     if(!$("#btn-act").dataset.action.includes("Lancer")) throw new Error(`au bout du ponton, le bouton dit « ${$("#btn-act").dataset.action} »`);
     const avant = state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0);
@@ -1296,7 +1297,15 @@ export async function verifier(){
     if(k >= 400) throw new Error("rien ne mord au bout du ponton");
     $("#btn-act").click(); frames(40);
     if(state.sac.reduce((n, it) => n + (POISSONS[it.k] ? it.n : 0), 0) <= avant) throw new Error("pas de poisson dans le sac");
-    return `${P.n} cases dans l'eau`;
+    /* ses poissons nagent autour du bout, plus loin de la côte que ceux de la plage (Yo, 6 novembre 2026) */
+    const { distanceDuBord, ombresIci } = await import("../js/peche.js"), { PECHE } = await import("../js/donnees.js");
+    let vus = [];
+    for(let n = 0; n < 6 && vus.length < 3; n++){ frames(200); vus = ombresIci().filter(o => o.ponton); }
+    if(!vus.length) throw new Error("aucune ombre de poisson du ponton autour de son bout");
+    const dist = vus.map(o => distanceDuBord(o.x, o.z));
+    if(Math.min(...dist) <= PECHE.plage[1] + .5) throw new Error(`un poisson du ponton nage à ${Math.min(...dist).toFixed(1)} cases de la côte, pas plus loin que ceux de la plage`);
+    if(vus.some(o => POISSONS[o.k].depuis !== "ponton")) throw new Error("un poisson d'ailleurs nage au bout du ponton");
+    return `${P.n} cases dans l'eau ; ses poissons à ${dist.map(d => isFinite(d) ? d.toFixed(1) : "7+").join(", ")} cases de la côte`;
   });
   /* La mer (Yo, 6 novembre 2026) : chaque poisson de la mer d'un seul endroit (plage, ponton, barque), un poisson commun en
      toute saison à la plage et en barque ; les poissons de la plage hors de l'écume ; un fil plus long */

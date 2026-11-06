@@ -25,7 +25,7 @@ import { G, part, toon } from "./monde/formes.js";
 import { POISSONS, HEURES, PECHE, OUTILS, SAC, KOI_VARIETES, lieuxDe, saisonDu, tirerKoi } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, placesSac } from "./regles.js";
-import { idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
+import { map, idx, inb, N, tileOf, centerOf, lieuEau } from "./monde/ile.js";
 import { eauLibre, pontonCases } from "./monde/ponton.js";
 import { foret, ftile, fcx, fcz, sources } from "./monde/foret.js";
 import { player, pencheMain, dir4, regard } from "./monde/personnage.js";
@@ -150,7 +150,8 @@ function bordMarais(x, z){
 }
 const enEau = (x, z) => { if(ici === "foret") return eauForet(x, z); if(ici === "marais") return eauMarais(x, z); const a = tileOf(x), b = tileOf(z); return !inb(a, b) || eauLibre(idx(a, b)); };
 /* Une place où une ombre peut nager (en coordonnées du monde) */
-const nageable = (x, z, o) => ici === "foret" || (ici === "marais" ? bordMarais(x, z) : o && o.plage ? auLargeDeLaPlage(tileOf(x), tileOf(z)) : presDuBord(tileOf(x), tileOf(z)));
+const nageable = (x, z, o) => ici === "foret" || (ici === "marais" ? bordMarais(x, z) : o && o.plage ? auLargeDeLaPlage(tileOf(x), tileOf(z))
+  : o && o.ponton ? presDuPonton(x, z) : presDuBord(tileOf(x), tileOf(z)));   // ceux du ponton restent autour de son bout
 /* Près d'un bord (terre ou ponton à deux cases au plus) : on peut y lancer depuis la rive (le ruisseau et la
    source sont étroits : toujours) */
 function presDuBord(x, z){
@@ -159,16 +160,24 @@ function presDuBord(x, z){
   return false;
 }
 /* Les poissons de la plage nagent au large de l'écume (Yo, 6 novembre 2026 : « un peu plus loin car là ils sont dans
-   l'écume ») : entre PECHE.plage[0] et PECHE.plage[1] cases de la terre la plus proche */
+   l'écume ») : entre PECHE.plage[0] et PECHE.plage[1] cases de la terre la plus proche (le ponton et le pont ne
+   comptent pas : ce n'est pas la côte) */
 function distanceBord(x, z){
   const M = PECHE.plage[1] + 1; let d = Infinity;
   for(let dz = -M; dz <= M; dz++) for(let dx = -M; dx <= M; dx++){ const a = x + dx, b = z + dz;
-    if(inb(a, b) && !eauLibre(idx(a, b))) d = Math.min(d, Math.hypot(dx, dz)); }
+    if(inb(a, b) && map.type[idx(a, b)] !== "water") d = Math.min(d, Math.hypot(dx, dz)); }
   return d;
 }
 const auLargeDeLaPlage = (x, z) => { const d = distanceBord(x, z); return d >= PECHE.plage[0] && d <= PECHE.plage[1]; };
 export const distanceDuBord = (x, z) => distanceBord(tileOf(x), tileOf(z));   // pour la vérification
-const presDuPonton = (x, z) => ici === "ile" && [...pontonCases].some(j => Math.hypot(centerOf(j % N) - x, centerOf(Math.floor(j / N)) - z) < 2.2);
+/* Le bout du ponton (Yo, 6 novembre 2026 : ses poissons plus loin que ceux du bord) : les cases à moins de 2 cases du
+   ponton, et plus loin de la côte que les poissons de la plage (au-delà de PECHE.plage[1] + 0,5 : la côte peut faire
+   un coude) ; calculées une fois */
+const zonePonton = new Set();
+for(const j of pontonCases){ const px = j % N, pz = Math.floor(j / N);
+  for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++){ const a = px + dx, b = pz + dz;
+    if(Math.hypot(dx, dz) < 2.2 && inb(a, b) && map.type[idx(a, b)] === "water" && distanceBord(a, b) > PECHE.plage[1] + .5) zonePonton.add(idx(a, b)); } }
+const presDuPonton = (x, z) => { const a = tileOf(x), b = tileOf(z); return ici === "ile" && inb(a, b) && zonePonton.has(idx(a, b)); };
 function ajouterOmbre(k, cm, x, z, lieu){
   const p = POISSONS[k], L = .45 + .9 * Math.min(1, cm / 160), W = L * (FORMES[p.forme] || .42);
   const mat = new THREE.MeshBasicMaterial({color: p.brume ? 0xEEF4F4 : 0x10303C, transparent: true, opacity: 0, depthWrite: false});   // le poisson-brume : une ombre pâle
@@ -252,10 +261,13 @@ function pondre(){
   if(ici === "marais"){ pondreMarais(); return; }
   if(enBarque()){ pondreBarque(); return; }
   const R = PECHE.ombres.rayon, px = tileOf(player.position.x), pz = tileOf(player.position.z), cand = [];
+  const auBout = presDuPonton(player.position.x, player.position.z);       // au bout du ponton : ses poissons à lui, tout autour
   for(let z = pz - R; z <= pz + R; z++) for(let x = px - R; x <= px + R; x++){
     const d = Math.hypot(x - px, z - pz);
-    if(d < 2 || d > R || !inb(x, z) || !eauLibre(idx(x, z))) continue;
-    const plage = lieuEau(idx(x, z)) === "mer" && !presDuPonton(centerOf(x), centerOf(z));
+    if(d < (auBout ? 1 : 2) || d > R || !inb(x, z) || !eauLibre(idx(x, z))) continue;
+    const pres = presDuPonton(centerOf(x), centerOf(z));
+    if(auBout && !pres) continue;
+    const plage = lieuEau(idx(x, z)) === "mer" && !pres;
     if(plage ? !auLargeDeLaPlage(x, z) : !presDuBord(x, z)) continue;     // la plage : au large de l'écume ; ailleurs : près d'un bord
     cand.push(idx(x, z));
   }
@@ -266,7 +278,7 @@ function pondre(){
     const x = centerOf(i % N) + (Math.random() - .5) * .6, z = centerOf(Math.floor(i / N)) + (Math.random() - .5) * .6;
     if(ombres.some(o => Math.hypot(o.x - x, o.z - z) < 1.3)) continue;
     const pont = presDuPonton(x, z), f = tirer(lieu, pont);
-    if(f){ const o = ajouterOmbre(f.k, f.cm, x, z, lieu); o.plage = lieu === "mer" && !pont; banc(f, x, z, lieu); }
+    if(f){ const o = ajouterOmbre(f.k, f.cm, x, z, lieu); o.plage = lieu === "mer" && !pont; o.ponton = lieu === "mer" && pont; banc(f, x, z, lieu); }
     return;
   }
 }
