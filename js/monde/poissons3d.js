@@ -112,7 +112,7 @@ function opercule(M, F, c, u0 = .26, ampleur = .045){
   }
 }
 /* l'œil (à u, a ; r : son rayon) : l'iris cerclé, la prunelle noire, le reflet ; la narine */
-function oeil(M, F, {u, a, r, iris, cercle, narine}){
+function oeil(M, F, {u, a, r, iris, cercle, narine, uNarine = .045, aNarine = .55}){
   for(const s of [-1, 1]){
     const o = F.peau(u, a, s), n = F.normale(u, a, s), q = versN(n);
     M.push({geo: ROND, m: new THREE.Matrix4().compose(o.clone().addScaledVector(n, -.011), q, V(r, .018, r)), c: cercle});
@@ -120,7 +120,7 @@ function oeil(M, F, {u, a, r, iris, cercle, narine}){
     M.push({geo: ROND, m: new THREE.Matrix4().compose(o.clone().addScaledVector(n, -.004), q, V(r * .5, .017, r * .5)), c: 0x141010});
     const b = o.clone().addScaledVector(n, .012); b.x -= .006; b.y += .008;
     M.push({geo: BOULE_P, m: new THREE.Matrix4().compose(b, q, V(r * .17, .003, r * .17)), c: 0xFFFFFF});
-    const nar = F.peau(.045, .55, s); boule(M, narine, nar.x, nar.y, nar.z, .006, .006, .006, BOULE_P);
+    const nar = F.peau(uNarine, aNarine, s); boule(M, narine, nar.x, nar.y, nar.z, .006, .006, .006, BOULE_P);
   }
 }
 const nageoire = (M, geo, m, couleur) => M.push({geo, m, c: 0xFFFFFF, couleur});
@@ -498,8 +498,114 @@ function ecrevisseFait(){
 }
 export const ecrevisseModele = () => modeleDe(ecrevisseFait());
 
+/* ---------- Le brochet ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici le brochet »), comme un vrai brochet (Esox lucius ; choix de Yo : « A »,
+   comme la nature) : le corps long et rond, vert-olive, semé de taches jaune pâle en forme de haricot, rangées en lignes ; le
+   ventre crème ; le long museau plat en bec de canard, la mâchoire du bas un peu plus longue, la bouche entrouverte et ses
+   grands crocs en bas (le bord de la mâchoire du haut presque lisse) ; l'œil jaune doré, haut sur la tête. La nageoire du
+   dos tout au fond, juste au-dessus de l'anale ; elles et la queue fourchue olive-jaune à rouge orangé, marbrées de taches
+   sombres ; les pectorales et les ventrales orange-jaune pâle, sans taches. */
+/* une courbe douce qui passe par des points [u, valeur] (pour dessiner le profil du corps) */
+function courbe(pts){
+  return u => {
+    let i = 0; while(i < pts.length - 2 && u > pts[i + 1][0]) i++;
+    const [u0, v0] = pts[i], [u1, v1] = pts[i + 1], t = Math.max(0, Math.min(1, (u - u0) / (u1 - u0))), du = u1 - u0;
+    const pente = k => { const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)]; return (b[1] - a[1]) / (b[0] - a[0]); };
+    const m0 = pente(i) * du, m1 = pente(i + 1) * du, t2 = t * t, t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * v0 + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * v1 + (t3 - t2) * m1;
+  };
+}
+const BROCHET_F = corps(-.58, .36,
+  courbe([[0, .013], [.05, .023], [.12, .034], [.21, .05], [.32, .062], [.45, .072], [.6, .076], [.75, .07], [.88, .056], [1, .038]]),
+  courbe([[0, .006], [.05, .01], [.12, .015], [.21, .032], [.32, .056], [.45, .068], [.6, .072], [.75, .064], [.88, .05], [1, .034]]),
+  courbe([[0, .018], [.05, .028], [.12, .034], [.21, .042], [.32, .054], [.45, .06], [.6, .06], [.75, .052], [.88, .04], [1, .024]]));
+const BROCHET = {dos: 0x3E4A1A, flanc: 0x6E7A2A, flancOr: 0x9C9A3A, ventre: 0xE6DCAA, tete: 0x5A6424, joue: 0xC8BC72,
+  opercule: 0x56601E, tache: 0xE0D278, iris: 0xE0B42A, cercle: 0xB08A1E, levre: 0xD8CC90, bouche: 0xC08A74, dent: 0xF4EEDA,
+  nag: 0x94883A, nagBout: 0xD0602A, marbre: 0x5A4220, pale: 0xE09A3E, paleBout: 0xEEBC62};
+/* une tache sur la peau ou sur une nageoire : une petite coupole plate */
+const TACHE = new THREE.SphereGeometry(1, 8, 2, 0, Math.PI * 2, 0, Math.PI / 2);
+const MARBRE = new THREE.CircleGeometry(1, 6);
+let brochetGeo = null;
+function brochetFait(){
+  if(brochetGeo) return brochetGeo;
+  const C = BROCHET, F = BROCHET_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  let graine = 7; const hasard = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+  /* le corps : olive foncé au dos, vert-olive aux flancs, doré plus bas, crème au ventre ; la tête lisse, la joue claire */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .35 ? melange(C.flanc, C.dos, (h - .35) / .55) : h > -.3 ? melange(C.flancOr, C.flanc, (h + .3) / .65) : melange(C.flancOr, C.ventre, (-.3 - h) / .4);
+    if(u < .32) c = melange(c, h > .05 ? C.tete : C.joue, Math.min(1, (.32 - u) / .08));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .33, u1: .97, nu: 15, na: 8, taille: .026});
+  /* les taches jaune pâle en haricot, rangées en lignes un peu de travers, du dos au bas du flanc ; plus petites sur la tête */
+  for(const s of [-1, 1]){ graine = 7;
+    for(const a0 of [-.4, -.1, .2, .5, .8]){
+      let u = .34 + hasard() * .03;
+      while(u < .95){
+        const a = a0 + (hasard() - .5) * .16 + (u - .6) * .1, l = .014 + hasard() * .012;
+        const p = F.peau(u, a, s), n = F.normale(u, a, s), t = Math.min(1, Math.min(F.haut(u), F.bas(u)) / .06);
+        M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.001), versN(n), V(l * t + .003, .0048, .0055 * t + .0015)), c: C.tache});
+        u += (l * 2 + .026 + hasard() * .03) / .94;
+      }
+    }
+    for(let k = 0; k < 7; k++){ const u = .2 + hasard() * .1, a = .1 + hasard() * .6, p = F.peau(u, a, s), n = F.normale(u, a, s);
+      M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.001), versN(n), V(.006, .004, .004)), c: C.tache}); }
+  }
+  opercule(M, F, C.opercule, .31, .045);
+  oeil(M, F, {u: .21, a: .5, r: .024, iris: C.iris, cercle: C.cercle, narine: 0x2E3412, uNarine: .14, aNarine: .7});
+  /* la mâchoire du bas : longue, plate, un peu plus longue que celle du haut, la bouche entrouverte ; le dedans rose pâle ;
+     les grands crocs en bas, plus grands vers l'avant ; le bord de la mâchoire du haut presque lisse */
+  const ja = V(X0 - .008, -.03, 0), jb = V(X0 + .21, -.034, 0);
+  ovale(M, 0xFFFFFF, ja, jb, .031, .016, (x, y) => y > -.028 ? C.levre : melange(C.joue, C.ventre, .5));
+  ovale(M, C.bouche, V(X0 + .01, -.014, 0), V(X0 + .17, -.022, 0), .022, .01);
+  for(const s of [-1, 1]) for(let k = 0; k < 7; k++){
+    const t = .1 + k * .085, f = Math.sqrt(Math.max(0, 1 - Math.pow(2 * t - 1, 2))), p = ja.clone().lerp(jb, t);
+    const haut = (k % 2 ? .009 : .015) * (1.2 - t * .6);
+    M.push({geo: new THREE.ConeGeometry(1, 1, 4), m: new THREE.Matrix4().compose(V(p.x, p.y + .016 * f * .8 + haut * .4, s * .03 * f * .78), q0, V(.0035, haut, .0035)), c: C.dent});
+  }
+  /* les nageoires marbrées : olive-jaune, rouge orangé au bord, semées de taches sombres des deux côtés */
+  const marbrer = (b0, b1, bord, n) => {
+    for(let k = 0; k < n; k++){ const t = .08 + hasard() * .84, e = .15 + hasard() * .7, p = b0.clone().lerp(b1, t).lerp(bord(t), e), r = .005 + hasard() * .004;
+      for(const s of [-1, 1]) M.push({geo: MARBRE, m: new THREE.Matrix4().compose(V(p.x, p.y, s * (.006 * (1 - e * .7) + .0012)), s > 0 ? q0 : tourne(0, Math.PI, 0), V(r * 1.4, r, 1)), c: C.marbre}); }
+  };
+  const nagCouleur = d => (x, y) => melange(C.nag, C.nagBout, d(x, y));
+  /* la nageoire du dos : tout au fond, ronde, penchée vers l'arrière */
+  const d0 = .12, d1 = .26, y0 = HAUT(uDe(d0)) - .01, y1 = HAUT(uDe(d1)) - .008;
+  const bordD = t => { const a = Math.PI * (.04 + t * .9); return V((d0 + d1) / 2 + .07 - Math.cos(a) * .1, (y0 + y1) / 2 + Math.sin(a) * .12 * (1 - t * .2), 0); };
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), bordD, 14), new THREE.Matrix4(), nagCouleur((x, y) => (y - y0) / .1));
+  marbrer(V(d0, y0, 0), V(d1, y1, 0), bordD, 9);
+  /* l'anale : juste en dessous, ronde aussi */
+  const a0 = .14, a1 = .27, ay0 = -BAS(uDe(a0)) + .01, ay1 = -BAS(uDe(a1)) + .008;
+  const bordA = t => { const a = Math.PI * (.04 + t * .9); return V((a0 + a1) / 2 + .06 - Math.cos(a) * .09, (ay0 + ay1) / 2 - Math.sin(a) * .1 * (1 - t * .2), 0); };
+  nageoire(M, nageoireGeo(V(a0, ay0, 0), V(a1, ay1, 0), bordA, 12), new THREE.Matrix4(), nagCouleur((x, y) => (ay0 - y) / .09));
+  marbrer(V(a0, ay0, 0), V(a1, ay1, 0), bordA, 7);
+  /* la queue fourchue, aux lobes arrondis */
+  const qx = X1 - .015, bordQ = t => {
+    const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .3, fourche = .07 + .1 * Math.sin(Math.PI / 2 * Math.pow(lobe, .7)) - .05 * Math.pow(lobe, 5);
+    return V(qx + fourche + .03, y * (.8 + .2 * lobe), 0); };
+  nageoire(M, nageoireGeo(V(qx, .04, 0), V(qx, -.04, 0), bordQ, 22), new THREE.Matrix4(), nagCouleur(x => (x - qx) / .22));
+  marbrer(V(qx, .04, 0), V(qx, -.04, 0), bordQ, 11);
+  /* les ventrales : orange-jaune pâle, au milieu du ventre */
+  const peX = -.02;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .016, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.04, 0, 0), V(.03, 0, 0), t => { const a = Math.PI * (.1 + t * .8); return V(.02 - Math.cos(a) * .06, -Math.sin(a) * .1, 0); }, 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), (x, y) => melange(C.pale, C.paleBout, (pY - y) / .09));
+  }
+  /* les pectorales : orange-jaune pâle, basses, derrière l'opercule */
+  for(const s of [-1, 1]){
+    const p = F.peau(.35, -.7, s);
+    const g = nageoireGeo(V(0, .016, 0), V(0, -.016, 0), t => V(.13 - Math.abs(t - .35) * .08, -.06 + t * .045, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .008), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.pale, C.paleBout, (x - p.x) / .12));
+  }
+  return brochetGeo = fusionner(M);
+}
+export const brochetModele = () => modeleDe(brochetFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
   tanche: {fabrique: tancheModele, echelle: 1}, carpe: {fabrique: carpeModele, echelle: 1},
+  brochet: {fabrique: brochetModele, echelle: 1},
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
