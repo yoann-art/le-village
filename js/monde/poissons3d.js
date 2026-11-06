@@ -1016,6 +1016,89 @@ function silureFait(){
 }
 export const silureModele = () => { const g = modeleDe(silureFait()); g.children[0].material.emissive.setHex(0x140E04); return g; };
 
+/* ---------- Le rouget ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici le rouget »), comme un vrai rouget de roche (le surmulet, Mullus
+   surmuletus ; choix de Yo : « A », comme la nature) : le corps allongé, le front très pentu jusqu'à l'œil, haut placé et
+   doré cerclé de rouge ; la petite bouche aux lèvres fines sous le museau ; deux longs barbillons fins et souples, blanc-jaune,
+   sous le menton. Le dos rouge, les flancs rouge-rose barrés d'une bande rouge sombre depuis l'œil et de fines lignes jaunes
+   de la tête à la queue, le ventre blanc crème ; de grandes écailles. Deux nageoires du dos bien séparées : la première,
+   épineuse, pâle et rayée de bandes sombres ; la seconde petite, rose pâle. La queue fourchue rose-rouge ; les autres
+   nageoires pâles, rose clair à jaunâtre. */
+const ROUGET_F = corps(-.48, .36,
+  courbe([[0, .028], [.035, .074], [.09, .114], [.17, .138], [.3, .15], [.45, .146], [.6, .13], [.75, .102], [.88, .074], [1, .052]]),
+  courbe([[0, .016], [.05, .04], [.12, .07], [.22, .1], [.35, .116], [.5, .114], [.65, .098], [.8, .074], [.92, .054], [1, .044]]),
+  courbe([[0, .02], [.06, .038], [.15, .054], [.3, .064], [.45, .064], [.6, .056], [.75, .045], [.9, .033], [1, .024]]));
+const ROUGET = {dos: 0xB0302A, flanc: 0xDE5C50, flancClair: 0xF09A88, ventre: 0xF6E8DA, bande: 0xA02C26, jaune: 0xF2C24A,
+  tete: 0xC8443A, joue: 0xF0B4A0, opercule: 0xB83A30, iris: 0xE8A632, cercle: 0xC0361E, levre: 0xF0C8B4, bouche: 0x9A4A3E,
+  barbillon: 0xF4E8C6, pale: 0xF4D8C4, raie: 0x9A4630, epine: 0xF0DCC8, rose: 0xF2B6A4, queue: 0xE0605A, queueBout: 0xC8443C,
+  jaunatre: 0xF4DEB0};
+let rougetGeo = null;
+function rougetFait(){
+  if(rougetGeo) return rougetGeo;
+  const C = ROUGET, F = ROUGET_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* le corps : rouge au dos, rouge-rose aux flancs, blanc crème au ventre ; la bande rouge sombre de l'œil à la queue ; les
+     fines lignes jaunes dessous ; la tête lisse, la joue rose clair */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .4 ? melange(C.flanc, C.dos, (h - .4) / .5) : h > -.3 ? melange(C.flancClair, C.flanc, (h + .3) / .7) : melange(C.flancClair, C.ventre, (-.3 - h) / .35);
+    const ligne = (h0, l, coul, f) => { const d = Math.abs(h - h0 - (u - .5) * .08); if(d < l) c = melange(c, coul, f * Math.min(1, (l - d) / (l * .45))); };
+    if(u > .14){ const entre = Math.min(1, (u - .14) / .1);
+      ligne(.46, .08, C.bande, .9 * entre);
+      for(const h0 of [.22, -.02, -.24]) ligne(h0, .035, C.jaune, .95 * entre * Math.min(1, (1.02 - u) / .15)); }
+    if(u < .27) c = melange(c, h > 0 ? C.tete : C.joue, Math.min(1, (.27 - u) / .08));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .3, u1: .97, nu: 12, na: 9, taille: .047, relief: .0045, geo: ECAILLE_GRANDE});
+  opercule(M, F, C.opercule, .27, .045);
+  oeil(M, F, {u: .15, a: .68, r: .036, iris: C.iris, cercle: C.cercle, narine: 0x8A2A22, uNarine: .07, aNarine: .75});
+  /* la petite bouche aux lèvres fines, sous le museau */
+  boule(M, C.levre, X0 + .008, -.006, 0, .014, .007, .018);
+  boule(M, C.bouche, X0 + .002, -.011, 0, .008, .003, .014, BOULE_P);
+  /* les deux longs barbillons fins sous le menton : ils pendent un peu vers l'avant, souples, plus fins au bout */
+  for(const s of [-1, 1]){
+    const pts = [V(X0 + .04, -.03, s * .012), V(X0 + .032, -.06, s * .016), V(X0 + .022, -.09, s * .019), V(X0 + .018, -.118, s * .02), V(X0 + .024, -.142, s * .02)];
+    for(let i = 0; i < pts.length - 1; i++) baton(M, C.barbillon, pts[i], pts[i + 1].clone().add(pts[i + 1].clone().sub(pts[i]).multiplyScalar(.12)), .0042 * (1 - i * .15));
+    const b = pts[pts.length - 1]; boule(M, C.barbillon, b.x, b.y, b.z, .0034, .0034, .0034, BOULE_P);
+  }
+  /* la première nageoire du dos : haute, triangulaire, épineuse ; pâle, rayée de bandes sombres, le bout sombre */
+  const d0 = -.13, d1 = .0, y0 = HAUT(uDe(d0)) - .01, y1 = HAUT(uDe(d1)) - .01, hD = .15;
+  const bordD = t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t); return V(b.x + .05 + t * .03, b.y + .02 + hD * Math.pow(Math.sin(Math.PI * Math.min(1, t * .9 + .1)), .8) * (1 - t * .35), 0); };
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), bordD, 14), new THREE.Matrix4(), (x, y) => {
+    const f = (y - y0) / hD;
+    return (f > .3 && f < .42) || (f > .62 && f < .74) || f > .9 ? C.raie : C.pale; });
+  for(let k = 0; k <= 7; k++){ const t = k / 7, b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), e = bordD(t), bout = e.clone().add(e.clone().sub(b).multiplyScalar(.06));
+    baton(M, C.epine, b, bout, .003); }
+  /* la seconde nageoire du dos : petite, rose pâle */
+  const m0 = .13, m1 = .23, ym0 = HAUT(uDe(m0)) - .008, ym1 = HAUT(uDe(m1)) - .008;
+  nageoire(M, nageoireGeo(V(m0, ym0, 0), V(m1, ym1, 0), t => V(m0 + .03 + t * .12, ym0 + .085 - t * .07, 0), 10),
+    new THREE.Matrix4(), (x, y) => melange(C.rose, C.pale, (y - ym0) / .09));
+  /* la queue fourchue : rose-rouge, plus sombre au bord des lobes */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .04, 0), V(qx, -.04, 0), t => {
+      const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .3, fourche = .06 + .13 * Math.pow(lobe, .9);
+      return V(qx + fourche + .03, y * (.8 + .2 * lobe), 0); }, 22),
+    new THREE.Matrix4(), (x, y) => melange(C.queue, C.queueBout, (x - qx) / .26 + Math.abs(y) * 2));
+  /* l'anale : sous la seconde nageoire du dos, pâle */
+  const anX = .17, anY = -BAS(uDe(anX)) + .008;
+  nageoire(M, nageoireGeo(V(anX - .06, anY, 0), V(anX + .05, anY + .01, 0), t => V(anX - .025 + t * .11, anY - .08 + t * .06, 0), 10),
+    new THREE.Matrix4(), (x, y) => melange(C.jaunatre, C.pale, (anY - y) / .08));
+  /* les ventrales : sous la poitrine, pâles, jaunâtres */
+  const peX = -.2;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .014, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.04, 0, 0), V(.03, 0, 0), t => V(-.005 + t * .1, -.1 + t * .07, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), (x, y) => melange(C.jaunatre, C.pale, (pY - y) / .09));
+  }
+  /* les pectorales : rose clair, derrière l'opercule */
+  for(const s of [-1, 1]){
+    const p = F.peau(.31, -.35, s);
+    const g = nageoireGeo(V(0, .02, 0), V(0, -.02, 0), t => V(.15 - Math.abs(t - .35) * .09, -.06 + t * .05, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.rose, C.pale, (x - p.x) / .15));
+  }
+  return rougetGeo = fusionner(M);
+}
+export const rougetModele = () => modeleDe(rougetFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1024,5 +1107,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   anguille: {fabrique: anguilleModele, echelle: 1},
   carpeOr: {fabrique: carpeOrModele, echelle: 1},
   silure: {fabrique: silureModele, echelle: 1.15},   // le plus grand de l'étang : un peu plus grand en main
+  rouget: {fabrique: rougetModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
