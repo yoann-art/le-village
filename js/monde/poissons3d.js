@@ -1175,6 +1175,83 @@ function merlanFait(){
 }
 export const merlanModele = () => modeleDe(merlanFait());
 
+/* ---------- Le bar ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici le bar »), comme un vrai bar (le loup de mer, Dicentrarchus labrax ;
+   choix de Yo : « A », comme la nature) : le corps allongé et puissant, le dos gris-bleu, les flancs argentés, le ventre
+   blanc ; des écailles bien visibles, la ligne latérale fine et sombre. La grande bouche aux lèvres fines, la mâchoire du bas
+   un peu en avant ; l'œil argenté à jaune pâle ; sa marque : la tache sombre en haut de l'opercule, avec deux petites
+   pointes plates au bord. Deux nageoires du dos bien séparées, la première épineuse ; la queue un peu fourchue ; toutes les
+   nageoires gris argenté, plus foncées au bout. */
+const BAR_F = corps(-.48, .36,
+  courbe([[0, .024], [.05, .056], [.14, .1], [.28, .136], [.42, .142], [.58, .124], [.72, .094], [.86, .064], [1, .043]]),
+  courbe([[0, .018], [.05, .042], [.14, .08], [.28, .11], [.42, .113], [.58, .098], [.72, .074], [.86, .052], [1, .038]]),
+  courbe([[0, .02], [.06, .038], [.15, .056], [.3, .066], [.45, .066], [.6, .057], [.75, .045], [.9, .032], [1, .023]]));
+const BAR = {dos: 0x46526A, dosClair: 0x7A8698, flanc: 0xC0C6CE, ventre: 0xF0F0EC, ligne: 0x5A6474, tete: 0x56627A,
+  joue: 0xD4D8DA, opercule: 0x8A94A2, tache: 0x2A3038, iris: 0xDCD8B8, cercle: 0x7E848A, levre: 0xC8CCD0, bouche: 0x7A6A6A,
+  nag: 0xAEB4BC, nagBout: 0x66707C};
+let barGeo = null;
+function barFait(){
+  if(barGeo) return barGeo;
+  const C = BAR, F = BAR_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* le corps : gris-bleu au dos, argenté aux flancs, blanc au ventre ; la ligne latérale fine et sombre ; la tête lisse */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .5 ? melange(C.dosClair, C.dos, (h - .5) / .4) : h > .1 ? melange(C.flanc, C.dosClair, (h - .1) / .4) : melange(C.flanc, C.ventre, (.1 - h) / .7);
+    const d = Math.abs(h - (.52 - .2 * Math.max(0, u - .45)));
+    if(u > .27 && d < .035) c = melange(c, C.ligne, .7 * (1 - d / .035));
+    if(u < .27) c = melange(c, h > .2 ? C.tete : C.joue, Math.min(1, (.27 - u) / .08));
+    return c;
+  };
+  peauEtEcailles(M, F, couleurCorps, {u0: .29, u1: .97, nu: 14, na: 11, taille: .038, relief: .0024});
+  opercule(M, F, C.opercule, .27, .05);
+  /* la tache sombre en haut de l'opercule, et ses deux petites pointes plates au bord */
+  for(const s of [-1, 1]){
+    const p = F.peau(.27, .5, s), n = F.normale(.27, .5, s);
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.001), versN(n), V(.024, .003, .018)), c: C.tache});
+    for(const a of [.15, -.1]){ const b = F.peau(.31, a, s), nb = F.normale(.31, a, s);
+      ovale(M, C.opercule, b.clone().addScaledVector(nb, .002).add(V(-.02, 0, 0)), b.clone().addScaledVector(nb, .002).add(V(.014, 0, 0)), .003, .005); }
+  }
+  oeil(M, F, {u: .15, a: .45, r: .032, iris: C.iris, cercle: C.cercle, narine: 0x3A4250, uNarine: .07, aNarine: .6});
+  /* la grande bouche aux lèvres fines, la mâchoire du bas un peu en avant */
+  ovale(M, C.levre, V(X0 + .004, .002, 0), V(X0 + .1, -.004, 0), .02, .007);
+  ovale(M, C.levre, V(X0 - .008, -.016, 0), V(X0 + .1, -.018, 0), .019, .007);
+  ovale(M, C.bouche, V(X0, -.007, 0), V(X0 + .095, -.01, 0), .015, .004);
+  const nagC = (y0, sens, h) => (x, y) => melange(C.nag, C.nagBout, Math.pow(Math.max(0, (y - y0) * sens / h), 1.8));
+  /* la première nageoire du dos : épineuse, ses épines qui dépassent un peu */
+  const d0 = -.17, d1 = .01, y0 = HAUT(uDe(d0)) - .01, y1 = HAUT(uDe(d1)) - .01, hD = .16;
+  const bordD = t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t); return V(b.x + .04, b.y + .015 + hD * Math.pow(Math.sin(Math.PI * Math.min(1, .15 + t * .9)), .6) * (1 - t * .35), 0); };
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), bordD, 16), new THREE.Matrix4(), nagC(y0, 1, hD));
+  for(let k = 0; k <= 8; k++){ const t = k / 8, b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), e = bordD(t), bout = e.clone().add(e.clone().sub(b).multiplyScalar(.05));
+    baton(M, C.nag, b, bout, .0035); }
+  /* la seconde nageoire du dos : molle, le bord droit, penchée vers l'arrière */
+  const m0 = .06, m1 = .21, ym0 = HAUT(uDe(m0)) - .01, ym1 = HAUT(uDe(m1)) - .008;
+  nageoire(M, nageoireGeo(V(m0, ym0, 0), V(m1, ym1, 0), t => V(m0 + .035 + t * .18, ym0 + .125 - t * .1, 0), 14), new THREE.Matrix4(), nagC(ym0, 1, .1));
+  /* l'anale, sous la seconde nageoire du dos */
+  const a0 = .1, a1 = .22, ay0 = -BAS(uDe(a0)) + .01, ay1 = -BAS(uDe(a1)) + .008;
+  nageoire(M, nageoireGeo(V(a0, ay0, 0), V(a1, ay1, 0), t => V(a0 + .03 + t * .15, ay0 - .11 + t * .09, 0), 12), new THREE.Matrix4(), nagC(ay0, -1, .11));
+  /* la queue un peu fourchue */
+  const qx = X1 - .015;
+  nageoire(M, nageoireGeo(V(qx, .04, 0), V(qx, -.04, 0), t => {
+      const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .34, fourche = .07 + .1 * Math.pow(lobe, .9);
+      return V(qx + fourche + .03, y * (.82 + .18 * lobe), 0); }, 22),
+    new THREE.Matrix4(), (x, y) => melange(C.nag, C.nagBout, Math.pow(Math.max(0, (x - qx) / .2), 1.5)));
+  /* les ventrales, sous les pectorales */
+  const peX = -.18;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .012, base = s * LARGE(uDe(peX)) * .5;
+    const g = nageoireGeo(V(-.035, 0, 0), V(.03, 0, 0), t => V(.0 + t * .11, -.12 + t * .09, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.35, 0, 0), V(1, 1, 1)), (x, y) => melange(C.nag, C.nagBout, (pY - y) / .12));
+  }
+  /* les pectorales, derrière l'opercule */
+  for(const s of [-1, 1]){
+    const p = F.peau(.31, -.3, s);
+    const g = nageoireGeo(V(0, .024, 0), V(0, -.024, 0), t => V(.2 - Math.abs(t - .3) * .12, -.07 + t * .09, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .01), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.nag, C.nagBout, (x - p.x) / .2));
+  }
+  return barGeo = fusionner(M);
+}
+export const barModele = () => modeleDe(barFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1185,5 +1262,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   silure: {fabrique: silureModele, echelle: 1.15},   // le plus grand de l'étang : un peu plus grand en main
   rouget: {fabrique: rougetModele, echelle: 1},
   merlan: {fabrique: merlanModele, echelle: 1},
+  bar: {fabrique: barModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
