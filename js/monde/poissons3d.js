@@ -1252,6 +1252,88 @@ function barFait(){
 }
 export const barModele = () => modeleDe(barFait());
 
+/* ---------- La sole ----------
+   D'après l'image de Yo (6 novembre 2026 : « Voici la sole »), comme une vraie sole commune (Solea solea ; choix de Yo :
+   « A », comme la nature) : le premier poisson plat. Le corps aplati et ovale, couché sur son côté gauche : le côté des yeux
+   brun-gris sable, marbré de taches plus sombres et semé de points clairs, la ligne latérale droite ; le dessous blanc. Les
+   deux petits yeux du côté droit, l'un au-dessus de l'autre ; la petite bouche en croissant sous le museau arrondi. La longue
+   frange de nageoires tout autour, à fins rayons, qui rejoint la queue arrondie ; la petite nageoire de côté et sa tache
+   noire au bout (la marque de la sole). Faite tête vers −x comme les autres, puis retournée : la tête vers +x, le côté des
+   yeux vers +z (vers nous quand on la montre), comme une vraie sole vue de dessus. */
+const SOLE_F = corps(-.46, .3,
+  courbe([[0, .03], [.04, .072], [.12, .124], [.25, .162], [.45, .176], [.65, .158], [.8, .118], [.92, .07], [1, .036]]),
+  courbe([[0, .02], [.04, .05], [.12, .098], [.25, .144], [.45, .162], [.65, .146], [.8, .108], [.92, .064], [1, .034]]),
+  courbe([[0, .018], [.06, .028], [.2, .032], [.5, .03], [.8, .021], [1, .013]]));
+const SOLE = {fond: 0x8A7A5C, sombre: 0x5A4C38, clair: 0xB6A684, dessous: 0xF0EAE0, ligne: 0x6E604A, nag: 0x8C7C5E,
+  nagBord: 0x5E5240, iris: 0x8A6A3A, cercle: 0x6A5A42, bouche: 0x4A3E30, levre: 0xA89A7C, tache: 0x141210};
+let soleGeo = null;
+function soleFait(){
+  if(soleGeo) return soleGeo;
+  const C = SOLE, F = SOLE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* le marbré : des taches sombres aux bords doux, des points clairs ; rien sur le dessous blanc */
+  const marbre = (x, y) => {
+    const n = Math.sin(x * 30 + Math.sin(y * 19) * 1.6) * Math.sin(y * 30 + x * 9) + .35 * Math.sin(x * 52 - y * 41 + 1.3);
+    const p = Math.sin(x * 140 + y * 37) * Math.sin(y * 120 - x * 29);
+    return {n, p};
+  };
+  const couleurDessus = (x, y) => {
+    const {n, p} = marbre(x, y);
+    let c = melange(C.fond, C.sombre, Math.max(0, Math.min(1, (n - .25) / .35)));
+    if(p > .82) c = melange(c, C.clair, (p - .82) / .18 * .9);
+    if(Math.abs(y) < .005 && uDe(x) > .2) c = melange(c, C.ligne, .6);
+    return c;
+  };
+  const couleurCorps = (x, y, z) => {
+    const u = uDe(x), t = z / Math.max(.01, LARGE(u));        // 1 au milieu du côté des yeux, −1 au milieu du dessous
+    return t > .15 ? couleurDessus(x, y) : t < -.25 ? new THREE.Color(C.dessous) : melange(C.dessous, couleurDessus(x, y), (t + .25) / .4);
+  };
+  M.push({geo: corpsGeo(X0, X1, HAUT, BAS, LARGE, 76, 72), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: couleurCorps,
+    ombre: (x, y, z) => z < 0 ? .95 : .94 + .1 * Math.max(-1, Math.min(1, y / .15))});
+  /* les deux petits yeux du côté droit (vers +z), l'un au-dessus de l'autre, sur une petite bosse */
+  for(const [u, a] of [[.1, .78], [.075, .38]]){
+    const o = F.peau(u, a, 1), n = F.normale(u, a, 1), q = versN(n), r = .019;
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(o.clone().addScaledVector(n, -.004), q, V(r * 1.5, .014, r * 1.4)), c: 0xFFFFFF, couleur: couleurDessus});
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(o.clone().addScaledVector(n, .004), q, V(r, .012, r)), c: C.cercle});
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(o.clone().addScaledVector(n, .008), q, V(r * .82, .011, r * .82)), c: C.iris});
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(o.clone().addScaledVector(n, .011), q, V(r * .5, .01, r * .5)), c: 0x141010});
+    const b = o.clone().addScaledVector(n, .021); b.x -= .004; b.y += .005;
+    M.push({geo: BOULE_P, m: new THREE.Matrix4().compose(b, q, V(r * .2, .003, r * .2)), c: 0xFFFFFF});
+  }
+  /* la petite bouche en croissant, sous le museau arrondi qui la recouvre */
+  const bo = F.peau(.035, -.55, 1);
+  ovale(M, C.levre, V(bo.x - .006, bo.y + .008, bo.z * .6), V(bo.x + .03, bo.y - .012, bo.z * .6), .012, .006);
+  ovale(M, C.bouche, V(bo.x - .004, bo.y + .006, bo.z * .75), V(bo.x + .026, bo.y - .01, bo.z * .75), .007, .003);
+  /* la longue frange de nageoires : au-dessus depuis la tête, en dessous depuis la gorge, jusqu'à la queue qu'elle rejoint */
+  const frange = (xa, sens, large) => {
+    const bord = x => sens > 0 ? HAUT(uDe(x)) : -BAS(uDe(x));
+    const base = t => { const x = xa + (X1 + .02 - xa) * t; return V(x, bord(x) - sens * .006, 0); };
+    const larg = t => large * Math.min(1, t / .1 + .25) * (1 - .15 * t);
+    const tip = t => { const b = base(t), d = (bord(b.x + .01) - bord(b.x - .01)) / .02, l = larg(t), k = Math.hypot(1, d);
+      return V(b.x - sens * d / k * l * .4 + l * .25, b.y + sens * l / k, 0); };
+    nageoire(M, rubanGeo(base, tip, 110), new THREE.Matrix4(), (x, y) => melange(C.nag, C.nagBord, Math.pow(Math.max(0, Math.min(1, (Math.abs(y) - Math.abs(bord(x)) + .004) / (large * .9))), 1.6)));
+  };
+  frange(X0 + .025, 1, .062);
+  frange(X0 + .07, -1, .056);
+  /* la queue arrondie, que la frange rejoint */
+  const qx = X1 - .01;
+  nageoire(M, nageoireGeo(V(qx, .034, 0), V(qx, -.034, 0), t => { const a = Math.PI * (t - .5) * .95; return V(qx + .025 + Math.cos(a) * .085, -Math.sin(a) * .085 + (.5 - t) * .02, 0); }, 22),
+    new THREE.Matrix4(), x => melange(C.nag, C.nagBord, Math.pow(Math.max(0, (x - qx) / .11), 1.6)));
+  /* la petite nageoire de côté, du côté des yeux, et sa tache noire au bout ; une plus petite dessous */
+  const p = F.peau(.24, .05, 1);
+  const gP = nageoireGeo(V(0, .016, 0), V(0, -.016, 0), t => V(.1 - Math.abs(t - .4) * .05, -.035 + t * .07, 0), 10);
+  nageoire(M, gP, new THREE.Matrix4().compose(V(p.x, p.y, p.z + .004), tourne(0, -.25, 0), V(1, 1, 1)),
+    (x, y) => x - p.x > .086 ? C.tache : melange(C.clair, C.nag, (x - p.x) / .07));
+  const pd = F.peau(.24, .05, -1);
+  nageoire(M, nageoireGeo(V(0, .008, 0), V(0, -.008, 0), t => V(.045, -.015 + t * .03, 0), 6), new THREE.Matrix4().compose(V(pd.x, pd.y, pd.z - .004), tourne(0, .25, 0), V(1, 1, 1)), () => C.dessous);
+  /* retournée : la tête vers +x, le côté des yeux toujours vers +z (une sole a les yeux sur son côté droit) */
+  const g = fusionner(M), P = g.attributes.position, N = g.attributes.normal, I = g.index;
+  for(let i = 0; i < P.count; i++){ P.setX(i, -P.getX(i)); N.setX(i, -N.getX(i)); }
+  for(let j = 0; j < I.count; j += 3){ const a = I.getX(j + 1); I.setX(j + 1, I.getX(j + 2)); I.setX(j + 2, a); }
+  g.computeBoundingSphere();
+  return soleGeo = g;
+}
+export const soleModele = () => modeleDe(soleFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1263,5 +1345,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   rouget: {fabrique: rougetModele, echelle: 1},
   merlan: {fabrique: merlanModele, echelle: 1},
   bar: {fabrique: barModele, echelle: 1},
+  sole: {fabrique: soleModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
