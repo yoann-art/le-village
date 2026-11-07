@@ -20,7 +20,7 @@ import { toast } from "./interface.js";
 import { jouer } from "./sons.js";
 
 /* Ce qu'on peut faire avec chaque objet : s'asseoir (la hauteur du siège), s'allonger, l'allumer et l'éteindre, le toucher */
-const SIEGES = {tabouret: .46, chaise: .35, banc: .4};   // la hauteur du dessus de chaque siège (meubles.js)
+const SIEGES = {tabouret: .46, chaise: .46, banc: .4};   // la hauteur du dessus de chaque siège (meubles.js)
 const LIT = {lit: .44};
 const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLucioles"), "cheminee"]);
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;

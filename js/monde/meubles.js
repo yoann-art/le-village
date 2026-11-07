@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, ton
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -59,12 +59,55 @@ function tabouretMorceaux(c){
   return out;
 }
 
+/* Une boîte aux arêtes et aux coins tout arrondis (rayon r), centrée sur l'origine */
+function boiteRonde(w, h, d, r, m = 4, f = [1, 1, 1]){   // m : les sommets dans l'arrondi ; f : les parts du plat (pour le cintrer)
+  const n = f.map(x => x + m), g = new THREE.BoxGeometry(2, 2, 2, 2 * n[0], 2 * n[1], 2 * n[2]), P = g.attributes.position, N = g.attributes.normal;
+  const v = new THREE.Vector3(), c = new THREE.Vector3(), demi = [w / 2, h / 2, d / 2];
+  const cale = (t, k) => { const a = Math.round(Math.abs(t) * n[k]), p = demi[k] - r;
+    return Math.sign(t) * (a <= f[k] ? p * a / f[k] : p + r * (a - f[k]) / m); };
+  for(let i = 0; i < P.count; i++){
+    v.set(cale(P.getX(i), 0), cale(P.getY(i), 1), cale(P.getZ(i), 2));
+    c.set(Math.max(r - demi[0], Math.min(demi[0] - r, v.x)), Math.max(r - demi[1], Math.min(demi[1] - r, v.y)), Math.max(r - demi[2], Math.min(demi[2] - r, v.z)));
+    v.sub(c).normalize(); N.setXYZ(i, v.x, v.y, v.z); P.setXYZ(i, c.x + v.x * r, c.y + v.y * r, c.z + v.z * r);
+  }
+  return g;
+}
+/* Un bâton rond : le bout du bas arrondi (bas), le haut arrondi (haut) ou plat, hauteur h, rayon r */
+function baton(r, h, bas, haut, seg = 12){
+  const p = [], k = 4;
+  if(bas) for(let j = 0; j <= k; j++){ const a = j / k * Math.PI / 2; p.push(new THREE.Vector2(r * Math.sin(a), r - r * Math.cos(a))); }
+  else p.push(new THREE.Vector2(0, 0), new THREE.Vector2(r, 0));
+  if(haut) for(let j = 0; j <= k; j++){ const a = j / k * Math.PI / 2; p.push(new THREE.Vector2(r * Math.cos(a), h - r + r * Math.sin(a))); }
+  else p.push(new THREE.Vector2(r, h), new THREE.Vector2(0, h));
+  return new THREE.LatheGeometry(p, seg);
+}
+/* La chaise (image de Yo, 7 novembre 2026 : « Voici la chaise ») : une assise carrée épaisse aux bords tout arrondis ; quatre gros
+   pieds ronds au bout arrondi, un peu écartés ; deux montants ronds au bout arrondi, posés sur l'arrière de l'assise et un peu
+   penchés en arrière ; trois barreaux plats et arrondis entre eux, cintrés (le milieu un peu plus haut et en arrière). Tout d'un
+   seul bois. Le dessus de l'assise à .46, comme le tabouret (gestes.js s'y assoit) ; le devant regarde vers +z */
+const CH = {haut: .46, ep: .155, larg: .6, prof: .58};
+const CH_ASSISE = boiteRonde(CH.larg, CH.ep, CH.prof, .075, 3);
+const CH_PIED = baton(.072, .36, true, false, 10);
+const CH_MONTANT = baton(.078, .56, false, true, 10);
+const CH_BARREAU = (() => { const g = boiteRonde(.42, .1, .07, .032, 2, [4, 1, 1]), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const u = P.getX(i) / .21, b = 1 - u * u; P.setY(i, P.getY(i) + .022 * b); P.setZ(i, P.getZ(i) - .03 * b); }
+  g.computeVertexNormals(); return g; })();
+function chaiseMorceaux(c){
+  const o = ombreBois(0, 1), out = [{geo: CH_ASSISE, m: M4(0, CH.haut - CH.ep / 2, 0), c, ombre: o}];
+  const yBas = CH.haut - CH.ep + .02;                                  // les pieds entrent un peu dans l'assise
+  for(const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]){
+    const bas = new THREE.Vector3(sx * .26, 0, sz * .25), haut = new THREE.Vector3(sx * .2, yBas, sz * .19), dir = haut.clone().sub(bas);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    out.push({geo: CH_PIED, m: new THREE.Matrix4().compose(bas, q, new THREE.Vector3(1, dir.length() / .36, 1)), c, ombre: o});
+  }
+  const pente = .09, z0 = -CH.prof / 2 + .085, y0 = CH.haut - .03;   // les montants : sur l'arrière de l'assise, penchés en arrière
+  for(const sx of [-1, 1]) out.push({geo: CH_MONTANT, m: M4(sx * .215, y0, z0, -pente), c, ombre: o});
+  for(const y of [.16, .29, .42]) out.push({geo: CH_BARREAU, m: M4(0, y0 + y, z0 - Math.sin(pente) * y, -pente), c, ombre: o});
+  return out;
+}
+
 const BUILD = {
-  chaise(g, m){
-    g.add(part(G.box, m, .6, .1, .6, 0, .3, 0));                                      // assise
-    for(const [x,z] of [[-.24,-.24],[.24,-.24],[-.24,.24],[.24,.24]]) g.add(part(G.cyl, C.dark, .07, .3, .07, x, .15, z));
-    g.add(part(G.box, m, .6, .5, .08, 0, .6, -.26));                                  // dossier
-  },
+  chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
   tabouret(g, m){ g.add(modeleBois("tabouret", m, tabouretMorceaux)); },
   pot(g, m){
     g.add(part(G.cyl, m, .4, .3, .4, 0, .15, 0));                                     // pot

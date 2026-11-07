@@ -26,7 +26,7 @@ import { thymModele } from "./monde/thym.js";
 import { FLEURS } from "./donnees.js";
 import { makeMeuble, MEUBLES_REFAITS } from "./monde/meubles.js";
 
-const VERSION_ICONES = 5, CLE = "le-village-icones", TAILLE = 96;
+const VERSION_ICONES = 6, CLE = "le-village-icones", TAILLE = 96;
 /* Ce qu'on photographie : la clé de l'objet, et comment faire son modèle (en été, en fleur, de face : un mâle) */
 const PHOTOS = {};
 for(const k of Object.keys(MODELES_INSECTES)) PHOTOS[k] = () => MODELES_INSECTES[k].fabrique({saison: "ete"});
