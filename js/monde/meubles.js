@@ -14,6 +14,8 @@ const glowMat = toon({color:0xFFE3A3, emissive:0xFFB347, emissiveIntensity:.8});
 /* Le verre des lanternes qui s'allument seules à la nuit tombée (lumieres.js règle leur éclat), et les lucioles du bocal */
 export const nuitMat = toon({color:0xFFEFC8, emissive:0xFFC060, emissiveIntensity:.1});
 export const lucioleMat = toon({color:0xE8FF9A, emissive:0xC8F060, emissiveIntensity:.9});
+/* Une lumière éteinte (gestes.js) : plus de flamme, le verre sans lueur */
+const verreEteint = toon({color:0xD8D2C0});
 const CUIVRE = 0xC8743C;
 /* Le verre de la vitrine : on voit au travers */
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
@@ -316,6 +318,7 @@ export function makeMeuble(type, color, o){
   const g = new THREE.Group();
   const hex = couleurMeuble(type, color);                            // sa teinte, l'ancienne couleur, ou celle de départ (donnees.js)
   BUILD[type](g, hex !== null ? hex : ORIGIN[type], o);
+  if(o && o.eteint) g.traverse(c => { if(c.material === fireMat) c.visible = false; else if(c.material === glowMat || c.material === nuitMat) c.material = verreEteint; });
   if(PRISE[type]){ const [w, h, d, y] = PRISE[type], p = new THREE.Mesh(BOITE, INVISIBLE); p.scale.set(w, h, d); p.position.y = y; g.add(p); }
   return g;
 }

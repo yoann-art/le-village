@@ -206,11 +206,52 @@ function bouger(dt){
   placerMains(0); if(e.roule) armL.rotation.x = armR.rotation.x = -1.3;
   if(e.t >= e.T){ elanEnCours = null; body.rotation.x = 0; body.position.set(0, 0, 0); }
 }
+/* Assis ou allongé (chantier de la décoration, étape 2 : les gestes avec les objets ; gestes.js) : la pose garde l'endroit où
+   l'on se tenait debout ; un mouvement du joystick relève le personnage à cet endroit. p = {type: "assis" | "allonge",
+   x, y, z (où va le personnage : ses pieds, ou ses hanches sur le siège), fx, fz (vers où il regarde), it (l'objet)} */
+let pose = null;
+const HANCHE_Y = .3 * P / 1.12;                        // la hauteur des hanches, debout (heros.js : HANCHE.y, le modèle ramené à 1 P)
+export function poser(p){
+  if(!pose) pose = {debout: {x: player.position.x, z: player.position.z, fx: facing.x, fz: facing.z}};
+  Object.assign(pose, p);
+  player.position.set(p.x, p.type === "assis" ? p.y + .03 - HANCHE_Y : p.y, p.z);
+  facing.x = p.fx; facing.z = p.fz; player.rotation.y = Math.atan2(p.fx, p.fz);
+  elanEnCours = null; allureNow = 0;
+  montrerPose();
+}
+function montrerPose(){
+  const allonge = pose && pose.type === "allonge", assis = pose && pose.type === "assis";
+  body.rotation.x = allonge ? -Math.PI / 2 : 0;                 // allongé sur le dos : la tête vers l'arrière, le visage vers le haut
+  body.position.set(0, allonge ? .11 : 0, 0);
+  legL.rotation.x = legR.rotation.x = assis ? -1.15 : 0;       // assis : les jambes devant, qui pendent un peu au bord du siège
+  placerMains(0);
+  if(assis) armL.rotation.x = armR.rotation.x = -.45;          // les mains sur les genoux
+}
+export function seLever(){
+  if(!pose) return;
+  const d = pose.debout; pose = null;
+  player.position.set(d.x, 0, d.z);
+  montrerPose();
+}
+export const posture = () => pose ? pose.type : null;
+export const poseObjet = () => pose ? pose.it : null;
+/* Les yeux, assis ou allongé (la première personne, main.js) : leur place et s'ils regardent en l'air ; null debout */
+export function yeuxPose(){
+  if(!pose) return null;
+  const p = player.position;
+  if(pose.type === "assis") return {x: p.x, y: p.y + .8, z: p.z, enLair: false};
+  return {x: p.x - facing.x * .92, y: p.y + .22, z: p.z - facing.z * .92, enLair: true};   // la tête, à l'autre bout du corps
+}
 /* Ralenti un moment (étape 1.13, morceau 6 : la sangsue géante s'accroche) */
 let lent = 0;
 export function ralentir(t){ lent = Math.max(lent, t); }
 export function updatePlayer(dt){
   if(lent > 0) lent = Math.max(0, lent - dt);
+  if(pose){                                           // assis ou allongé : il ne bouge pas, et se relève dès qu'on pousse le joystick
+    const k = (keys.r||0) || (keys.l||0) || (keys.u||0) || (keys.d||0);
+    if(Math.hypot(jv.x, jv.z) < .3 && !k){ allureNow = 0; montrerPose(); return false; }
+    seLever();
+  }
   degager();                                          // coincé (un arbre planté, un bâtiment, un meuble posé dessus) : il se dégage
   if(clign > 0){ clign -= dt; body.visible = clign <= 0 || Math.floor(clign * 12) % 2 === 0; }
   else if(!body.visible) body.visible = true;

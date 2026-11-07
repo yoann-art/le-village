@@ -17,7 +17,7 @@ import { leveePrise } from "./prise.js";
 import { avecCour } from "./regles.js";
 import { reglerRecul } from "./monde/chene.js";
 import "./monde/batiments.js";
-import { player, updatePlayer, regard, viser } from "./monde/personnage.js";
+import { player, updatePlayer, regard, viser, yeuxPose } from "./monde/personnage.js";
 import "./coffres.js";
 import { view, setLacet } from "./commandes.js";
 import { prendreIcones } from "./icones.js";                 // les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026)
@@ -29,6 +29,7 @@ import { decorating, lifting, decoView, updateLift, addMeuble, finishDeco } from
 import { updatePlan } from "./ateliers.js";
 import { updateCoffrePiece } from "./coffres.js";
 import { updateVitrine } from "./vitrine.js";
+import { updateGestes } from "./gestes.js";
 import { updateTorche } from "./torche.js";
 import { updateCombat } from "./combat.js";
 import { updateChemins } from "./terraformer.js";
@@ -136,6 +137,7 @@ function tick(now){
   garde("plan de travail", () => updatePlan(isInside() && !decorating() && !lifting() && !isBusy()));   // bouton du plan de travail, quand on est tout près
   garde("coffre", () => updateCoffrePiece(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // un coffre dans la pièce : l'ouvrir, ou le poser
   garde("vitrine", () => updateVitrine(isInside() && !decorating() && !lifting() && !isBusy() && wrap.hidden));   // une vitrine tout près : exposer une pierre (étape 1.11)
+  garde("gestes", () => updateGestes(wrap.hidden && !isBusy() && !placing && !decorating() && !lifting() && !deplaceEnCours() && !voyageEnCours() && !enBarque()));   // s'asseoir, s'allonger, allumer, éteindre (gestes.js)
   garde("barque", () => updateBarque(dt));                  // la barque du ponton : ses travaux, à bord (étape 1.13)
   garde("voyage", () => updateVoyage(dt));                  // le trajet en barque vers le Marais, et le retour
   garde("marais", () => updateMarais(dt));                  // au Marais : ses plantes suivent la nuit et la saison, les feux-follets dansent
@@ -193,8 +195,14 @@ function camera_(now, dt, marche){
     viseur.hidden = false;
     view.lacetIci = 0; majNord(false);                     // à la première personne, le regard suit le personnage
     viseur.classList.toggle("cible", !btnAct.hidden);       // quelque chose à faire là : le point devient un rond
+    const y = yeuxPose();                                  // assis ou allongé (gestes.js) : les yeux suivent ; allongé, on regarde en l'air
+    if(y){ const tt = y.enLair ? Math.max(t, 1.05) : t, cc = Math.cos(tt);
+      camera.position.set(y.x, y.y, y.z);
+      camera.lookAt(y.x + Math.sin(lacet) * cc, y.y + Math.sin(tt), y.z + Math.cos(lacet) * cc); }
+    else {
     camera.position.set(p.x, OEIL, p.z);
     camera.lookAt(p.x + Math.sin(lacet) * c, OEIL + Math.sin(t), p.z + Math.cos(lacet) * c);
+    }
   } else {
   lacet = null;
   viser(null);

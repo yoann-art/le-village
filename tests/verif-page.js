@@ -673,6 +673,71 @@ export async function verifier(){
     delete etabli.color;
     return `${cles.length} couleurs (${TEINTES.bois.length} bois, ${TEINTES.pierre.length} pierres et minerais, ${TEINTES.metal.length} métaux, ${TEINTES.tissu.length} teintures) ; l'établi teint en pin pour 1 bois de pin, refusé sans, gratuit pour la même ; l'ancienne palette gardée`;
   });
+  /* les gestes avec les objets (chantier de la décoration, étape 2) : s'asseoir, s'allonger, se lever ; allumer et éteindre
+     une lumière, dedans comme dehors ; toucher le bocal à lucioles */
+  if(scierie) await etape("Les gestes : s'asseoir sur une chaise, s'allonger dans un lit, se lever ; éteindre et rallumer une chandelle, un feu de camp dehors", async () => {
+    const {updateGestes, faireGeste} = await import("../js/gestes.js");
+    const {posture, yeuxPose} = await import("../js/monde/personnage.js");
+    const {addMeuble} = await import("../js/decorer.js");
+    const {addItemMesh, removeItemMesh} = await import("../js/monde/interieurs.js");
+    const {setObj, map: carte, idx: ix, inb: dedansIle, tileOf: caseDe} = await import("../js/monde/ile.js");
+    const btnG = $("#btn-geste"), {seLever} = await import("../js/monde/personnage.js");
+    await entrer(scierie);
+    try {
+    sacAdd("chaise", 1); sacAdd("chandelle", 1);
+    $("#btn-deco").click(); await wait(200);
+    addMeuble("chaise"); addMeuble("chandelle");
+    $("#deco-done").click(); await wait(200);
+    const items = scierie.deco.items, chaise = items.find(it => it.type === "chaise"), chandelle = items.find(it => it.type === "chandelle");
+    if(!chaise || !chandelle) throw new Error("la chaise ou la chandelle ne se posent pas");
+    /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
+    placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
+    if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
+    const x0 = player.position.x; faireGeste();
+    if(posture() !== "assis" || player.position.y < .05 || Math.abs(player.position.x - chaise.x) > .2) throw new Error("le personnage ne s'assoit pas sur la chaise");
+    updateGestes(true);
+    if(!btnG.textContent.includes("Se lever")) throw new Error("assis, le bouton ne dit pas « Se lever »");
+    faireGeste();
+    if(posture() || player.position.y !== 0 || Math.abs(player.position.x - x0) > .01) throw new Error("il ne se relève pas là où il était");
+    /* éteindre et rallumer la chandelle (la chaise ôtée : la chandelle est la seule dans la pièce) */
+    items.splice(items.indexOf(chaise), 1); removeItemMesh(chaise.id);
+    placePlayer(chandelle.x + .8, chandelle.z, -1, 0); updateGestes(true);
+    if(!btnG.textContent.includes("Éteindre la chandelle")) throw new Error(`près de la chandelle, le bouton dit « ${btnG.textContent} »`);
+    faireGeste();
+    if(!chandelle.eteint) throw new Error("la chandelle ne s'éteint pas");
+    updateGestes(true); faireGeste();
+    if(chandelle.eteint) throw new Error("la chandelle ne se rallume pas");
+    const cx = chandelle.x, cz = chandelle.z;
+    items.splice(items.indexOf(chandelle), 1); removeItemMesh(chandelle.id);
+    /* s'allonger dans un lit (posé pour l'essai, seul dans la pièce, puis enlevé), les yeux en l'air */
+    const lit = {id: 9999, type: "lit", x: cx, z: cz, rot: 1};
+    items.push(lit); addItemMesh(lit);
+    placePlayer(lit.x, lit.z + 1.4, 0, -1); updateGestes(true);
+    if(!btnG.textContent.includes("S'allonger")) throw new Error(`près du lit, le bouton dit « ${btnG.textContent} »`);
+    faireGeste();
+    const y = yeuxPose();
+    if(posture() !== "allonge" || !y || !y.enLair || y.y < .5) throw new Error("le personnage ne s'allonge pas dans le lit");
+    items.splice(items.indexOf(lit), 1); removeItemMesh(lit.id); updateGestes(true);
+    if(posture()) throw new Error("le lit enlevé, il reste allongé dans le vide");
+    } finally {                                         // quoi qu'il arrive : debout, dehors (sinon tout ce qui suit échoue)
+      seLever();
+      for(const t of ["chaise", "chandelle", "lit"]){ const it = items => items.find(v => v.type === t); const v = it(scierie.deco.items); if(v && (t === "lit" || v.id >= 0)){ scierie.deco.items.splice(scierie.deco.items.indexOf(v), 1); removeItemMesh(v.id); } }
+      if(isInside()) await sortir();
+    }
+    /* dehors : un feu de camp posé à côté, éteint puis rallumé */
+    const px = caseDe(player.position.x), pz = caseDe(player.position.z);
+    let i = -1;
+    for(const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if(dedansIle(px + a, pz + b) && !carte.obj[ix(px + a, pz + b)] && carte.type[ix(px + a, pz + b)] !== "water"){ i = ix(px + a, pz + b); break; }
+    if(i < 0) return "dedans : assis, levé, allongé, la chandelle éteinte et rallumée (dehors : pas de case libre à côté pour l'essai)";
+    setObj(i, "feuCamp"); updateGestes(true);
+    if(!btnG.textContent.includes("Éteindre le feu de camp")) throw new Error(`près du feu de camp, le bouton dit « ${btnG.textContent} »`);
+    faireGeste();
+    if(!(state.ile[i] || {}).eteint) throw new Error("le feu de camp ne s'éteint pas");
+    updateGestes(true); faireGeste();
+    if((state.ile[i] || {}).eteint) throw new Error("le feu de camp ne se rallume pas");
+    setObj(i, null);
+    return "assis sur la chaise puis levé à sa place, allongé dans un lit (les yeux en l'air), relevé quand le lit disparaît ; la chandelle et un feu de camp dehors éteints puis rallumés";
+  });
   if(scierie) await etape("Améliorer la Scierie : elle change d'allure au niveau 2", async () => {
     sacAdd("bois", 18); sacAdd("pierre", 9); sacAdd("fibre", 6);
     const avant = toitDe(scierie);

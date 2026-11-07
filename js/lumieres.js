@@ -30,7 +30,10 @@ import { toast, renderHUD } from "./interface.js";
 const lumieresDehors = Array.from({length: 3}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 scene.add(...lumieresDehors);
 /* Ce meuble éclaire-t-il ? (une torchère, seulement avec sa torche) : sa lumière, ou null */
-const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) ? L : null; };
+const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && !(o && o.eteint) ? L : null; };   // éteinte (gestes.js) : rien
+/* Toucher le bocal à lucioles (gestes.js) : elles brillent plus fort un instant */
+let eclat = 0;
+export function eclatLucioles(){ eclat = 1.6; }
 
 /* Les lumières posées sur l'île (et accrochées aux façades), relevées une fois par seconde, chacune avec son halo (la nuit) */
 let ile = [], releve = 0;
@@ -78,7 +81,7 @@ function allumer(pool, liste, facteur){
     if(!s){ if(l.intensity) l.intensity = 0; return; }
     const g = s.x * 7.1 + s.z * 3.3;                 // chaque flamme vacille à sa façon
     const v = s.L.flamme ? 1 + Math.sin(t * 11 + g) * .07 + Math.sin(t * 17.3 + g * 2) * .05
-      : s.L.lucioles ? .75 + Math.sin(t * 2.2 + g) * .25 : 1;
+      : s.L.lucioles ? .75 + Math.sin(t * 2.2 + g) * .25 + eclat * .8 : 1;
     l.color.setHex(s.L.couleur); l.distance = s.L.portee; l.position.set(s.x, s.y, s.z);
     l.intensity = s.L.force * (s.L.nuit ? n : facteur) * v;
   });
@@ -90,7 +93,8 @@ let actives = 0;
 export function updateLumieres(dt, actif){
   t += dt;
   fireMat.emissiveIntensity = .85 + Math.sin(t * 9) * .12 + Math.sin(t * 14.7) * .06;   // les flammes vacillent
-  lucioleMat.emissiveIntensity = .55 + Math.sin(t * 2.2) * .4;                         // les lucioles palpitent
+  if(eclat > 0) eclat = Math.max(0, eclat - dt);
+  lucioleMat.emissiveIntensity = .55 + Math.sin(t * 2.2) * .4 + eclat * .9;             // les lucioles palpitent (plus fort quand on touche le bocal)
   const place = currentPlace(), n = nuitIci();
   nuitMat.emissiveIntensity = .06 + .94 * n;                                           // le verre des lanternes de nuit
   if(!place){

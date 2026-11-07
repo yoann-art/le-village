@@ -48,12 +48,12 @@ function autour(x, z, r, test){
   let n = 0, best = 99;
   for(let b = -r; b <= r; b++) for(let a = -r; a <= r; a++){
     if(!inb(x + a, z + b)) continue;
-    if(test(map.obj[idx(x + a, z + b)])){ n++; best = Math.min(best, Math.hypot(a, b)); }
+    if(test(map.obj[idx(x + a, z + b)], idx(x + a, z + b))){ n++; best = Math.min(best, Math.hypot(a, b)); }
   }
   return {n, d: best};
 }
 const arbre = (o, hiver) => !!o && (hiver ? o === "pin" : RECOLTE[o] && RECOLTE[o].outil === "hache" && o !== "buisson");
-const feuDehors = o => o === "feuCamp" || o === "brasero";
+const feuDehors = (o, i) => (o === "feuCamp" || o === "brasero") && !(state.ile[i] || {}).eteint;   // éteint : plus de crépitement
 
 /* Le tonnerre : un peu après l'éclair (le son va moins vite que la lumière), plus ou moins loin */
 let eclairAvant = 0;
@@ -103,7 +103,7 @@ export function updateAmbiance(dt){
       cible[hiver ? "ambHiver" : "ambVent"] = vent * .25;
       if(pluie) cible.ambPluieToit = orage ? 1 : .8;
       const items = (place.b.deco && place.b.deco.items) || [];
-      const feu = items.find(it => it.type === "cheminee" || it.type === "feuCamp" || it.type === "brasero");
+      const feu = items.find(it => (it.type === "cheminee" || it.type === "feuCamp" || it.type === "brasero") && !it.eteint);
       if(feu){ const p = player.position; cible.ambFeu = clamp(1 - (Math.hypot(p.x - feu.x, p.z - feu.z) - 1) / 6); }
     }
   }
