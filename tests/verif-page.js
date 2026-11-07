@@ -1249,8 +1249,9 @@ export async function verifier(){
     /* les poissons refaits d'après les images de Yo (poissons3d.js) : levés tels quels, et leur photo pour le sac */
     const { MODELES_POISSONS } = await import("../js/monde/poissons3d.js"), { poissonMesh } = await import("../js/peche.js"), { iconesPhoto } = await import("../js/icones.js");
     for(const f of Object.keys(MODELES_POISSONS)){
+      /* au moins 3 000 triangles : les anciens poissons simples en ont quelques centaines ; l'orphie, à la peau lisse sans écailles en relief, en a 4 918 */
       let n = 0; poissonMesh(f, 20).traverse(o => { if(o.isMesh) n += o.geometry.index.count / 3; });
-      if(n < 5000) throw new Error(`le ${f} pêché n'est pas son modèle refait (${n} triangles)`);
+      if(n < 3000) throw new Error(`le ${f} pêché n'est pas son modèle refait (${n} triangles)`);
       if(!iconesPhoto().includes(f)) throw new Error(`le ${f} n'a pas sa photo dans le sac`);
     }
     /* la carpe koï et ses dix robes (Yo, 6 novembre 2026) : tirées au hasard, les rares plus rares ; chaque robe son modèle ;
