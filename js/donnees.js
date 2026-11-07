@@ -38,6 +38,7 @@ export const NIVEAU3 = {scierie: {granit: 8}, chaumiere: {granit: 8}, carriere: 
    where : les seuls bâtiments où il se pose (meuble de métier) ; sans where, il se pose partout */
 export const MEUBLES = {
   chaise:   {nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
+  fauteuil: {nom:"Fauteuil", emoji:"💺", gabarit:"petit", w:1.05, d:.9},
   tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
   pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
   lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
@@ -913,6 +914,7 @@ export const ATELIERS = {
     {out:"feuCamp", in:{pierre:6, bois:4}, t:30, lvl:1},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
+    {out:"fauteuil", in:{planche:4, fibre:3}, t:40, lvl:1},   // le fauteuil : du bois et des coussins de lin (Yo, 7 novembre 2026)
     {out:"banc", in:{planche:4}, t:40, lvl:1},
     {out:"tonneau", in:{planche:5}, t:60, lvl:2},
     {out:"table", in:{planche:6}, t:90, lvl:2},
@@ -1040,7 +1042,7 @@ export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
    toutes les ressources nécessaires »). La palette gratuite (COULEURS) n'est plus proposée : un meuble déjà peint avec
    elle garde sa couleur. MATIERE : la matière de la partie qui prend la couleur (le bois de la chaise, la couverture du lit,
    le bougeoir de cuivre de la chandelle) ; la première teinte de chaque matière est celle de départ. */
-export const MATIERE = {chaise:"bois", tabouret:"bois", banc:"bois", table:"bois", etagere:"bois", tonneau:"bois", coffre:"bois",
+export const MATIERE = {chaise:"bois", fauteuil:"bois", tabouret:"bois", banc:"bois", table:"bois", etagere:"bois", tonneau:"bois", coffre:"bois",
   vitrine:"bois", torchere:"bois", bocalLucioles:"bois", etabli:"bois", atelierDeco:"bois", comptoir:"bois", trone:"bois",
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
@@ -1113,7 +1115,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

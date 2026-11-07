@@ -21,7 +21,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, ton
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -106,7 +106,59 @@ function chaiseMorceaux(c){
   return out;
 }
 
+/* Le fauteuil (image de Yo, 7 novembre 2026 : « Voici le fauteuil ») : deux gros coussins dodus de lin écru (l'assise et le dos),
+   bombés ; tout autour un bois rond et doux : deux montants arrière plus hauts que le dossier, un peu plus épais en haut,
+   penchés en arrière, reliés par un haut de dossier cintré ; deux gros accoudoirs ronds qui dépassent devant, sur deux
+   montants avant ; une ceinture de bois sous l'assise ; les pieds courts et ronds sont le bas des montants. Le bois prend la
+   couleur (sa teinte) ; les coussins restent en lin écru. Le dessus de l'assise à .52 (gestes.js s'y assoit) ; le devant vers +z */
+const LIN = 0xE8DCC0;
+/* Un coussin : une boîte ronde dont une face est bombée (axe 1 : le dessus, axe 2 : le devant) */
+function coussin(w, h, d, r, bombe, axe){
+  const g = boiteRonde(w, h, d, r, 3, axe === 1 ? [3, 1, 3] : [3, 3, 1]), P = g.attributes.position, demi = [w / 2, h / 2, d / 2];
+  const [a, b] = axe === 1 ? [0, 2] : [0, 1];
+  for(let i = 0; i < P.count; i++){
+    const v = [P.getX(i), P.getY(i), P.getZ(i)];
+    if(v[axe] <= 0) continue;
+    const u = v[a] / demi[a], t = v[b] / demi[b], k = Math.max(0, 1 - u * u) * Math.max(0, 1 - t * t) * (v[axe] / demi[axe]);
+    v[axe] += bombe * k; P.setXYZ(i, v[0], v[1], v[2]);
+  }
+  g.computeVertexNormals(); return g;
+}
+/* Un montant rond, un peu plus épais en haut (r0 en bas, r1 en haut), les deux bouts arrondis */
+function fuseau(r0, r1, h, seg = 10){
+  const p = [];
+  for(let j = 0; j <= 3; j++){ const a = j / 3 * Math.PI / 2; p.push(new THREE.Vector2(r0 * Math.sin(a), r0 - r0 * Math.cos(a))); }
+  for(let j = 0; j <= 4; j++){ const a = j / 4 * Math.PI / 2; p.push(new THREE.Vector2(r1 * Math.cos(a), h - r1 + r1 * Math.sin(a))); }
+  return new THREE.LatheGeometry(p, seg);
+}
+const FT = {x: .45, zAv: .29, zAr: -.31, haut: .52, pente: .07};
+const FT_ARRIERE = fuseau(.092, .112, 1.04);
+const FT_AVANT = baton(.098, .62, true, false, 10);
+const FT_ACCOUDOIR = baton(.106, .84, true, true, 12);
+const FT_FACE = boiteRonde(.86, .15, .12, .045, 2);                      // la ceinture : devant et derrière
+const FT_COTE = boiteRonde(.12, .15, .58, .045, 2);                      // la ceinture : les côtés
+const FT_HAUT = (() => { const g = boiteRonde(.8, .16, .1, .045, 2, [4, 1, 1]), P = g.attributes.position;   // le haut du dossier, cintré
+  for(let i = 0; i < P.count; i++){ const u = P.getX(i) / .4, b = 1 - u * u; P.setY(i, P.getY(i) + .055 * b); }
+  g.computeVertexNormals(); return g; })();
+const FT_ASSISE = coussin(.8, .22, .68, .08, .04, 1);
+const FT_DOS = coussin(.72, .52, .2, .08, .05, 2);
+function fauteuilMorceaux(c){
+  const o = ombreBois(0, 1.1), ol = ombreBois(.1, 1.1), out = [];
+  for(const sx of [-1, 1]){
+    out.push({geo: FT_ARRIERE, m: M4(sx * FT.x, 0, FT.zAr, -FT.pente), c, ombre: o});             // les montants arrière (et leurs pieds)
+    out.push({geo: FT_AVANT, m: M4(sx * FT.x, 0, FT.zAv), c, ombre: o});                         // les montants avant (et leurs pieds)
+    out.push({geo: FT_ACCOUDOIR, m: M4(sx * (FT.x + .01), .66, FT.zAr - .07, Math.PI / 2, 0, 0, .95, 1, .95), c, ombre: o});   // les accoudoirs, qui dépassent devant
+    out.push({geo: FT_COTE, m: M4(sx * FT.x, .27, (FT.zAv + FT.zAr) / 2), c, ombre: o});         // la ceinture, sur les côtés
+  }
+  out.push({geo: FT_FACE, m: M4(0, .27, FT.zAv), c, ombre: o}, {geo: FT_FACE, m: M4(0, .27, FT.zAr), c, ombre: o});
+  out.push({geo: FT_HAUT, m: M4(0, .95, FT.zAr - .95 * FT.pente - .01, -FT.pente), c, ombre: o});   // le haut du dossier
+  out.push({geo: FT_ASSISE, m: M4(0, FT.haut - .22 / 2 - .04, .05), c: LIN, ombre: ol});        // le coussin de l'assise, bombé
+  out.push({geo: FT_DOS, m: M4(0, .78, -.21, -.15), c: LIN, ombre: ol});                         // le coussin du dos, penché
+  return out;
+}
+
 const BUILD = {
+  fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
   tabouret(g, m){ g.add(modeleBois("tabouret", m, tabouretMorceaux)); },
   pot(g, m){

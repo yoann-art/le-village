@@ -20,7 +20,7 @@ import { toast } from "./interface.js";
 import { jouer } from "./sons.js";
 
 /* Ce qu'on peut faire avec chaque objet : s'asseoir (la hauteur du siège), s'allonger, l'allumer et l'éteindre, le toucher */
-const SIEGES = {tabouret: .46, chaise: .46, banc: .4};   // la hauteur du dessus de chaque siège (meubles.js)
+const SIEGES = {tabouret: .46, chaise: .46, fauteuil: .52, banc: .4};   // la hauteur du dessus de chaque siège (meubles.js)
 const LIT = {lit: .44};
 const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLucioles"), "cheminee"]);
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
@@ -33,11 +33,11 @@ const versPiece = (it, lx, lz) => { const a = -(it.rot || 0) * Math.PI / 2, c = 
 const versMeuble = (it, x, z) => { const a = -(it.rot || 0) * Math.PI / 2, c = Math.cos(a), s = Math.sin(a), dx = x - it.x, dz = z - it.z;
   return {x: dx * c - dz * s, z: dx * s + dz * c}; };
 
-/* S'asseoir : sur la chaise, face au devant (le dossier derrière) ; sur le banc, à la place la plus proche, du côté où l'on est ;
+/* S'asseoir : sur la chaise ou le fauteuil, face au devant (le dossier derrière) ; sur le banc, à la place la plus proche, du côté où l'on est ;
    sur le tabouret, tourné comme on était */
 function asseoir(it){
   const p = player.position, h = SIEGES[it.type];
-  if(it.type === "chaise"){ const q = versPiece(it, 0, .1), f = versPiece(it, 0, 1); poser({type: "assis", it, x: q.x, y: h, z: q.z, fx: f.x - it.x, fz: f.z - it.z}); return; }
+  if(it.type === "chaise" || it.type === "fauteuil"){ const q = versPiece(it, 0, it.type === "fauteuil" ? .06 : .1), f = versPiece(it, 0, 1); poser({type: "assis", it, x: q.x, y: h, z: q.z, fx: f.x - it.x, fz: f.z - it.z}); return; }
   if(it.type === "banc"){
     const l = versMeuble(it, p.x, p.z), cote = l.z >= 0 ? 1 : -1, q = versPiece(it, l.x >= 0 ? .38 : -.38, cote * .08), f = versPiece(it, 0, cote);
     poser({type: "assis", it, x: q.x, y: h, z: q.z, fx: f.x - it.x, fz: f.z - it.z}); return;

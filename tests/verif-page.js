@@ -684,7 +684,7 @@ export async function verifier(){
     const btnG = $("#btn-geste"), {seLever} = await import("../js/monde/personnage.js");
     await entrer(scierie);
     try {
-    sacAdd("chaise", 1); sacAdd("chandelle", 1);
+    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("fauteuil", 1);
     $("#btn-deco").click(); await wait(200);
     addMeuble("chaise"); addMeuble("chandelle");
     $("#deco-done").click(); await wait(200);
@@ -701,6 +701,17 @@ export async function verifier(){
     if(posture() || player.position.y !== 0 || Math.abs(player.position.x - x0) > .01) throw new Error("il ne se relève pas là où il était");
     /* éteindre et rallumer la chandelle (la chaise ôtée : la chandelle est la seule dans la pièce) */
     items.splice(items.indexOf(chaise), 1); removeItemMesh(chaise.id);
+    /* s'asseoir dans le fauteuil (chantier de la décoration), puis se lever ; il est ôté ensuite */
+    $("#btn-deco").click(); await wait(200); addMeuble("fauteuil"); $("#deco-done").click(); await wait(200);   // posé seul, la chaise ôtée
+    const fauteuil = items.find(it => it.type === "fauteuil");
+    if(!fauteuil) throw new Error("le fauteuil ne se pose pas");
+    placePlayer(fauteuil.x + 1, fauteuil.z, -1, 0); updateGestes(true);
+    if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près du fauteuil, le bouton dit « ${btnG.textContent} »`);
+    faireGeste();
+    if(posture() !== "assis" || player.position.y < .05 || Math.abs(player.position.x - fauteuil.x) > .2) throw new Error("le personnage ne s'assoit pas dans le fauteuil");
+    updateGestes(true); faireGeste();
+    if(posture()) throw new Error("il ne se lève pas du fauteuil");
+    items.splice(items.indexOf(fauteuil), 1); removeItemMesh(fauteuil.id);
     placePlayer(chandelle.x + .8, chandelle.z, -1, 0); updateGestes(true);
     if(!btnG.textContent.includes("Éteindre la chandelle")) throw new Error(`près de la chandelle, le bouton dit « ${btnG.textContent} »`);
     faireGeste();
@@ -736,7 +747,7 @@ export async function verifier(){
     updateGestes(true); faireGeste();
     if((state.ile[i] || {}).eteint) throw new Error("le feu de camp ne se rallume pas");
     setObj(i, null);
-    return "assis sur la chaise puis levé à sa place, allongé dans un lit (les yeux en l'air), relevé quand le lit disparaît ; la chandelle et un feu de camp dehors éteints puis rallumés";
+    return "assis sur la chaise puis levé à sa place, assis dans le fauteuil, allongé dans un lit (les yeux en l'air), relevé quand le lit disparaît ; la chandelle et un feu de camp dehors éteints puis rallumés";
   });
   if(scierie) await etape("Améliorer la Scierie : elle change d'allure au niveau 2", async () => {
     sacAdd("bois", 18); sacAdd("pierre", 9); sacAdd("fibre", 6);
@@ -3012,7 +3023,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise"]) if(!ks.includes(t)) throw new Error(`${t === "chaise" ? "la chaise refaite" : "le tabouret refait"} n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
