@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tabouret:C.wood, pot:C.clay, lan
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -154,6 +154,43 @@ function fauteuilMorceaux(c){
   out.push({geo: FT_HAUT, m: M4(0, .95, FT.zAr - .95 * FT.pente - .01, -FT.pente), c, ombre: o});   // le haut du dossier
   out.push({geo: FT_ASSISE, m: M4(0, FT.haut - .22 / 2 - .04, .05), c: LIN, ombre: ol});        // le coussin de l'assise, bombé
   out.push({geo: FT_DOS, m: M4(0, .78, -.21, -.15), c: LIN, ombre: ol});                         // le coussin du dos, penché
+  return out;
+}
+
+/* Le banc (image de Yo, 7 novembre 2026 : « Voici le banc ») : une épaisse planche aux bouts tout arrondis vue de dessus (une
+   pilule), le bord tout rond ; deux gros pieds pleins, plus larges en bas, aux arêtes arrondies, un peu rentrés sous la
+   planche. Tout d'un seul bois. Le dessus à .4, comme avant (gestes.js : deux places, de chaque côté) */
+const BC = {long: 1.4, prof: .5, ep: .17, R: .21};
+/* Une galette : vue de dessus un rectangle aux coins arrondis (rayon R), le bord tout rond (rayon r), épaisse de h ; lisse,
+   sans couture (le tour suit le bord, le dessus et le dessous en éventail) */
+function galette(L, D, h, R, r, nc = 7, nr = 4){
+  const ax = L / 2 - R, az = D / 2 - R, tour = [];                      // le tour : centre du coin + (R − r) vers la normale
+  for(const [sx, sz, a0] of [[1, 1, 0], [-1, 1, Math.PI / 2], [-1, -1, Math.PI], [1, -1, Math.PI * 1.5]])
+    for(let k = 0; k <= nc; k++){ const a = a0 + k / nc * Math.PI / 2, nx = Math.cos(a), nz = Math.sin(a);
+      tour.push([sx * ax + (R - r) * nx, sz * az + (R - r) * nz, nx, nz]); }
+  const prof = [];                                                     // le bord : du dessous au dessus, [écart, y, normale en écart, normale en y]
+  for(let k = 0; k <= nr; k++){ const a = k / nr * Math.PI / 2; prof.push([r * Math.sin(a), -h / 2 + r - r * Math.cos(a), Math.sin(a), -Math.cos(a)]); }
+  for(let k = 1; k <= nr; k++){ const a = k / nr * Math.PI / 2; prof.push([r * Math.cos(a), h / 2 - r + r * Math.sin(a), Math.cos(a), Math.sin(a)]); }
+  const pos = [], nor = [], idx = [], T = tour.length, Pn = prof.length;
+  for(const [o, y, no, ny] of prof) for(const [x, z, nx, nz] of tour){ pos.push(x + nx * o, y, z + nz * o); nor.push(nx * no, ny, nz * no); }
+  for(let j = 0; j < Pn - 1; j++) for(let i = 0; i < T; i++){ const i2 = (i + 1) % T, a = j * T + i, b = j * T + i2, c = (j + 1) * T + i, d = (j + 1) * T + i2;
+    idx.push(a, c, b, b, c, d); }
+  for(const [y, ny, rang] of [[-h / 2, -1, 0], [h / 2, 1, Pn - 1]]){     // le dessous et le dessus, en éventail
+    const c0 = pos.length / 3; pos.push(0, y, 0); nor.push(0, ny, 0);
+    const d0 = pos.length / 3; for(const [x, z] of tour){ pos.push(x, y, z); nor.push(0, ny, 0); }
+    for(let i = 0; i < T; i++){ const i2 = (i + 1) % T; if(ny > 0) idx.push(c0, d0 + i2, d0 + i); else idx.push(c0, d0 + i, d0 + i2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+  return g;
+}
+const BC_PLANCHE = galette(BC.long, BC.prof, BC.ep, BC.R, .08);
+const BC_PIED = (() => { const h = .3, g = boiteRonde(.22, h, .42, .06, 2, [1, 2, 1]), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const t = .5 - P.getY(i) / h; P.setX(i, P.getX(i) * (.82 + .5 * t)); P.setZ(i, P.getZ(i) * (.96 + .1 * t)); }   // plus large en bas
+  g.computeVertexNormals(); return g; })();
+function bancMorceaux(c){
+  const o = ombreBois(0, .4), out = [{geo: BC_PLANCHE, m: M4(0, .4 - BC.ep / 2, 0), c, ombre: o}];
+  for(const sx of [-1, 1]) out.push({geo: BC_PIED, m: M4(sx * .44, .14, 0), c, ombre: o});
   return out;
 }
 
@@ -299,10 +336,7 @@ const BUILD = {
     }
     g.add(part(G.box, C.gold, .16, .16, .05, 0, .46, .37));                            // serrure
   },
-  banc(g, m){
-    g.add(part(G.box, m, 1.5, .1, .45, 0, .35, 0));                                   // planche
-    for(const x of [-.62, .62]) g.add(part(G.box, C.dark, .1, .35, .4, x, .175, 0));   // pieds
-  },
+  banc(g, m){ g.add(modeleBois("banc", m, bancMorceaux)); },
   etagere(g, m){
     for(const x of [-.66, .66]) g.add(part(G.box, C.dark, .08, 1.6, .45, x, .8, 0));  // montants
     g.add(part(G.box, m, 1.4, 1.6, .04, 0, .8, -.2));                                 // fond
