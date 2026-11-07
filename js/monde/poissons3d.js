@@ -2068,6 +2068,79 @@ function thonFait(){
 }
 export const thonModele = () => modeleDe(thonFait());
 
+/* ---------- La raie ----------
+   D'après l'image de Yo (7 novembre 2026 : « Voici la raie »), comme une vraie raie bouclée (Raja clavata ; choix de Yo :
+   « A », comme la nature) : le corps plat en losange, le museau court et pointu, le bord lisse (de la même peau que le dos) ;
+   le dos brun sable semé de taches claires et sombres, le ventre blanc. Sur le dos, la rangée d'épines du milieu jusqu'au
+   bout de la queue, et ses « boucles » semées ici et là : de grosses épines sur un bouton rond (son nom). Les deux yeux
+   gris-brun sur le dessus, et juste derrière les deux petits trous ronds (les évents) ; les nageoires arrondies de chaque
+   côté de la queue ; la queue annelée de clair et de sombre, ses deux petites nageoires près du bout.
+   Faite à plat (le dos vers +y), puis tournée le dos vers +z : en main, elle montre son dos, comme l'image. */
+const RAIE = {dos: 0x96704C, dosClair: 0xAA845E, ventre: 0xF0E6DA, clair: 0xE6CC9C, sombre: 0x6A4630, epine: 0xF2E2C2,
+  bouton: 0xC8A478, iris: 0x7A6A54, cercle: 0x5A4A36, event: 0x2E2018, anneau: 0x7A5434, nag: 0xB08050};
+const RAIE_F = corps(-.34, .2,
+  courbe([[0, .004], [.15, .016], [.3, .03], [.45, .04], [.65, .038], [.85, .032], [1, .026]]),
+  courbe([[0, .003], [.15, .01], [.3, .018], [.45, .024], [.65, .024], [.85, .022], [1, .02]]),
+  courbe([[0, .006], [.1, .07], [.25, .175], [.4, .27], [.48, .3], [.56, .29], [.7, .245], [.85, .16], [1, .045]]));
+const QUEUE_R = courbe([[0, .03], [.15, .022], [.5, .014], [.85, .009], [1, .004]]);
+const RAIE_Q = corps(.16, .62, u => QUEUE_R(u), u => QUEUE_R(u) * .8, u => QUEUE_R(u) * 1.25);
+let raieGeo = null;
+function raieFait(){
+  if(raieGeo) return raieGeo;
+  const C = RAIE, F = RAIE_F, Q = RAIE_Q, M = [];
+  const hache = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+  /* le disque : brun sable dessus, un peu plus clair vers le bord, blanc dessous */
+  M.push({geo: corpsGeo(F.x0, F.x1, F.haut, F.bas, F.large, 64, 40), m: new THREE.Matrix4(), c: 0xFFFFFF,
+    couleur: (x, y, z) => { if(y < -.002) return C.ventre; const l = F.large(F.uDe(x)); return melange(C.dos, C.dosClair, Math.pow(Math.abs(z) / Math.max(.01, l), 3)); },
+    ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .03))});
+  /* un point du dos : u le long du disque, f de −1 à 1 en travers */
+  const surDos = (u, f) => { const s = f < 0 ? -1 : 1, a = Math.acos(Math.min(.98, Math.abs(f))); return [F.peau(u, a, s), F.normale(u, a, s)]; };
+  /* les taches claires et sombres, de tailles diverses */
+  for(let i = 0; i < 130; i++){
+    const u = .12 + .85 * hache(i, 1.7), f = (hache(i, 5.3) * 2 - 1) * .9, sombre = hache(i, 9.1) < .45;
+    const [p, n] = surDos(u, f), e = sombre ? .007 + .008 * hache(i, 2.2) : .0045 + .004 * hache(i, 3.3);
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, .0003), versN(n), V(e, .0006, e)), c: sombre ? C.sombre : C.clair});
+  }
+  /* la rangée d'épines du milieu, du dos jusqu'au bout de la queue */
+  const EPINE = new THREE.ConeGeometry(1, 1, 6).translate(0, .5, 0);
+  for(let x = -.17; x < .6; x += .028){
+    const sur = x < .17 ? F.haut(F.uDe(x)) : Q.haut(Q.uDe(x)), h = x < .17 ? .02 : .016 * (1 - (x - .17) / .7);
+    M.push({geo: EPINE, m: new THREE.Matrix4().compose(V(x, sur - .003, 0), tourne(0, 0, -.35), V(.0055, h, .0055)), c: C.epine});
+  }
+  /* les « boucles » : de grosses épines sur un bouton rond, semées sur le dos */
+  for(let i = 0; i < 16; i++){
+    const u = .3 + .62 * hache(i, 12.5), f = (hache(i, 7.7) < .5 ? -1 : 1) * (.15 + .55 * hache(i, 4.4)), [p, n] = surDos(u, f);
+    M.push({geo: BOULE_P, m: new THREE.Matrix4().compose(p.clone(), versN(n), V(.014, .004, .014)), c: C.bouton});
+    M.push({geo: EPINE, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, .001), versN(n), V(.006, .022, .006)), c: C.epine});
+  }
+  /* les yeux gris-brun sur le dessus, sur leur bosse, et les évents juste derrière */
+  for(const s of [-1, 1]){
+    const [p, n] = surDos(.3, s * .17);
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(p.clone(), versN(n), V(.024, .012, .019)), c: C.dos});
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, .008), versN(n), V(.014, .007, .012)), c: C.cercle});
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, .0105), versN(n), V(.0118, .006, .0098)), c: C.iris});
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(p.clone().addScaledVector(n, .013), versN(n), V(.0068, .004, .0032)), c: 0x141010});
+    const [q, m] = surDos(.36, s * .2);
+    M.push({geo: ROND, m: new THREE.Matrix4().compose(q.addScaledVector(m, .0005), versN(m), V(.009, .003, .0075)), c: C.event});
+  }
+  /* les nageoires arrondies de chaque côté de la queue */
+  for(const s of [-1, 1]) M.push({geo: ROND, m: new THREE.Matrix4().compose(V(.2, -.004, s * .055), tourne(0, s * .4, 0), V(.055, .008, .035)), c: C.dos});
+  /* la queue, annelée de clair et de sombre */
+  M.push({geo: corpsGeo(Q.x0, Q.x1, Q.haut, Q.bas, Q.large, 50, 12), m: new THREE.Matrix4(), c: 0xFFFFFF,
+    couleur: (x, y) => { if(y < -.004) return C.ventre; const k = (x - .2) / .045; return k > 0 && k - Math.floor(k) < .4 ? C.anneau : C.dos; }});
+  /* ses deux petites nageoires près du bout, sur le dessus */
+  for(const x0 of [.5, .555]){
+    const y0 = Q.haut(Q.uDe(x0)) - .002, x1 = x0 + .035, y1 = Q.haut(Q.uDe(x1)) - .002;
+    nageoire(M, nageoireGeo(V(x0, y0, 0), V(x1, y1, 0), t => { const a = Math.PI * t; return V(x0 + .035 * t + .008 * Math.sin(a), y0 + (y1 - y0) * t + .022 * Math.sin(a), 0); }, 10, .003),
+      new THREE.Matrix4(), () => C.nag);
+  }
+  const g = fusionner(M);
+  g.rotateX(Math.PI / 2 - .4);                                    // le dos vers +z, un peu penchée : ses épines se voient de profil
+  g.computeBoundingSphere();
+  return raieGeo = g;
+}
+export const raieModele = () => modeleDe(raieFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -2089,5 +2162,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   maquereau: {fabrique: maquereauModele, echelle: 1},
   lieuJaune: {fabrique: lieuJauneModele, echelle: 1},
   thon: {fabrique: thonModele, echelle: 1},
+  raie: {fabrique: raieModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
