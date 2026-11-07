@@ -1033,6 +1033,48 @@ export const COULEURS = {
   creme: {nom:"Crème", hex:0xF2E2C2}
 };
 export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
+/* Les couleurs par ressource (chantier de la décoration, Yo, 7 novembre 2026) : chaque meuble a UNE couleur de départ,
+   celle de sa matière ; on la change avec une ressource, et chaque changement en coûte une (Yo : « cela permettra au joueur
+   de récupérer cette ressource à chaque fois »). Chaque essence d'arbre, chaque pierre et minerai, chaque métal, chaque
+   teinture donne sa propre couleur (Yo : « toutes les essences d'arbres qui seront présentes dans le jeu, tous les minerais,
+   toutes les ressources nécessaires »). La palette gratuite (COULEURS) n'est plus proposée : un meuble déjà peint avec
+   elle garde sa couleur. MATIERE : la matière de la partie qui prend la couleur (le bois de la chaise, la couverture du lit,
+   le bougeoir de cuivre de la chandelle) ; la première teinte de chaque matière est celle de départ. */
+export const MATIERE = {chaise:"bois", tabouret:"bois", banc:"bois", table:"bois", etagere:"bois", tonneau:"bois", coffre:"bois",
+  vitrine:"bois", torchere:"bois", bocalLucioles:"bois", etabli:"bois", atelierDeco:"bois", comptoir:"bois", trone:"bois",
+  pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
+  chandelle:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
+  brasero:"metal", lampadaire:"metal", enclume:"metal",
+  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu"};
+/* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */
+export const DEPART = {chandelier:"argent"};
+const nomBois = p => p.nom.replace(/^Bois d(e |')/, "").replace(/^./, c => c.toUpperCase());
+export const TEINTES = {
+  /* le chêne de l'île (le bois, les planches), puis chaque bois coupé (PRODUITS.bois : un nouveau bois y entre tout seul) */
+  bois: [{k:"bois", nom:"Chêne", hex:0xC8955A}, ...Object.entries(PRODUITS).filter(([, p]) => p.bois !== undefined).map(([k, p]) => ({k, nom:nomBois(p), hex:p.bois}))],
+  /* la pierre des champs, puis chaque pierre et minerai (PIERRES, sans la géode, qu'on ouvre) ; une nouvelle pierre ajoute la sienne ici */
+  pierre: [{k:"pierre", nom:"Pierre des champs", hex:0xA8A49A}, {k:"granit", nom:"Granit", hex:0x8E8A88}, {k:"marbre", nom:"Marbre", hex:0xEDEAE2},
+    {k:"quartz", nom:"Quartz", hex:0xDCE2E8}, {k:"amethyste", nom:"Améthyste", hex:0x8A5AB0}, {k:"grenat", nom:"Grenat", hex:0x8A1E2E},
+    {k:"quartzRose", nom:"Quartz rose", hex:0xF0B8C0}, {k:"citrine", nom:"Citrine", hex:0xE8B030}, {k:"oeilTigre", nom:"Œil-de-tigre", hex:0xB07A2A},
+    {k:"charbon", nom:"Charbon", hex:0x2E2C2A}],
+  metal: [{k:"cuivre", nom:"Cuivre", hex:0xB87333}, {k:"etain", nom:"Étain", hex:0xB8BCC0}, {k:"bronze", nom:"Bronze", hex:0x9C7A3C},
+    {k:"argent", nom:"Argent", hex:0xC8CCD0}, {k:"or", nom:"Or", hex:0xD4AF37}],
+  /* le lin écru des fibres, puis les teintures de vraies plantes de l'île (la vraie nature : le coquelicot, le bleuet, le
+     pissenlit, la violette et la groseille teignent ; le thym donne un vert-jaune) */
+  tissu: [{k:"fibre", nom:"Lin écru", hex:0xE8DCC0}, {k:"coquelicot", nom:"Rouge coquelicot", hex:0xC8402E}, {k:"bleuet", nom:"Bleu bleuet", hex:0x4A6FC0},
+    {k:"pissenlit", nom:"Jaune pissenlit", hex:0xE8C030}, {k:"violette", nom:"Violet", hex:0x7A4AA8}, {k:"baie", nom:"Rose groseille", hex:0xD86A80},
+    {k:"thym", nom:"Vert thym", hex:0x8A9A4A}]
+};
+/* Les teintes d'un meuble (vide s'il n'en a pas), sa teinte de départ, et la couleur à dessiner : sa teinte, l'ancienne
+   couleur de la palette gratuite s'il en a une, sinon celle de départ */
+export const teintesDe = type => TEINTES[MATIERE[type]] || [];
+export const departDe = type => { const l = teintesDe(type); return l.find(t => t.k === DEPART[type]) || l[0] || null; };
+export function couleurMeuble(type, color){
+  const t = teintesDe(type).find(x => x.k === color);
+  if(t) return t.hex;
+  if(COULEURS[color]) return COULEURS[color].hex;
+  const d = departDe(type); return d ? d.hex : null;
+}
 /* Les revêtements des pièces (demande de Yo, 29 octobre 2026 : « chaque intérieur soit tous identiques et basique au départ
    et que l'on pourra transformer en fonction des ressources (mur, sol,..) » ; la bible : « Tous les intérieurs se décorent
    librement, murs et sols compris ») : au départ, partout, un sol de terre battue et des murs de torchis clair ; ensuite,

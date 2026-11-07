@@ -3,7 +3,7 @@
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
 import { G, part, toon } from "./formes.js";
-import { MEUBLES, COULEURS, ATELIERS } from "../donnees.js";
+import { MEUBLES, COULEURS, ATELIERS, couleurMeuble } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
@@ -314,7 +314,8 @@ function torcheSur(g, x, y, z){
    (la pierre qu'expose une vitrine, la torche posée sur une torchère) */
 export function makeMeuble(type, color, o){
   const g = new THREE.Group();
-  BUILD[type](g, COULEURS[color] ? COULEURS[color].hex : ORIGIN[type], o);
+  const hex = couleurMeuble(type, color);                            // sa teinte, l'ancienne couleur, ou celle de départ (donnees.js)
+  BUILD[type](g, hex !== null ? hex : ORIGIN[type], o);
   if(PRISE[type]){ const [w, h, d, y] = PRISE[type], p = new THREE.Mesh(BOITE, INVISIBLE); p.scale.set(w, h, d); p.position.y = y; g.add(p); }
   return g;
 }

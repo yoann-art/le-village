@@ -651,6 +651,28 @@ export async function verifier(){
     await sortir();
     return "la Scierie commence en terre battue et torchis ; un parquet de pin posé sur une case, un lambris de pin sur le mur du fond, puis enlevés et rendus au sac";
   });
+  /* les couleurs par ressource (Yo, 7 novembre 2026) : une couleur de départ, chaque changement coûte une ressource ; chaque
+     essence, chaque pierre et minerai a la sienne ; un meuble peint avec l'ancienne palette garde sa couleur */
+  if(scierie) await etape("Les couleurs par ressource : chaque changement coûte une ressource, chaque bois et chaque pierre a sa couleur", async () => {
+    const {teindre} = await import("../js/decorer.js");
+    const {TEINTES, PRODUITS, PIERRES, COULEURS, couleurMeuble} = await import("../js/donnees.js");
+    const cles = Object.values(TEINTES).flat().map(t => t.k), hex = Object.values(TEINTES).flat().map(t => t.hex);
+    const bois = Object.keys(PRODUITS).filter(k => PRODUITS[k].bois !== undefined), pierres = Object.keys(PIERRES).filter(k => k !== "geode");
+    const manque = [...bois, ...pierres].filter(k => !cles.includes(k));
+    if(manque.length) throw new Error(`sans couleur : ${manque.join(", ")}`);
+    if(new Set(hex).size !== hex.length) throw new Error("deux ressources donnent la même couleur");
+    const etabli = scierie.deco.items.find(it => it.type === "etabli");
+    if(couleurMeuble("etabli", etabli.color) !== TEINTES.bois[0].hex) throw new Error("l'établi ne commence pas en chêne");
+    payer({boisPin: owned("boisPin")});
+    if(!teindre(etabli, "boisPin") || etabli.color) throw new Error("sans bois de pin, l'établi a changé de couleur");
+    sacAdd("boisPin", 1);
+    if(teindre(etabli, "boisPin") || etabli.color !== "boisPin" || owned("boisPin") !== 0) throw new Error("le bois de pin ne teint pas l'établi, ou n'est pas dépensé");
+    if(teindre(etabli, "boisPin")) throw new Error("garder la même couleur coûte encore");
+    if(!teindre(etabli, "granit")) throw new Error("le granit teint un meuble de bois");
+    if(couleurMeuble("chaise", "miel") !== COULEURS.miel.hex) throw new Error("une chaise peinte avec l'ancienne palette perd sa couleur");
+    delete etabli.color;
+    return `${cles.length} couleurs (${TEINTES.bois.length} bois, ${TEINTES.pierre.length} pierres et minerais, ${TEINTES.metal.length} métaux, ${TEINTES.tissu.length} teintures) ; l'établi teint en pin pour 1 bois de pin, refusé sans, gratuit pour la même ; l'ancienne palette gardée`;
+  });
   if(scierie) await etape("Améliorer la Scierie : elle change d'allure au niveau 2", async () => {
     sacAdd("bois", 18); sacAdd("pierre", 9); sacAdd("fibre", 6);
     const avant = toitDe(scierie);

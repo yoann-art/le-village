@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, REVETEMENTS } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, REVETEMENTS, teintesDe, departDe } from "./donnees.js";
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -269,11 +269,35 @@ function swatches(target, current){
   return `<div class="swatches">${one("", "D'origine", "", "↺")}` +
     COULEURS_ORDER.map(k => one(k, COULEURS[k].nom, `style="--sw:${hexCss(COULEURS[k].hex)}"`, "")).join("") + `</div>`;
 }
+/* Les couleurs par ressource (Yo, 7 novembre 2026 ; TEINTES dans donnees.js) : chaque teinte coûte une de sa ressource,
+   à chaque changement ; celle qu'il a déjà ne coûte rien. Une ancienne couleur de la palette gratuite reste affichée,
+   sans pouvoir la reprendre. */
+const teinteActuelle = it => it.color || (departDe(it.type) || {}).k;
+function teintesHTML(it){
+  const l = teintesDe(it.type), cur = teinteActuelle(it), ancienne = COULEURS[it.color];
+  if(!l.length) return `<p class="muted">Ce meuble garde sa couleur.</p>`;
+  return (ancienne ? `<p class="muted" style="margin:0 0 6px">Sa couleur d'avant : ${ancienne.nom.toLowerCase()}. Choisis-en une nouvelle avec une ressource.</p>` : "") +
+    `<div class="swatches">` + l.map(t => {
+      const n = owned(t.k), on = t.k === cur && !ancienne, ok = on || n > 0, o = objet(t.k);
+      const prix = on ? "la sienne" : `1 ${(o.nom || t.k).toLowerCase()} · ${n}`;
+      return `<div class="sw-item"><button class="swatch${on ? " on" : ""}" style="--sw:${hexCss(t.hex)}${ok ? "" : ";opacity:.35"}" data-teinte="${t.k}"
+        aria-label="${t.nom}${ok ? "" : " : il te manque la ressource"}">${ok ? "" : "🔒"}</button>${t.nom}<br><span style="font-size:11px">${prix}</span></div>`;
+    }).join("") + `</div>`;
+}
+/* Teindre un meuble posé avec la teinte k : coûte une de sa ressource (rien si c'est déjà la sienne). Rend un message, ou "" si c'est fait */
+export function teindre(it, k){
+  const t = teintesDe(it.type).find(x => x.k === k);
+  if(!t) return "Cette couleur ne va pas à ce meuble";
+  if(k === teinteActuelle(it) && !COULEURS[it.color]) return "";
+  if(owned(k) < 1){ const o = objet(k); return `Il te faut 1 ${(o.nom || k).toLowerCase()} pour cette couleur${o.aide ? ". " + o.aide : ""}`; }
+  addOwned(k, -1); it.color = k; refreshItemMesh(it); jouer("peindre"); save();
+  return "";
+}
 $("#deco-color").addEventListener("click", () => {
   if(!sel) return;
   const m = MEUBLES[sel.type];
   openSheet(`<div class="sh-head"><h2 class="display">🎨 ${m.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Touche une couleur : le meuble change tout de suite.</p>${swatches("item", sel.color)}`);
+    <p class="muted" style="margin:0 0 6px">Chaque couleur vient d'une ressource : en changer en coûte une.</p><div id="deco-teintes">${teintesHTML(sel)}</div>`);
 });
 /* ----- Les sols et les murs (demande de Yo, 29 octobre 2026) : on choisit un revêtement fabriqué, puis on touche les cases
    du sol (case par case, le doigt peut glisser) ou un mur (mur par mur) ; l'ancien revient dans le sac ; « Terre battue » ou
@@ -322,6 +346,13 @@ wrap.addEventListener("click", e => {
   if(deco && e.target.closest("[data-atelier]")){ openAtelier(deco.b); return; }
   const rv = e.target.closest("[data-revet]");
   if(rv && deco){ pose = {sol: rv.dataset.sol === "1", k: rv.dataset.revet || null}; sel = null; showSel(); closeSheet(); montrerPose(); return; }
+  const te = e.target.closest("[data-teinte]");
+  if(te && deco && sel){
+    const msg = teindre(sel, te.dataset.teinte);
+    if(msg) toast(`🎨 ${msg}`, 3200);
+    const box = document.getElementById("deco-teintes"); if(box) box.innerHTML = teintesHTML(sel);
+    showSel(); return;
+  }
   const btn = e.target.closest("[data-couleur]");
   if(!btn || !deco) return;
   const key = btn.dataset.couleur || undefined, target = btn.dataset.cible, d = deco.b.deco;
