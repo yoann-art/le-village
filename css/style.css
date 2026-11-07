@@ -178,6 +178,7 @@ button{font:inherit;color:inherit}
 .sh-head h2{font-size:30px;margin:0;line-height:1.05}
 .brow{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
 .brow .be{font-size:32px;width:42px;text-align:center;flex:none}
+.brow .be .ico-photo{width:42px;height:42px}   /* la photo d'un meuble refait, dans le catalogue de « Décorer » */
 .brow .bt{flex:1;min-width:0}
 .brow .bn{font-weight:700}
 .brow .st{color:var(--or);font-weight:700;margin-left:4px}

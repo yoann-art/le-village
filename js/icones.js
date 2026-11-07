@@ -24,8 +24,9 @@ import { herbesModele } from "./monde/herbes.js";
 import { caillouModele, pierreChamps } from "./monde/pierre.js";
 import { thymModele } from "./monde/thym.js";
 import { FLEURS } from "./donnees.js";
+import { makeMeuble, MEUBLES_REFAITS } from "./monde/meubles.js";
 
-const VERSION_ICONES = 4, CLE = "le-village-icones", TAILLE = 96;
+const VERSION_ICONES = 5, CLE = "le-village-icones", TAILLE = 96;
 /* Ce qu'on photographie : la clé de l'objet, et comment faire son modèle (en été, en fleur, de face : un mâle) */
 const PHOTOS = {};
 for(const k of Object.keys(MODELES_INSECTES)) PHOTOS[k] = () => MODELES_INSECTES[k].fabrique({saison: "ete"});
@@ -46,6 +47,9 @@ Object.assign(PHOTOS, {
   thym: () => thymModele("ete", "fleuri"),
   rocher: () => pierreChamps("ete")
 });
+/* Les meubles refaits d'après les images de Yo (chantier de la décoration) : leur photo, dans leur couleur de départ ; elle
+   sert aussi au catalogue de « Décorer » */
+for(const k of MEUBLES_REFAITS) PHOTOS[k] = () => makeMeuble(k);
 export const iconesPhoto = () => Object.keys(PHOTOS);
 
 /* Les photos déjà prises, gardées sur l'appareil */

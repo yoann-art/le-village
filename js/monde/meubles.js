@@ -2,7 +2,7 @@
    Les modèles 3D des meubles, en formes simples (phase 1), et leur place au sol.
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
-import { G, part, toon } from "./formes.js";
+import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS, couleurMeuble } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
 
@@ -26,16 +26,46 @@ const ORIGIN = {chaise:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, ton
   chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
+/* ---------- Les meubles refaits d'après les images de Yo (chantier de la décoration, étape 3) ----------
+   Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
+   matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
+   couleur, puis partagée. */
+export const MEUBLES_REFAITS = ["tabouret"];
+const formes = new Map();
+const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
+function modeleBois(type, hex, morceaux){
+  const cle = type + hex;
+  if(!formes.has(cle)) formes.set(cle, fusionner(morceaux(hex)));
+  const mesh = new THREE.Mesh(formes.get(cle), MAT_UNI); mesh.castShadow = mesh.receiveShadow = true;
+  return mesh;
+}
+const M4 = (x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, "YXZ")), new THREE.Vector3(sx, sy, sz));
+/* Le tabouret (image de Yo, 7 novembre 2026 : « Voici le tabouret ») : une épaisse assise ronde au bord tout arrondi, le dessus
+   à peine bombé ; trois gros pieds ronds, un peu plus larges en bas, au bout arrondi, écartés vers l'extérieur ; tout d'un
+   seul bois ; plus haut que large, comme l'image. Le dessus de l'assise à .46 (gestes.js s'y assoit) */
+const ASSISE = new THREE.LatheGeometry([[0, 0], [.15, 0], [.192, .012], [.214, .045], [.222, .085], [.218, .123], [.2, .152], [.16, .166], [0, .17]]
+  .map(([x, y]) => new THREE.Vector2(x, y)), 28);
+const PIED = (() => { const p = []; for(let k = 0; k <= 6; k++){ const a = k / 6 * Math.PI / 2; p.push(new THREE.Vector2(.068 * Math.sin(a), -.068 * Math.cos(a))); }   // le bout arrondi
+  p.push(new THREE.Vector2(.06, .3), new THREE.Vector2(0, .3)); return new THREE.LatheGeometry(p, 12); })();
+function tabouretMorceaux(c){
+  const o = ombreBois(0, .46), out = [{geo: ASSISE, m: M4(0, .29, 0), c, ombre: o}];   // l'assise, épaisse, de .29 à .46
+  for(let k = 0; k < 3; k++){
+    const a = k * Math.PI * 2 / 3 + Math.PI, bas = {x: Math.sin(a) * .2, z: Math.cos(a) * .2}, haut = {x: Math.sin(a) * .1, z: Math.cos(a) * .1};
+    const dx = haut.x - bas.x, dz = haut.z - bas.z, L = Math.hypot(dx, .25, dz);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(dx, .25, dz).normalize());
+    out.push({geo: PIED, m: new THREE.Matrix4().compose(new THREE.Vector3(bas.x, .066, bas.z), q, new THREE.Vector3(1, L / .3 * .95, 1)), c, ombre: o});
+  }
+  return out;
+}
+
 const BUILD = {
   chaise(g, m){
     g.add(part(G.box, m, .6, .1, .6, 0, .3, 0));                                      // assise
     for(const [x,z] of [[-.24,-.24],[.24,-.24],[-.24,.24],[.24,.24]]) g.add(part(G.cyl, C.dark, .07, .3, .07, x, .15, z));
     g.add(part(G.box, m, .6, .5, .08, 0, .6, -.26));                                  // dossier
   },
-  tabouret(g, m){
-    g.add(part(G.cyl, m, .44, .08, .44, 0, .32, 0));                                  // assise ronde
-    for(let k = 0; k < 3; k++){ const a = k * Math.PI * 2 / 3; g.add(part(G.cyl, C.dark, .06, .3, .06, Math.sin(a) * .14, .15, Math.cos(a) * .14)); }
-  },
+  tabouret(g, m){ g.add(modeleBois("tabouret", m, tabouretMorceaux)); },
   pot(g, m){
     g.add(part(G.cyl, m, .4, .3, .4, 0, .15, 0));                                     // pot
     g.add(part(G.cyl, m, .46, .06, .46, 0, .3, 0));                                   // rebord

@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, REVETEMENTS, teintesDe, departDe } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe } from "./donnees.js";
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -167,7 +167,7 @@ function planHTML(b){
   const m = MEUBLES[a.meuble], built = hasPlan(b), ok = !built && hasAll(a.cost), e = a.fem ? "e" : "", pr = a.fem ? "la" : "le";
   const chips = Object.entries(a.cost).map(([k, v]) => `<span class="chip ${owned(k) >= v ? "" : "short"}">${objet(k).emoji} ${owned(k)}/${v}</span>`).join("");
   return `<h3 style="margin:10px 0 2px">Plan de travail</h3>
-    <div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
+    <div class="brow"><div class="be" aria-hidden="true">${icone(a.meuble)}</div>
       <div class="bt"><span class="bn">${m.nom}</span>
         <p>${built ? `Déjà construit${e} : touche-${pr} dans la pièce pour ${pr} déplacer.` : `Pour ${a.pour}. Un seul par bâtiment.`}</p>
         ${built ? "" : `<div>${chips}</div>`}
@@ -199,7 +199,7 @@ $("#deco-cat").addEventListener("click", () => {
         const btn = ok ? `<button class="btn primary" data-meuble="${t}">Poser</button>`
           : craftable(t) && n === 0 && fab === here && hasPlan(deco.b) ? `<button class="btn primary" data-atelier>Fabriquer</button>`
           : `<button class="btn primary" disabled>Poser</button>`;
-        return `<div class="brow"><div class="be" aria-hidden="true">${m.emoji}</div>
+        return `<div class="brow"><div class="be" aria-hidden="true">${icone(t)}</div>
           <div class="bt"><span class="bn">${m.nom}${craftable(t) && n > 0 ? ` × ${n}` : ""}</span><p>${stock}. ${m.flat ? "À plat, on marche dessus. " : ""}${where}</p></div>
           ${btn}</div>`;
       }).join("")).join(""));

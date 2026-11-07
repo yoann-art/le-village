@@ -174,9 +174,11 @@ export const distanceDuBord = (x, z) => distanceBord(tileOf(x), tileOf(z));   //
    ponton, et plus loin de la côte que les poissons de la plage (au-delà de PECHE.plage[1] + 0,5 : la côte peut faire
    un coude) ; calculées une fois */
 const zonePonton = new Set();
+/* la zone du ponton : les cases dont le centre est à plus de 7 cases de la côte (une demi-case de plus que les 6,5 de la plage : un
+   poisson au bord d'une case reste plus loin que ceux de la plage ; la vérification en avait trouvé un à 6,3, 7 novembre 2026) */
 for(const j of pontonCases){ const px = j % N, pz = Math.floor(j / N);
   for(let dz = -2; dz <= 2; dz++) for(let dx = -2; dx <= 2; dx++){ const a = px + dx, b = pz + dz;
-    if(Math.hypot(dx, dz) < 2.2 && inb(a, b) && map.type[idx(a, b)] === "water" && distanceBord(a, b) > PECHE.plage[1] + .5) zonePonton.add(idx(a, b)); } }
+    if(Math.hypot(dx, dz) < 2.2 && inb(a, b) && map.type[idx(a, b)] === "water" && distanceBord(a, b) > PECHE.plage[1] + 1) zonePonton.add(idx(a, b)); } }
 const presDuPonton = (x, z) => { const a = tileOf(x), b = tileOf(z); return ici === "ile" && inb(a, b) && zonePonton.has(idx(a, b)); };
 function ajouterOmbre(k, cm, x, z, lieu){
   const p = POISSONS[k], L = .45 + .9 * Math.min(1, cm / 160), W = L * (FORMES[p.forme] || .42);
