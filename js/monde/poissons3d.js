@@ -1812,6 +1812,95 @@ function encornetFait(){
 }
 export const encornetModele = () => modeleDe(encornetFait());
 
+/* ---------- Le maquereau ----------
+   D'après l'image de Yo (7 novembre 2026 : « Voici le maquereau »), comme un vrai maquereau (Scomber scombrus ; choix de
+   Yo : « A », comme la nature) : le corps fuselé, le museau pointu aux lèvres fines ; la peau lisse et satinée (les écailles
+   minuscules) ; le dos bleu-vert barré de fines lignes sombres, presque noires, en zigzag ondulé, du dos jusqu'au milieu du
+   flanc ; le ventre argenté, sans taches. Le grand œil sombre cerclé d'argent. Deux nageoires du dos bien séparées, la
+   première épineuse ; derrière la seconde et l'anale, les cinq petites pinnules en haut et en bas ; les deux petites crêtes
+   de chaque côté avant la queue ; la queue bien fourchue ; la petite pectorale haute ; les nageoires grises. */
+const MAQUEREAU_F = corps(-.48, .36,
+  courbe([[0, .017], [.05, .04], [.14, .069], [.28, .091], [.42, .095], [.58, .083], [.72, .06], [.86, .034], [1, .019]]),
+  courbe([[0, .014], [.05, .034], [.14, .062], [.28, .083], [.42, .086], [.58, .076], [.72, .055], [.86, .032], [1, .017]]),
+  courbe([[0, .014], [.06, .031], [.15, .045], [.3, .054], [.45, .054], [.6, .047], [.75, .036], [.9, .023], [1, .018]]));
+const MAQUEREAU = {dos: 0x1C5E70, dosVert: 0x3A9488, flanc: 0xC4CED6, ventre: 0xF4F4F0, ligne: 0x0E1820, reflet: 0x8EC0B8,
+  tete: 0x24606E, joue: 0xD0D8DC, opercule: 0xA8B4BC, levre: 0xC4CCD0, bouche: 0x6E6468, iris: 0x22262C, cercle: 0xC8D0D6,
+  nag: 0x8C969E, nagBord: 0x56606A};
+let maquereauGeo = null;
+function maquereauFait(){
+  if(maquereauGeo) return maquereauGeo;
+  const C = MAQUEREAU, F = MAQUEREAU_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* la peau lisse : bleu-vert au dos et ses lignes sombres en zigzag, un reflet vert, argentée au flanc, blanche au ventre */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .4 ? melange(C.dosVert, C.dos, (h - .4) / .4) : h > 0 ? melange(C.flanc, C.dosVert, h / .4) : melange(C.flanc, C.ventre, -h / .6);
+    const r = Math.abs(h - .15);
+    if(r < .1) c = melange(c, C.reflet, .35 * (1 - r / .1));
+    if(u > .27 && u < .95 && h > .08){
+      const phase = u * 24 - h * 3 + .5 * Math.sin(h * 10), fr = phase - Math.floor(phase), e = .2 + .08 * Math.min(1, (h - .08) / .3);
+      const force = Math.min(1, (h - .08) / .14) * Math.min(1, (u - .27) / .04) * Math.min(1, (.95 - u) / .06);
+      if(fr < e) c = melange(c, C.ligne, .85 * force * Math.min(1, 3 * Math.min(fr, e - fr) / e + .3));
+    }
+    if(u < .27) c = melange(c, h > .25 ? C.tete : C.joue, Math.min(1, (.27 - u) / .05));
+    return c;
+  };
+  M.push({geo: corpsGeo(X0, X1, HAUT, BAS, LARGE, 150, 28), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: couleurCorps,
+    ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .15))});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X1, 0, 0), q0, V(.02, HAUT(1) * .9, LARGE(1) * .9)), c: 0xFFFFFF, couleur: couleurCorps});
+  /* l'ouïe : un arc fin derrière l'œil (la peau est lisse : pas d'opercule en relief) */
+  for(const s of [-1, 1]) for(let k = 0; k < 12; k++){ const a0 = -1 + k * .18, a1 = a0 + .18;
+    baton(M, C.opercule, F.peau(.25 + .035 * Math.cos(a0 * .9), a0, s).addScaledVector(F.normale(.25, a0, s), .0006), F.peau(.25 + .035 * Math.cos(a1 * .9), a1, s).addScaledVector(F.normale(.25, a1, s), .0006), .0018); }
+  oeil(M, F, {u: .13, a: .42, r: .034, iris: C.iris, cercle: C.cercle, narine: 0x2A4A56, uNarine: .06, aNarine: .6});
+  /* le museau pointu, les lèvres fines, la bouche jusque sous l'œil */
+  ovale(M, C.levre, V(X0 - .004, .001, 0), V(X0 + .08, -.006, 0), .014, .005);
+  ovale(M, C.levre, V(X0 + .002, -.012, 0), V(X0 + .08, -.014, 0), .013, .005);
+  ovale(M, C.bouche, V(X0 + .002, -.0055, 0), V(X0 + .075, -.009, 0), .011, .0025);
+  const nagC = (y0, sens, h) => (x, y) => melange(C.nag, C.nagBord, Math.pow(Math.max(0, (y - y0) * sens / h), 1.6));
+  /* la première nageoire du dos : épineuse, triangulaire */
+  const d0 = -.13, d1 = -.01, y0 = HAUT(uDe(d0)) - .008, y1 = HAUT(uDe(d1)) - .008, hD = .11;
+  const bordD = t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), f = t < .12 ? .55 + .45 * t / .12 : 1 - .92 * (t - .12) / .88;
+    return V(b.x + .02 + .04 * f, b.y + .004 + hD * f, 0); };
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), bordD, 14), new THREE.Matrix4(), nagC(y0, 1, hD));
+  for(let k = 0; k <= 9; k++){ const t = k / 9 * .9, b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), e = bordD(t);
+    baton(M, C.nagBord, b, e.clone().add(e.clone().sub(b).multiplyScalar(.05)), .0024); }
+  /* la seconde nageoire du dos et l'anale, petites, en face */
+  const petite = (x0, x1, sens, h) => { const yA = sens * ((sens > 0 ? HAUT : BAS)(uDe(x0)) - .006), yB = sens * ((sens > 0 ? HAUT : BAS)(uDe(x1)) - .005);
+    nageoire(M, nageoireGeo(V(x0, yA, 0), V(x1, yB, 0), t => { const b = V(x0, yA, 0).lerp(V(x1, yB, 0), t), f = t < .2 ? .5 + .5 * t / .2 : 1 - .75 * (t - .2) / .8;
+      return V(b.x + .02 + .03 * f, b.y + sens * (.004 + h * f), 0); }, 10), new THREE.Matrix4(), nagC(yA, sens, h)); };
+  petite(.07, .13, 1, .055);
+  petite(.09, .15, -1, .05);
+  /* les cinq pinnules en haut et en bas, jusqu'à la queue */
+  for(let k = 0; k < 5; k++){ const x = .165 + k * .03, w = .014;
+    for(const sens of [1, -1]){ const yA = sens * ((sens > 0 ? HAUT : BAS)(uDe(x)) - .004), yB = sens * ((sens > 0 ? HAUT : BAS)(uDe(x + w)) - .004);
+      nageoire(M, nageoireGeo(V(x, yA, 0), V(x + w, yB, 0), t => V(x + w * t + .014 * (1 - t * .5), yA + (yB - yA) * t + sens * .018 * (1 - t), 0), 4, .004), new THREE.Matrix4(), nagC(yA, sens, .018)); }
+  }
+  /* les deux petites crêtes de chaque côté, avant la queue */
+  for(const s of [-1, 1]) for(const a of [.28, -.28]){ const p0 = F.peau(.9, a, s), p1 = F.peau(.99, a, s);
+    ovale(M, C.dos, p0.add(V(0, 0, s * .003)), p1.add(V(0, 0, s * .003)), .004, .0035); }
+  /* la queue bien fourchue */
+  const qx = X1 - .012;
+  const bordQ = t => { const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .32, fourche = .025 + .15 * Math.pow(lobe, .8);
+    return V(qx + fourche + .015, y * (.72 + .28 * lobe), 0); };
+  nageoire(M, nageoireGeo(V(qx, .022, 0), V(qx, -.022, 0), bordQ, 24), new THREE.Matrix4(), (x, y) => {
+    const t = Math.max(0, Math.min(1, .5 - y / .32)), e = bordQ(t), k = (x - qx) / Math.max(.02, e.x - qx);
+    return melange(C.nag, C.nagBord, Math.pow(Math.max(0, Math.min(1, k)), 1.5)); });
+  /* les ventrales, sous les pectorales */
+  const peX = -.17;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .01, base = s * LARGE(uDe(peX)) * .45;
+    const g = nageoireGeo(V(-.02, 0, 0), V(.015, 0, 0), t => V(.02 + t * .05, -.055 + t * .045, 0), 8);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.3, 0, 0), V(1, 1, 1)), (x, y) => melange(C.nag, C.nagBord, (pY - y) / .07));
+  }
+  /* la petite pectorale, haute, juste derrière l'ouïe */
+  for(const s of [-1, 1]){
+    const p = F.peau(.3, .22, s);
+    const g = nageoireGeo(V(0, .014, 0), V(0, -.014, 0), t => V(.1 - Math.abs(t - .25) * .06, .004 - t * .035, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .008), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.nag, C.nagBord, (x - p.x) / .12));
+  }
+  return maquereauGeo = fusionner(M);
+}
+export const maquereauModele = () => modeleDe(maquereauFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1830,5 +1919,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   orphie: {fabrique: orphieModele, echelle: 1},
   congre: {fabrique: congreModele, echelle: 1},
   encornet: {fabrique: encornetModele, echelle: 1.4},   // petit (15 à 40 cm) : un peu plus grand en main
+  maquereau: {fabrique: maquereauModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
