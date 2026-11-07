@@ -1978,6 +1978,96 @@ function lieuFait(){
 }
 export const lieuJauneModele = () => modeleDe(lieuFait());
 
+/* ---------- Le thon ----------
+   D'après l'image de Yo (7 novembre 2026 : « Voici le thon »), comme un vrai thon rouge (Thunnus thynnus ; choix de Yo :
+   « A », comme la nature ; son image, aux nageoires toutes jaunes, ressemblait au thon albacore) : le corps énorme, épais et
+   fuselé, le pédoncule fin ; la peau lisse et brillante (les écailles minuscules) ; le dos bleu nuit, les flancs et le
+   ventre argentés. Le museau pointu, la petite bouche aux lèvres fines ; l'œil sombre cerclé d'argent. La première nageoire
+   du dos épineuse, basse, gris-bleu sombre ; la seconde, en faucille, brun-rouge ; l'anale gris argenté ; les pinnules
+   jaunes bordées de noir, en haut et en bas jusqu'à la queue ; la grosse crête de chaque côté avant la queue ; la queue en
+   croissant de lune, gris foncé ; la nageoire de côté courte et sombre. Fait comme le maquereau (maquereauFait), son
+   cousin. */
+const THON_F = corps(-.48, .36,
+  courbe([[0, .02], [.05, .055], [.14, .1], [.28, .134], [.42, .14], [.58, .122], [.72, .088], [.86, .046], [1, .016]]),
+  courbe([[0, .016], [.05, .048], [.14, .09], [.28, .124], [.42, .13], [.58, .11], [.72, .078], [.86, .04], [1, .014]]),
+  courbe([[0, .016], [.06, .04], [.15, .064], [.3, .08], [.45, .08], [.6, .068], [.75, .05], [.9, .03], [1, .02]]));
+const THON = {dos: 0x16215A, dosClair: 0x30509A, flanc: 0xC4CAD6, ventre: 0xF2F2F4, reflet: 0x92AAD2, tete: 0x1E2C66,
+  joue: 0xD0D6DE, opercule: 0xA8B2C2, levre: 0xC4CAD2, bouche: 0x6A6070, iris: 0x22262E, cercle: 0xC8D0DA,
+  dorsale: 0x3A4458, dorsaleBord: 0x222838, seconde: 0x7C4A3A, secondeBord: 0x4E2C24, anale: 0xAAB0BA, analeBord: 0x707884,
+  pinnule: 0xE6C232, pinnuleBord: 0x1A1A16, queue: 0x3A4256, queueBord: 0x1E2232, pecto: 0x2E3646, pectoBord: 0x1A2030};
+let thonGeo = null;
+function thonFait(){
+  if(thonGeo) return thonGeo;
+  const C = THON, F = THON_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas, LARGE = F.large;
+  /* la peau lisse : bleu nuit au dos, un reflet bleuté, argentée aux flancs, blanche au ventre */
+  const couleurCorps = (x, y) => {
+    const u = uDe(x), h = F.h(x, y);
+    let c = h > .45 ? melange(C.dosClair, C.dos, (h - .45) / .35) : h > .1 ? melange(C.flanc, C.dosClair, (h - .1) / .35) : melange(C.flanc, C.ventre, (.1 - h) / .7);
+    const r = Math.abs(h - .2);
+    if(r < .12) c = melange(c, C.reflet, .3 * (1 - r / .12));
+    if(u < .26) c = melange(c, h > .3 ? C.tete : C.joue, Math.min(1, (.26 - u) / .05));
+    return c;
+  };
+  M.push({geo: corpsGeo(X0, X1, HAUT, BAS, LARGE, 80, 28), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: couleurCorps,
+    ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .16))});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(X1, 0, 0), q0, V(.02, HAUT(1) * .9, LARGE(1) * .9)), c: 0xFFFFFF, couleur: couleurCorps});
+  /* l'ouïe : un arc fin derrière l'œil */
+  for(const s of [-1, 1]) for(let k = 0; k < 12; k++){ const a0 = -1 + k * .18, a1 = a0 + .18;
+    baton(M, C.opercule, F.peau(.24 + .035 * Math.cos(a0 * .9), a0, s).addScaledVector(F.normale(.24, a0, s), .0006), F.peau(.24 + .035 * Math.cos(a1 * .9), a1, s).addScaledVector(F.normale(.24, a1, s), .0006), .002); }
+  oeil(M, F, {u: .12, a: .4, r: .03, iris: C.iris, cercle: C.cercle, narine: 0x1E2C66, uNarine: .055, aNarine: .6});
+  /* le museau pointu, la petite bouche aux lèvres fines */
+  ovale(M, C.levre, V(X0 - .003, .001, 0), V(X0 + .06, -.006, 0), .014, .005);
+  ovale(M, C.levre, V(X0 + .002, -.012, 0), V(X0 + .06, -.014, 0), .013, .005);
+  ovale(M, C.bouche, V(X0 + .002, -.0055, 0), V(X0 + .055, -.009, 0), .011, .0025);
+  const nagC = (y0, sens, h, a, b) => (x, y) => melange(a, b, Math.pow(Math.max(0, (y - y0) * sens / h), 1.4));
+  /* la première nageoire du dos : épineuse, basse, gris-bleu sombre */
+  const d0 = -.14, d1 = -.02, y0 = HAUT(uDe(d0)) - .008, y1 = HAUT(uDe(d1)) - .008, hD = .075;
+  const bordD = t => { const b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), f = t < .1 ? .6 + .4 * t / .1 : 1 - .9 * (t - .1) / .9;
+    return V(b.x + .02 + .03 * f, b.y + .004 + hD * f, 0); };
+  nageoire(M, nageoireGeo(V(d0, y0, 0), V(d1, y1, 0), bordD, 14), new THREE.Matrix4(), nagC(y0, 1, hD, C.dorsale, C.dorsaleBord));
+  for(let k = 0; k <= 10; k++){ const t = k / 10 * .92, b = V(d0, y0, 0).lerp(V(d1, y1, 0), t), e = bordD(t);
+    baton(M, C.dorsaleBord, b, e.clone().add(e.clone().sub(b).multiplyScalar(.05)), .0024); }
+  /* la seconde nageoire du dos (brun-rouge) et l'anale (gris argenté), en faucille, en face */
+  const faucille = (x0, x1, sens, h, a, b) => { const yA = sens * ((sens > 0 ? HAUT : BAS)(uDe(x0)) - .007), yB = sens * ((sens > 0 ? HAUT : BAS)(uDe(x1)) - .006);
+    nageoire(M, nageoireGeo(V(x0, yA, 0), V(x1, yB, 0), t => { const p = V(x0, yA, 0).lerp(V(x1, yB, 0), t), f = t < .25 ? .6 + .4 * t / .25 : 1 - .85 * Math.pow((t - .25) / .75, .6);
+      return V(p.x + .03 + .07 * f * f, p.y + sens * (.004 + h * f), 0); }, 12), new THREE.Matrix4(), nagC(yA, sens, h, a, b)); };
+  faucille(.04, .11, 1, .11, C.seconde, C.secondeBord);
+  faucille(.07, .13, -1, .1, C.anale, C.analeBord);
+  /* les pinnules jaunes bordées de noir : 8 en haut, 7 en bas, jusqu'à la queue */
+  for(const [sens, n, x0] of [[1, 8, .14], [-1, 7, .165]]) for(let k = 0; k < n; k++){
+    const x = x0 + k * (.32 - x0) / n, w = .016, yA = sens * ((sens > 0 ? HAUT : BAS)(uDe(x)) - .004), yB = sens * ((sens > 0 ? HAUT : BAS)(uDe(x + w)) - .004);
+    nageoire(M, nageoireGeo(V(x, yA, 0), V(x + w, yB, 0), t => V(x + w * t + .016 * (1 - t * .5), yA + (yB - yA) * t + sens * .025 * (1 - t), 0), 4, .004),
+      new THREE.Matrix4(), nagC(yA, sens, .025, C.pinnule, C.pinnuleBord));
+  }
+  /* la grosse crête de chaque côté avant la queue, et les deux petites sur la queue */
+  for(const s of [-1, 1]){
+    ovale(M, C.dos, F.peau(.87, 0, s).add(V(0, 0, s * .002)), F.peau(1, 0, s).add(V(.02, 0, s * .006)), .009, .006);
+    for(const a of [.35, -.35]) ovale(M, C.queue, V(X1 + .005, Math.sin(a) * .014, s * .01), V(X1 + .03, Math.sin(a) * .016, s * .006), .003, .0025);
+  }
+  /* la queue en croissant de lune, gris foncé */
+  const qx = X1 - .008;
+  const bordQ = t => { const lobe = t < .5 ? (.5 - t) * 2 : (t - .5) * 2, y = (.5 - t) * .5, fourche = .02 + .19 * Math.pow(lobe, .7);
+    return V(qx + fourche + .012, y * (.55 + .45 * lobe), 0); };
+  nageoire(M, nageoireGeo(V(qx, .016, 0), V(qx, -.016, 0), bordQ, 26), new THREE.Matrix4(), (x, y) => {
+    const t = Math.max(0, Math.min(1, .5 - y / .5)), e = bordQ(t), k = (x - qx) / Math.max(.02, e.x - qx);
+    return melange(C.queue, C.queueBord, Math.pow(Math.max(0, Math.min(1, k)), 1.3)); });
+  /* les ventrales, petites, sous les pectorales */
+  const peX = -.2;
+  for(const s of [-1, 1]){
+    const pY = -BAS(uDe(peX)) + .012, base = s * LARGE(uDe(peX)) * .45;
+    const g = nageoireGeo(V(-.02, 0, 0), V(.015, 0, 0), t => V(.02 + t * .045, -.05 + t * .04, 0), 8);
+    nageoire(M, g, new THREE.Matrix4().compose(V(peX, pY, base), tourne(s * -.3, 0, 0), V(1, 1, 1)), (x, y) => melange(C.anale, C.analeBord, (pY - y) / .06));
+  }
+  /* la nageoire de côté, courte et sombre */
+  for(const s of [-1, 1]){
+    const p = F.peau(.29, .1, s);
+    const g = nageoireGeo(V(0, .016, 0), V(0, -.016, 0), t => V(.1 - Math.abs(t - .25) * .06, .002 - t * .04, 0), 10);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .008), tourne(s * .15, s * -.35, 0), V(1, 1, 1)), x => melange(C.pecto, C.pectoBord, (x - p.x) / .11));
+  }
+  return thonGeo = fusionner(M);
+}
+export const thonModele = () => modeleDe(thonFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1998,5 +2088,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   encornet: {fabrique: encornetModele, echelle: 1.4},   // petit (15 à 40 cm) : un peu plus grand en main
   maquereau: {fabrique: maquereauModele, echelle: 1},
   lieuJaune: {fabrique: lieuJauneModele, echelle: 1},
+  thon: {fabrique: thonModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
