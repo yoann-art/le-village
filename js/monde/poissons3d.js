@@ -1730,6 +1730,88 @@ function congreFait(){
 }
 export const congreModele = () => modeleDe(congreFait());
 
+/* ---------- L'encornet ----------
+   D'après l'image de Yo (7 novembre 2026 : « Voici l'encornet »), comme un vrai encornet (le calmar commun, Loligo
+   vulgaris ; choix de Yo : « A », comme la nature) : le long manteau en fuseau qui finit en pointe, son col autour de la
+   tête ; les deux longues nageoires en losange qui bordent ses deux tiers arrière ; la peau blanc rosé, un peu translucide,
+   semée de petits points rouge-brun (ses chromatophores), plus serrés sur le dos. La tête et ses deux grands yeux sombres
+   au reflet argenté ; le siphon dessous. Huit bras courts, presque droits, serrés en pointe vers l'avant, leurs ventouses ;
+   et deux tentacules bien plus longs, terminés par une massue couverte de ventouses.
+   Fait dans sa position naturelle (le dos vers +y, les nageoires à plat), puis tourné le dos vers +z : en main, il montre
+   son dos et ses nageoires étalées, comme l'image. */
+const ENCORNET = {peau: 0xF0DDD6, dos: 0xE2B2A6, ventre: 0xF6EEEA, point: 0x9E3A30, nag: 0xE8C2B8, nagBord: 0xF0D4CC,
+  bras: 0xEFCDC2, ventouse: 0xF8EEE6, iris: 0x262A34, cercle: 0xB4BEC8, col: 0xE8C4B8};
+const rayonManteau = courbe([[0, .064], [.06, .072], [.2, .075], [.4, .066], [.6, .05], [.8, .029], [1, .005]]);
+const ENCORNET_F = corps(-.2, .5, rayonManteau, u => rayonManteau(u) * .94, rayonManteau);
+const rayonTete = courbe([[0, .03], [.25, .046], [.6, .052], [1, .047]]);
+const TETE_E = corps(-.33, -.17, rayonTete, u => rayonTete(u) * .92, u => rayonTete(u) * 1.05);
+let encornetGeo = null;
+function encornetFait(){
+  if(encornetGeo) return encornetGeo;
+  const C = ENCORNET, F = ENCORNET_F, M = [];
+  /* les petits points rouge-brun : des sommets tirés au hasard (toujours les mêmes), plus serrés sur le dos */
+  const hache = (x, y, z) => { const s = Math.sin(Math.floor(x / .011) * 127.1 + Math.floor(y / .011) * 311.7 + Math.floor(z / .011) * 74.7) * 43758.5453; return s - Math.floor(s); };
+  const pointe = (c, x, y, z, densite) => hache(x, y, z) < densite ? melange(c, C.point, .55 + .3 * hache(z, x, y)) : c;
+  const peau = (x, y, z, r) => { const h = Math.max(-1, Math.min(1, y / Math.max(.01, r)));
+    const c = h > 0 ? melange(C.peau, C.dos, h * .8) : melange(C.peau, C.ventre, -h);
+    return pointe(c, x, y, z, .03 + .05 * Math.max(0, h)); };
+  /* le manteau, lisse, et son col */
+  M.push({geo: corpsGeo(F.x0, F.x1, F.haut, F.bas, F.large, 60, 24), m: new THREE.Matrix4(), c: 0xFFFFFF,
+    couleur: (x, y, z) => peau(x, y, z, rayonManteau(F.uDe(x))), ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .06))});
+  M.push({geo: ROND, m: new THREE.Matrix4().compose(V(-.196, 0, 0), q0, V(.013, .067, .072)), c: C.col});
+  /* ses petits points rouge-brun, de tailles diverses, serrés sur le dos, rares sur le ventre */
+  for(let i = 0; i < 150; i++){
+    const u = .04 + .9 * hache(i * .37, 1.3, 2.1), dos = hache(2.7, i * .53, .9), a = dos < .75 ? Math.PI / 2 + (hache(i * .11, 4.4, .3) - .5) * 2.6 : -Math.PI / 2 + (hache(.8, i * .29, 5.5) - .5) * 2.6;
+    const s = Math.cos(a) >= 0 ? 1 : -1, a2 = Math.asin(Math.sin(a)), p = F.peau(u, a2, s), n = F.normale(u, a2, s), e = .0022 + .0028 * hache(i * .91, .2, 7.7) * (1 - u * .5);
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, .0004), versN(n), V(e, .0008, e * (.8 + .4 * hache(i, 3, 3)))), c: C.point});
+  }
+  /* la tête, ses grands yeux sombres au reflet argenté, le siphon dessous */
+  M.push({geo: corpsGeo(TETE_E.x0, TETE_E.x1, TETE_E.haut, TETE_E.bas, TETE_E.large, 30, 20), m: new THREE.Matrix4(), c: 0xFFFFFF,
+    couleur: (x, y, z) => peau(x, y, z, .04), ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .04))});
+  oeil(M, TETE_E, {u: .5, a: .12, r: .023, iris: C.iris, cercle: C.cercle, narine: C.peau, uNarine: .6, aNarine: .1});
+  ovale(M, C.col, V(-.235, -.042, 0), V(-.19, -.05, 0), .013, .01);
+  /* les huit bras, courts et presque droits, serrés en pointe vers l'avant ; leurs ventouses en dessous */
+  const coulBras = (x, y, z) => pointe(C.bras, x, y, z, .08);
+  for(let k = 0; k < 8; k++){
+    const a = (k + .5) / 8 * Math.PI * 2, L = .12 + .035 * Math.max(0, -Math.sin(a)) + .015 * Math.abs(Math.cos(a)), pts = [];
+    for(let i = 0; i <= 4; i++){ const t = i / 4, rho = .026 * (1 - .6 * t);
+      pts.push(V(-.31 - L * t, rho * Math.sin(a) + .006 * Math.sin(a) * t * t, rho * Math.cos(a) * (1 + .3 * t))); }
+    articule(M, pts, .012, .0028, coulBras);
+    for(let i = 1; i <= 5; i++){ const t = i / 6, p = pts[0].clone().lerp(pts[4], t), n = V(0, -Math.sin(a), -Math.cos(a));
+      M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, .007 * (1 - .6 * t)), versN(n), V(.0026, .0012, .0026)), c: C.ventouse}); }
+  }
+  /* les deux longs tentacules, de chaque côté dessous, et leur massue couverte de ventouses */
+  for(const s of [-1, 1]){
+    const pts = [];
+    for(let i = 0; i <= 5; i++){ const t = i / 5;
+      pts.push(V(-.3 - .22 * t, -.014 - .006 * Math.sin(Math.PI * t), s * (.016 + .026 * Math.sin(Math.PI * t * .8)))); }
+    articule(M, pts, .006, .0042, coulBras);
+    const bout = pts[5], club = bout.clone().add(V(-.028, 0, -s * .004));
+    ovale(M, C.bras, bout.clone().add(V(.004, 0, 0)), club.clone().add(V(-.012, 0, 0)), .013, .008, coulBras);
+    for(let i = 0; i < 5; i++){ const p = bout.clone().lerp(club, i / 4).add(V(0, -.006, 0));
+      M.push({geo: TACHE, m: new THREE.Matrix4().compose(p, versN(V(0, -1, 0)), V(.0026, .0012, .0026)), c: C.ventouse}); }
+  }
+  /* les deux longues nageoires en losange, à plat, sur les deux tiers arrière du manteau : lisses, sans rayons */
+  const n0 = .04, n1 = F.x1 - .005, r0 = rayonManteau(F.uDe(n0)) - .006, r1 = rayonManteau(F.uDe(n1)) - .002;
+  const coulNag = (x, y, z) => pointe(melange(C.nag, C.nagBord, (Math.abs(z) - rayonManteau(F.uDe(x))) / .07), x, y, z, .05);
+  for(const s of [-1, 1]){
+    const contour = [];
+    for(let i = 0; i <= 16; i++){ const t = i / 16, bx = n0 + (n1 - n0) * t, br = r0 + (r1 - r0) * t, f = t < .46 ? Math.pow(t / .46, .9) : (1 - t) / .54;
+      contour.push([bx + .03 * f, br + .088 * f]); }
+    for(let i = 16; i >= 0; i--){ const t = i / 16; contour.push([n0 + (n1 - n0) * t, r0 + (r1 - r0) * t]); }
+    for(const face of [1, -1]){                                  // le dessus et le dessous, un peu écartés
+      const forme = new THREE.Shape(contour.map(([x, l]) => new THREE.Vector2(x, -face * s * l)));
+      const geo = new THREE.ShapeGeometry(forme).rotateX(-face * Math.PI / 2).translate(0, face * .0018, 0);
+      M.push({geo, m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: coulNag});
+    }
+  }
+  const g = fusionner(M);
+  g.rotateX(Math.PI / 2);                                         // le dos vers +z
+  g.computeBoundingSphere();
+  return encornetGeo = g;
+}
+export const encornetModele = () => modeleDe(encornetFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1747,5 +1829,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   mulet: {fabrique: muletModele, echelle: 1},
   orphie: {fabrique: orphieModele, echelle: 1},
   congre: {fabrique: congreModele, echelle: 1},
+  encornet: {fabrique: encornetModele, echelle: 1.4},   // petit (15 à 40 cm) : un peu plus grand en main
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
