@@ -21,7 +21,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tabouret:C.wood, pot:C.clay, lan
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -210,6 +210,25 @@ function tableMorceaux(c){
   return out;
 }
 
+/* La grande table de banquet (image de Yo, 7 novembre 2026 : « Voici la grande table de banquet » ; « Adapte la taille par
+   rapport à la table ordinaire ») : un très long plateau épais aux coins arrondis et au bord tout rond (une galette) ; six
+   pieds tournés, renflés au milieu, avec leurs anneaux et une boule en bas. Tout d'un seul bois. À la hauteur de la table
+   (¾ P), plus longue et un peu moins large qu'elle (3,2 × 1,1) */
+const BQ = {long: 3.16, prof: 1.06, ep: .17, haut: .75, px: 1.36, pz: .36};
+const BQ_PLATEAU = galette(BQ.long, BQ.prof, BQ.ep, .16, .08, 6, 4);
+const BQ_PIED = (() => { const h = BQ.haut - BQ.ep + .03, p = [[0, 0], [.06, .004], [.09, .03], [.1, .065], [.09, .1], [.075, .12], [.088, .14], [.075, .16],
+    [.068, .19], [.09, .25], [.105, .32], [.1, .38], [.08, .43], [.066, .47], [.08, .5], [.085, .52], [.07, .54], [.075, .57], [.08, h], [0, h]];   // le profil tourné
+  const lisse = new THREE.SplineCurve(p.slice(1, -1).map(([r, y]) => new THREE.Vector2(r * 1.15, y))).getPoints(22);   // un profil lisse, sans cassure
+  return new THREE.LatheGeometry([new THREE.Vector2(0, 0), ...lisse, new THREE.Vector2(0, h)], 20); })();
+function tableBanquetMorceaux(c){
+  const o = ombreBois(0, BQ.haut), out = [{geo: BQ_PLATEAU, m: M4(0, BQ.haut - BQ.ep / 2, 0), c, ombre: o}];
+  /* les pieds tournés : la lumière comme sur un pied droit (la normale presque à plat), pour que l'ombre du renflement ne
+     dessine pas une spirale ; le renflement se lit par son contour */
+  const droite = (x, y, z, n) => Math.abs(n.y) > .97 ? n : n.set(n.x, n.y * .25, n.z).normalize();
+  for(const x of [-BQ.px, 0, BQ.px]) for(const sz of [-1, 1]) out.push({geo: BQ_PIED, m: M4(x, 0, sz * BQ.pz), c, ombre: o, normale: droite});
+  return out;
+}
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -373,6 +392,7 @@ const BUILD = {
     g.add(part(G.box, C.cream, 1.3, .025, .8, 0, .014, 0));
   },
   table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
+  tableBanquet(g, m){ g.add(modeleBois("tableBanquet", m, tableBanquetMorceaux)); },
   lit(g, m){
     g.add(part(G.box, C.wood, 1.4, .3, 2.2, 0, .15, 0));                               // cadre
     g.add(part(G.box, m, 1.3, .14, 1.6, 0, .37, .25));                                // couverture
