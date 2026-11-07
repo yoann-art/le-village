@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tabouret:C.wood, pot:C.clay, lan
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -191,6 +191,22 @@ const BC_PIED = (() => { const h = .3, g = boiteRonde(.22, h, .42, .06, 2, [1, 2
 function bancMorceaux(c){
   const o = ombreBois(0, .4), out = [{geo: BC_PLANCHE, m: M4(0, .4 - BC.ep / 2, 0), c, ombre: o}];
   for(const sx of [-1, 1]) out.push({geo: BC_PIED, m: M4(sx * .44, .14, 0), c, ombre: o});
+  return out;
+}
+
+/* La table (image de Yo, 7 novembre 2026 : « Voici la table ») : un épais plateau aux coins arrondis et au bord tout rond (une
+   galette) ; dessous, une ceinture de quatre traverses arrondies, un peu en retrait ; quatre gros pieds ronds au bout arrondi,
+   droits, sous les coins. Tout d'un seul bois. Le plateau monté de ½ P à ¾ P, la bonne hauteur à côté d'une chaise (choix de
+   Yo : « Plus haute, même place au sol ») ; sa taille au sol ne change pas (2 × 1,4) */
+const TB = {long: 1.96, prof: 1.3, ep: .17, haut: .75, px: .76, pz: .44};
+const TB_PLATEAU = galette(TB.long, TB.prof, TB.ep, .2, .08);
+const TB_PIED = baton(.13, TB.haut - TB.ep + .03, true, false, 12);
+const TB_LONG = boiteRonde(2 * TB.px, .13, .09, .04, 2);
+const TB_COURT = boiteRonde(.09, .13, 2 * TB.pz, .04, 2);
+function tableMorceaux(c){
+  const o = ombreBois(0, TB.haut), y = TB.haut - TB.ep, out = [{geo: TB_PLATEAU, m: M4(0, TB.haut - TB.ep / 2, 0), c, ombre: o}];
+  for(const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) out.push({geo: TB_PIED, m: M4(sx * TB.px, 0, sz * TB.pz), c, ombre: o});
+  for(const s of [-1, 1]) out.push({geo: TB_LONG, m: M4(0, y - .05, s * TB.pz), c, ombre: o}, {geo: TB_COURT, m: M4(s * TB.px, y - .05, 0), c, ombre: o});
   return out;
 }
 
@@ -356,10 +372,7 @@ const BUILD = {
     g.add(part(G.box, m, 1.6, .02, 1.1, 0, .012, 0));                                 // bordure
     g.add(part(G.box, C.cream, 1.3, .025, .8, 0, .014, 0));
   },
-  table(g, m){
-    g.add(part(G.box, m, 2, .1, 1.4, 0, .45, 0));                                     // plateau à ½ P
-    for(const [x,z] of [[-.85,-.55],[.85,-.55],[-.85,.55],[.85,.55]]) g.add(part(G.cyl, C.dark, .12, .4, .12, x, .2, z));
-  },
+  table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
   lit(g, m){
     g.add(part(G.box, C.wood, 1.4, .3, 2.2, 0, .15, 0));                               // cadre
     g.add(part(G.box, m, 1.3, .14, 1.6, 0, .37, .25));                                // couverture
