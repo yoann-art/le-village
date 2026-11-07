@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, objet, REVETEMENTS } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, REVETEMENTS } from "./donnees.js";
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -186,7 +186,7 @@ $("#deco-cat").addEventListener("click", () => {
     (empty ? `<p class="hint-box">Tu n'as pas encore de meuble. Chaque meuble se fabrique au plan de travail d'un bâtiment : la chaise ${aLe(ATELIERS.scierie)} de la Scierie, le pot de fleurs ${aLe(ATELIERS.chaumiere)} de la Chaumière… Approche-toi du plan de travail, touche son bouton, puis « Fabriquer ». Le meuble arrive dans ton sac quand il est prêt.</p>` : "") +
     planHTML(deco.b) +
     Object.keys(GAB).map(g => `<h3 style="margin:14px 0 2px">${GAB[g][0]} <span class="muted" style="font-weight:400;font-size:14px">(${GAB[g][1]})</span></h3>` +
-      MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g).map(t => {
+      MEUBLES_ORDER.filter(t => MEUBLES[t].gabarit === g && !(PLUS_TARD.has(t) && owned(t) < 1)).map(t => {   // gardé pour plus tard : seulement si on en a déjà
         const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
         const where = m.dehorsSeul ? "Seulement dehors, sur ton île : prends-le en main devant une case libre"
           : m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}`

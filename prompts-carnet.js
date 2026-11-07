@@ -2752,7 +2752,19 @@ window.PROMPTS_CARNET = [
 "id": "poi-thon",
 "name": "Thon",
 "size": "rare",
-"line": "Un thon énorme et fuselé, dos bleu nuit, ventre argenté, petites nageoires jaunes, environ 1,5 P de long, vue de côté, corps entier, pose neutre."
+"line": "Un thon rouge (Thunnus thynnus), corps énorme, épais et fuselé, dos bleu nuit, flancs et ventre argentés, première nageoire du dos épineuse et grise, seconde nageoire du dos brun-rouge, une rangée de petites pinnules jaunes bordées de noir en haut et en bas jusqu'à la queue, une petite crête de chaque côté juste avant la queue, queue en croissant de lune, petites nageoires de côté, grand œil sombre, environ 1,5 P de long, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "poi-lieu-jaune",
+"name": "Lieu jaune",
+"size": "commun",
+"line": "Un lieu jaune (Pollachius pollachius), corps allongé et fuselé, dos brun olive, flancs dorés jaunâtres, ventre blanc grisé, la ligne latérale sombre bien visible qui fait une courbe au-dessus de la nageoire de côté, la mâchoire du bas qui dépasse, pas de barbillon, trois nageoires sur le dos et deux dessous, queue presque droite, petites écailles, environ 0,5 P de long, vue de côté, corps entier, pose neutre."
+},
+{
+"id": "poi-raie-bouclee",
+"name": "Raie bouclée (vue de dessus)",
+"size": "peu commun",
+"line": "Une raie bouclée (Raja clavata), vue de dessus légèrement de biais, corps plat en losange aux bords arrondis, dos brun sable semé de petites taches claires et sombres, une rangée de petites épines le long du dos et de la queue, deux petits yeux sur le dessus et juste derrière eux deux petits trous ronds, la queue fine et assez courte avec deux petites nageoires près du bout, environ 0,8 P de large, corps entier, pose neutre."
 }
 ]
 },

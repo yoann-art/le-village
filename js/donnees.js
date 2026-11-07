@@ -976,7 +976,7 @@ export const ATELIERS = {
     {nom:"Tarte aux fruits", emoji:"🥧", lock:"Arrive avec la cueillette"}
   ]},
   forge:{nom:"Enclume", le:"l'enclume", fem:true, emoji:"⚒️", meuble:"enclume", cost:{bloc:10, cuivre:5},
-    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux et les lumières de métal (lanternes, lampadaire, brasero, lustre, torchère murale, chandelier)", recettes:[
+    pour:"forger les outils en cuivre et en bronze, fondre le bronze et le verre, et faire les bocaux et les lumières de métal (lanternes, lustre, torchère murale, chandelier)", recettes:[
     {out:"bronze", in:{cuivre:2, etain:1, charbon:1}, t:20, lvl:1, cat:"Matériaux"},      // étape 1.11 : le bronze et le verre, fondus au charbon
     {out:"verre", n:2, in:{quartz:1, charbon:1}, t:20, lvl:1},
     {out:"piocheCuivre", in:{cuivre:4, planche:2}, t:60, lvl:1, cat:"Outils"},
@@ -1001,8 +1001,11 @@ export const ATELIERS = {
     {out:"torchereMurale", in:{cuivre:2}, t:40, lvl:1, cat:"Lumières"},     // demande de Yo (11 octobre 2026)
     {out:"lanterneMain", in:{cuivre:2, verre:1, chandelle:1}, t:60, lvl:1},
     {out:"lanterneMurale", in:{cuivre:2, verre:1, chandelle:1}, t:60, lvl:1},
-    {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1},
-    {out:"brasero", in:{bloc:2, cuivre:3, charbon:2}, t:60, lvl:1},
+    /* Gardés pour une mise à jour ou un événement (choix de Yo, 7 novembre 2026, page « Les objets de l'île ») : plus
+       proposés à l'enclume ni au catalogue ; ceux déjà fabriqués ou posés dans une partie en cours restent (la recette
+       reste ici, pour que le jeu les reconnaisse comme fabriqués : FABRIQUE_A, rangés dans le sac) */
+    {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1, plusTard:true},
+    {out:"brasero", in:{bloc:2, cuivre:3, charbon:2}, t:60, lvl:1, plusTard:true},
     {out:"lustre", in:{bronze:2, chandelle:6}, t:90, lvl:1},
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1}
   ]},
@@ -1017,6 +1020,8 @@ export const ATELIERS = {
 /* Pour chaque objet fabriqué (meuble ou produit) : le bâtiment dont l'atelier le fabrique */
 export const FABRIQUE_A = {};
 for(const [b, a] of Object.entries(ATELIERS)) for(const r of a.recettes) if(r.out && !RES[r.out]) FABRIQUE_A[r.out] = b;
+/* Les objets gardés pour plus tard (plusTard dans leur recette) : ni à l'atelier, ni au catalogue, sauf ceux qu'on a déjà */
+export const PLUS_TARD = new Set(Object.values(ATELIERS).flatMap(a => a.recettes.filter(r => r.plusTard).map(r => r.out)));
 /* Palette gratuite : couleur d'un meuble, des murs ou du sol d'une pièce.
    (Plus tard : des couleurs à gagner, avec un cadenas — voir la Boîte à idées du plan de production.) */
 export const COULEURS = {

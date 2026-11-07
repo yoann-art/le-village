@@ -177,6 +177,94 @@ const MEUBLES = [
     {id:"m-trone", name:"Trône (Château)", size:"moyen", line:"Un trône en bois sombre aux formes arrondies, gabarit moyen, haut dossier et coussin rouges, ornements dorés, posé sur une petite estrade de pierre claire."}
   ]}
 ];
+/* Les objets de l'île (chantier de la décoration, Yo, 7 novembre 2026) : les 42 objets que Yo garde pour le début d'une
+   partie (sa page « Les objets de l'île »), puis les 17 qu'il garde pour une mise à jour ou un événement. Chacun dans sa
+   SEULE couleur de départ (règle de Yo : elle change ensuite avec les ressources) : le bois de chêne couleur miel, la pierre
+   des champs grise, le cuivre, le lin écru. Ils remplacent, pour ces objets, les prompts de l'onglet Meubles (couleurs
+   d'avant). id préfixés par o- */
+const OBJETS = [
+  {name:"S'asseoir", note:"Le personnage pourra s'y asseoir. Bois de chêne couleur miel au départ.", items:[
+    {id:"o-tabouret", name:"Tabouret", size:"petit", line:"Un tabouret rond en bois de chêne couleur miel, petit gabarit, assise épaisse et bombée, trois pieds ronds légèrement écartés, tout d'une seule couleur de bois."},
+    {id:"o-chaise", name:"Chaise", size:"petit", line:"Une chaise en bois de chêne couleur miel, petit gabarit, assise carrée, dossier à trois barreaux aux coins arrondis, quatre pieds ronds, tout d'une seule couleur de bois."},
+    {id:"o-fauteuil", name:"Fauteuil", size:"petit", line:"Un fauteuil en bois de chêne couleur miel, petit gabarit, accoudoirs arrondis, gros coussins d'assise et de dossier en lin écru, pieds courts et ronds."},
+    {id:"o-banc", name:"Banc", size:"moyen", line:"Un banc en bois de chêne couleur miel, gabarit moyen, longue assise épaisse aux bouts arrondis, deux pieds pleins, assez long pour deux personnages assis."}
+  ]},
+  {name:"Tables", note:"On pourra y poser un objet : un bouquet, une chandelle, un plat.", items:[
+    {id:"o-table", name:"Table", size:"grand", line:"Une table rectangulaire en bois de chêne couleur miel, grand gabarit, plateau épais aux coins arrondis, quatre pieds ronds, plateau vide."},
+    {id:"o-table-banquet", name:"Grande table de banquet", size:"très grand", line:"Une grande table de banquet en bois de chêne couleur miel, très long plateau épais aux coins arrondis, six pieds tournés, plateau vide, pour une grande salle."}
+  ]},
+  {name:"Se coucher", items:[
+    {id:"o-lit", name:"Lit", size:"grand", line:"Un lit en bois de chêne couleur miel, grand gabarit, tête de lit arrondie, couverture en lin écru bien bordée, drap blanc replié, gros oreiller blanc."}
+  ]},
+  {name:"Ranger et montrer", items:[
+    {id:"o-etagere", name:"Étagère", size:"moyen", line:"Une étagère haute en bois de chêne couleur miel, gabarit moyen, quatre planches vides aux bords arrondis, montants épais, prête à recevoir des bocaux et des pierres."},
+    {id:"o-armoire", name:"Armoire", size:"moyen", line:"Une armoire en bois de chêne couleur miel, gabarit moyen, deux portes bombées fermées, petites poignées rondes en cuivre, corniche arrondie, pieds courts."},
+    {id:"o-tonneau", name:"Tonneau", size:"petit", line:"Un tonneau en bois de chêne couleur miel, petit gabarit, ventre bombé, deux cerclages de cuivre, couvercle de bois, posé debout."},
+    {id:"o-vitrine", name:"Vitrine", size:"moyen", line:"Une vitrine en bois de chêne couleur miel et verre clair, gabarit moyen, petit meuble à hauteur de hanche au dessus vitré, un cristal d'améthyste exposé sur un coussinet de lin écru."},
+    {id:"o-coffre", name:"Coffre de réserve", size:"moyen", line:"Un coffre de rangement en bois de chêne couleur miel, gabarit moyen, couvercle bombé, deux cerclages et une serrure en cuivre."}
+  ]},
+  {name:"Lumières", note:"On pourra les allumer et les éteindre. Cuivre au départ pour le métal ; le chandelier commence en argent.", items:[
+    {id:"o-chandelle", name:"Chandelle", size:"petit", line:"Une chandelle de suif ivoire allumée dans un petit bougeoir rond en cuivre à anse, petit gabarit, flamme dorée, une goutte de cire figée sur le côté."},
+    {id:"o-lanterne", name:"Lanterne sur pied", size:"petit", line:"Une lanterne sur pied, petit gabarit, haut poteau de cuivre sur un socle rond, lanterne de cuivre et de verre allumée d'une lumière dorée sous un petit toit arrondi."},
+    {id:"o-bocal-lucioles", name:"Bocal à lucioles", size:"petit", line:"Un bocal de verre clair à couvercle de cuivre, petit gabarit, rempli de petites lucioles qui brillent en jaune-vert, poignée de corde."},
+    {id:"o-torchere", name:"Torchère sur pied", size:"petit", line:"Une torchère sur pied en bois de chêne couleur miel, petit gabarit, haut poteau sur un socle en croix, coupe en haut tenant une torche allumée à la flamme orange."},
+    {id:"o-feu-camp", name:"Feu de camp", size:"petit", line:"Un feu de camp, cercle de pierres des champs grises arrondies, bûches croisées, petites flammes orange, une broche en bois posée au-dessus pour y cuire un poisson."},
+    {id:"o-torchere-murale", name:"Torchère murale", size:"petit", line:"Une torchère murale en cuivre, petit gabarit, support recourbé fixé à une petite plaque murale, tenant une torche allumée à la flamme orange."},
+    {id:"o-lanterne-murale", name:"Lanterne murale", size:"petit", line:"Une lanterne murale en cuivre et verre, petit gabarit, bras recourbé fixé au mur, petite lanterne allumée d'une lumière dorée."},
+    {id:"o-lustre", name:"Lustre", size:"moyen", line:"Un lustre en cuivre en forme de couronne, gabarit moyen, six chandelles ivoire allumées, trois chaînes réunies en haut pour le suspendre au plafond."},
+    {id:"o-chandelier", name:"Chandelier", size:"petit", line:"Un chandelier en argent à trois branches, petit gabarit, pied rond, trois chandelles ivoire allumées."},
+    {id:"o-cheminee", name:"Cheminée", size:"moyen", line:"Une cheminée en pierre des champs grise aux angles arrondis, gabarit moyen, foyer avec un feu orangé, tablette en bois de chêne couleur miel, adossée à un mur."}
+  ]},
+  {name:"Tissus", note:"Lin écru au départ ; les teintures des plantes les colorent ensuite.", items:[
+    {id:"o-petit-tapis", name:"Petit tapis", size:"moyen", line:"Un petit tapis rectangulaire en lin écru tissé, gabarit moyen, bordure simple un peu plus foncée de la même couleur, posé à plat sur le sol."},
+    {id:"o-grand-tapis", name:"Grand tapis", size:"grand", line:"Un grand tapis rectangulaire en lin écru tissé, grand gabarit, large bordure et motif de losanges discret de la même couleur, posé à plat sur le sol."},
+    {id:"o-rideaux", name:"Rideaux", size:"fenêtre", line:"Une paire de rideaux en lin écru suspendus à une tringle en bois de chêne couleur miel, ouverts et noués sur les côtés, sans fenêtre derrière."}
+  ]},
+  {name:"Petite déco", items:[
+    {id:"o-pot", name:"Pot de fleurs", size:"petit", line:"Un pot de fleurs en pierre des champs grise taillée, petit gabarit, rebord épais et arrondi, rempli de terre, vide, prêt à recevoir une fleur."},
+    {id:"o-vase", name:"Vase", size:"petit", line:"Un vase en pierre des champs grise polie, petit gabarit, ventre rond et col étroit, vide."},
+    {id:"o-bouquet", name:"Bouquet", size:"petit", line:"Un bouquet de fleurs des prés noué d'un brin de fibre : coquelicots rouges, bleuets bleus, pâquerettes blanches et pissenlits jaunes, tiges vertes bien visibles."},
+    {id:"o-statue", name:"Petite statue", size:"petit", line:"Une petite statue en pierre des champs grise aux formes lisses et arrondies, petit gabarit, un renard assis sculpté sur un socle rond."},
+    {id:"o-miroir", name:"Miroir", size:"petit", line:"Un miroir sur pied en bois de chêne couleur miel, petit gabarit, cadre ovale aux bords arrondis, verre qui reflète doucement, pied en arceau."},
+    {id:"o-herbier", name:"Herbier encadré", size:"mur", line:"Un herbier encadré à accrocher au mur, cadre en bois de chêne couleur miel, papier crème où six fleurs des prés pressées et séchées sont posées bien à plat, petites étiquettes manuscrites."}
+  ]},
+  {name:"Souvenirs d'aventure", note:"L'aquarium en trois tailles (demande de Yo) : un petit poisson, plusieurs à la fois, ou un gros poisson.", items:[
+    {id:"o-aquarium-petit", name:"Petit aquarium", size:"petit", line:"Un petit aquarium rond en verre clair sur un petit socle en bois de chêne couleur miel, petit gabarit, eau bleue, gravier et une plante, sans poisson."},
+    {id:"o-aquarium-moyen", name:"Aquarium moyen", size:"moyen", line:"Un aquarium rectangulaire en verre clair sur un meuble bas en bois de chêne couleur miel, gabarit moyen, eau bleue, plantes et galets, sans poisson, assez grand pour trois ou quatre poissons."},
+    {id:"o-aquarium-grand", name:"Grand aquarium", size:"grand", line:"Un grand aquarium rectangulaire en verre clair sur un long meuble en bois de chêne couleur miel, grand gabarit, eau bleue profonde, rochers et grandes plantes, sans poisson, assez grand pour un gros poisson."},
+    {id:"o-trophee", name:"Trophée de gibier", size:"mur", line:"Un trophée de chasse mural, écusson en bois de chêne couleur miel en forme de blason, une tête de cerf stylisée en bois sculpté au naturel, petite plaque de cuivre gravée."},
+    {id:"o-statuette", name:"Statuette de gardien", size:"petit", line:"Une statuette en bois sculpté au naturel d'un esprit de l'arbre fait de racines et de mousse, petit gabarit, sur un socle rond en bois de chêne couleur miel."}
+  ]},
+  {name:"Le jardin et le dehors", items:[
+    {id:"o-cloture", name:"Clôture en bois", size:"moyen", line:"Un morceau de clôture droite en bois de chêne couleur miel, gabarit moyen, trois piquets au sommet arrondi et deux traverses."},
+    {id:"o-muret", name:"Muret de pierre", size:"moyen", line:"Un muret bas de pierres des champs grises arrondies empilées à sec, gabarit moyen, dessus plat où l'on peut s'asseoir, un peu de mousse."},
+    {id:"o-portail", name:"Portail", size:"moyen", line:"Un portillon de jardin en bois de chêne couleur miel, gabarit moyen, deux battants au haut arrondi entre deux poteaux, charnières et loquet en cuivre."},
+    {id:"o-puits", name:"Puits", size:"grand", line:"Un puits rond en pierre des champs grise, grand gabarit, petit toit à deux pans en bois de chêne couleur miel, manivelle et seau de bois pendu à une corde."},
+    {id:"o-fontaine", name:"Fontaine", size:"grand", line:"Une fontaine en pierre des champs grise aux formes arrondies, grand gabarit, bassin rond à deux étages, eau claire qui coule de la vasque du haut."},
+    {id:"o-mangeoire", name:"Mangeoire", size:"petit", line:"Une mangeoire à oiseaux en bois de chêne couleur miel sur un piquet, petit gabarit, petit toit à deux pans, plateau rempli de graines."},
+    {id:"o-bassin", name:"Bassin d'ornement", size:"grand", line:"Un bassin d'ornement rond bordé de pierres des champs grises, grand gabarit, eau bleue claire, deux nénuphars en fleur, sans poisson."},
+    {id:"o-panneau", name:"Panneau de bois", size:"petit", line:"Un panneau en bois de chêne couleur miel sur un poteau, petit gabarit, planche rectangulaire aux coins arrondis, vierge, prête à recevoir un nom."}
+  ]},
+  {name:"Pour plus tard : mises à jour et événements", note:"Les 17 objets que Yo garde pour plus tard. Leurs prompts sont prêts, rien ne presse.", items:[
+    {id:"o-table-ronde", name:"Table ronde", size:"moyen", line:"Une table ronde en bois de chêne couleur miel, gabarit moyen, plateau épais, pied central tourné sur trois petits pieds arrondis, plateau vide."},
+    {id:"o-chaise-bascule", name:"Chaise à bascule", size:"petit", line:"Une chaise à bascule en bois de chêne couleur miel, petit gabarit, patins arrondis, dossier haut à barreaux, accoudoirs arrondis."},
+    {id:"o-coussins", name:"Coussins de sol", size:"petit", line:"Une pile de trois gros coussins ronds et moelleux en lin écru, petit gabarit, posés au sol."},
+    {id:"o-lit-baldaquin", name:"Lit à baldaquin", size:"grand", line:"Un lit à baldaquin en bois de chêne couleur miel, grand gabarit, quatre colonnes tournées, rideaux de lin écru noués aux colonnes, couverture de lin écru, oreillers blancs."},
+    {id:"o-hamac", name:"Hamac", size:"moyen", line:"Un hamac en toile de lin écru tendu entre deux poteaux de bois de chêne couleur miel, gabarit moyen, cordes nouées aux bouts, légèrement creusé au milieu."},
+    {id:"o-bibliotheque", name:"Bibliothèque", size:"moyen", line:"Une bibliothèque en bois de chêne couleur miel, gabarit moyen, quatre rayons de livres reliés de cuir et de parchemins roulés, corniche arrondie."},
+    {id:"o-horloge", name:"Horloge", size:"moyen", line:"Une horloge de parquet en bois de chêne couleur miel, gabarit moyen, haute et fine, cadran rond en cuivre, balancier de cuivre visible derrière une petite vitre."},
+    {id:"o-brasero", name:"Brasero", size:"petit", line:"Un brasero en cuivre, petit gabarit, coupe ronde sur trois pieds recourbés, braises et flammes orange dedans."},
+    {id:"o-lampadaire", name:"Lampadaire", size:"petit", line:"Un lampadaire de jardin, haut poteau fin de cuivre, lanterne de cuivre et de verre allumée d'une lumière dorée en haut, petit socle rond."},
+    {id:"o-tonnelle", name:"Tonnelle", size:"grand", line:"Une tonnelle en arche en bois de chêne couleur miel, grand gabarit, deux montants et un treillage arrondi en haut, sans plante grimpante."},
+    {id:"o-hotel-insectes", name:"Hôtel à insectes", size:"petit", line:"Un hôtel à insectes en bois de chêne couleur miel sur un poteau, petit gabarit, petit toit à deux pans, cases remplies de tiges creuses, de pommes de pin et de bûchettes percées."},
+    {id:"o-carillon", name:"Carillon à vent", size:"petit", line:"Un carillon à vent en cuivre, petit gabarit, cinq tubes de longueurs différentes pendus à un disque, un battant au milieu, suspendu à un crochet."},
+    {id:"o-cadran-solaire", name:"Cadran solaire", size:"petit", line:"Un cadran solaire en pierre des champs grise, petit gabarit, colonne basse arrondie, dessus plat gravé des heures, style triangulaire en cuivre qui projette une ombre."},
+    {id:"o-girouette", name:"Girouette", size:"petit", line:"Une girouette en cuivre en forme de coq sur une tige, petit gabarit, flèche et lettres des quatre points cardinaux."},
+    {id:"o-balancoire", name:"Balançoire", size:"moyen", line:"Une balançoire en bois de chêne couleur miel, gabarit moyen, portique arrondi, siège de planche suspendu par deux cordes."},
+    {id:"o-nichoir", name:"Nichoir", size:"petit", line:"Un nichoir en bois de chêne couleur miel sur un poteau, petit gabarit, toit pentu, petit trou rond, petit perchoir."},
+    {id:"o-epouvantail", name:"Épouvantail", size:"moyen", line:"Un épouvantail de bois de chêne couleur miel et de paille, gabarit moyen, chemise en lin écru rapiécée, chapeau de paille, sourire cousu, bras écartés sur une traverse."}
+  ]}
+];
 /* Les onglets : une famille de prompts chacun */
 const CATS = {
   batiments:{label:"Bâtiments", families:parNiveau(FAMILIES),
@@ -185,6 +273,9 @@ const CATS = {
   meubles:{label:"Meubles", families:MEUBLES,
     lead:"Un prompt par meuble et par plan de travail, prêt pour ChatGPT. Chacun commence par la phrase de style de la bible, mot pour mot. L'image montre la couleur d'origine du meuble.",
     steps:["Touche <b>Copier</b>, puis colle dans ChatGPT.", "Vérifie l'image : un seul meuble, entier, fond blanc, vu de trois quarts, le devant bien visible.", "Enregistre-la sous le nom du meuble (par exemple chaise.png) et coche la case."]},
+  objets:{label:"Objets de l'île", families:OBJETS,
+    lead:"Les objets de décoration de l'île choisis par Yo (7 novembre 2026), chacun dans sa seule couleur de départ : bois de chêne couleur miel, pierre des champs grise, cuivre ou lin écru. Les couleurs suivantes viendront dans le jeu, avec les ressources. Ces prompts remplacent ceux de l'onglet Meubles pour les mêmes objets.",
+    steps:["Touche <b>Copier</b>, puis colle dans ChatGPT.", "Vérifie l'image : un seul objet, entier, fond blanc, vu de trois quarts, dans sa couleur de départ.", "Envoie-la à Claude : il fait l'objet d'après elle et te montre la comparaison."]},
   /* Le personnage (étape 2.5 de la bible : « Personnalisation de base : visage, cheveux, tenue » ; Yo, 30 octobre 2026 :
      « le choix sur une fille ou garçon », « Seulement la base pour commencer ») : la ligne « Personnage » de la fiche de
      commande de la bible (trois têtes de haut ; vue de face, corps entier, pose neutre debout, bras légèrement écartés), le

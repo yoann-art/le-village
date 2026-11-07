@@ -140,6 +140,19 @@ export async function verifier(){
     if(bois !== 24) throw new Error(`${bois} morceaux de bois au sol au lieu de 24`);
     return `${Object.keys(state.sol).length} objets au sol (dont 24 morceaux de bois), la mine est posée`;
   });
+  await etape("Les objets gardés pour plus tard : le brasero et le lampadaire ne se fabriquent plus, mais restent connus", async () => {
+    const { PLUS_TARD, FABRIQUE_A, MEUBLES } = await import("../js/donnees.js");
+    for(const k of ["brasero", "lampadaire"]){
+      if(!PLUS_TARD.has(k)) throw new Error(`${k} n'est pas gardé pour plus tard`);
+      if(!MEUBLES[k] || FABRIQUE_A[k] !== "forge") throw new Error(`${k} n'est plus reconnu (une partie en cours le perdrait)`);
+    }
+    const forge = state.buildings.find(b => b.type === "forge") || {type: "forge", lvl: 1};
+    const { recettesPour } = await import("../js/ateliers.js");
+    const offertes = recettesPour(forge).map(r => r.out);
+    if(offertes.includes("brasero") || offertes.includes("lampadaire")) throw new Error("l'enclume propose encore le brasero ou le lampadaire");
+    if(!offertes.includes("lustre")) throw new Error("l'enclume ne propose plus le lustre");
+    return `${offertes.length} recettes à l'enclume, sans le brasero ni le lampadaire ; tous deux restent dans le jeu pour les parties en cours`;
+  });
   await etape("Le petit caillou (image de Yo) : une pierre à facettes, l'herbe et ses pousses autour ; sur le sable, sans herbe", async () => {
     const cailloux = Object.keys(state.sol).filter(i => state.sol[i] === "caillou").map(Number);
     if(!cailloux.length) throw new Error("aucun petit caillou au sol");

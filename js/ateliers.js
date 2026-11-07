@@ -55,8 +55,9 @@ const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...
 /* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : seul le sac suivant se fabrique, et pas s'il est déjà en cours */
 const sacEnCours = () => state.buildings.some(b => b.atelier && b.atelier.queue.some(j => objet(j.out).sac));
 const sacPropose = r => !r.out || !objet(r.out).sac || (objet(r.out).sac === (state.sacNiveau || 0) + 1 && !sacEnCours());
+export const recettesPour = b => recettesDe(b);   // pour la vérification
 function recettesDe(b){
-  const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i})).filter(sacPropose);
+  const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i})).filter(r => sacPropose(r) && !r.plusTard);   // plusTard : gardé pour une mise à jour (donnees.js)
   if(!a.vente) return list;
   /* l'étal de graines (étape 2.1, les fleurs, morceau 2) : deux fleurs de jardin aujourd'hui */
   for(const f of etalDuJour(state.seed)){
