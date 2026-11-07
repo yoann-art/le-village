@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, tabouret:C.
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -229,6 +229,37 @@ function tableBanquetMorceaux(c){
   return out;
 }
 
+/* Le lit (image de Yo, 7 novembre 2026 : « Voici le lit ») : un cadre de chêne tout rond (le bois de départ des meubles) :
+   quatre gros montants ronds au bout arrondi, plus hauts à la tête ; une tête de lit cintrée entre eux ; des traverses
+   arrondies autour du matelas. Un matelas au drap blanc, un oreiller dodu penché contre la tête, la couverture (la couleur du
+   lit : lin écru au départ, puis les teintures) et le drap blanc replié dessus. La couverture à .5 (gestes.js s'y allonge) ;
+   la tête vers −z, le pied vers +z, la taille au sol comme avant (1,4 × 2,2) */
+const LT = {x: .58, zT: -1, zP: 1, bois: 0xC8955A, blanc: 0xFBFAF7};
+const LT_TETE_MONTANT = baton(.15, 1.18, true, true, 12);
+const LT_PIED_MONTANT = baton(.15, .8, true, true, 12);
+const LT_TETE = (() => { const g = boiteRonde(1.1, .62, .13, .055, 2, [4, 2, 1]), P = g.attributes.position;   // la tête de lit, cintrée en haut
+  for(let i = 0; i < P.count; i++){ if(P.getY(i) <= 0) continue; const u = P.getX(i) / .55, k = P.getY(i) / .31; P.setY(i, P.getY(i) + .13 * (1 - u * u) * k); }
+  g.computeVertexNormals(); return g; })();
+const LT_COTE = boiteRonde(.12, .2, 1.9, .05, 2);
+const LT_TRAVERSE = boiteRonde(1.1, .2, .12, .05, 2);
+const LT_MATELAS = boiteRonde(1.06, .17, 1.84, .06, 3);
+const LT_COUVERTURE = coussin(1.14, .2, 1.3, .05, .02, 1);           // elle retombe sur les côtés du matelas
+const LT_DRAP = coussin(1.15, .21, .3, .055, .015, 1);
+const LT_OREILLER = coussin(.84, .2, .5, .08, .07, 1);
+function litMorceaux(c){
+  const o = ombreBois(0, 1.2), ol = ombreBois(.2, 1), b = LT.bois, out = [];
+  for(const sx of [-1, 1]){
+    out.push({geo: LT_TETE_MONTANT, m: M4(sx * LT.x, 0, LT.zT), c: b, ombre: o}, {geo: LT_PIED_MONTANT, m: M4(sx * LT.x, 0, LT.zP), c: b, ombre: o});
+    out.push({geo: LT_COTE, m: M4(sx * LT.x, .3, 0), c: b, ombre: o});
+  }
+  out.push({geo: LT_TETE, m: M4(0, .68, LT.zT), c: b, ombre: o}, {geo: LT_TRAVERSE, m: M4(0, .3, LT.zP), c: b, ombre: o}, {geo: LT_TRAVERSE, m: M4(0, .3, LT.zT), c: b, ombre: o});
+  out.push({geo: LT_MATELAS, m: M4(0, .37, 0), c: LT.blanc, ombre: ol});                              // le matelas et son drap
+  out.push({geo: LT_OREILLER, m: M4(0, .62, -.8, -.75), c: LT.blanc, ombre: ol});                      // l'oreiller, penché contre la tête
+  out.push({geo: LT_COUVERTURE, m: M4(0, .4, .3), c, ombre: ol});                                      // la couverture : la couleur du lit
+  out.push({geo: LT_DRAP, m: M4(0, .425, -.43), c: LT.blanc, ombre: ol});                                // le drap replié par-dessus
+  return out;
+}
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -393,14 +424,7 @@ const BUILD = {
   },
   table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
   tableBanquet(g, m){ g.add(modeleBois("tableBanquet", m, tableBanquetMorceaux)); },
-  lit(g, m){
-    g.add(part(G.box, C.wood, 1.4, .3, 2.2, 0, .15, 0));                               // cadre
-    g.add(part(G.box, m, 1.3, .14, 1.6, 0, .37, .25));                                // couverture
-    g.add(part(G.box, C.white, 1.3, .15, .35, 0, .375, -.72));                         // drap replié
-    g.add(part(G.box, C.white, .9, .12, .3, 0, .44, -.85));                            // oreiller
-    g.add(part(G.box, C.dark, 1.4, .8, .12, 0, .4, -1.04));                            // tête de lit
-    g.add(part(G.box, C.dark, 1.4, .45, .1, 0, .225, 1.05));                           // pied de lit
-  },
+  lit(g, m){ g.add(modeleBois("lit", m, litMorceaux)); },
   grandTapis(g, m){
     g.add(part(G.box, m, 2.4, .02, 1.8, 0, .012, 0));                                 // bordure
     g.add(part(G.box, C.cream, 2, .025, 1.4, 0, .014, 0));
