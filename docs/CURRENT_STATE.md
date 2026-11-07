@@ -31,6 +31,9 @@
   seuls les communs tant que le carnet compte moins de 3 oiseaux ; v2.1.86 : les moineaux volent seuls, plus de
   groupes) ; puis les modèles un par un d'après les images de Yo, comme des vrais : 12 sur 12, tous faits (la cigogne, qui claque du bec et plane le cou tendu, v2.1.97 ; le martin-pêcheur, qui plonge et ressort avec un poisson, v2.1.95 ; le rossignol, qui chante tête levée, v2.1.94 ; la chouette effraie, la tête qui tourne et la chasse lente, v2.1.93 ; le héron cendré, qui pêche un petit poisson, v2.1.92 ; l'hirondelle, qui chasse en boucles, v2.1.91 ; la mouette rieuse, capuchon l'été, qui plane, v2.1.90 ; la pie à la longue queue, qui marche à grands pas, v2.1.89 ; le merle, qui court, écoute et tire un ver, v2.1.88 ; le rouge-gorge, qui fait des courbettes, v2.1.87 ; la mésange charbonnière, la tête en bas et le vol ondulé, v2.1.85 ; le moineau
   domestique, mâles et femelles, v2.1.84).
+- Les poissons de l'île (24) : tous faits d'après les images de Yo, comme des vrais (`MODELES_POISSONS` dans
+  `js/monde/poissons3d.js`, tous préparés au chargement par `mains.js`) ; le dernier, la raie bouclée (v2.1.164, 7 novembre
+  2026). Le ponton allongé à 10 cases, ses poissons plus loin que ceux de la plage (v2.1.154).
 - La Scierie : le niveau 3 fait d'après l'image de Yo (v2.1.104), sur un terrain de 5 × 5 (v2.1.103) ; « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.
 - La Carrière : le niveau 1 fait d'après la nouvelle image de Yo (v2.1.106), à ciel ouvert, sur un terrain de 5 × 5 ; les niveaux 2 et 3
@@ -49,7 +52,7 @@
   https://claude.ai/artifact/LWFge8j2WxeRZEdrv88mCe, fichiers attendus dans `C:\Users\Artefact\Desktop\Hearthwild\musiques\`).
 - L'étape 2.3 (la Scierie dedans), 2.4 à 2.7.
 - Les arbres de la forêt et du Marais d'après images (morceau 2d), la forêt et le Marais refaits.
-- Les poissons de l'île d'après images ; ponton, pont, orée, entrée de la mine, chemins, coffre, lumières.
+- Ponton, pont, orée, entrée de la mine, chemins, coffre, lumières.
 - Destinations suivantes (le Récif…), élevage, potions, champignons, fêtes.
 
 ## Limites et points à surveiller

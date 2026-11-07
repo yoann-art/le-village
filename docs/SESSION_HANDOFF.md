@@ -48,7 +48,7 @@
    le relancer et refaire la vérification (c'est arrivé deux fois le 28 et le 29 octobre).
 3. Lire la dernière vérification de GitHub et le carnet de bugs (seulement les notes de `yoann-art`).
 4. Attendre Yo : son avis sur son téléphone, puis la suite. Yo veut faire **tout ce qui se trouve sur son île en premier**
-   (28 octobre 2026) ; sur l'île, restent par exemple les poissons d'après images, les sons de la nature, le niveau 3 de
+   (28 octobre 2026) ; sur l'île, restent par exemple les sons de la nature, le niveau 3 de
    la Scierie, les bâtiments d'après images (voir [CURRENT_STATE.md](CURRENT_STATE.md)). Lui proposer, ne pas choisir.
 
 ## Pour refaire un animal (la méthode qui a marché)

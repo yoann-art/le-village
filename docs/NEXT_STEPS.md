@@ -40,7 +40,7 @@ Ce que Yo a demandé est marqué **(Yo)** ; ce que Claude propose est marqué *(
 - **Les sons de la nature** (étape 2.1, morceau 5 : bibliothèques CC0, choisis par Claude, validés par Yo en jouant)
   et **la musique** (les morceaux Suno de Yo ; la playlist décrite dans le doc Suno).
 - Le reste de l'île (« toute l'île d'abord », 15 octobre 2026) : les 6 autres bâtiments, ponton, pont et orée de la forêt,
-  entrée de la mine, chemins, coffre, lumières ; les 12 oiseaux et les poissons de l'île.
+  entrée de la mine, chemins, coffre, lumières (les 12 oiseaux et les 24 poissons de l'île sont faits).
 - Puis la forêt et le Marais refaits avec leurs arbres (morceau 2d), l'étape 2.3 (la Scierie dedans) et la suite de la phase 2.
 
 ## Dépendances et risques
