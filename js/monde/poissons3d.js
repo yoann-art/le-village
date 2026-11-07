@@ -1658,6 +1658,78 @@ function orphieFait(){
 }
 export const orphieModele = () => modeleDe(orphieFait());
 
+/* ---------- Le congre ----------
+   D'après l'image de Yo (7 novembre 2026 : « Voici le congre »), comme un vrai congre (Conger conger ; choix de Yo : « A »,
+   comme la nature) : le long corps de serpent, puissant, la grosse tête ; la peau lisse sans écailles, gris ardoise presque
+   noir au dos, gris pâle au ventre, sans taches ; le long du flanc, la rangée de petits points clairs de la ligne latérale.
+   La grande bouche aux lèvres épaisses, la mâchoire du haut un peu plus longue, la fente jusque sous l'œil ; le grand œil
+   gris doré. Pas de nageoires au ventre : seulement les pectorales, pointues. La longue nageoire du dos part juste derrière
+   les pectorales, celle du dessous du milieu du ventre ; elles font le tour de la queue, qui finit en pointe ; grises,
+   bordées d'un liseré noir. Fait comme l'anguille (anguilleFait), plus gros et plus gris. */
+const CONGRE_F = corps(-.6, .56,
+  courbe([[0, .017], [.03, .036], [.08, .059], [.14, .073], [.3, .081], [.5, .078], [.7, .063], [.85, .042], [1, .008]]),
+  courbe([[0, .014], [.03, .031], [.08, .052], [.14, .067], [.3, .078], [.5, .077], [.7, .062], [.85, .041], [1, .008]]),
+  courbe([[0, .018], [.03, .034], [.08, .049], [.14, .057], [.3, .06], [.5, .052], [.7, .036], [.85, .021], [1, .004]]));
+const CONGRE = {dos: 0x2C3034, dosClair: 0x4C535A, flanc: 0x7A8288, ventre: 0xC4C8CA, levre: 0x8C9298, bouche: 0x3A3436,
+  pore: 0xB6BCBC, iris: 0xA49C80, cercle: 0x464C52, nag: 0x6A7076, nagBord: 0x141618, pecto: 0x737B82, pectoBout: 0x4A5258};
+let congreGeo = null;
+function congreFait(){
+  if(congreGeo) return congreGeo;
+  const C = CONGRE, F = CONGRE_F, M = [], X0 = F.x0, X1 = F.x1, uDe = F.uDe, HAUT = F.haut, BAS = F.bas;
+  const xDe = u => X0 + (X1 - X0) * u;
+  /* le corps, lisse : gris ardoise au dos, gris pâle au ventre, sans taches */
+  const couleurCorps = (x, y) => { const h = F.h(x, y);
+    return h > .3 ? melange(C.dosClair, C.dos, (h - .3) / .4) : h > -.2 ? melange(C.flanc, C.dosClair, (h + .2) / .5) : melange(C.flanc, C.ventre, (-.2 - h) / .5); };
+  M.push({geo: corpsGeo(X0, X1, HAUT, BAS, F.large, 96, 26), m: new THREE.Matrix4(), c: 0xFFFFFF, couleur: couleurCorps,
+    ombre: (x, y) => .92 + .12 * Math.max(-1, Math.min(1, y / .06))});
+  oeil(M, F, {u: .07, a: .5, r: .022, iris: C.iris, cercle: C.cercle, narine: C.dos, uNarine: .016, aNarine: .45});
+  /* les narines en petits tubes, au bout du museau */
+  for(const s of [-1, 1]){ const a = F.peau(.012, .4, s), b = a.clone().add(V(-.006, .005, s * .003)); baton(M, C.dosClair, a, b, .0025); }
+  /* la grande bouche aux lèvres épaisses : la mâchoire du haut un peu plus longue, la fente jusque sous l'œil */
+  boule(M, C.levre, X0 + .036, -.005, 0, .055, .012, .021);
+  boule(M, C.levre, X0 + .045, -.022, 0, .05, .011, .02);
+  boule(M, C.bouche, X0 + .045, -.0135, 0, .046, .004, .0205, BOULE_P);
+  /* la fente des ouïes, devant la pectorale */
+  for(const s of [-1, 1]) for(let k = 0; k < 5; k++){ const p = F.peau(.13, -.4 + k * .1, s), n = F.normale(.13, -.4 + k * .1, s);
+    M.push({geo: BOULE_P, m: new THREE.Matrix4().compose(p.addScaledVector(n, -.001), versN(n), V(.003, .003, .007)), c: C.dosClair}); }
+  /* la ligne latérale : une rangée de petits points clairs le long du flanc */
+  for(const s of [-1, 1]) for(let u = .15; u < .96; u += .026){ const a = .08 - .1 * u, p = F.peau(u, a, s), n = F.normale(u, a, s);
+    M.push({geo: TACHE, m: new THREE.Matrix4().compose(p.addScaledVector(n, .0008), versN(n), V(.0035, .0012, .0035)), c: C.pore}); }
+  /* la pectorale, pointue */
+  for(const s of [-1, 1]){
+    const p = F.peau(.145, -.1, s);
+    const g = nageoireGeo(V(0, .012, 0), V(0, -.012, 0), t => { const a = Math.PI * (t - .5) * .95; return V(.01 + Math.cos(a) * .06 * (1 - .35 * Math.abs(t - .35)), Math.sin(-a) * .026 - .008, 0); }, 10, .004);
+    nageoire(M, g, new THREE.Matrix4().compose(V(p.x, p.y, p.z + s * .007), tourne(s * .1, s * -.4, 0), V(1, 1, 1)), x => melange(C.pecto, C.pectoBout, (x - p.x) / .06));
+  }
+  /* la longue nageoire : du dos juste derrière les pectorales, du dessous depuis le milieu du ventre ; elles font le tour de
+     la queue et s'y rejoignent ; grises, le liseré noir au bord */
+  const rubans = [[.2, 1], [.44, -1]];
+  for(const [u0, sens] of rubans){
+    const base = t => { const u = u0 + (1 - u0) * t, f = Math.max(0, (t - .8) / .2);
+      return V(xDe(u), sens * ((sens > 0 ? HAUT(u) : BAS(u)) - .004 - .005 * f * f), 0); };
+    const hauteur = t => .034 * Math.min(1, t / .1) + .01 * t;
+    const tc = .82, bc = base(tc), xc = bc.x, ry = Math.abs(bc.y) + hauteur(tc), rx = X1 + .06 - xc;
+    const bord = t => { if(t <= tc) return base(t).add(V(0, sens * hauteur(t), 0));
+      const a = (t - tc) / (1 - tc) * Math.PI / 2; return V(xc + rx * Math.sin(a), sens * ry * Math.pow(Math.cos(a), 1.4), 0); };
+    nageoire(M, rubanGeo(base, bord, 90), new THREE.Matrix4(), (x, y) => {
+      const u = uDe(x), k = (Math.abs(y) - (sens > 0 ? HAUT(u) : BAS(u)) + .004) / .03;
+      return u > .97 ? melange(C.nag, C.nagBord, Math.max(0, (x - X1) / .05) * 1.4) : melange(C.nag, C.nagBord, Math.pow(Math.max(0, Math.min(1, k)), 3) * 1.2); });
+  }
+  /* le tout ondule doucement, comme sur l'image : droit à la tête, des vagues plus amples vers la queue */
+  const g = fusionner(M), P = g.attributes.position, N = g.attributes.normal, k = Math.PI * 2 / .62;
+  const A = x => .045 * Math.max(0, Math.min(1, (x + .35) / .5));
+  const w = x => A(x) * Math.sin(k * (x + .1)), dw = x => (w(x + .001) - w(x - .001)) / .002;
+  for(let i = 0; i < P.count; i++){
+    const x = P.getX(i), y = P.getY(i), d = dw(x), L = Math.sqrt(1 + d * d);
+    P.setXY(i, x - y * d / L, w(x) + y / L);
+    const nx = N.getX(i), ny = N.getY(i), c = 1 / L, s = d / L;
+    N.setXY(i, nx * c - ny * s, nx * s + ny * c);
+  }
+  g.computeBoundingSphere();
+  return congreGeo = g;
+}
+export const congreModele = () => modeleDe(congreFait());
+
 /* Les poissons refaits d'après les images de Yo (peche.js, icones.js) : fabrique() rend le modèle ; echelle le met à la taille
    des anciens poissons */
 export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, perche: {fabrique: percheModele, echelle: 1},
@@ -1674,5 +1746,6 @@ export const MODELES_POISSONS = {gardon: {fabrique: gardonModele, echelle: 1}, p
   sardine: {fabrique: sardineModele, echelle: 1},
   mulet: {fabrique: muletModele, echelle: 1},
   orphie: {fabrique: orphieModele, echelle: 1},
+  congre: {fabrique: congreModele, echelle: 1},
   koi: {fabrique: koiModele, echelle: 1, couleurs: KOI_COULEURS},   // fabrique(couleur) : une des dix variétés (Kohaku si rien)
   ecrevisse: {fabrique: ecrevisseModele, echelle: 1.35}};   // l'écrevisse, petite (8 à 15 cm) : un peu plus grande en main, pour bien la voir
