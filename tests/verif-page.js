@@ -684,7 +684,7 @@ export async function verifier(){
     const btnG = $("#btn-geste"), {seLever} = await import("../js/monde/personnage.js");
     await entrer(scierie);
     try {
-    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("fauteuil", 1); sacAdd("banc", 1); sacAdd("tableBanquet", 1); sacAdd("etagere", 1); sacAdd("armoire", 1);
+    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("fauteuil", 1); sacAdd("banc", 1); sacAdd("tableBanquet", 1); sacAdd("etagere", 1); sacAdd("armoire", 1); sacAdd("tonneau", 1);
     $("#btn-deco").click(); await wait(200);
     addMeuble("chaise"); addMeuble("chandelle");
     $("#deco-done").click(); await wait(200);
@@ -738,6 +738,11 @@ export async function verifier(){
     const armoire = items.find(it => it.type === "armoire");
     if(!armoire) throw new Error("l'armoire ne se pose pas");
     items.splice(items.indexOf(armoire), 1); removeItemMesh(armoire.id);
+    /* le tonneau refait (image de Yo) : il se pose dans la pièce, puis il est ôté */
+    $("#btn-deco").click(); await wait(200); addMeuble("tonneau"); $("#deco-done").click(); await wait(200);
+    const tonneau = items.find(it => it.type === "tonneau");
+    if(!tonneau) throw new Error("le tonneau ne se pose pas");
+    items.splice(items.indexOf(tonneau), 1); removeItemMesh(tonneau.id);
     placePlayer(chandelle.x + .8, chandelle.z, -1, 0); updateGestes(true);
     if(!btnG.textContent.includes("Éteindre la chandelle")) throw new Error(`près de la chandelle, le bouton dit « ${btnG.textContent} »`);
     faireGeste();
@@ -3049,7 +3054,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

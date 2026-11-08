@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -318,6 +318,40 @@ function armoireMorceaux(c){
   return out;
 }
 
+/* Le tonneau (image de Yo, 8 novembre 2026 : « Voici le tonneau ») : bombé, plus large au milieu ; douze douelles, le joint
+   entre elles un petit creux peint plus sombre ; en haut, un gros rebord rond et un couvercle de trois planches ; deux larges
+   cerclages de cuivre et leurs rivets ronds (leur couleur ne change pas avec le bois). 0,7 × 0,7 au sol, .84 de haut */
+const TN = {H: .84, bas: .285, ventre: .35, n: 12, cuivre: 0xB0602A};
+const rayonTN = y => TN.bas + (TN.ventre - TN.bas) * Math.sin(Math.PI * Math.min(1, Math.max(0, y / TN.H)));
+const jointTN = (x, z) => { const t = (Math.atan2(z, x) / (2 * Math.PI) * TN.n % 1 + 1) % 1; return Math.max(0, 1 - Math.min(t, 1 - t) / .045); };   // 1 sur un joint
+const TN_CORPS = (() => { const p = []; for(let k = 0; k <= 14; k++){ const y = (TN.H - .06) * k / 14; p.push(new THREE.Vector2(rayonTN(y), y)); }
+  const g = new THREE.LatheGeometry(p, 48), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const x = P.getX(i), z = P.getZ(i), f = 1 - .01 * jointTN(x, z); P.setX(i, x * f); P.setZ(i, z * f); }
+  g.computeVertexNormals(); return g; })();
+const TN_REBORD = (() => { const p = [], R = rayonTN(TN.H - .05), r = .045; for(let k = 0; k <= 10; k++){ const a = -Math.PI / 2 + k / 10 * Math.PI;
+    p.push(new THREE.Vector2(R - .01 + r * Math.cos(a), TN.H - r + r * Math.sin(a))); }
+  p.unshift(new THREE.Vector2(R - .03, TN.H - 2 * .045)); p.push(new THREE.Vector2(R - .06, TN.H), new THREE.Vector2(R - .06, TN.H - .05));   // le bord intérieur
+  return new THREE.LatheGeometry(p, 40); })();
+const TN_COUVERCLE = new THREE.CylinderGeometry(.24, .24, .03, 32);
+const TN_RAINURE = new THREE.BoxGeometry(.44, .008, .012);
+const TN_CERCLE = y0 => { const p = [], h = .12; for(let k = 0; k <= 6; k++){ const y = y0 - h / 2 + h * k / 6, b = k === 0 || k === 6 ? .008 : .022; p.push(new THREE.Vector2(rayonTN(y) + b, y)); }
+  return new THREE.LatheGeometry(p, 48); };
+const TN_HAUTS = [.2, .6], TN_CERCLES = TN_HAUTS.map(TN_CERCLE);
+const TN_RIVET = new THREE.SphereGeometry(.024, 8, 6);
+function tonneauMorceaux(c){
+  const o = ombreBois(0, TN.H), joint = (x, y, z) => o(x, y) * (1 - .3 * jointTN(x, z)), out = [];
+  out.push({geo: TN_CORPS, m: M4(0, 0, 0), c, ombre: joint, normale: (x, y, z, n) => { const r = Math.hypot(x, z) || 1; return n.set(x / r, n.y * .3, z / r).normalize(); }});   // la lumière comme sur un fût droit : pas d'ombre en biais ni de couture
+  out.push({geo: TN_REBORD, m: M4(0, 0, 0), c, ombre: o});
+  out.push({geo: TN_COUVERCLE, m: M4(0, TN.H - .04, 0), c, ombre: () => .98});
+  for(const z of [-.09, .09]) out.push({geo: TN_RAINURE, m: M4(0, TN.H - .025, z, 0, .35), c, ombre: () => .7});   // les trois planches du couvercle
+  TN_HAUTS.forEach((y, i) => {
+    out.push({geo: TN_CERCLES[i], m: M4(0, 0, 0), c: TN.cuivre, ombre: o});
+    for(let k = 0; k < 10; k++){ const a = (k + .5) / 10 * 2 * Math.PI, r = rayonTN(y) + .024;
+      out.push({geo: TN_RIVET, m: M4(Math.cos(a) * r, y, Math.sin(a) * r), c: TN.cuivre, ombre: o}); }
+  });
+  return out;
+}
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -444,11 +478,7 @@ const BUILD = {
     for(const x of [-.51, .51]) g.add(part(G.box, m, .04, .04, .6, x, .9, 0));
     if(pierre){ const p = pierreMesh(pierre); p.scale.setScalar(1.35); p.position.y = .52; g.add(p); }
   },
-  tonneau(g, m){
-    g.add(part(G.cyl, m, .64, .7, .64, 0, .35, 0));                                   // douelles
-    for(const y of [.15, .55]) g.add(part(G.cyl, C.metal, .67, .05, .67, 0, y, 0));   // cerclages
-    g.add(part(G.cyl, C.dark, .6, .02, .6, 0, .705, 0));                               // couvercle
-  },
+  tonneau(g, m){ g.add(modeleBois("tonneau", m, tonneauMorceaux)); },
   coffre(g, m){
     g.add(part(G.box, m, 1.2, .5, .7, 0, .25, 0));                                    // caisse
     const lid = part(G.cyl, m, .7, 1.2, .7, 0, .5, 0);                                // couvercle bombé

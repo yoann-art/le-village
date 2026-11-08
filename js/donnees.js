@@ -918,7 +918,7 @@ export const ATELIERS = {
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"fauteuil", in:{planche:4, fibre:3}, t:40, lvl:1},   // le fauteuil : du bois et des coussins de lin (Yo, 7 novembre 2026)
     {out:"banc", in:{planche:4}, t:40, lvl:1},
-    {out:"tonneau", in:{planche:5}, t:60, lvl:2},
+    {out:"tonneau", in:{planche:5, cuivre:1}, t:60, lvl:2},   // les cerclages de cuivre (Yo, 8 novembre 2026)
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"tableBanquet", in:{planche:10}, t:120, lvl:2},   // la grande table de banquet (Yo, 7 novembre 2026)
     {out:"etagere", in:{planche:6}, t:90, lvl:2},
