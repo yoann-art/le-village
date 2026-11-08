@@ -57,7 +57,7 @@ export const MEUBLES = {
   chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5},   // étape 1.11 : l'argent de la mine
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
-  coffre:   {nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
+  coffre:   {nom:"Coffre", emoji:"📦", gabarit:"petit", w:.9, d:.55},   // à la taille des autres meubles (Yo, 8 novembre 2026)
   banc:     {nom:"Banc", emoji:"🛋️", gabarit:"moyen", w:1.6, d:.6},
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
   armoire:  {nom:"Armoire", emoji:"🚪", gabarit:"moyen", w:1.3, d:.7, une:true},   // l'armoire (Yo, 8 novembre 2026)

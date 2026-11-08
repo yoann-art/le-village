@@ -800,7 +800,7 @@ function buildObj(i){
     g.add(makeMeuble(o, undefined, state.ile[i]));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre", undefined, state.ile[i]);   // son allure : simple, ou cerclé de cuivre (state.ile[i].style)
-    c.scale.setScalar(.75); g.add(c);
+    g.add(c);                                       // à la même taille que dans les pièces (Yo, 8 novembre 2026)
   } else if(o === "galets"){                        // les galets de plage (étape 2.1, morceau 3 : galets.js, d'après l'image de Yo)
     g.add(galetsModele(r, neigeBranches()));
   } else if(o === "rock"){                          // la pierre des champs (étape 2.1, morceau 3 : pierre.js, d'après l'image de Yo)

@@ -130,7 +130,7 @@ export function updateCoffrePiece(active){
     const p = player.position, proche = ((place.b.deco && place.b.deco.items) || []).find(it => {
       if(!it.reserve) return false;
       const [w, d] = footOf(it);
-      return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
+      return Math.abs(p.x - it.x) < w/2 + 1 && Math.abs(p.z - it.z) < d/2 + 1;   // un pas de plus : le coffre est petit (8 novembre 2026)
     });
     if(proche){ const co = state.coffres.find(c => c.id === proche.reserve);   // le bouton dit son nom (demande de Yo, 13 octobre 2026)
       actPiece = {label: "🗃️ Ouvrir le coffre", nom: co ? `🗃️ ${nomCoffre(co)}` : "🗃️ Coffre", run: () => openCoffre(proche.reserve)}; }

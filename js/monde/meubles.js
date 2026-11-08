@@ -416,6 +416,7 @@ function verreVitrine(){
    deux larges bandes par-dessus. Le coffre simple (le début de partie, sans cuivre) : les bandes de bois sombre, des chevilles,
    un loquet de bois. Le coffre cerclé de cuivre (o.style = "cuivre") : les bandes, les rivets et la serrure en écusson de
    cuivre, comme l'image. 1,4 × 0,8 au sol, 1,05 de haut ; le devant vers +z */
+const CF_ECHELLE = .65;
 const CF = {L: 1.3, D: .74, bas: .1, haut: .62, R: .37, cy: .68, bx: .42, cuivre: 0xB0602A, trou: 0x2A1A10};
 const CF_PIED = baton(.075, CF.bas + .04, true, false, 8);
 const CF_PLANCHE = boiteRonde(CF.L / 7, CF.haut - CF.bas, CF.D, .02, 1);
@@ -582,7 +583,9 @@ const BUILD = {
     if(pierre){ const p = pierreMesh(pierre); p.scale.setScalar(1.35); p.position.y = VT.plateau + .14; g.add(p); }
   },
   tonneau(g, m){ g.add(modeleBois("tonneau", m, tonneauMorceaux)); },
-  coffre(g, m, o){ const cu = !!(o && o.style === "cuivre"); g.add(modeleBois(cu ? "coffreCuivre" : "coffre", m, coffreMorceaux(cu))); },
+  /* Yo (8 novembre 2026 : « les coffres sont vraiment trop grands ; il faut qu'ils soient proportionnels aux autres meubles ») :
+     le modèle aux deux tiers : .9 × .55 au sol, .68 de haut, à hauteur de genou à côté d'une chaise */
+  coffre(g, m, o){ const cu = !!(o && o.style === "cuivre"), c = modeleBois(cu ? "coffreCuivre" : "coffre", m, coffreMorceaux(cu)); c.scale.setScalar(CF_ECHELLE); g.add(c); },
 
   banc(g, m){ g.add(modeleBois("banc", m, bancMorceaux)); },
   etagere(g, m){ g.add(modeleBois("etagere", m, etagereMorceaux)); },
