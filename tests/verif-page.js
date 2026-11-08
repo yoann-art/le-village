@@ -2927,6 +2927,29 @@ export async function verifier(){
     $("#sheetWrap [data-close]").click(); await wait(300);
     return `un coffre rempli (${range.items.length} emplacement) rangé dans un autre`;
   });
+  await etape("Le coffre cerclé de cuivre : le poser, y ranger, le déplacer plein, il garde son allure", async () => {
+    const clic = s => { const b = $(s); if(!b) throw new Error(`pas de bouton ${s}`); b.click(); };
+    const libre = () => { const px = tileOf(player.position.x), pz = tileOf(player.position.z);
+      for(let d = 1; d < 8; d++) for(let dx = -d; dx <= d; dx++) for(const dz of [-d, d]){ const i = idx(px + dx, pz + dz); if(!poseProblem(i)) return i; }
+      throw new Error("pas de place pour poser un coffre"); };
+    place(4); sacAdd("coffreCuivre", 1); sacAdd("bois", 3); enMain("coffreCuivre");
+    const i = libre(); poserCoffre(i);
+    const co = state.coffres.find(c => c.i === i);
+    if(!co || co.style !== "cuivre" || !state.ile[i] || state.ile[i].style !== "cuivre") throw new Error("le coffre de cuivre posé n'a pas son allure");
+    openCoffre(co.id); await wait(200);
+    clic(`[data-co="sac:${state.sac.findIndex(it => it.k === "bois")}"]`); clic(".co-fiche [data-co-bouge]");
+    clic("[data-co-deplacer]"); await wait(300);
+    const plein = [...state.sac, ...state.barre].find(it => it && it.k === "coffrePlein" && it.id === co.id);
+    if(!plein || plein.style !== "cuivre") throw new Error("le coffre de cuivre rempli, en main, a perdu son allure");
+    const j = libre(); poserCoffre(j);
+    const co2 = state.coffres.find(c => c.i === j);
+    if(!co2 || co2.style !== "cuivre" || !co2.items.some(it => it.k === "bois")) throw new Error("reposé, le coffre de cuivre a perdu son allure ou son bois");
+    co2.items.length = 0;                                                       // vidé : il revient dans le sac comme coffre de cuivre
+    openCoffre(co2.id); await wait(200); clic("[data-co-deplacer]"); await wait(300);
+    if(state.coffres.includes(co2) || !owned("coffreCuivre")) throw new Error("vide, le coffre de cuivre ne revient pas comme coffre de cuivre");
+    $("#sheetWrap [data-close]")?.click(); await wait(200);
+    return "posé, rempli, déplacé, reposé et repris : toujours cerclé de cuivre";
+  });
   if(scierie) await etape("Un coffre dans un bâtiment : le poser, l'ouvrir, l'emporter", async () => {
     sacAdd("coffreReserve", 1); enMain("coffreReserve");
     await entrer(scierie);
@@ -3054,7 +3077,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

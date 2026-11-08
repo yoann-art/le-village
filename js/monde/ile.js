@@ -799,7 +799,7 @@ function buildObj(i){
   } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
     g.add(makeMeuble(o, undefined, state.ile[i]));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
-    const c = makeMeuble("coffre");
+    const c = makeMeuble("coffre", undefined, state.ile[i]);   // son allure : simple, ou cerclé de cuivre (state.ile[i].style)
     c.scale.setScalar(.75); g.add(c);
   } else if(o === "galets"){                        // les galets de plage (étape 2.1, morceau 3 : galets.js, d'après l'image de Yo)
     g.add(galetsModele(r, neigeBranches()));

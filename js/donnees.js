@@ -129,6 +129,10 @@ export const POSABLES = {
     usage:"Un rocher à veines de cuivre rapporté de la mine : pose-le sur ton île, puis mine-le pour son cuivre."},
   coffreReserve:{nom:"Coffre de réserve", pluriel:"coffres de réserve", emoji:"🗃️", pose:"coffre",
     usage:"Prends-le en main, puis touche « Poser le coffre » devant une case libre du village. On y range ce qu'on veut."},
+  /* Le coffre cerclé de cuivre (Yo, 8 novembre 2026 : « un autre coffre sans cuivre apparent et celui-ci pour un autre design ») :
+     un coffre de réserve comme l'autre, de l'allure de son image ; il garde son allure posé, déplacé, rempli */
+  coffreCuivre:{nom:"Coffre cerclé de cuivre", pluriel:"coffres cerclés de cuivre", emoji:"🗃️", pose:"coffre",
+    usage:"Un coffre de réserve garni de cuivre, pour un autre style : prends-le en main, puis touche « Poser le coffre ». On y range autant que dans l'autre."},
   /* Demande de Yo (v1.7.8) : un coffre plein se déplace avec ce qu'il contient (comme la boîte de Shulker de Minecraft) */
   coffrePlein:{nom:"Coffre rempli", pluriel:"coffres remplis", emoji:"🗃️", pose:"coffre", seul:true,
     usage:"Un coffre déplacé avec tout ce qu'il contient : prends-le en main et touche « Poser le coffre » devant une case libre, ou range-le dans un autre coffre."}
@@ -911,6 +915,7 @@ export const ATELIERS = {
     {out:"fleche", n:10, in:{planche:2, pierre:1}, t:30, lvl:1, cat:"Outils"},
     {out:"epeeBois", in:{planche:4}, t:40, lvl:1, cat:"Outils"},
     {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},
+    {out:"coffreCuivre", in:{planche:5, cuivre:2}, t:40, lvl:2},   // le coffre cerclé de cuivre (Yo, 8 novembre 2026)
     /* Les lumières (demande de Yo, 11 octobre 2026) : une torche posée sur la torchère ne s'éteint plus jamais */
     {out:"torchere", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Lumières"},
     {out:"feuCamp", in:{pierre:6, bois:4}, t:30, lvl:1},

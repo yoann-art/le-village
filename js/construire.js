@@ -294,7 +294,7 @@ function demonterDoubles(){
     const i = caseLibre();
     if(i < 0) break;                     // l'île pleine : il reste rangé (sans place), on ne perd rien
     delete co.b; co.i = i;
-    setObj(i, "coffre"); setEtat(i, {id: co.id});
+    setObj(i, "coffre"); setEtat(i, {id: co.id, style: co.style});
   }
   state.coffres.sort((a, b) => a.id - b.id);
   save();

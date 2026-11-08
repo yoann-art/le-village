@@ -50,6 +50,9 @@ Object.assign(PHOTOS, {
 /* Les meubles refaits d'après les images de Yo (chantier de la décoration) : leur photo, dans leur couleur de départ ; elle
    sert aussi au catalogue de « Décorer » */
 for(const k of MEUBLES_REFAITS) PHOTOS[k] = () => makeMeuble(k);
+/* Les coffres de réserve (image de Yo, 8 novembre 2026) : le simple, et le coffre cerclé de cuivre */
+Object.assign(PHOTOS, {coffreReserve: () => makeMeuble("coffre"), coffrePlein: () => makeMeuble("coffre"), coffreCuivre: () => makeMeuble("coffre", undefined, {style: "cuivre"})});
+const DE_FACE = new Set([...MEUBLES_REFAITS, "coffreReserve", "coffrePlein", "coffreCuivre"]);
 export const iconesPhoto = () => Object.keys(PHOTOS);
 
 /* Les photos déjà prises, gardées sur l'appareil */
@@ -90,7 +93,7 @@ export function photographier(k){
   if(D_EN_HAUT.has(k)) for(const a of ailes) a.pivot.rotation.z = a.cote * .08;
   else if(ferme) for(const a of ailes) a.pivot.rotation.z = a.cote * ferme;
   const vue = MODELES_POISSONS[k] ? POISSON : D_EN_HAUT.has(k) ? DESSUS : ferme ? PROFIL : VUE;
-  if(MEUBLES_REFAITS.includes(k)) m.rotation.y = Math.PI;        // un meuble se voit par-devant (son devant est vers +z)
+  if(DE_FACE.has(k)) m.rotation.y = Math.PI;        // un meuble se voit par-devant (son devant est vers +z)
   S.scene.add(m);
   m.updateMatrixWorld(true);
   boite.makeEmpty();                                               // seulement ce qui se voit (pas les ailes de vol cachées)

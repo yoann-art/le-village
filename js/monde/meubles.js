@@ -410,6 +410,58 @@ function verreVitrine(){
   return vtVerre = fusionner(morceaux);
 }
 
+/* Les coffres de réserve (image de Yo, 8 novembre 2026 : « Voici le coffre » ; « Il faudrait faire un autre coffre sans cuivre
+   apparent et celui-ci pour un autre design ») : une caisse de planches verticales, son cadre arrondi (le bas, les coins),
+   quatre petits pieds ronds ; un gros rebord, puis un couvercle bombé de planches couchées, ses bouts en demi-lune cerclés ;
+   deux larges bandes par-dessus. Le coffre simple (le début de partie, sans cuivre) : les bandes de bois sombre, des chevilles,
+   un loquet de bois. Le coffre cerclé de cuivre (o.style = "cuivre") : les bandes, les rivets et la serrure en écusson de
+   cuivre, comme l'image. 1,4 × 0,8 au sol, 1,05 de haut ; le devant vers +z */
+const CF = {L: 1.3, D: .74, bas: .1, haut: .62, R: .37, cy: .68, bx: .42, cuivre: 0xB0602A, trou: 0x2A1A10};
+const CF_PIED = baton(.075, CF.bas + .04, true, false, 8);
+const CF_PLANCHE = boiteRonde(CF.L / 7, CF.haut - CF.bas, CF.D, .02, 1);
+const CF_BAS = boiteRonde(CF.L + .06, .08, CF.D + .06, .035, 1);
+const CF_COIN = boiteRonde(.09, CF.haut - CF.bas, .09, .035, 1);
+const CF_REBORD = boiteRonde(CF.L + .1, .1, CF.D + .1, .045, 2);
+const CF_LATTE = (k, n) => { const a = Math.PI * k / n, b = Math.PI / n - .03;    // une planche du couvercle : une part du demi-cylindre
+  return new THREE.CylinderGeometry(CF.R, CF.R, CF.L - .04, 3, 1, false, a + .015, b).rotateZ(Math.PI / 2); };
+const CF_LATTES = [0, 1, 2, 3, 4].map(k => CF_LATTE(k, 5));
+const CF_DESSOUS = new THREE.CylinderGeometry(CF.R - .012, CF.R - .012, CF.L - .05, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2);   // sous les planches : les joints se voient sombres
+const CF_BOUT = new THREE.TorusGeometry(CF.R - .02, .04, 6, 14, Math.PI).rotateY(Math.PI / 2);
+const CF_BANDE_HAUT = new THREE.CylinderGeometry(CF.R + .022, CF.R + .022, .13, 16, 1, true, 0, Math.PI).rotateZ(Math.PI / 2);
+const CF_BANDE = boiteRonde(.13, CF.haut - CF.bas, .03, .012, 1);
+const CF_RIVET = new THREE.SphereGeometry(.026, 8, 6);
+const CF_LOQUET = boiteRonde(.16, .17, .05, .025, 1);
+const CF_ECUSSON = (() => { const g = boiteRonde(.22, .22, .045, .02, 1, [1, 2, 1]), P = g.attributes.position;   // la serrure : le bas en pointe
+  for(let i = 0; i < P.count; i++){ const y = P.getY(i); if(y < 0) P.setX(i, P.getX(i) * (1 + y / .11 * .55)); }
+  g.computeVertexNormals(); return g; })();
+const CF_PATTE = boiteRonde(.14, .14, .04, .02, 1);
+const CF_TROU = new THREE.SphereGeometry(.034, 6, 4);
+function coffreMorceaux(cuivre){ return c => {
+  const o = ombreBois(0, 1), out = [], ys = CF.cy, zF = CF.D / 2;
+  const sombre = (x, y) => o(x, y) * .62, metal = cuivre ? CF.cuivre : c, om = cuivre ? o : sombre;
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]) out.push({geo: CF_PIED, m: M4(sx * .55, 0, sz * .27), c, ombre: o});
+  for(let k = 0; k < 7; k++) out.push({geo: CF_PLANCHE, m: M4((k - 3) * CF.L / 7, (CF.bas + CF.haut) / 2, 0), c, ombre: o});   // la caisse : sept planches
+  out.push({geo: CF_BAS, m: M4(0, CF.bas + .04, 0), c, ombre: o});
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]) out.push({geo: CF_COIN, m: M4(sx * (CF.L / 2 - .02), (CF.bas + CF.haut) / 2, sz * (zF - .02)), c, ombre: o});
+  out.push({geo: CF_REBORD, m: M4(0, CF.haut + .03, 0), c, ombre: o});
+  out.push({geo: CF_DESSOUS, m: M4(0, ys, 0, 0, 0, 0, 1, 1, 1), c, ombre: sombre});
+  for(const g of CF_LATTES) out.push({geo: g, m: M4(0, ys, 0, 0, 0, 0, 1, 1, 1), c, ombre: o});                  // le couvercle bombé
+  for(const sx of [-1, 1]) out.push({geo: CF_BOUT, m: M4(sx * (CF.L / 2 - .03), ys, 0, 0, 0, 0, 1, 1, 1), c, ombre: o});
+  for(const sx of [-1, 1]){
+    const x = sx * CF.bx;
+    out.push({geo: CF_BANDE_HAUT, m: M4(x, ys, 0, 0, 0, 0, 1, 1, 1), c: metal, ombre: om});
+    for(const sz of [-1, 1]) out.push({geo: CF_BANDE, m: M4(x, (CF.bas + CF.haut) / 2, sz * (zF + .01)), c: metal, ombre: om});
+    for(const y of [.22, .48]) out.push({geo: CF_RIVET, m: M4(x, y, zF + .03, 0, 0, 0, 1, 1, cuivre ? 1 : .6), c: metal, ombre: om});   // rivets (ou chevilles)
+    for(const a of [.35, 1.05]) out.push({geo: CF_RIVET, m: M4(x, ys + Math.sin(a) * (CF.R + .03), Math.cos(a) * (CF.R + .03), 0, 0, 0, 1, 1, cuivre ? 1 : .6), c: metal, ombre: om});
+  }
+  if(cuivre){                                                                                                    // la serrure en écusson
+    out.push({geo: CF_ECUSSON, m: M4(0, CF.haut - .06, zF + .03), c: metal, ombre: o}, {geo: CF_PATTE, m: M4(0, CF.haut + .1, zF + .07, -.3), c: metal, ombre: o});
+    for(const sx of [-1, 1]) out.push({geo: CF_RIVET, m: M4(sx * .1, CF.haut - .02, zF + .06), c: metal, ombre: o});
+    out.push({geo: CF_TROU, m: M4(0, CF.haut - .04, zF + .058, 0, 0, 0, 1, 1, .4), c: CF.trou}, {geo: CF_TROU, m: M4(0, CF.haut - .085, zF + .058, 0, 0, 0, .55, 1.6, .4), c: CF.trou});
+  } else out.push({geo: CF_LOQUET, m: M4(0, CF.haut + .02, zF + .06), c, ombre: sombre});                      // le loquet de bois
+  return out;
+}; }
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -530,17 +582,8 @@ const BUILD = {
     if(pierre){ const p = pierreMesh(pierre); p.scale.setScalar(1.35); p.position.y = VT.plateau + .14; g.add(p); }
   },
   tonneau(g, m){ g.add(modeleBois("tonneau", m, tonneauMorceaux)); },
-  coffre(g, m){
-    g.add(part(G.box, m, 1.2, .5, .7, 0, .25, 0));                                    // caisse
-    const lid = part(G.cyl, m, .7, 1.2, .7, 0, .5, 0);                                // couvercle bombé
-    lid.rotation.z = Math.PI/2; g.add(lid);
-    for(const x of [-.4, .4]){                                                         // cerclages : autour de la caisse et du couvercle
-      g.add(part(G.box, C.metal, .07, .5, .74, x, .25, 0));
-      const ring = part(G.cyl, C.metal, .74, .07, .74, x, .5, 0);
-      ring.rotation.z = Math.PI/2; g.add(ring);
-    }
-    g.add(part(G.box, C.gold, .16, .16, .05, 0, .46, .37));                            // serrure
-  },
+  coffre(g, m, o){ const cu = !!(o && o.style === "cuivre"); g.add(modeleBois(cu ? "coffreCuivre" : "coffre", m, coffreMorceaux(cu))); },
+
   banc(g, m){ g.add(modeleBois("banc", m, bancMorceaux)); },
   etagere(g, m){ g.add(modeleBois("etagere", m, etagereMorceaux)); },
   armoire(g, m){ g.add(modeleBois("armoire", m, armoireMorceaux)); },

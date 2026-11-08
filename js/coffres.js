@@ -52,19 +52,22 @@ export function poseProblem(i){
 }
 /* Un coffre posé (ou : {i} sur l'île, {b} dans un bâtiment) ; un coffre rempli garde ce qu'il contient, et son
    nom (son numéro) si personne ne l'a pris */
-function newCoffre(ou, plein){
+function newCoffre(ou, plein, style){
   let id = plein && plein.id;
   if(!id || state.coffres.some(c => c.id === id)){ state.coffreId = (state.coffreId || 0) + 1; id = state.coffreId; }
   const co = {id, ...ou, items: plein ? plein.items : []};
+  if(style) co.style = style;                       // le coffre cerclé de cuivre (8 novembre 2026) : il garde son allure
   state.coffres.push(co);
   state.coffres.sort((a, b) => a.id - b.id);
   return co;
 }
-/* Le coffre tenu en main quitte la main : {plein} (le coffre rempli, ou null pour un coffre vide), ou null */
+/* Le coffre tenu en main quitte la main : {plein} (le coffre rempli, ou null pour un coffre vide) et son allure
+   (style : "cuivre" pour le coffre cerclé de cuivre), ou null */
+export const styleDe = k => k === "coffreCuivre" ? "cuivre" : undefined;
 function sortirDeLaMain(){
-  const plein = state.main === "coffrePlein" ? sacTakeObj(state.main) : null;
-  if(!plein && !sacTake(state.main, 1)) return null;
-  return {plein};
+  const k = state.main, plein = k === "coffrePlein" ? sacTakeObj(k) : null;
+  if(!plein && !sacTake(k, 1)) return null;
+  return {plein, style: plein ? plein.style : styleDe(k)};
 }
 const pose = (co, plein) => toast(plein ? `🗃️ ${nomCoffre(co)} posé, avec tout ce qu'il contient`
   : `🗃️ ${nomCoffre(co)} posé : approche-toi et touche « Ouvrir le coffre » pour y ranger tes affaires`, 3600);
@@ -89,8 +92,8 @@ export function poserCoffre(i){
   if(why){ toast(why); return; }
   const m = sortirDeLaMain();
   if(!m) return;
-  const co = newCoffre({i}, m.plein);
-  setObj(i, "coffre"); setEtat(i, {id: co.id});
+  const co = newCoffre({i}, m.plein, m.style);
+  setObj(i, "coffre"); setEtat(i, {id: co.id, style: co.style});
   syncBarre(); save(); pose(co, m.plein); jouer("meuble");
 }
 /* Poser le coffre tenu en main dans la pièce d'un bâtiment, juste devant soi, aligné comme un meuble */
@@ -101,8 +104,9 @@ export function poserDansPiece(place){
   if(!placerDans(place, it, p.x + d.x * 1.1, p.z + d.z * 1.1)){ toast("Pas de place ici : va vers un coin libre de la pièce", 2600); return; }
   const m = sortirDeLaMain();
   if(!m) return;
-  const co = newCoffre({b: b.id}, m.plein);
+  const co = newCoffre({b: b.id}, m.plein, m.style);
   it.id = b.deco.next++; it.reserve = co.id;
+  if(co.style) it.style = co.style;
   b.deco.items.push(it); addItemMesh(it);
   syncBarre(); save(); pose(co, m.plein); jouer("meuble");
 }
@@ -239,7 +243,8 @@ wrap.addEventListener("click", e => {
     toast(plein ? "Le coffre est plein : il en reste dans ton sac" : n ? (piles ? "Piles complétées" : "Tout est rangé") : "Rien à ranger", 1800);
   } else if(e.target.closest("[data-co-deplacer]")){
     /* Déplacer le coffre : vide, il redevient un coffre de réserve ; plein, un coffre rempli qui garde tout */
-    const co = open, plein = co.items.length ? {k: "coffrePlein", n: 1, id: co.id, items: co.items} : null, k = plein ? plein.k : "coffreReserve";
+    const co = open, plein = co.items.length ? {k: "coffrePlein", n: 1, id: co.id, items: co.items, ...(co.style ? {style: co.style} : {})} : null,
+      k = plein ? plein.k : co.style === "cuivre" ? "coffreCuivre" : "coffreReserve";
     if(plein ? !sacPut(plein) : !sacAdd(k, 1)){ toast("Ton sac et tes cases rapides sont pleins : fais de la place pour emporter le coffre", 3200); return; }
     const nom = nomCoffre(co);
     enlever(co);

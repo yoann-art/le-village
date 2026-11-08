@@ -126,7 +126,7 @@ function listesCoffres(){
 /* Un coffre rempli qu'on a vidé (en fabriquant avec ce qu'il contenait) redevient un coffre vide */
 function videsRemplis(){
   for(const l of [state.sac, state.barre, ...listesCoffres()]) for(const it of l)
-    if(it && it.items && !it.items.length){ it.k = "coffreReserve"; delete it.items; delete it.id; }
+    if(it && it.items && !it.items.length){ it.k = it.style === "cuivre" ? "coffreCuivre" : "coffreReserve"; delete it.items; delete it.id; delete it.style; }
 }
 export const coffresCount = k => listesCoffres().reduce((c, l) => c + slotsCount(l, k), 0);
 /* La place pour k dans le sac et tous les coffres */
