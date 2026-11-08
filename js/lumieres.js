@@ -12,7 +12,7 @@
    des bâtiments (batiments.js) éclairent l'île comme celles posées sur les cases ; les papillons de nuit viennent
    tourner autour de toutes ces lumières (lumieresIle, insectes.js). */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE } from "./donnees.js";
+import { MEUBLES, LUMIERE, LUMIERE_MAIN } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacCount } from "./regles.js";
 import { scene } from "./monde/scene.js";
@@ -69,13 +69,20 @@ function sourcesDedans(b){
   }
   return out;
 }
-/* Les plus proches du personnage reçoivent les vraies lumières ; facteur : leur force (dehors, plus forte la nuit) ;
-   celles qui s'allument seules à la nuit tombée suivent la nuit (éteintes le jour, elles laissent leur place) */
-let t = 0;
+/* Les vraies lumières vont aux sources qui éclairent le plus autour du personnage (Yo, 8 novembre 2026) : pas seulement les
+   plus proches, mais celles dont la lumière arrive le plus près de lui (sa distance, moins la moitié de sa portée : un grand
+   feu un peu plus loin passe avant une chandelle toute proche) ; la lumière tenue en main d'abord (sourceEnMain) ;
+   facteur : leur force (dehors, plus forte la nuit) ; celles qui s'allument seules à la nuit tombée suivent la nuit
+   (éteintes le jour, elles laissent leur place) */
+let t = 0, enMain = null;
+/* La torche ou la lanterne tenue en main (torche.js) : {x, z, lanterne}, ou null ; ailleurs que dans la grotte et le Marais */
+export function sourceEnMain(x, z, lanterne){ enMain = x === null ? null : {x, y: LUMIERE_MAIN[lanterne ? "lanterne" : "torche"].y, z, L: LUMIERE_MAIN[lanterne ? "lanterne" : "torche"], main: true}; }
+const ecart = (s, p) => Math.hypot(s.x - p.x, s.z - p.z) - s.L.portee * .5;
 function allumer(pool, liste, facteur){
   const p = player.position, n = nuitIci();
   const list = liste.filter(s => !s.L.nuit || n > .05);
-  list.sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z));
+  list.sort((a, b) => ecart(a, p) - ecart(b, p));
+  if(enMain) list.unshift(enMain);
   pool.forEach((l, k) => {
     const s = list[k];
     if(!s){ if(l.intensity) l.intensity = 0; return; }
@@ -83,7 +90,7 @@ function allumer(pool, liste, facteur){
     const v = s.L.flamme ? 1 + Math.sin(t * 11 + g) * .07 + Math.sin(t * 17.3 + g * 2) * .05
       : s.L.lucioles ? .75 + Math.sin(t * 2.2 + g) * .25 + eclat * .8 : 1;
     l.color.setHex(s.L.couleur); l.distance = s.L.portee; l.position.set(s.x, s.y, s.z);
-    l.intensity = s.L.force * (s.L.nuit ? n : facteur) * v;
+    l.intensity = s.L.force * (s.L.nuit ? n : s.main ? 1 : facteur) * v;
   });
   return Math.min(list.length, pool.length);
 }
@@ -103,6 +110,7 @@ export function updateLumieres(dt, actif){
     haloMat.opacity = n * .75;
     for(const h of halos.values()) h.visible = n > .02;
   } else if(!DEDANS_SANS.includes(place.b.type)) actives = allumer(lumieresDedans, sourcesDedans(place.b), 1);
+  else if(["mine", "foret", "trajet"].includes(place.b.type)) actives = allumer(lumieresDehors, [], 1);   // seulement la torche en main
   else actives = 0;
   bouton(actif && place && !DEDANS_SANS.includes(place.b.type) ? place : null);
 }

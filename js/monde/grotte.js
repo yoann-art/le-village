@@ -21,6 +21,7 @@
    cache ce qui est loin. Au dernier palier, le repaire de l'Hydre des brumes, au milieu d'une grande mare. */
 import { G, part, toon } from "./formes.js";
 import { rockMesh } from "./rochers.js";
+import { LUMIERE_MAIN } from "../donnees.js";
 
 export const W = 30, D = 32;
 const cx = x => x - W / 2 + .5, cz = z => z - D / 2 + .5;
@@ -157,8 +158,8 @@ export function eclaire(x, z, torche, t){
   const f = torche && !lampe ? 1 + Math.sin(t * 13) * .05 + Math.sin(t * 7.3) * .04 : 1;   // la flamme vacille
   lueur.position.set(x, 1.3, z);
   lueur.color.setHex(lampe ? 0xFFDCA0 : torche ? 0xFFB060 : 0x8C9AB4);
-  lueur.intensity = (lampe ? 1.8 : torche ? 1.6 : .9) * f;
-  lueur.distance = lampe ? 10 : torche ? 7.5 : 3.2;
+  lueur.intensity = (lampe ? LUMIERE_MAIN.lanterne.force : torche ? LUMIERE_MAIN.torche.force : .9) * f;   // l'échelle des lumières (donnees.js)
+  lueur.distance = lampe ? LUMIERE_MAIN.lanterne.portee : torche ? LUMIERE_MAIN.torche.portee : 3.2;
 }
 /* La torche posée au sol (torche.js, demande de Yo : pour tirer à l'arc, à deux mains) : un bâton planté, sa flamme,
    et sa propre lumière ; x = null l'enlève */
@@ -186,7 +187,7 @@ export function torcheAuSol(x, z, t = 0, lanterne = false){
   }
   const f = lanterne ? 1 : 1 + Math.sin(t * 13) * .06 + Math.sin(t * 7.3) * .05;   // la flamme vacille (la lanterne, non)
   torcheSol.position.set(x, 0, z); if(flammeSol) flammeSol.scale.set(.14 * f, .26 * (2 - f), .14 * f);
-  lueurSol.position.set(x, lanterne ? .7 : 1.2, z); lueurSol.intensity = (lanterne ? 1.9 : 1.8) * f; lueurSol.distance = lanterne ? 9 : 7.5;
+  lueurSol.position.set(x, lanterne ? .7 : 1.2, z); lueurSol.intensity = LUMIERE_MAIN[lanterne ? "lanterne" : "torche"].force * f; lueurSol.distance = LUMIERE_MAIN[lanterne ? "lanterne" : "torche"].portee;
 }
 export function makeGrotte(palier, zone){
   plan = genere(palier, zone);

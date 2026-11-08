@@ -81,25 +81,35 @@ export const MEUBLES = {
   trone:    {nom:"Trône", emoji:"👑", gabarit:"moyen", w:1.2, d:1, plan:true}
 };
 
-/* La lumière de chaque meuble qui éclaire (demande de Yo, 11 octobre 2026 ; lumieres.js) : sa couleur, sa force, sa
-   portée en P, la hauteur de sa flamme (y) ; flamme : elle vacille ; torche : seulement avec une torche posée dessus.
-   Dans les bâtiments, une pénombre ; seules les lumières les plus proches éclairent vraiment (le téléphone), les autres
-   brillent. Dehors, elles éclairent surtout la nuit. nuit : elle s'allume seule à la nuit tombée (Grand Carnet : la
-   lanterne murale ; le lampadaire aussi) ; lucioles : une lueur douce qui palpite. Chiffres choisis par Claude, à régler
-   en jouant. */
+/* La lumière de chaque source (demande de Yo, 11 octobre 2026 ; lumieres.js) : la hauteur de sa flamme (y) ; flamme : elle
+   vacille ; torche : seulement avec une torche posée dessus ; nuit : elle s'allume seule à la nuit tombée (la lanterne murale,
+   le lampadaire) ; lucioles : une lueur douce qui palpite ; avance : un peu devant le meuble.
+   L'échelle de luminosité (Yo, 8 novembre 2026 : « un système d'intensité de luminosité en fonction de la source de
+   lumière ») : chaque source a son niveau, d'après la vraie nature (une bougie éclaire peu et près, une lanterne à huile un
+   peu plus, une torche de poix, puis un brasero, une cheminée, un grand feu de bois) ; sa force et sa portée (en P), et la
+   taille de son halo la nuit, viennent de son niveau (ECLAT) ; sa couleur, de ce qui brûle (FLAMMES : la bougie jaune, l'huile
+   plus claire, le bois orangé, les lucioles vert pâle). La torche et la lanterne tenues en main (torche.js) sont sur la même
+   échelle ; la lanterne à main, un peu au-dessus de la torche (bible : « la torche s'améliore en lanterne »). */
+export const ECLAT = {1: {force: .7, portee: 2.5}, 2: {force: .9, portee: 3.5}, 3: {force: 1.2, portee: 5}, 4: {force: 1.35, portee: 5.75},
+  5: {force: 1.6, portee: 7}, 6: {force: 1.8, portee: 8}, 7: {force: 2, portee: 8.5}, 8: {force: 2.2, portee: 10}};
+export const FLAMMES = {bougie: 0xFFC27A, huile: 0xFFD490, bois: 0xFF9A48, lucioles: 0xC8F070};
+const source = (niveau, flamme, plus) => ({niveau, couleur: FLAMMES[flamme], ...ECLAT[niveau], ...plus});
 export const LUMIERE = {
-  chandelle:     {couleur:0xFFC27A, force:.9,  portee:3.6, y:.42, flamme:true},
-  lanterne:      {couleur:0xFFD08A, force:1.2, portee:5,   y:1.28},
-  chandelier:    {couleur:0xFFCB78, force:1.3, portee:5.5, y:1.05, flamme:true},
-  torchere:      {couleur:0xFFA055, force:1.6, portee:6.5, y:1.66, flamme:true, torche:true},
-  torchereMurale:{couleur:0xFFA055, force:1.6, portee:6.5, y:1.65, flamme:true, torche:true, avance:.12},
-  feuCamp:       {couleur:0xFF9040, force:2.2, portee:8,   y:.55, flamme:true},
-  lanterneMurale:{couleur:0xFFD890, force:1.4, portee:6,   y:1.32, nuit:true, avance:.12},
-  bocalLucioles: {couleur:0xC8F070, force:.7,  portee:3.4, y:.3,  lucioles:true},
-  brasero:       {couleur:0xFF8A3A, force:2,   portee:7.5, y:.95, flamme:true},
-  lampadaire:    {couleur:0xFFE0A0, force:1.7, portee:8,   y:2.05, nuit:true},
-  lustre:        {couleur:0xFFD27A, force:1.5, portee:10,  y:1.95, flamme:true}     // « éclaire toute la pièce »
+  bocalLucioles: source(1, "lucioles", {y: .3, lucioles: true}),
+  chandelle:     source(2, "bougie", {y: .42, flamme: true}),
+  chandelier:    source(3, "bougie", {y: 1.05, flamme: true}),
+  lanterne:      source(4, "huile", {y: 1.28}),
+  lanterneMurale:source(4, "huile", {y: 1.32, nuit: true, avance: .12}),
+  torchere:      source(5, "bois", {y: 1.66, flamme: true, torche: true}),
+  torchereMurale:source(5, "bois", {y: 1.65, flamme: true, torche: true, avance: .12}),
+  lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
+  brasero:       source(6, "bois", {y: .95, flamme: true}),
+  cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55}),                // son feu éclaire la pièce, devant le foyer
+  feuCamp:       source(8, "bois", {y: .55, flamme: true}),
+  lustre:        source(8, "bougie", {y: 1.95, flamme: true})                           // « éclaire toute la pièce »
 };
+/* Les lumières tenues en main (torche.js) : la torche (niveau 5), la lanterne à main (niveau 7) */
+export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
 /* Un meuble qui se prend en main pour aller dehors : posé sur une case, ou accroché à une façade */

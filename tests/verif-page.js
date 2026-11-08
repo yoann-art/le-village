@@ -51,7 +51,7 @@ import { combat, vieCombat } from "../js/combat.js";
 import { torcheAllumee, updateTorche } from "../js/torche.js";
 import { forcerHeure, updateCiel, VITRE } from "../js/monde/ciel.js";
 import { choisirHemisphere } from "../js/saisons.js";
-import { forcerSaison, saisonDu, reglerHemisphere, saison } from "../js/donnees.js";
+import { forcerSaison, saisonDu, reglerHemisphere, saison, LUMIERE, LUMIERE_MAIN } from "../js/donnees.js";
 import { allumerCompteur, rapportPerf, mesures, mettreDeCote, releve, regularite, lancerSession, sessionEnCours, rapportSession } from "../js/performance.js";
 import { scene, camera, renderer } from "../js/monde/scene.js";
 import { foret, foretObj, W as WF, fcx, fcz, ENTREE_GROTTE } from "../js/monde/foret.js";
@@ -2968,6 +2968,43 @@ export async function verifier(){
     await sortir();
     return `posé à (${it.x}, ${it.z}) dans la pièce, puis emporté`;
   });
+  await etape("L'échelle des lumières, la cheminée qui éclaire, la torche en main partout où il fait sombre", async () => {
+    const {syncBarre} = await import("../js/barre.js");
+    /* l'échelle (Yo, 8 novembre 2026) : de la plus faible à la plus forte, d'après la vraie nature */
+    const ordre = ["bocalLucioles", "chandelle", "chandelier", "lanterne", "torchere", "brasero", "cheminee", "feuCamp"];
+    for(let k = 1; k < ordre.length; k++){ const a = LUMIERE[ordre[k - 1]], b = LUMIERE[ordre[k]];
+      if(!a || !b || b.niveau <= a.niveau || b.force < a.force || b.portee < a.portee) throw new Error(`l'échelle des lumières n'est pas dans l'ordre : ${ordre[k - 1]} puis ${ordre[k]}`); }
+    if(!(LUMIERE_MAIN.lanterne.portee > LUMIERE_MAIN.torche.portee)) throw new Error("la lanterne à main n'éclaire pas plus loin que la torche");
+    /* la torche en main dehors : allumée la nuit, éteinte le jour ; elle s'use */
+    const avant = state.barre.slice(), torche0 = state.torche;
+    state.barre[0] = {k: "torche", n: 2}; state.barre[1] = state.barre[2] = null; state.torche = 0;
+    forcerMeteo("beau");
+    try {
+      forcerHeure(23); updateCiel(0, 0); updateTorche(.5);
+      if(!torcheAllumee() || !(state.torche > 0)) throw new Error("la nuit, dehors, la torche en main ne s'allume pas");
+      const reste = state.torche; updateTorche(2);
+      if(!(state.torche < reste)) throw new Error("la torche en main ne s'use pas");
+      updateLumieres(1.1, true);
+      if(lumieresActives() < 1) throw new Error("la torche en main n'éclaire pas, dehors la nuit");
+      forcerHeure(12.5); updateCiel(0, 0); updateTorche(.5);
+      if(torcheAllumee()) throw new Error("en plein jour, dehors, la torche en main brûle");
+    } finally { forcerHeure(null); updateCiel(0, 0); forcerMeteo(null); state.barre.splice(0, 3, ...avant); state.torche = torche0; updateTorche(.01); syncBarre(); }
+    /* la cheminée éclaire sa pièce (une cheminée d'essai dans la Scierie), sans torche en main */
+    let chem = "";
+    if(scierie){
+      const {addItemMesh, removeItemMesh} = await import("../js/monde/interieurs.js");
+      const tenues = state.barre.slice(); state.barre.fill(null);
+      await entrer(scierie);
+      const it = {id: 9990, type: "cheminee", x: 0, z: -1, rot: 0};
+      try {
+        scierie.deco.items.push(it); addItemMesh(it); updateTorche(.01);
+        updateLumieres(.016, true);
+        if(lumieresActives() < 1) throw new Error("la cheminée n'éclaire pas la pièce");
+        chem = " ; la cheminée éclaire la pièce";
+      } finally { scierie.deco.items.splice(scierie.deco.items.indexOf(it), 1); removeItemMesh(it.id); state.barre.splice(0, 3, ...tenues); syncBarre(); await sortir(); }
+    }
+    return `${ordre.length} sources dans l'ordre ; la torche en main s'allume la nuit dehors, s'éteint le jour${chem}`;
+  });
   await etape("Les lumières : le suif et la chandelle, la pénombre, une torche sur la torchère, le feu de camp dehors", async () => {
     /* le suif au fourneau, la chandelle à l'atelier de décoration : une Taverne et une Chaumière d'essai (retirées ensuite) */
     const taverne = {id: -4, type: "taverne", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "fourneau", x: 0, z: 0, rot: 0}], next: 2}};
@@ -3161,9 +3198,11 @@ export async function verifier(){
       if(!await attendre(() => mainsIci().actif && mainsIci().droite === "hachePierre")) throw new Error(`la main droite ne tient pas la hache (${JSON.stringify(mainsIci())})`);
       gesteOutil("hachePierre");
       if(mainsIci().geste !== "frappe") throw new Error("la main ne fait pas le geste de la hache");
-      tenirTorche(true, 0);
+      /* la torche s'allume toute seule partout où il fait sombre (8 novembre 2026) : une torche dans une case, la nuit */
+      const casesAvant = state.barre.slice(), torcheAvant = state.torche, libreT = state.barre.findIndex((c, k) => !c || c.k !== "hachePierre");
+      state.barre[libreT] = {k: "torche", n: 1}; forcerHeure(23); updateCiel(0, 0);
       const torcheVue = await attendre(() => mainsIci().gauche === "torche");
-      tenirTorche(false);
+      state.barre.splice(0, casesAvant.length, ...casesAvant); state.torche = torcheAvant; forcerHeure(null); updateCiel(0, 0);
       if(!torcheVue) throw new Error("la main gauche ne tient pas la torche");
       hold(null);                                          // rien en main : on ne voit plus de main (v1.13.23)
       if(!await attendre(() => !mainsIci().droite && !mainsIci().gauche)) throw new Error(`rien en main, on voit encore une main (${JSON.stringify(mainsIci())})`);

@@ -21,7 +21,7 @@
 import { G, part, mat, toon } from "./formes.js";
 import { barqueModele } from "./ponton.js";
 import { state, save } from "../sauvegarde.js";
-import { RECOLTE, PRODUITS, PLANTES_MARAIS, PLANTE_RETOUR, enSaisonPlante } from "../donnees.js";
+import { RECOLTE, PRODUITS, PLANTES_MARAIS, PLANTE_RETOUR, enSaisonPlante, LUMIERE_MAIN } from "../donnees.js";
 import { essences, TAILLE, arbreModele, FRUITS, fruitsDeSaison, VOILE } from "./essences.js";
 import { nuitIci } from "./ciel.js";
 import { couvertIci } from "./meteo.js";
@@ -465,8 +465,8 @@ export function eclaireMarais(x, z, torche, t){
   const lampe = torche === "lanterne", f = torche && !lampe ? 1 + Math.sin(t * 13) * .05 + Math.sin(t * 7.3) * .04 : 1;   // la flamme vacille
   lueur.position.set(x, 1.3, z);
   lueur.color.setHex(lampe ? 0xFFDCA0 : 0xFFB060);
-  lueur.intensity = torche ? (lampe ? 1.9 : 1.7) * f : 0;
-  lueur.distance = lampe ? 10 : 8;
+  lueur.intensity = torche ? LUMIERE_MAIN[lampe ? "lanterne" : "torche"].force * f : 0;   // l'échelle des lumières (donnees.js)
+  lueur.distance = LUMIERE_MAIN[lampe ? "lanterne" : "torche"].portee;
 }
 /* À chaque image (main.js), quand on est au Marais : les feux-follets dansent ; chaque seconde, les plantes suivent la
    nuit, la saison et leurs cueillettes */
