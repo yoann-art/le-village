@@ -56,9 +56,14 @@ export const iconesPhoto = () => Object.keys(PHOTOS);
 let gardees = {};
 try{ const g = JSON.parse(localStorage.getItem(CLE) || "{}"); if(g.v === VERSION_ICONES) gardees = g.icones || {}; }catch(_){}
 const garder = () => { try{ localStorage.setItem(CLE, JSON.stringify({v: VERSION_ICONES, icones: gardees})); }catch(_){} };
+/* Une photo reprise (son modèle a changé de sens ou d'allure) : on la garde sous un autre nom, elle seule est reprise,
+   sans reprendre toutes les autres (le téléphone reste fluide) ; l'ancienne est oubliée */
+const REPRISES = {chaise: 2, fauteuil: 2, lit: 2};
+const cle = k => REPRISES[k] ? k + "#" + REPRISES[k] : k;
+{ const valides = new Set(Object.keys(PHOTOS).map(cle)); for(const n of Object.keys(gardees)) if(!valides.has(n)) delete gardees[n]; }
 const html = url => `<img class="ico-photo" src="${url}" alt="" draggable="false">`;
 function poser(k, url){ const o = objet(k); if(o) o.icone = html(url); }
-for(const [k, url] of Object.entries(gardees)) if(PHOTOS[k]) poser(k, url);
+for(const k of Object.keys(PHOTOS)) if(gardees[cle(k)]) poser(k, gardees[cle(k)]);
 
 /* Le studio : une petite scène, une lumière douce de trois quarts, comme dans le jeu */
 let studio = null;
@@ -85,6 +90,7 @@ export function photographier(k){
   if(D_EN_HAUT.has(k)) for(const a of ailes) a.pivot.rotation.z = a.cote * .08;
   else if(ferme) for(const a of ailes) a.pivot.rotation.z = a.cote * ferme;
   const vue = MODELES_POISSONS[k] ? POISSON : D_EN_HAUT.has(k) ? DESSUS : ferme ? PROFIL : VUE;
+  if(MEUBLES_REFAITS.includes(k)) m.rotation.y = Math.PI;        // un meuble se voit par-devant (son devant est vers +z)
   S.scene.add(m);
   m.updateMatrixWorld(true);
   boite.makeEmpty();                                               // seulement ce qui se voit (pas les ailes de vol cachées)
@@ -118,12 +124,12 @@ export function photographier(k){
 let prises = 0;
 export const iconesPrises = () => prises;
 export function prendreIcones(delai = 4000, entre = 250){
-  const reste = Object.keys(PHOTOS).filter(k => !gardees[k]);
+  const reste = Object.keys(PHOTOS).filter(k => !gardees[cle(k)]);
   if(!reste.length) return;
   const suivante = () => {
     const k = reste.shift();
     if(!k){ garder(); return; }
-    try{ const url = photographier(k); if(url){ gardees[k] = url; poser(k, url); prises++; } }catch(e){ console.warn("icône", k, e); }
+    try{ const url = photographier(k); if(url){ gardees[cle(k)] = url; poser(k, url); prises++; } }catch(e){ console.warn("icône", k, e); }
     if(prises % 8 === 0) garder();
     setTimeout(suivante, entre);
   };
