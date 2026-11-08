@@ -53,6 +53,7 @@ for(const k of MEUBLES_REFAITS) PHOTOS[k] = () => makeMeuble(k);
 /* Les coffres de réserve (image de Yo, 8 novembre 2026) : le simple, et le coffre cerclé de cuivre */
 PHOTOS.chandelleSuif = () => { const g = new THREE.Group(); g.add(chandelleSeule()); return g; };   // la chandelle de suif, à poser dans un bougeoir
 Object.assign(PHOTOS, {coffreReserve: () => makeMeuble("coffre"), coffrePlein: () => makeMeuble("coffre"), coffreCuivre: () => makeMeuble("coffre", undefined, {style: "cuivre"})});
+const SERRE = new Set(["chandelle", "chandelleSuif"]);   // cadrées sur leur forme, pas sur leur boîte
 const DE_FACE = new Set([...MEUBLES_REFAITS, "coffreReserve", "coffrePlein", "coffreCuivre"]);
 export const iconesPhoto = () => Object.keys(PHOTOS);
 
@@ -62,7 +63,7 @@ try{ const g = JSON.parse(localStorage.getItem(CLE) || "{}"); if(g.v === VERSION
 const garder = () => { try{ localStorage.setItem(CLE, JSON.stringify({v: VERSION_ICONES, icones: gardees})); }catch(_){} };
 /* Une photo reprise (son modèle a changé de sens ou d'allure) : on la garde sous un autre nom, elle seule est reprise,
    sans reprendre toutes les autres (le téléphone reste fluide) ; l'ancienne est oubliée */
-const REPRISES = {chaise: 2, fauteuil: 2, lit: 2};
+const REPRISES = {chaise: 2, fauteuil: 2, lit: 2, chandelle: 2, chandelleSuif: 2};
 const cle = k => REPRISES[k] ? k + "#" + REPRISES[k] : k;
 { const valides = new Set(Object.keys(PHOTOS).map(cle)); for(const n of Object.keys(gardees)) if(!valides.has(n)) delete gardees[n]; }
 const html = url => `<img class="ico-photo" src="${url}" alt="" draggable="false">`;
@@ -97,8 +98,8 @@ export function photographier(k){
   if(DE_FACE.has(k)) m.rotation.y = Math.PI;        // un meuble se voit par-devant (son devant est vers +z)
   S.scene.add(m);
   m.updateMatrixWorld(true);
-  boite.makeEmpty();                                               // seulement ce qui se voit (pas les ailes de vol cachées)
-  m.traverseVisible(o => { if(o.geometry){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); boite.union(morceau.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld)); } });
+  boite.makeEmpty();                                               // seulement ce qui se voit (pas les ailes de vol cachées, ni la boîte invisible qu'on touche)
+  m.traverseVisible(o => { if(o.geometry && !(o.material && o.material.visible === false)){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); boite.union(morceau.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld)); } });
   boite.getCenter(centre); boite.getBoundingSphere(sphere);
   const d = sphere.radius / Math.sin(S.cam.fov * Math.PI / 360) * 1.02;
   S.cam.position.copy(centre).addScaledVector(vue, d); S.cam.lookAt(centre);
@@ -107,6 +108,11 @@ export function photographier(k){
   let x0 = 1, x1 = -1, y0 = 1, y1 = -1;
   for(let i = 0; i < 8; i++){ coin.set(i & 1 ? boite.max.x : boite.min.x, i & 2 ? boite.max.y : boite.min.y, i & 4 ? boite.max.z : boite.min.z).project(S.cam);
     x0 = Math.min(x0, coin.x); x1 = Math.max(x1, coin.x); y0 = Math.min(y0, coin.y); y1 = Math.max(y1, coin.y); }
+  /* un objet plat et rond (le bougeoir) : les coins de sa boîte dépassent loin de sa forme ; on cadre sur ses vrais points */
+  if(SERRE.has(k)){ x0 = y0 = 1; x1 = y1 = -1;
+    m.traverseVisible(o => { const pos = o.geometry && !(o.material && o.material.visible === false) && o.geometry.attributes.position;
+      if(pos) for(let i = 0; i < pos.count; i++){ coin.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld).project(S.cam);
+        x0 = Math.min(x0, coin.x); x1 = Math.max(x1, coin.x); y0 = Math.min(y0, coin.y); y1 = Math.max(y1, coin.y); } }); }
   const z = 1.84 / Math.max(x1 - x0, y1 - y0, .05);
   S.cam.zoom = z; S.cam.setViewOffset(1000, 1000, (x0 + x1) / 2 * 500 * z, -(y0 + y1) / 2 * 500 * z, 1000, 1000); S.cam.updateProjectionMatrix();
   const avant = renderer.getRenderTarget(), fond = renderer.getClearColor(new THREE.Color()), alpha = renderer.getClearAlpha(), ombres = renderer.shadowMap.enabled;
