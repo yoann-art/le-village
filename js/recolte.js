@@ -34,7 +34,7 @@
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, SEMIS, enFleur, quandFleur, graineDeFleur, grainesDe, objet, vitessePousse,
-  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison } from "./donnees.js";
+  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison, garniDe } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh, lieuEau } from "./monde/ile.js";
@@ -62,7 +62,7 @@ import { updatePrise, priseEnCours } from "./prise.js";
 import { updateChasse, chasseAction, tirEnCours } from "./chasse.js";
 import { cibleTerrain, actionTerrain, terrainProbleme } from "./terraformer.js";
 import { entreeAction } from "./entreeMine.js";
-import { poserTorche } from "./lumieres.js";
+import { poserGarni, garniDispo, poserLabel } from "./lumieres.js";
 import { torcheAction } from "./torche.js";
 import { barqueAction, enBarque } from "./barque.js";
 import { voyageAction } from "./voyage.js";
@@ -668,19 +668,21 @@ function poser(t){
    (avec sa torche) ----- */
 const aPoser = k => !!(GRAINES[k] || POSABLES[k] || poseDehors(k));
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
+const avecGarni = g => !g ? "" : g === "torche" ? " et sa torche" : " et sa chandelle";   // ce qui est posé dessus revient aussi
 function poserDehors(t){
   const k = state.main, m = MEUBLES[k], why = poseProblem(t.i);
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
   setObj(t.i, k); jouer("meuble");
   syncBarre(); save();
-  toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais" : ""}`, 3200);
+  toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support === "torche" ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais"
+    : m.support === "bougie" ? " : approche-toi avec une chandelle pour l'y poser, elle ne s'y usera jamais" : ""}`, 3200);
 }
 function lumiereAction(t){
-  const m = MEUBLES[t.o], c = state.ile[t.i] || {};
-  if(m.support && !c.torche && owned("torche") > 0)
-    return {label: "🔥 Poser une torche sur la torchère", run: () => poserTorche(c, () => setEtat(t.i, {torche: true}))};
-  return {label: `✋ Reprendre ${leNom(m)}${c.torche ? " et sa torche" : ""}`, run: () => reprendreLumiere(t)};
+  const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c);
+  if(m.support && !g && garniDispo(t.o))
+    return {label: poserLabel(t.o), run: () => poserGarni(c, t.o, patch => setEtat(t.i, patch))};
+  return {label: `✋ Reprendre ${leNom(m)}${avecGarni(g)}`, run: () => reprendreLumiere(t)};
 }
 /* La façade de devant d'un bâtiment (batiments.js) : on s'y tient juste devant, face à elle, une colonne à la fois ;
    une torchère ou une lanterne murale en main s'y accroche ; accrochée, on y pose une torche, ou on la décroche */
@@ -695,9 +697,9 @@ function facadeAction(t){
   if(!f && col === colPorte(b.type)) return info("🚪 Pas sur la porte : accroche-la à côté");
   if(f){
     const m = MEUBLES[f.type];
-    if(m.support && !f.torche && owned("torche") > 0)
-      return {label: "🔥 Poser une torche sur la torchère", run: () => poserTorche(f, () => placeMesh(b))};
-    return {label: `✋ Décrocher ${leNom(m)}${f.torche ? " et sa torche" : ""}`, run: () => decrocher(t)};
+    if(m.support && !garniDe(f.type, f) && garniDispo(f.type))
+      return {label: poserLabel(f.type), run: () => poserGarni(f, f.type, () => placeMesh(b))};
+    return {label: `✋ Décrocher ${leNom(m)}${avecGarni(garniDe(f.type, f))}`, run: () => decrocher(t)};
   }
   return {label: `🪝 Accrocher ${leNom(MEUBLES[state.main])} au mur`, run: () => accrocher(t)};
 }
@@ -709,20 +711,20 @@ function accrocher(t){
   toast(`${m.emoji} ${m.nom} accrochée à la façade${m.support ? " : approche-toi avec une torche pour l'allumer" : " : elle s'allumera seule à la nuit tombée"}`, 3400);
 }
 function decrocher(t){
-  const f = t.f, m = MEUBLES[f.type], gains = {[f.type]: 1, ...(f.torche ? {torche: 1} : {})};
+  const f = t.f, m = MEUBLES[f.type], g = garniDe(f.type, f), gains = {[f.type]: 1, ...(g ? {[g]: 1} : {})};
   if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la décrocher", 3000); return; }
   for(const [k, n] of Object.entries(gains)) sacAdd(k, n);
   t.b.facade.splice(t.b.facade.indexOf(f), 1);
   placeMesh(t.b); syncBarre(); save();
-  toast(`${m.emoji} ${m.nom} dans ton sac${f.torche ? ", avec sa torche" : ""}`, 2400);
+  toast(`${m.emoji} ${m.nom} dans ton sac${g ? `, ${avecGarni(g).trim()}` : ""}`, 2400);
 }
 function reprendreLumiere(t){
-  const m = MEUBLES[t.o], c = state.ile[t.i] || {}, gains = {[t.o]: 1, ...(c.torche ? {torche: 1} : {})};
+  const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c), gains = {[t.o]: 1, ...(g ? {[g]: 1} : {})};
   if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la reprendre", 3000); return; }
   for(const [k, n] of Object.entries(gains)) sacAdd(k, n);
   setObj(t.i, null);
   syncBarre(); save();
-  toast(`${m.emoji} ${m.nom} dans ton sac${c.torche ? ", avec sa torche" : ""}`, 2400);
+  toast(`${m.emoji} ${m.nom} dans ton sac${g ? `, ${avecGarni(g).trim()}` : ""}`, 2400);
 }
 
 /* ----- Planter ----- */

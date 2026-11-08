@@ -24,8 +24,9 @@ const SIEGES = {tabouret: .46, chaise: .46, fauteuil: .52, banc: .4};   // la ha
 const LIT = {lit: .5};   // le dessus de la couverture (meubles.js)
 const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLucioles"), "cheminee"]);
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
+const nomLumiere = (it, m) => it.type === "chandelle" ? "la chandelle" : leNom(m);   // le bougeoir : on éteint sa chandelle
 const geste = it => SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? "toucher"
-  : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || !LUMIERE[it.type].torche || it.torche) ? "lumiere" : null;   // une torchère : seulement avec sa torche
+  : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || ((!LUMIERE[it.type].torche || it.torche) && (!LUMIERE[it.type].bougie || it.bougie))) ? "lumiere" : null;   // une torchère : seulement avec sa torche ; un bougeoir, avec sa chandelle
 
 /* Du repère d'un meuble posé (rot : ses quarts de tour, comme interieurs.js) vers la pièce */
 const versPiece = (it, lx, lz) => { const a = -(it.rot || 0) * Math.PI / 2, c = Math.cos(a), s = Math.sin(a);
@@ -102,7 +103,7 @@ export function updateGestes(actif){
   if(!cible){ if(!btn.hidden) btn.hidden = true; return; }
   const it = cible.it, m = MEUBLES[it.type], g = geste(it);
   montrer(g === "assis" ? `🪑 S'asseoir` : g === "allonge" ? `🛏️ S'allonger` : g === "toucher" ? `✨ Toucher ${leNom(m)}`
-    : it.eteint ? `🔥 Allumer ${leNom(m)}` : `🌙 Éteindre ${leNom(m)}`);
+    : it.eteint ? `🔥 Allumer ${nomLumiere(it, m)}` : `🌙 Éteindre ${nomLumiere(it, m)}`);
 }
 function montrer(txt){
   if(btn.textContent !== txt) btn.textContent = txt;

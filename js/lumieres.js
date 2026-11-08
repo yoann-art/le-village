@@ -12,11 +12,11 @@
    des bâtiments (batiments.js) éclairent l'île comme celles posées sur les cases ; les papillons de nuit viennent
    tourner autour de toutes ces lumières (lumieresIle, insectes.js). */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE, LUMIERE_MAIN } from "./donnees.js";
+import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacCount } from "./regles.js";
 import { scene } from "./monde/scene.js";
-import { map, N, centerOf } from "./monde/ile.js";
+import { map, N, centerOf, setEtat, objMesh } from "./monde/ile.js";
 import { lumieresDedans, refreshItemMesh } from "./monde/interieurs.js";
 import { fireMat, nuitMat, lucioleMat, footOf } from "./monde/meubles.js";
 import { lumieresFacades } from "./monde/batiments.js";
@@ -30,7 +30,7 @@ import { toast, renderHUD } from "./interface.js";
 const lumieresDehors = Array.from({length: 3}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 scene.add(...lumieresDehors);
 /* Ce meuble éclaire-t-il ? (une torchère, seulement avec sa torche) : sa lumière, ou null */
-const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && !(o && o.eteint) ? L : null; };   // éteinte (gestes.js) : rien
+const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && (!L.bougie || (o && o.bougie)) && !(o && o.eteint) ? L : null; };   // éteinte (gestes.js) : rien ; le bougeoir, avec sa chandelle
 /* Toucher le bocal à lucioles (gestes.js) : elles brillent plus fort un instant */
 let eclat = 0;
 export function eclatLucioles(){ eclat = 1.6; }
@@ -117,16 +117,39 @@ export function updateLumieres(dt, actif){
 /* Pour la vérification : combien de vraies lumières sont allumées ici */
 export const lumieresActives = () => actives;
 
-/* ----- Poser une torche sur une torchère ----- */
-/* o : la torchère (le meuble de la pièce, ou la case de l'île) ; refaire : refait son modèle */
-export function poserTorche(o, refaire){
-  if(owned("torche") < 1){ toast("🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
-  addOwned("torche", -1);
-  if(!sacCount("torche")) state.torche = 0;          // plus de torche sur soi : celle qui brûlait est sur la torchère
-  o.torche = true; refaire();
+/* ----- Poser une torche sur une torchère, une chandelle dans un bougeoir ----- */
+/* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
+export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) > 0) || null;
+/* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » */
+export const poserLabel = type => MEUBLES[type].support === "bougie" ? "🕯️ Poser une chandelle dans le bougeoir" : "🔥 Poser une torche sur la torchère";
+/* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
+export function poserGarni(o, type, refaire){
+  const bougie = MEUBLES[type].support === "bougie", k = garniDispo(type);
+  if(!k){ toast(bougie ? "🕯️ Il te faut une chandelle : elle se fabrique à l'atelier de décoration de la Chaumière (1 suif, 1 fibre)"
+    : "🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
+  addOwned(k, -1);
+  if(k === "torche" && !sacCount("torche")) state.torche = 0;          // plus de torche sur soi : celle qui brûlait est sur la torchère
+  const patch = bougie ? {bougie: k} : {torche: true};
+  Object.assign(o, patch); refaire(patch);
   syncBarre(); save(); renderHUD();
-  toast("🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
+  toast(bougie ? `🕯️ ${objet(k).nom} posée dans le bougeoir : elle ne s'y usera jamais` : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
   return true;
+}
+export const poserTorche = (o, refaire) => poserGarni(o, "torchere", refaire);
+
+/* Les chandelles d'avant (Yo, 8 novembre 2026 : le bougeoir vide, la chandelle à poser dedans) : une fois, chaque chandelle
+   posée devient un bougeoir garni de sa chandelle de suif ; chaque chandelle du sac, des cases et des coffres, un bougeoir et
+   une chandelle (rien ne se perd) ; une chandelle en fabrication devient une chandelle de suif (la même recette) */
+if(!state.bougeoirs){
+  for(const b of state.buildings){
+    for(const it of (b.deco && b.deco.items) || []) if(it.type === "chandelle" && !it.bougie) it.bougie = "chandelleSuif";
+    for(const j of (b.atelier && b.atelier.queue) || []) if(j.out === "chandelle") j.out = "chandelleSuif";
+  }
+  for(const [i, c] of Object.entries(state.ile)) if(c && c.o === "chandelle" && !c.bougie){
+    if(objMesh(+i)) setEtat(+i, {bougie: "chandelleSuif"}); else c.bougie = "chandelleSuif"; }   // déjà dessinée : refaite
+  const n = owned("chandelle");
+  if(n > 0) addOwned("chandelleSuif", n);
+  state.bougeoirs = 1; save();
 }
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");
@@ -134,11 +157,11 @@ let proche = null;
 function bouton(place){
   const p = player.position;
   proche = place && place.b.deco ? place.b.deco.items.find(it => {
-    if(!MEUBLES[it.type] || !MEUBLES[it.type].support || it.torche) return false;
+    if(!MEUBLES[it.type] || !MEUBLES[it.type].support || garniDe(it.type, it)) return false;
     const [w, d] = footOf(it);
     return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
   }) || null : null;
   if(proche){ const m = MEUBLES[proche.type], txt = `${m.emoji} ${m.nom}`; if(btn.textContent !== txt) btn.textContent = txt; }   // son nom (demande de Yo)
   if(btn.hidden === !!proche) btn.hidden = !proche;
 }
-btn.addEventListener("click", () => { const it = proche; if(it) poserTorche(it, () => refreshItemMesh(it)); });
+btn.addEventListener("click", () => { const it = proche; if(it) poserGarni(it, it.type, () => refreshItemMesh(it)); });

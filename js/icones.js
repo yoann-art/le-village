@@ -24,7 +24,7 @@ import { herbesModele } from "./monde/herbes.js";
 import { caillouModele, pierreChamps } from "./monde/pierre.js";
 import { thymModele } from "./monde/thym.js";
 import { FLEURS } from "./donnees.js";
-import { makeMeuble, MEUBLES_REFAITS } from "./monde/meubles.js";
+import { makeMeuble, MEUBLES_REFAITS, chandelleSeule } from "./monde/meubles.js";
 
 const VERSION_ICONES = 6, CLE = "le-village-icones", TAILLE = 96;
 /* Ce qu'on photographie : la clé de l'objet, et comment faire son modèle (en été, en fleur, de face : un mâle) */
@@ -51,6 +51,7 @@ Object.assign(PHOTOS, {
    sert aussi au catalogue de « Décorer » */
 for(const k of MEUBLES_REFAITS) PHOTOS[k] = () => makeMeuble(k);
 /* Les coffres de réserve (image de Yo, 8 novembre 2026) : le simple, et le coffre cerclé de cuivre */
+PHOTOS.chandelleSuif = () => { const g = new THREE.Group(); g.add(chandelleSeule()); return g; };   // la chandelle de suif, à poser dans un bougeoir
 Object.assign(PHOTOS, {coffreReserve: () => makeMeuble("coffre"), coffrePlein: () => makeMeuble("coffre"), coffreCuivre: () => makeMeuble("coffre", undefined, {style: "cuivre"})});
 const DE_FACE = new Set([...MEUBLES_REFAITS, "coffreReserve", "coffrePlein", "coffreCuivre"]);
 export const iconesPhoto = () => Object.keys(PHOTOS);

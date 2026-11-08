@@ -45,10 +45,14 @@ export const MEUBLES = {
   /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE) : dehors = se pose aussi sur l'île (en main, devant une
      case libre) ; dehorsSeul = seulement dehors ; mur = contre un mur de la pièce (sa propre couche, on passe dessous) ;
      facade = s'accroche aussi dehors, sur la façade de devant d'un bâtiment (batiments.js) ; plafond = pend du plafond
-     (sa propre couche) ; support = on y pose une torche, qui ne s'éteint plus jamais (seulement sur son île) */
-  chandelle:{nom:"Chandelle", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
-  torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:true, une:true},
-  torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:true, une:true},
+     (sa propre couche) ; support = ce qu'on y pose (GARNIS) : une torche sur la torchère, qui ne s'éteint plus jamais
+     (seulement sur son île) ; une chandelle dans le bougeoir, qui ne s'y use jamais (Yo, 8 novembre 2026).
+     Le bougeoir (Yo, 8 novembre 2026 : la chandelle refaite d'après son image, le bougeoir vide « pour ensuite fabriquer une
+     bougie avec la cire d'abeille ») : sa clé reste « chandelle » (les parties en cours) ; on y pose une chandelle de suif,
+     plus tard une bougie de cire d'abeille (la ruche) */
+  chandelle:{nom:"Bougeoir", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, support:"bougie"},
+  torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:"torche", une:true},
+  torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:"torche", une:true},
   /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
   lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true},
   bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true},
@@ -96,7 +100,7 @@ export const FLAMMES = {bougie: 0xFFC27A, huile: 0xFFD490, bois: 0xFF9A48, lucio
 const source = (niveau, flamme, plus) => ({niveau, couleur: FLAMMES[flamme], ...ECLAT[niveau], ...plus});
 export const LUMIERE = {
   bocalLucioles: source(1, "lucioles", {y: .3, lucioles: true}),
-  chandelle:     source(2, "bougie", {y: .42, flamme: true}),
+  chandelle:     source(2, "bougie", {y: .41, flamme: true, bougie: true}),    // le bougeoir : seulement avec sa chandelle
   chandelier:    source(3, "bougie", {y: 1.05, flamme: true}),
   lanterne:      source(4, "huile", {y: 1.28}),
   lanterneMurale:source(4, "huile", {y: 1.32, nuit: true, avance: .12}),
@@ -110,6 +114,10 @@ export const LUMIERE = {
 };
 /* Les lumières tenues en main (torche.js) : la torche (niveau 5), la lanterne à main (niveau 7) */
 export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
+/* Ce qui se pose sur un support (MEUBLES[...].support) : la torche sur la torchère (o.torche), la chandelle dans le bougeoir
+   (o.bougie : sa clé ; plus tard la bougie de cire d'abeille) ; garniDe : ce qui y est posé, ou null */
+export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"]};
+export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : o.bougie || null; };
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
 /* Un meuble qui se prend en main pour aller dehors : posé sur une case, ou accroché à une façade */
@@ -868,6 +876,9 @@ export const PRODUITS = {
      viendra avec la ruche) */
   suif:     {nom:"Suif", pluriel:"suif", emoji:"🧈", prix:1, aide:"Le suif se fond au fourneau de la Taverne : 1 viande de gibier pour 2 suif.",
     usage:"La graisse fondue de la viande de gibier : pour les chandelles (atelier de décoration de la Chaumière, avec une fibre pour la mèche)."},
+  /* La chandelle de suif (Yo, 8 novembre 2026) : elle se pose dans un bougeoir, et ne s'y use jamais */
+  chandelleSuif:{nom:"Chandelle de suif", pluriel:"chandelles de suif", emoji:"🕯️", prix:1, aide:"Les chandelles se fabriquent à l'atelier de décoration de la Chaumière : 1 suif et 1 fibre pour 2 chandelles.",
+    usage:"Pose-la dans un bougeoir (approche-toi, une chandelle sur toi) : elle l'allume, et ne s'y use jamais."},
   /* La toile (demande de Yo, 11 octobre 2026) : tissée à l'atelier de décoration avec des fibres, pour le sac de cuir */
   toile:    {nom:"Toile", pluriel:"toiles", emoji:"🧶", icone:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h13v11H4z" fill="#E8D6A8" stroke="#1C2230" stroke-opacity=".35"/><path d="M7 7v11M10 7v11M13 7v11M4 10h13M4 13h13M4 16h13" stroke="#B89A62" stroke-width=".8"/><ellipse cx="18" cy="12.5" rx="2.6" ry="5.8" fill="#D9C28C" stroke="#1C2230" stroke-opacity=".35"/><ellipse cx="18" cy="12.5" rx="1" ry="2.4" fill="#B89A62"/></svg>', prix:1,
     aide:"La toile se tisse à l'atelier de décoration de la Chaumière : 4 fibres pour 1 toile.",
@@ -950,11 +961,12 @@ export const ATELIERS = {
     {out:"lambrisPommier", in:{boisPommier:4}, t:40, lvl:1}
   ]},
   chaumiere:{nom:"Atelier de décoration", le:"l'atelier de décoration", emoji:"🧵", meuble:"atelierDeco", cost:{planche:6, fibre:4},
-    pour:"tisser la toile, agrandir ton sac, fabriquer des chandelles, des lanternes, des pots de fleurs, des tapis et des vitrines", recettes:[
+    pour:"tisser la toile, agrandir ton sac, fabriquer des bougeoirs et des chandelles, des lanternes, des pots de fleurs, des tapis et des vitrines", recettes:[
     {out:"toile", in:{fibre:4}, t:20, lvl:1, cat:"Matériaux"},          // demande de Yo (11 octobre 2026)
     /* Le sac qui s'agrandit (SACS) : seul le suivant est proposé (recettesDe dans ateliers.js) */
     ...SACS.filter(s => s.k).map(s => ({out:s.k, in:s.in, t:120, lvl:1, cat:"Ton sac"})),
-    {out:"chandelle", n:2, in:{suif:1, fibre:1}, t:20, lvl:1, cat:"Lumières"},   // demande de Yo (11 octobre 2026) : le suif, une fibre pour la mèche
+    {out:"chandelle", in:{cuivre:1}, t:20, lvl:1, cat:"Lumières"},              // le bougeoir de cuivre, vide (Yo, 8 novembre 2026)
+    {out:"chandelleSuif", n:2, in:{suif:1, fibre:1}, t:20, lvl:1},            // demande de Yo (11 octobre 2026) : le suif, une fibre pour la mèche
     {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
     {out:"bocalLucioles", in:{bocal:1, luciole:3}, t:30, lvl:1},           // un bocal et trois lucioles attrapées
     {out:"pot", in:{pierre:2}, t:20, lvl:1, cat:"Décoration"},

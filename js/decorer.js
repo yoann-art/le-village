@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe, garniDe } from "./donnees.js";
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -250,14 +250,15 @@ $("#deco-store").addEventListener("click", () => {
   if(!sel || MEUBLES[sel.type].plan || sel.reserve) return;           // le plan de travail reste dans son bâtiment ; un coffre de réserve s'emporte depuis le coffre
   if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
   if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
-  if(sel.torche && placeFor("torche") < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la torche de la torchère"); return; }
+  const garni = garniDe(sel.type, sel);                                // la torche de la torchère, la chandelle du bougeoir
+  if(garni && placeFor(garni) < 1){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : "la chandelle du bougeoir"}`); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);
   let ou = "dans ton sac";
   if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
   if(sel.pierre){ addOwned(sel.pierre, 1); ou += `, et sa pierre (${objet(sel.pierre).nom.toLowerCase()})`; }   // la pierre exposée dans une vitrine revient aussi
-  if(sel.torche){ addOwned("torche", 1); ou += ", et sa torche"; }                        // la torche posée sur une torchère aussi
+  if(garni){ addOwned(garni, 1); ou += garni === "torche" ? ", et sa torche" : ", et sa chandelle"; }   // ce qui est posé dessus aussi
   toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`, 2400, "ranger");
   sel = null; showSel(); save();
 });

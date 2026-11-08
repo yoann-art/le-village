@@ -23,14 +23,14 @@ const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
-  chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
+  chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 /* ---------- Les meubles refaits d'après les images de Yo (chantier de la décoration, étape 3) ----------
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -463,6 +463,33 @@ function coffreMorceaux(cuivre){ return c => {
   return out;
 }; }
 
+/* Le bougeoir et sa chandelle (image de Yo, 8 novembre 2026 : « Voici la chandelle » ; le bougeoir vide, on y pose la
+   chandelle) : une coupelle ronde au bord relevé, un godet au milieu, une anse ronde ; le cuivre (sa couleur, celle du métal).
+   La chandelle de suif : crème, la cire coulée par-dessus le bord et deux coulures sur le côté, sa mèche ; la flamme en goutte
+   (fireMat : elle vacille, s'éteint par gestes.js). Le bougeoir et sa chandelle font un dessin, la flamme un autre */
+const BG = {cire: 0xF3E6C4, meche: 0x3A2A1C, bas: .115, haut: .33};
+const lathe = (pts, seg) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+const BG_COUPELLE = lathe([[0, 0], [.15, 0], [.172, .008], [.184, .032], [.188, .058], [.178, .066], [.166, .046], [.15, .03], [0, .03]], 22);
+const BG_GODET = lathe([[0, .025], [.092, .025], [.086, .05], [.08, .08], [.084, .1], [.096, .108], [.094, .12], [.082, .118], [.078, .09], [0, .088]], 16);   // creux en haut : la chandelle s'y plante
+const BG_ANSE = new THREE.TorusGeometry(.07, .019, 6, 16);
+const CH_CORPS = baton(.078, BG.haut - BG.bas, false, false, 14);
+const CH_BORD = new THREE.TorusGeometry(.068, .016, 5, 14).rotateX(Math.PI / 2);    // la cire coulée sur le bord
+const CH_COULURE = baton(.016, .1, true, true, 6);
+const CH_MECHE = baton(.009, .04, false, true, 5);
+const CH_FLAMME = lathe([[0, 0], [.026, .008], [.042, .03], [.046, .055], [.038, .085], [.022, .115], [.008, .14], [0, .15]], 14);
+function chandelleMorceaux(y0){ const o = ombreBois(y0, y0 + .3); return [
+  {geo: CH_CORPS, m: M4(0, y0, 0), c: BG.cire, ombre: o}, {geo: CH_BORD, m: M4(0, y0 + BG.haut - BG.bas - .006, 0), c: BG.cire, ombre: o},
+  {geo: CH_COULURE, m: M4(.074, y0 + .15, .02), c: BG.cire, ombre: o}, {geo: CH_COULURE, m: M4(-.035, y0 + .17, .07, 0, 0, 0, 1, .6, 1), c: BG.cire, ombre: o},
+  {geo: CH_MECHE, m: M4(0, y0 + BG.haut - BG.bas, 0), c: BG.meche}]; }
+function bougeoirMorceaux(garni){ return c => {
+  const o = ombreBois(0, .2), out = [{geo: BG_COUPELLE, m: M4(0, 0, 0), c, ombre: o}, {geo: BG_GODET, m: M4(0, 0, 0), c, ombre: o},
+    {geo: BG_ANSE, m: M4(.225, .1, 0), c, ombre: o}];
+  if(garni) out.push(...chandelleMorceaux(BG.bas));
+  return out;
+}; }
+/* La chandelle seule (son icône) */
+export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -490,12 +517,10 @@ const BUILD = {
     }
   },
   /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE dans donnees.js) */
-  chandelle(g, m){                                                                   // une chandelle de suif sur son bougeoir
-    g.add(part(G.cyl, m, .34, .04, .34, 0, .02, 0));                                  // la coupelle
-    g.add(part(G.cyl, m, .16, .06, .16, 0, .07, 0));                                  // le godet
-    const anse = part(G.tore, m, .2, .2, .3, .2, .06, 0); anse.rotation.y = Math.PI / 2; g.add(anse);   // l'anse
-    g.add(part(G.cyl, 0xF1E6C8, .12, .26, .12, 0, .23, 0));                           // la chandelle, couleur crème
-    g.add(part(G.cone, fireMat, .08, .13, .08, 0, .42, 0));                           // la flamme
+  chandelle(g, m, o){                                                                // le bougeoir, et la chandelle qu'on y a posée
+    const garni = !!(o && o.bougie);
+    g.add(modeleBois(garni ? "bougeoirGarni" : "bougeoir", m, bougeoirMorceaux(garni)));
+    if(garni){ const f = new THREE.Mesh(CH_FLAMME, fireMat); f.position.y = BG.haut + .02; f.scale.setScalar(1.25); f.castShadow = false; g.add(f); }
   },
   /* La torchère sur pied : un socle de pierre, un poteau de bois, une coupelle de fer ; la torche posée dessus brûle
      toujours (o.torche) */

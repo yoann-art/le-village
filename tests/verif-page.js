@@ -690,6 +690,12 @@ export async function verifier(){
     $("#deco-done").click(); await wait(200);
     const items = scierie.deco.items, chaise = items.find(it => it.type === "chaise"), chandelle = items.find(it => it.type === "chandelle");
     if(!chaise || !chandelle) throw new Error("la chaise ou la chandelle ne se posent pas");
+    /* le bougeoir vide (Yo, 8 novembre 2026) : on y pose une chandelle de suif, qui ne s'y use jamais */
+    if(chandelle.bougie) throw new Error("le bougeoir n'est pas vide quand on le pose");
+    sacAdd("chandelleSuif", 1); placePlayer(chandelle.x + .6, chandelle.z, -1, 0); updateLumieres(.016, true);
+    if($("#btn-torchere").hidden) throw new Error("pas de bouton tout près du bougeoir vide");
+    $("#btn-torchere").click();
+    if(chandelle.bougie !== "chandelleSuif") throw new Error("la chandelle n'est pas posée dans le bougeoir");
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
@@ -3016,8 +3022,8 @@ export async function verifier(){
       place(4); sacAdd("viandeGibier", 1); sacAdd("fibre", 1);
       openAtelier(taverne); await wait(200); fab(taverne, "suif"); await fini(taverne);
       if(owned("suif") < 2) throw new Error(`${owned("suif")} suif au lieu de 2`);
-      openAtelier(chaumiere); await wait(200); fab(chaumiere, "chandelle"); await fini(chaumiere);
-      if(owned("chandelle") < 2) throw new Error(`${owned("chandelle")} chandelles au lieu de 2`);
+      openAtelier(chaumiere); await wait(200); fab(chaumiere, "chandelleSuif"); await fini(chaumiere);
+      if(owned("chandelleSuif") < 2) throw new Error(`${owned("chandelleSuif")} chandelles au lieu de 2`);
       $("#sheetWrap [data-close]").click(); await wait(300);
     } finally {
       for(const b of [taverne, chaumiere]) state.buildings.splice(state.buildings.indexOf(b), 1);
@@ -3114,7 +3120,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
