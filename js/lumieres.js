@@ -120,8 +120,8 @@ export const lumieresActives = () => actives;
 /* ----- Poser une torche sur une torchère, une chandelle dans un bougeoir ----- */
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
 export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) > 0) || null;
-/* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » */
-export const poserLabel = type => MEUBLES[type].support === "bougie" ? "🕯️ Poser une chandelle dans le bougeoir" : "🔥 Poser une torche sur la torchère";
+/* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
+export const poserLabel = type => MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
   const bougie = MEUBLES[type].support === "bougie", k = garniDispo(type);
@@ -132,7 +132,7 @@ export function poserGarni(o, type, refaire){
   const patch = bougie ? {bougie: k} : {torche: true};
   Object.assign(o, patch); refaire(patch);
   syncBarre(); save(); renderHUD();
-  toast(bougie ? `🕯️ ${objet(k).nom} posée dans le bougeoir : elle ne s'y usera jamais` : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
+  toast(bougie ? `🕯️ ${objet(k).nom} posée ${MEUBLES[type].dans} : elle ne s'y usera jamais` : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
   return true;
 }
 export const poserTorche = (o, refaire) => poserGarni(o, "torchere", refaire);
@@ -150,6 +150,17 @@ if(!state.bougeoirs){
   const n = owned("chandelle");
   if(n > 0) addOwned("chandelleSuif", n);
   state.bougeoirs = 1; save();
+}
+/* Les lanternes sur pied d'avant (Yo, 8 novembre 2026 : la lanterne vide, on y pose une chandelle) : une fois, chaque lanterne
+   posée reçoit sa chandelle de suif (elle reste allumée) ; chaque lanterne du sac, des cases et des coffres donne aussi une
+   chandelle (rien ne se perd) */
+if(!state.lanternes){
+  for(const b of state.buildings) for(const it of (b.deco && b.deco.items) || []) if(it.type === "lanterne" && !it.bougie) it.bougie = "chandelleSuif";
+  for(const [i, c] of Object.entries(state.ile)) if(c && c.o === "lanterne" && !c.bougie){
+    if(objMesh(+i)) setEtat(+i, {bougie: "chandelleSuif"}); else c.bougie = "chandelleSuif"; }
+  const n = owned("lanterne");
+  if(n > 0) addOwned("chandelleSuif", n);
+  state.lanternes = 1; save();
 }
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");

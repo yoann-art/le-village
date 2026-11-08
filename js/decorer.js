@@ -251,7 +251,7 @@ $("#deco-store").addEventListener("click", () => {
   if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
   if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
   const garni = garniDe(sel.type, sel);                                // la torche de la torchère, la chandelle du bougeoir
-  if(garni && placeFor(garni) < 1){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : "la chandelle du bougeoir"}`); return; }
+  if(garni && placeFor(garni) < 1){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : "sa chandelle"}`); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);

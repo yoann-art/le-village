@@ -41,7 +41,9 @@ export const MEUBLES = {
   fauteuil: {nom:"Fauteuil", emoji:"💺", gabarit:"petit", w:1.05, d:.9},
   tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
   pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
-  lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true},
+  /* La lanterne sur pied (Yo, 8 novembre 2026 : refaite d'après son image, vide « pour que cela soit réaliste ») : on y pose
+     une chandelle de suif, comme dans le bougeoir (plus tard une bougie de cire d'abeille) */
+  lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true, support:"bougie", dans:"dans la lanterne"},
   /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE) : dehors = se pose aussi sur l'île (en main, devant une
      case libre) ; dehorsSeul = seulement dehors ; mur = contre un mur de la pièce (sa propre couche, on passe dessous) ;
      facade = s'accroche aussi dehors, sur la façade de devant d'un bâtiment (batiments.js) ; plafond = pend du plafond
@@ -50,7 +52,7 @@ export const MEUBLES = {
      Le bougeoir (Yo, 8 novembre 2026 : la chandelle refaite d'après son image, le bougeoir vide « pour ensuite fabriquer une
      bougie avec la cire d'abeille ») : sa clé reste « chandelle » (les parties en cours) ; on y pose une chandelle de suif,
      plus tard une bougie de cire d'abeille (la ruche) */
-  chandelle:{nom:"Bougeoir", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, support:"bougie"},
+  chandelle:{nom:"Bougeoir", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, support:"bougie", dans:"dans le bougeoir"},
   torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:"torche", une:true},
   torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:"torche", une:true},
   /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
@@ -102,7 +104,7 @@ export const LUMIERE = {
   bocalLucioles: source(1, "lucioles", {y: .3, lucioles: true}),
   chandelle:     source(2, "bougie", {y: .41, flamme: true, bougie: true}),    // le bougeoir : seulement avec sa chandelle
   chandelier:    source(3, "bougie", {y: 1.05, flamme: true}),
-  lanterne:      source(4, "huile", {y: 1.28}),
+  lanterne:      source(3, "bougie", {y: 1.15, flamme: true, bougie: true}),     // une chandelle derrière des vitres : un peu plus que le bougeoir
   lanterneMurale:source(4, "huile", {y: 1.32, nuit: true, avance: .12}),
   torchere:      source(5, "bois", {y: 1.66, flamme: true, torche: true}),
   torchereMurale:source(5, "bois", {y: 1.65, flamme: true, torche: true, avance: .12}),
@@ -967,7 +969,7 @@ export const ATELIERS = {
     ...SACS.filter(s => s.k).map(s => ({out:s.k, in:s.in, t:120, lvl:1, cat:"Ton sac"})),
     {out:"chandelle", in:{cuivre:1}, t:20, lvl:1, cat:"Lumières"},              // le bougeoir de cuivre, vide (Yo, 8 novembre 2026)
     {out:"chandelleSuif", n:2, in:{suif:1, fibre:1}, t:20, lvl:1},            // demande de Yo (11 octobre 2026) : le suif, une fibre pour la mèche
-    {out:"lanterne", in:{planche:2, or:1}, t:30, lvl:1},
+    {out:"lanterne", in:{cuivre:2, verre:1}, t:30, lvl:1},                     // tout en cuivre, des vitres (image de Yo, 8 novembre 2026)
     {out:"bocalLucioles", in:{bocal:1, luciole:3}, t:30, lvl:1},           // un bocal et trois lucioles attrapées
     {out:"pot", in:{pierre:2}, t:20, lvl:1, cat:"Décoration"},
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
@@ -1032,8 +1034,8 @@ export const ATELIERS = {
     {out:"bocalCuivre", in:{verre:2, cuivre:2}, t:60, lvl:1},
     {out:"bocalBronze", in:{verre:2, bronze:2}, t:90, lvl:1},
     {out:"torchereMurale", in:{cuivre:2}, t:40, lvl:1, cat:"Lumières"},     // demande de Yo (11 octobre 2026)
-    {out:"lanterneMain", in:{cuivre:2, verre:1, chandelle:1}, t:60, lvl:1},
-    {out:"lanterneMurale", in:{cuivre:2, verre:1, chandelle:1}, t:60, lvl:1},
+    {out:"lanterneMain", in:{cuivre:2, verre:1, chandelleSuif:1}, t:60, lvl:1},
+    {out:"lanterneMurale", in:{cuivre:2, verre:1, chandelleSuif:1}, t:60, lvl:1},
     /* Gardés pour une mise à jour ou un événement (choix de Yo, 7 novembre 2026, page « Les objets de l'île ») : plus
        proposés à l'enclume ni au catalogue ; ceux déjà fabriqués ou posés dans une partie en cours restent (la recette
        reste ici, pour que le jeu les reconnaisse comme fabriqués : FABRIQUE_A, rangés dans le sac) */

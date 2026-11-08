@@ -684,9 +684,9 @@ export async function verifier(){
     const btnG = $("#btn-geste"), {seLever} = await import("../js/monde/personnage.js");
     await entrer(scierie);
     try {
-    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("fauteuil", 1); sacAdd("banc", 1); sacAdd("tableBanquet", 1); sacAdd("etagere", 1); sacAdd("armoire", 1); sacAdd("tonneau", 1);
+    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("lanterne", 1); sacAdd("fauteuil", 1); sacAdd("banc", 1); sacAdd("tableBanquet", 1); sacAdd("etagere", 1); sacAdd("armoire", 1); sacAdd("tonneau", 1);
     $("#btn-deco").click(); await wait(200);
-    addMeuble("chaise"); addMeuble("chandelle");
+    addMeuble("chaise"); addMeuble("chandelle"); addMeuble("lanterne");
     $("#deco-done").click(); await wait(200);
     const items = scierie.deco.items, chaise = items.find(it => it.type === "chaise"), chandelle = items.find(it => it.type === "chandelle");
     if(!chaise || !chandelle) throw new Error("la chaise ou la chandelle ne se posent pas");
@@ -696,6 +696,16 @@ export async function verifier(){
     if($("#btn-torchere").hidden) throw new Error("pas de bouton tout près du bougeoir vide");
     $("#btn-torchere").click();
     if(chandelle.bougie !== "chandelleSuif") throw new Error("la chandelle n'est pas posée dans le bougeoir");
+    /* la lanterne sur pied vide (Yo, 8 novembre 2026) : on y pose aussi une chandelle de suif */
+    const lanterne = items.find(it => it.type === "lanterne");
+    if(!lanterne) throw new Error("la lanterne sur pied ne se pose pas");
+    if(lanterne.bougie) throw new Error("la lanterne n'est pas vide quand on la pose");
+    sacAdd("chandelleSuif", 1); placePlayer(lanterne.x + .6, lanterne.z, -1, 0); updateLumieres(.016, true);
+    if($("#btn-torchere").hidden) throw new Error("pas de bouton tout près de la lanterne vide");
+    $("#btn-torchere").click();
+    if(lanterne.bougie !== "chandelleSuif") throw new Error("la chandelle n'est pas posée dans la lanterne");
+    if(!LUMIERE.lanterne.bougie) throw new Error("la lanterne éclaire sans chandelle");
+    items.splice(items.indexOf(lanterne), 1); removeItemMesh(lanterne.id);       // (la chandelle reste seule à éclairer la pièce)
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
@@ -2977,9 +2987,9 @@ export async function verifier(){
   await etape("L'échelle des lumières, la cheminée qui éclaire, la torche en main partout où il fait sombre", async () => {
     const {syncBarre} = await import("../js/barre.js");
     /* l'échelle (Yo, 8 novembre 2026) : de la plus faible à la plus forte, d'après la vraie nature */
-    const ordre = ["bocalLucioles", "chandelle", "chandelier", "lanterne", "torchere", "brasero", "cheminee", "feuCamp"];
+    const ordre = ["bocalLucioles", "chandelle", "lanterne", "chandelier", "torchere", "brasero", "cheminee", "feuCamp"];   // la lanterne et le chandelier : au même niveau
     for(let k = 1; k < ordre.length; k++){ const a = LUMIERE[ordre[k - 1]], b = LUMIERE[ordre[k]];
-      if(!a || !b || b.niveau <= a.niveau || b.force < a.force || b.portee < a.portee) throw new Error(`l'échelle des lumières n'est pas dans l'ordre : ${ordre[k - 1]} puis ${ordre[k]}`); }
+      if(!a || !b || b.niveau < a.niveau || b.force < a.force || b.portee < a.portee) throw new Error(`l'échelle des lumières n'est pas dans l'ordre : ${ordre[k - 1]} puis ${ordre[k]}`); }
     if(!(LUMIERE_MAIN.lanterne.portee > LUMIERE_MAIN.torche.portee)) throw new Error("la lanterne à main n'éclaire pas plus loin que la torche");
     /* la torche en main dehors : allumée la nuit, éteinte le jour ; elle s'use */
     const avant = state.barre.slice(), torche0 = state.torche;
@@ -3120,7 +3130,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

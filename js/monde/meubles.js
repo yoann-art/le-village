@@ -21,7 +21,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -487,6 +487,56 @@ function bougeoirMorceaux(garni){ return c => {
   if(garni) out.push(...chandelleMorceaux(BG.bas));
   return out;
 }; }
+/* La lanterne sur pied (image de Yo, 8 novembre 2026 : « Voici la lanterne sur pied », vide « pour que cela soit réaliste ») :
+   un socle rond à deux marches, un poteau aux anneaux, une boule en haut ; une crosse enroulée d'où pend la lanterne : un
+   bouton dessous, une coupe, six vitres cintrées entre des montants à rivets, un bord rond, un dôme et son anneau. Tout en
+   cuivre. Vide : le verre clair, on voit au travers ; on y pose une chandelle de suif (comme dans le bougeoir), qui ne s'y use
+   jamais : sa flamme (fireMat) derrière le verre qui s'allume (verreLanterne). Le poteau un peu à gauche du milieu, la lanterne
+   à droite : le tout tient sur sa case. Un dessin pour le cuivre (et la chandelle), un pour le verre, un pour la flamme */
+const LP = {x0: -.12, lx: .17, bas: 1.1, haut: 1.33, r: .145, s: .55, k: 1.15, pivot: 1.55};   // la lanterne grandie de .15 (l'image), depuis son anneau
+const LP_K = new THREE.Matrix4().makeTranslation(LP.lx, LP.pivot, 0).multiply(new THREE.Matrix4().makeScale(LP.k, LP.k, LP.k)).multiply(new THREE.Matrix4().makeTranslation(-LP.lx, -LP.pivot, 0));   // le poteau, la lanterne, ses vitres, la chandelle (à .55)
+const LP_SOCLE = lathe([[0, 0], [.19, 0], [.205, .015], [.205, .05], [.19, .065], [.15, .07], [.125, .08], [.125, .13], [.11, .145], [.06, .15], [0, .15]], 22);
+const LP_BAS = lathe([[0, .14], [.058, .14], [.052, .3], [.044, .5], [0, .5]], 12);          // le bas du poteau, plus large
+const LP_POTEAU = baton(.04, 1.08, false, false, 12);
+const LP_ANNEAU = lathe([[0, -.025], [.05, -.025], [.062, -.012], [.062, .012], [.05, .025], [0, .025]], 14);
+const LP_BOULE = new THREE.SphereGeometry(.055, 12, 8);
+const LP_CROSSE = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[.03, 1.42], [.05, 1.53], [.1, 1.62], [.19, 1.68], [.29, 1.685], [.36, 1.64],
+  [.375, 1.575], [.34, 1.54], [.3, 1.55], [.29, 1.585]].map(([x, y]) => new THREE.Vector3(x, y, 0))), 36, .024, 8, false);
+const LP_BOUT = new THREE.SphereGeometry(.03, 8, 6);
+const LP_BOUTON = new THREE.SphereGeometry(.034, 10, 6);
+const LP_COUPE = lathe([[0, .975], [.05, .985], [.1, 1.02], [.13, 1.06], [0, 1.06]], 12);
+const LP_BANDE = new THREE.CylinderGeometry(.172, .172, .04, 6);                            // les bandes du bas et du haut (six pans)
+const LP_MONTANT = baton(.017, LP.haut - LP.bas, false, false, 6);
+const LP_ARC = new THREE.TorusGeometry(.055, .012, 4, 8, Math.PI);                          // le haut cintré de chaque vitre
+const LP_RIVET = new THREE.SphereGeometry(.016, 6, 4);
+const LP_BORD = lathe([[0, 1.355], [.17, 1.355], [.2, 1.365], [.205, 1.38], [.19, 1.39], [0, 1.39]], 18);
+const LP_DOME = lathe([[0, 1.385], [.18, 1.385], [.16, 1.42], [.12, 1.45], [.075, 1.465], [.07, 1.49], [0, 1.495]], 18);
+const LP_ANNEAU_HAUT = new THREE.TorusGeometry(.03, .009, 5, 10);
+const LP_VERRE = new THREE.CylinderGeometry(LP.r, LP.r, LP.haut - LP.bas, 6, 1, true).translate(0, (LP.bas + LP.haut) / 2, 0);
+const verreLanterne = toon({color: 0xFFD27A, emissive: 0xFFA640, emissiveIntensity: 1, transparent: true, opacity: .85, depthWrite: false});
+function lanterneMorceaux(garni){ return c => {
+  const o = ombreBois(0, 1.7), X = LP.x0, L = LP.lx, out = [
+    {geo: LP_SOCLE, m: M4(X, 0, 0), c, ombre: o}, {geo: LP_BAS, m: M4(X, 0, 0), c, ombre: o}, {geo: LP_POTEAU, m: M4(X, .5, 0), c, ombre: o},
+    {geo: LP_BOULE, m: M4(X, 1.64, 0), c, ombre: o}, {geo: LP_CROSSE, m: M4(X, 0, 0), c, ombre: o}, {geo: LP_BOUT, m: M4(X + .29, 1.585, 0), c, ombre: o},
+    ...lanternePendue(c, o, garni)];                                                             // la lanterne, à part : grandie
+  for(const y of [.5, 1.39, 1.58]) out.push({geo: LP_ANNEAU, m: M4(X, y, 0), c, ombre: o});         // les anneaux du poteau
+  return out;
+}; }
+function lanternePendue(c, o, garni){
+  const L = LP.lx, out = [
+    {geo: LP_BOUTON, m: M4(L, .97, 0), c, ombre: o}, {geo: LP_COUPE, m: M4(L, 0, 0), c, ombre: o},
+    {geo: LP_BORD, m: M4(L, 0, 0), c, ombre: o}, {geo: LP_DOME, m: M4(L, 0, 0), c, ombre: o}, {geo: LP_ANNEAU_HAUT, m: M4(L, 1.525, 0), c, ombre: o}];
+  for(const y of [LP.bas - .01, LP.haut + .01]) out.push({geo: LP_BANDE, m: M4(L, y, 0), c, ombre: o});
+  for(let k = 0; k < 6; k++){
+    const a = k * Math.PI / 3, ca = a + Math.PI / 6, r = .158;
+    out.push({geo: LP_MONTANT, m: M4(L + Math.sin(a) * r, LP.bas, Math.cos(a) * r), c, ombre: o});                // les montants, aux coins
+    for(const y of [LP.bas - .01, LP.haut + .01]) out.push({geo: LP_RIVET, m: M4(L + Math.sin(a) * .175, y, Math.cos(a) * .175), c, ombre: o});
+    out.push({geo: LP_ARC, m: M4(L + Math.sin(ca) * .132, LP.haut - .06, Math.cos(ca) * .132, 0, ca, 0), c, ombre: o});   // le haut cintré de la vitre
+  }
+  if(garni){ const S = new THREE.Matrix4().makeTranslation(L, LP.bas, 0).multiply(new THREE.Matrix4().makeScale(LP.s, LP.s, LP.s));
+    for(const p of chandelleMorceaux(0)) out.push({...p, m: S.clone().multiply(p.m)}); }
+  return out.map(p => ({...p, m: LP_K.clone().multiply(p.m)}));
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -500,11 +550,11 @@ const BUILD = {
     g.add(part(G.leaf, C.leaf, .5, .45, .5, 0, .5, 0));                                // feuillage
     for(const [x,y,z,c] of [[-.1,.66,.08,C.red],[.12,.62,.05,C.yellow],[0,.6,-.12,C.white]]) g.add(part(G.head, c, .28, .28, .28, x, y, z));   // fleurs
   },
-  lanterne(g, m){
-    g.add(part(G.box, m, .4, .08, .4, 0, .04, 0));                                    // socle
-    g.add(part(G.cyl, m, .08, 1.1, .08, 0, .6, 0));                                   // poteau
-    g.add(part(G.box, glowMat, .22, .28, .22, 0, 1.28, 0));                            // lanterne allumée
-    g.add(part(G.cone4, m, .36, .16, .36, 0, 1.5, 0));                                // chapeau
+  lanterne(g, m, o){                                                                 // la lanterne sur pied, et la chandelle qu'on y a posée
+    const garni = !!(o && o.bougie);
+    g.add(modeleBois(garni ? "lanterneGarnie" : "lanterne", m, lanterneMorceaux(garni)));
+    const v = new THREE.Mesh(LP_VERRE, garni ? verreLanterne : verreMat); v.position.x = LP.lx; v.applyMatrix4(LP_K); v.renderOrder = 1; v.castShadow = false; g.add(v);
+    if(garni){ const f = new THREE.Mesh(CH_FLAMME, fireMat); f.position.set(LP.lx, LP.bas + (BG.haut - BG.bas + .01) * LP.s, 0); f.scale.setScalar(.62); f.applyMatrix4(LP_K); f.castShadow = false; g.add(f); }
   },
   chandelier(g, m){                                                                  // l'argent de la mine (étape 1.11) : trois bougies
     g.add(part(G.cyl, m, .34, .06, .34, 0, .03, 0));                                  // le pied
@@ -723,7 +773,7 @@ const BUILD = {
 /* Les petites lumières se touchent mal du doigt (la torchère murale est petite et haut sur le mur) : une boîte
    invisible autour d'elles agrandit ce qu'on peut toucher (demande de Yo, 12 octobre 2026) : [largeur, hauteur,
    profondeur, hauteur de son milieu] */
-const PRISE = {chandelle:[.6, .7, .6, .3], bocalLucioles:[.6, .7, .6, .3], lanterne:[.6, 1.7, .6, .8], torchere:[.6, 1.9, .6, .9],
+const PRISE = {chandelle:[.6, .7, .6, .3], bocalLucioles:[.6, .7, .6, .3], lanterne:[.8, 1.8, .6, .88], torchere:[.6, 1.9, .6, .9],
   torchereMurale:[.7, 1, .6, 1.35], lanterneMurale:[.7, 1, .6, 1.3], brasero:[.8, 1.3, .8, .6], lampadaire:[.6, 2.5, .6, 1.2], feuCamp:[1, .7, 1, .3]};
 const INVISIBLE = new THREE.MeshBasicMaterial({visible: false}), BOITE = new THREE.BoxGeometry(1, 1, 1);
 /* Une torche posée (sur une torchère) : le bâton, sa tête de fibres, sa flamme (y + .5) */
@@ -738,7 +788,7 @@ export function makeMeuble(type, color, o){
   const g = new THREE.Group();
   const hex = couleurMeuble(type, color);                            // sa teinte, l'ancienne couleur, ou celle de départ (donnees.js)
   BUILD[type](g, hex !== null ? hex : ORIGIN[type], o);
-  if(o && o.eteint) g.traverse(c => { if(c.material === fireMat) c.visible = false; else if(c.material === glowMat || c.material === nuitMat) c.material = verreEteint; });
+  if(o && o.eteint) g.traverse(c => { if(c.material === fireMat) c.visible = false; else if(c.material === glowMat || c.material === nuitMat) c.material = verreEteint; else if(c.material === verreLanterne) c.material = verreMat; });
   if(PRISE[type]){ const [w, h, d, y] = PRISE[type], p = new THREE.Mesh(BOITE, INVISIBLE); p.scale.set(w, h, d); p.position.y = y; g.add(p); }
   return g;
 }
