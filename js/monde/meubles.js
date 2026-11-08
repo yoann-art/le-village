@@ -21,7 +21,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, tabouret:C.
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -285,6 +285,39 @@ function etagereMorceaux(c){
   return out;
 }
 
+/* L'armoire (image de Yo, 8 novembre 2026 : « Voici l'armoire ») : un objet nouveau. Un gros caisson aux bords arrondis sur un
+   socle épais et quatre petits pieds ronds ; en haut, une corniche épaisse au grand chapeau cintré, ses rebords dépassant sur
+   les côtés ; deux portes au haut cintré (la courbe du chapeau), chacune avec son panneau en relief ; deux boutons ronds de
+   cuivre (leur couleur ne change pas avec le bois). 1,3 × 0,7 au sol, 2,1 de haut ; le devant vers +z */
+const AR = {larg: 1.16, prof: .58, bas: .32, haut: 1.82, cuivre: 0xB0602A};
+const arcAR = x => { const a = Math.abs(x), t = Math.min(1, Math.max(0, (.66 - a) / .2)), d = Math.max(0, 1 - (x / .66) ** 2);
+  return .26 * d * t * t * (3 - 2 * t); };          // le chapeau : un dôme rond au milieu, une courbe douce vers les rebords plats
+function cintrer(g, x0, haut){   // monte le haut d'une forme suivant le chapeau (x0 : sa place en x)
+  const P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const y = P.getY(i), k = haut ? Math.max(0, y / haut) : 1; P.setY(i, y + arcAR(P.getX(i) + x0) * k); }
+  g.computeVertexNormals(); return g;
+}
+const AR_PIED = baton(.11, .22, true, false, 10);
+const AR_SOCLE = boiteRonde(1.32, .16, .68, .07, 2);
+const AR_CORPS = cintrer(boiteRonde(AR.larg, AR.haut - AR.bas, AR.prof, .06, 2, [6, 2, 1]), 0, (AR.haut - AR.bas) / 2);
+const AR_CHAPEAU = cintrer(boiteRonde(1.36, .22, .7, .09, 2, [10, 1, 1]), 0, 0);
+const AR_PORTE = [-1, 1].map(s => cintrer(boiteRonde(.44, 1.36, .06, .03, 2, [2, 3, 1]), s * .23, .68));
+const AR_PANNEAU = [-1, 1].map(s => cintrer(boiteRonde(.3, 1.1, .05, .025, 1, [2, 3, 1]), s * .23, .55));
+const AR_BOUTON = new THREE.SphereGeometry(.058, 10, 8);
+function armoireMorceaux(c){
+  const o = ombreBois(0, 2.1), out = [], zP = AR.prof / 2 - .02 + .03;
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]) out.push({geo: AR_PIED, m: M4(sx * .5, 0, sz * .22), c, ombre: o});
+  out.push({geo: AR_SOCLE, m: M4(0, .24, 0), c, ombre: o});
+  out.push({geo: AR_CORPS, m: M4(0, (AR.bas + AR.haut) / 2, -.02), c, ombre: o});
+  out.push({geo: AR_CHAPEAU, m: M4(0, AR.haut + .07, -.01), c, ombre: o});
+  [-1, 1].forEach((s, i) => {
+    out.push({geo: AR_PORTE[i], m: M4(s * .23, 1.04, zP), c, ombre: o});
+    out.push({geo: AR_PANNEAU[i], m: M4(s * .23, 1.06, zP + .045), c, ombre: o});
+    out.push({geo: AR_BOUTON, m: M4(s * .085, 1.02, zP + .07), c: AR.cuivre, ombre: o});
+  });
+  return out;
+}
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -429,6 +462,7 @@ const BUILD = {
   },
   banc(g, m){ g.add(modeleBois("banc", m, bancMorceaux)); },
   etagere(g, m){ g.add(modeleBois("etagere", m, etagereMorceaux)); },
+  armoire(g, m){ g.add(modeleBois("armoire", m, armoireMorceaux)); },
   cheminee(g, m){
     g.add(part(G.box, m, 1.6, 1.4, .7, 0, .7, -.05));                                 // maçonnerie
     g.add(part(G.box, C.soot, .9, .65, .1, 0, .38, .3));                               // foyer

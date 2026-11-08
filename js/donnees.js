@@ -60,6 +60,7 @@ export const MEUBLES = {
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"moyen", w:1.4, d:.8},
   banc:     {nom:"Banc", emoji:"🛋️", gabarit:"moyen", w:1.6, d:.6},
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
+  armoire:  {nom:"Armoire", emoji:"🚪", gabarit:"moyen", w:1.3, d:.7, une:true},   // l'armoire (Yo, 8 novembre 2026)
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
@@ -921,6 +922,7 @@ export const ATELIERS = {
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"tableBanquet", in:{planche:10}, t:120, lvl:2},   // la grande table de banquet (Yo, 7 novembre 2026)
     {out:"etagere", in:{planche:6}, t:90, lvl:2},
+    {out:"armoire", in:{planche:10, cuivre:2}, t:120, lvl:2},   // l'armoire : du bois, des boutons de cuivre (Yo, 8 novembre 2026)
     {out:"lit", in:{planche:8, or:2}, t:120, lvl:3},
     /* Les sols et les murs des pièces, avec les bois de l'île (demande de Yo, 29 octobre 2026) : le chêne, ce sont les planches */
     {out:"parquetChene", n:4, in:{planche:2}, t:30, lvl:1, cat:"Sols et murs"},
@@ -1044,7 +1046,7 @@ export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
    toutes les ressources nécessaires »). La palette gratuite (COULEURS) n'est plus proposée : un meuble déjà peint avec
    elle garde sa couleur. MATIERE : la matière de la partie qui prend la couleur (le bois de la chaise, la couverture du lit,
    le bougeoir de cuivre de la chandelle) ; la première teinte de chaque matière est celle de départ. */
-export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tabouret:"bois", banc:"bois", table:"bois", etagere:"bois", tonneau:"bois", coffre:"bois",
+export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tabouret:"bois", banc:"bois", table:"bois", etagere:"bois", armoire:"bois", tonneau:"bois", coffre:"bois",
   vitrine:"bois", torchere:"bois", bocalLucioles:"bois", etabli:"bois", atelierDeco:"bois", comptoir:"bois", trone:"bois",
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
@@ -1117,7 +1119,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;
