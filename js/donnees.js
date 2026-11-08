@@ -946,7 +946,7 @@ export const ATELIERS = {
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
     {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2, cat:"Décoration"},
-    {out:"vitrine", in:{planche:4, verre:2}, t:60, lvl:1, cat:"Décoration"}   // étape 1.11 : bois et verre (Grand Carnet)
+    {out:"vitrine", in:{planche:4, verre:2, toile:1}, t:60, lvl:1, cat:"Décoration"}   // étape 1.11 : bois et verre (Grand Carnet) ; la toile du coussin (Yo, 8 novembre 2026)
   ]},
   carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{pierre:10, planche:4},
     pour:"tailler des blocs, des statues et des cheminées, et ouvrir les géodes", recettes:[

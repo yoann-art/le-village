@@ -22,7 +22,7 @@ const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
 const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:C.dark, tonneau:C.light, coffre:C.wood, banc:C.wood,
-  etagere:C.wood, vitrine:C.light, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
+  etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xB88A4A, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -352,6 +352,64 @@ function tonneauMorceaux(c){
   return out;
 }
 
+/* La vitrine (image de Yo, 8 novembre 2026 : « Voici la vitrine mais il faut retirer l'améthyste car au début de partie il n'y a
+   rien dedans » ; « Les boutons sont en bois ») : en bas, un buffet arrondi sur quatre petits pieds ronds et un socle épais,
+   deux portes à panneau et deux boutons de bois ; un plateau épais ; en haut, une cage de verre entre quatre montants, sous un
+   cadre cintré, le verre du dessus bombé ; dedans, un coussin de lin à cordelette et à glands, où se pose la pierre exposée
+   (vitrine.js). 1,2 × 0,7 au sol, 1,85 de haut ; le devant vers +z. Le bois, le coussin et les boutons font un dessin ; le verre
+   (transparent) un autre */
+const VT = {plateau: .92, cage: 1.58, x: .52, z: .27, cord: 0xD4BC8C};
+const arcVT = x => .17 * Math.max(0, 1 - (x / .6) ** 2);
+const VT_PIED = baton(.09, .16, true, false, 8);
+const VT_SOCLE = boiteRonde(1.2, .12, .66, .055, 2);
+const VT_BUFFET = boiteRonde(1.06, .54, .56, .045, 1);
+const VT_PORTE = boiteRonde(.42, .46, .05, .025, 1);
+const VT_PANNEAU = boiteRonde(.3, .34, .04, .02, 1);
+const VT_BOUTON = new THREE.SphereGeometry(.048, 10, 8);
+const VT_PLATEAU = boiteRonde(1.2, .12, .68, .055, 2);
+const VT_MONTANT = boiteRonde(.1, VT.cage - VT.plateau, .1, .035, 1);
+const VT_ARC = (() => { const g = boiteRonde(1.16, .12, .12, .05, 2, [5, 1, 1]), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++) P.setY(i, P.getY(i) + arcVT(P.getX(i)));
+  g.computeVertexNormals(); return g; })();
+const VT_COTE = boiteRonde(.12, .12, .66, .05, 1);
+const VT_COUSSIN = coussin(.5, .15, .36, .06, .05, 1);
+const VT_CORDE = boiteRonde(.53, .036, .39, .018, 1);
+const VT_GLAND = baton(.024, .07, true, true, 6);
+function vitrineMorceaux(c){
+  const o = ombreBois(0, 1.85), out = [], zP = .28;
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]) out.push({geo: VT_PIED, m: M4(sx * .45, 0, sz * .2), c, ombre: o});
+  out.push({geo: VT_SOCLE, m: M4(0, .2, 0), c, ombre: o}, {geo: VT_BUFFET, m: M4(0, .53, -.02), c, ombre: o});
+  for(const s of [-1, 1]){
+    out.push({geo: VT_PORTE, m: M4(s * .22, .53, zP), c, ombre: o}, {geo: VT_PANNEAU, m: M4(s * .22, .53, zP + .035), c, ombre: o});
+    out.push({geo: VT_BOUTON, m: M4(s * .065, .52, zP + .06), c, ombre: (x, y) => o(x, y) * .82});   // les boutons de bois, un peu plus sombres
+  }
+  out.push({geo: VT_PLATEAU, m: M4(0, VT.plateau - .06, 0), c, ombre: o});
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]) out.push({geo: VT_MONTANT, m: M4(sx * VT.x, (VT.plateau + VT.cage) / 2, sz * VT.z), c, ombre: o});
+  for(const sz of [-1, 1]) out.push({geo: VT_ARC, m: M4(0, VT.cage + .04, sz * VT.z), c, ombre: o});
+  for(const sx of [-1, 1]) out.push({geo: VT_COTE, m: M4(sx * .54, VT.cage + .04, 0), c, ombre: o});
+  const oc = ombreBois(VT.plateau, VT.plateau + .2);
+  out.push({geo: VT_COUSSIN, m: M4(0, VT.plateau + .075, 0), c: LIN, ombre: oc}, {geo: VT_CORDE, m: M4(0, VT.plateau + .06, 0), c: VT.cord, ombre: oc});
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]) out.push({geo: VT_GLAND, m: M4(sx * .27, VT.plateau, sz * .2), c: VT.cord, ombre: oc});
+  return out;
+}
+/* Le verre : quatre parois (devant et derrière cintrés en haut) et le dessus bombé, en une forme */
+let vtVerre = null;
+function verreVitrine(){
+  if(vtVerre) return vtVerre;
+  const haut = VT.cage + .04, h = haut - VT.plateau, morceaux = [];
+  const face = new THREE.PlaneGeometry(1.0, h, 12, 1), P = face.attributes.position;
+  for(let i = 0; i < P.count; i++) if(P.getY(i) > 0) P.setY(i, P.getY(i) + arcVT(P.getX(i)));
+  morceaux.push({geo: face, m: M4(0, VT.plateau + h / 2, VT.z), c: 0xFFFFFF}, {geo: face, m: M4(0, VT.plateau + h / 2, -VT.z, 0, Math.PI), c: 0xFFFFFF});
+  const cote = new THREE.PlaneGeometry(2 * VT.z, h);
+  for(const s of [-1, 1]) morceaux.push({geo: cote, m: M4(s * VT.x, VT.plateau + h / 2, 0, 0, s * Math.PI / 2), c: 0xFFFFFF});
+  const toit = new THREE.PlaneGeometry(1.04, 2 * VT.z, 12, 1), T = toit.attributes.position;
+  toit.rotateX(-Math.PI / 2);
+  for(let i = 0; i < T.count; i++) T.setY(i, arcVT(T.getX(i)));
+  toit.computeVertexNormals();
+  morceaux.push({geo: toit, m: M4(0, haut + .04, 0), c: 0xFFFFFF});
+  return vtVerre = fusionner(morceaux);
+}
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -464,19 +522,12 @@ const BUILD = {
       const f = part(G.cone, fireMat, .06, .1, .06, x, 2.03, z); f.castShadow = false; g.add(f);
     }
   },
-  /* La vitrine (étape 1.11, morceau 4 ; Grand Carnet : bois et verre) : un meuble bas, une cage de verre (le dessus
-     aussi : la caméra regarde d'en haut), et la pierre exposée sur un coussin de velours */
+  /* La vitrine (étape 1.11 ; refaite d'après l'image de Yo, v2.1.180) : la pierre exposée se pose sur le coussin */
   vitrine(g, m, o){
+    g.add(modeleBois("vitrine", m, vitrineMorceaux));
+    const v = new THREE.Mesh(verreVitrine(), verreMat); v.castShadow = v.receiveShadow = false; v.renderOrder = 1; g.add(v);
     const pierre = o && o.pierre;
-    g.add(part(G.box, m, 1.1, .42, .6, 0, .21, 0));                                   // le meuble du bas
-    for(const x of [-.27, .27]) g.add(part(G.box, C.dark, .44, .3, .02, x, .22, .305));   // ses deux portes
-    g.add(part(G.box, C.dark, 1.16, .05, .66, 0, .445, 0));                            // le plateau
-    g.add(part(G.box, C.red, .46, .05, .34, 0, .495, 0));                              // le coussin de velours
-    const v = part(G.box, verreMat, 1.02, .42, .56, 0, .68, 0); v.castShadow = false; v.receiveShadow = false; g.add(v);   // la cage de verre
-    for(const [x, z] of [[-.51, -.28], [.51, -.28], [-.51, .28], [.51, .28]]) g.add(part(G.box, m, .05, .42, .05, x, .68, z));   // les montants
-    for(const z of [-.28, .28]) g.add(part(G.box, m, 1.07, .04, .04, 0, .9, z));      // le cadre du dessus
-    for(const x of [-.51, .51]) g.add(part(G.box, m, .04, .04, .6, x, .9, 0));
-    if(pierre){ const p = pierreMesh(pierre); p.scale.setScalar(1.35); p.position.y = .52; g.add(p); }
+    if(pierre){ const p = pierreMesh(pierre); p.scale.setScalar(1.35); p.position.y = VT.plateau + .14; g.add(p); }
   },
   tonneau(g, m){ g.add(modeleBois("tonneau", m, tonneauMorceaux)); },
   coffre(g, m){
