@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, tabouret:C.
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -260,6 +260,31 @@ function litMorceaux(c){
   return out;
 }
 
+
+/* L'étagère (image de Yo, 8 novembre 2026 : « Voici l'étagère ») : deux gros côtés épais au haut tout arrondi, une encoche en
+   bas qui fait deux petits pieds ; une traverse cintrée en haut, entre eux ; un fond de planches verticales ; quatre tablettes
+   épaisses au bord arrondi. Tout d'un seul bois, vide comme l'image (poser des choses dessus : plus tard). La place au sol
+   comme avant (1,4 × 0,5), un peu plus haute (1,8) ; le devant vers +z */
+const ET = {x: .6, haut: 1.8, prof: .46, pied: .14};
+const ET_COTE = (() => { const H = ET.haut, r = .105, g = boiteRonde(.22, H, ET.prof, r, 3, [1, 1, 3]), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++) if(P.getY(i) < -H / 2 + r + .001 && Math.abs(P.getZ(i)) < .09) P.setY(i, P.getY(i) + ET.pied);   // l'encoche : deux petits pieds
+  g.computeVertexNormals(); return g; })();
+const ET_ARC = (() => { const g = boiteRonde(1.04, .24, .16, .05, 2, [4, 1, 1]), P = g.attributes.position;   // la traverse, cintrée
+  for(let i = 0; i < P.count; i++){ const u = P.getX(i) / .52; P.setY(i, P.getY(i) + .11 * (1 - u * u)); }
+  g.computeVertexNormals(); return g; })();
+const ET_PLANCHE = boiteRonde(.255, 1.46, .05, .02, 1);           // son haut caché dans la traverse
+const ET_TABLETTE = boiteRonde(1.04, .1, .4, .045, 2);
+function etagereMorceaux(c){
+  const o = ombreBois(0, ET.haut), out = [];
+  for(const sx of [-1, 1]){
+    out.push({geo: ET_COTE, m: M4(sx * ET.x, ET.haut / 2, 0), c, ombre: o});
+  }
+  out.push({geo: ET_ARC, m: M4(0, 1.54, -.12), c, ombre: o});
+  for(let k = 0; k < 4; k++) out.push({geo: ET_PLANCHE, m: M4((k - 1.5) * .255, .14 + .73, -.19), c, ombre: o});   // le fond
+  for(const y of [.22, .58, .94, 1.3]) out.push({geo: ET_TABLETTE, m: M4(0, y, .03), c, ombre: o});
+  return out;
+}
+
 const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
@@ -403,14 +428,7 @@ const BUILD = {
     g.add(part(G.box, C.gold, .16, .16, .05, 0, .46, .37));                            // serrure
   },
   banc(g, m){ g.add(modeleBois("banc", m, bancMorceaux)); },
-  etagere(g, m){
-    for(const x of [-.66, .66]) g.add(part(G.box, C.dark, .08, 1.6, .45, x, .8, 0));  // montants
-    g.add(part(G.box, m, 1.4, 1.6, .04, 0, .8, -.2));                                 // fond
-    for(const y of [.05, .55, 1.05, 1.55]) g.add(part(G.box, m, 1.3, .06, .45, 0, y, 0));   // planches
-    [[C.red,-.45],[C.blue,-.35],[C.cream,-.26],[C.leaf,-.17]].forEach(([c,x]) => g.add(part(G.box, c, .08, .36, .3, x, .76, 0)));   // livres
-    g.add(part(G.cyl, C.clay, .22, .3, .22, .35, 1.23, 0));                             // cruche
-    g.add(part(G.box, C.gold, .3, .16, .22, -.25, .16, 0));                            // coffret
-  },
+  etagere(g, m){ g.add(modeleBois("etagere", m, etagereMorceaux)); },
   cheminee(g, m){
     g.add(part(G.box, m, 1.6, 1.4, .7, 0, .7, -.05));                                 // maçonnerie
     g.add(part(G.box, C.soot, .9, .65, .1, 0, .38, .3));                               // foyer
