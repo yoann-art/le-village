@@ -57,7 +57,7 @@ export const MEUBLES = {
   torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:"torche", une:true},
   /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
   lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true},
-  bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true},
+  bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
   brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
   chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5},   // étape 1.11 : l'argent de la mine
@@ -118,8 +118,10 @@ export const LUMIERE = {
 export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
 /* Ce qui se pose sur un support (MEUBLES[...].support) : la torche sur la torchère (o.torche), la chandelle dans le bougeoir
    (o.bougie : sa clé ; plus tard la bougie de cire d'abeille) ; garniDe : ce qui y est posé, ou null */
-export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"]};
-export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : o.bougie || null; };
+export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"]};
+/* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), sinon une */
+export const garniNb = type => MEUBLES[type] && MEUBLES[type].support === "lucioles" ? 3 : 1;
+export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : o.bougie || null; };
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
 /* Un meuble qui se prend en main pour aller dehors : posé sur une case, ou accroché à une façade */
@@ -970,7 +972,7 @@ export const ATELIERS = {
     {out:"chandelle", in:{cuivre:1}, t:20, lvl:1, cat:"Lumières"},              // le bougeoir de cuivre, vide (Yo, 8 novembre 2026)
     {out:"chandelleSuif", n:2, in:{suif:1, fibre:1}, t:20, lvl:1},            // demande de Yo (11 octobre 2026) : le suif, une fibre pour la mèche
     {out:"lanterne", in:{cuivre:2, verre:1}, t:30, lvl:1},                     // tout en cuivre, des vitres (image de Yo, 8 novembre 2026)
-    {out:"bocalLucioles", in:{bocal:1, luciole:3}, t:30, lvl:1},           // un bocal et trois lucioles attrapées
+    {out:"bocalLucioles", in:{verre:2, cuivre:1}, t:30, lvl:1},           // le bocal vide, son couvercle de cuivre (Yo, 9 novembre 2026) ; trois lucioles s'y mettent ensuite
     {out:"pot", in:{pierre:2}, t:20, lvl:1, cat:"Décoration"},
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
@@ -1076,9 +1078,9 @@ export const COULEURS_ORDER = ["miel","sombre","tuile","vert","bleu","creme"];
    elle garde sa couleur. MATIERE : la matière de la partie qui prend la couleur (le bois de la chaise, la couverture du lit,
    le bougeoir de cuivre de la chandelle) ; la première teinte de chaque matière est celle de départ. */
 export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tabouret:"bois", banc:"bois", table:"bois", etagere:"bois", armoire:"bois", tonneau:"bois", coffre:"bois",
-  vitrine:"bois", torchere:"bois", bocalLucioles:"bois", etabli:"bois", atelierDeco:"bois", comptoir:"bois", trone:"bois",
+  vitrine:"bois", torchere:"bois", etabli:"bois", atelierDeco:"bois", comptoir:"bois", trone:"bois",
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
-  chandelle:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
+  chandelle:"metal", bocalLucioles:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
   brasero:"metal", lampadaire:"metal", enclume:"metal",
   petitTapis:"tissu", grandTapis:"tissu", lit:"tissu"};
 /* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */

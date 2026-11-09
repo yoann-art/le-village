@@ -684,9 +684,9 @@ export async function verifier(){
     const btnG = $("#btn-geste"), {seLever} = await import("../js/monde/personnage.js");
     await entrer(scierie);
     try {
-    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("lanterne", 1); sacAdd("fauteuil", 1); sacAdd("banc", 1); sacAdd("tableBanquet", 1); sacAdd("etagere", 1); sacAdd("armoire", 1); sacAdd("tonneau", 1);
+    sacAdd("chaise", 1); sacAdd("chandelle", 1); sacAdd("fauteuil", 1); sacAdd("banc", 1); sacAdd("tableBanquet", 1); sacAdd("etagere", 1); sacAdd("armoire", 1); sacAdd("tonneau", 1);
     $("#btn-deco").click(); await wait(200);
-    addMeuble("chaise"); addMeuble("chandelle"); addMeuble("lanterne");
+    addMeuble("chaise"); addMeuble("chandelle");
     $("#deco-done").click(); await wait(200);
     const items = scierie.deco.items, chaise = items.find(it => it.type === "chaise"), chandelle = items.find(it => it.type === "chandelle");
     if(!chaise || !chandelle) throw new Error("la chaise ou la chandelle ne se posent pas");
@@ -697,6 +697,7 @@ export async function verifier(){
     $("#btn-torchere").click();
     if(chandelle.bougie !== "chandelleSuif") throw new Error("la chandelle n'est pas posée dans le bougeoir");
     /* la lanterne sur pied vide (Yo, 8 novembre 2026) : on y pose aussi une chandelle de suif */
+    sacAdd("lanterne", 1); $("#btn-deco").click(); await wait(200); addMeuble("lanterne"); $("#deco-done").click(); await wait(200);
     const lanterne = items.find(it => it.type === "lanterne");
     if(!lanterne) throw new Error("la lanterne sur pied ne se pose pas");
     if(lanterne.bougie) throw new Error("la lanterne n'est pas vide quand on la pose");
@@ -706,6 +707,22 @@ export async function verifier(){
     if(lanterne.bougie !== "chandelleSuif") throw new Error("la chandelle n'est pas posée dans la lanterne");
     if(!LUMIERE.lanterne.bougie) throw new Error("la lanterne éclaire sans chandelle");
     items.splice(items.indexOf(lanterne), 1); removeItemMesh(lanterne.id);       // (la chandelle reste seule à éclairer la pièce)
+    /* le bocal à lucioles vide (Yo, 9 novembre 2026) : on y met trois lucioles ; on le touche, elles brillent plus fort */
+    sacAdd("bocalLucioles", 1); $("#btn-deco").click(); await wait(200); addMeuble("bocalLucioles"); $("#deco-done").click(); await wait(200);
+    const bocal = items.find(it => it.type === "bocalLucioles");
+    if(!bocal) throw new Error("le bocal à lucioles ne se pose pas");
+    if(bocal.lucioles) throw new Error("le bocal n'est pas vide quand on le pose");
+    /* de l'autre côté du bocal que la chandelle (le geste va à l'objet le plus proche) */
+    const ex = bocal.x - chandelle.x, ez = bocal.z - chandelle.z, el = Math.hypot(ex, ez) || 1;
+    placePlayer(bocal.x + ex / el * .55, bocal.z + ez / el * .55, -ex / el, -ez / el); updateGestes(true);
+    if(!btnG.hidden && btnG.textContent.includes("Toucher")) throw new Error("on touche un bocal vide");
+    const l0 = owned("luciole"); sacAdd("luciole", 3); updateLumieres(.016, true);
+    if($("#btn-torchere").hidden) throw new Error("pas de bouton tout près du bocal vide");
+    $("#btn-torchere").click(); updateLumieres(.016, false);
+    if(bocal.lucioles !== 3 || owned("luciole") !== l0) throw new Error(`les trois lucioles ne sont pas dans le bocal (${bocal.lucioles}, ${owned("luciole") - l0} de plus dans le sac)`);
+    updateGestes(true);
+    if(btnG.hidden || !btnG.textContent.includes("Toucher")) throw new Error(`près du bocal plein, le bouton dit « ${btnG.textContent} »`);
+    items.splice(items.indexOf(bocal), 1); removeItemMesh(bocal.id);
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
@@ -3135,7 +3152,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

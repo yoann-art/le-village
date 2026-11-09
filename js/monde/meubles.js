@@ -24,13 +24,13 @@ const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:
 const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
-  bocalLucioles:C.wood, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
+  bocalLucioles:CUIVRE, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 /* ---------- Les meubles refaits d'après les images de Yo (chantier de la décoration, étape 3) ----------
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -568,6 +568,44 @@ function torchereMorceaux(torche){ return c => {
     for(const y of [1.225, 1.252, 1.279]) out.push({geo: TC_CORDE, m: M4(0, y, 0), c: TC.corde, ombre: o}); }
   return out;
 }; }
+/* Le bocal à lucioles (image de Yo, 9 novembre 2026 : « Il faudrait qu'il soit vide également. Et la corde devant le bocal
+   gêne ») : un pot de verre aux épaules arrondies, le fond épais ; un couvercle de cuivre à deux étages et son bouton ; deux
+   anneaux de cuivre sur les côtés, la corde torsadée qui retombe derrière le verre. Vide quand on le pose ; on y met trois
+   lucioles (o.lucioles) : sept petites bêtes (comme l'image ; trois lucioles qui volent dans tous les sens), le corps sombre,
+   les ailes pâles, le bout du ventre qui brille (lucioleMat : il palpite, lumieres.js). Le cuivre, le corps et les ailes font
+   un dessin, le verre un autre, les ventres qui brillent un troisième */
+const BJ = {r: .15, haut: .36, corde: 0xE3CC96, corps: 0x3A2E22, aile: 0xF7F5E6};
+const BJ_VERRE = lathe([[0, .001], [.12, .001], [.145, .012], [.153, .04], [.153, .3], [.146, .335], [.13, .355], [.128, .37]], 22);
+const BJ_FOND = lathe([[0, .002], [.13, .002], [.135, .022], [0, .026]], 18);
+const BJ_VITRE = fusionner([{geo: BJ_VERRE, m: M4(0, 0, 0), c: 0}, {geo: BJ_FOND, m: M4(0, 0, 0), c: 0}]);   // le verre, un seul dessin
+const BJ_COL = lathe([[0, .355], [.14, .355], [.152, .365], [.152, .395], [.14, .405], [0, .405]], 22);
+const BJ_COUVERCLE = lathe([[0, .4], [.162, .4], [.174, .41], [.178, .432], [.176, .452], [.164, .466], [.13, .474], [.07, .478], [.05, .488], [.044, .5], [0, .5]], 22);
+const BJ_BOUTON = lathe([[0, .495], [.026, .495], [.044, .508], [.05, .528], [.044, .548], [.026, .558], [0, .56]], 14);
+const BJ_ANNEAU = new THREE.TorusGeometry(.03, .011, 6, 12);
+const BJ_CORDE = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[-.172, .355, 0], [-.172, .29, -.07], [-.12, .22, -.155], [0, .19, -.19],
+  [.12, .22, -.155], [.172, .29, -.07], [.172, .355, 0]].map(([x, y, z]) => new THREE.Vector3(x, y, z))), 24, .016, 6, false);
+const BJ_TETE = new THREE.SphereGeometry(.012, 6, 4);
+const BJ_THORAX = new THREE.SphereGeometry(.015, 6, 4);
+const BJ_AILE = new THREE.SphereGeometry(.02, 6, 3);
+const BJ_VENTRE = new THREE.SphereGeometry(.02, 8, 5);
+/* les lucioles dans le bocal : [x, y, z, cap (rad), pente (rad)] */
+const BJ_LUCIOLES = [[.045, .28, .04, .6, .3], [-.055, .23, .03, 2.6, -.2], [.05, .16, .035, -2.2, .25], [-.05, .1, -.035, 1.2, .1], [.015, .07, .055, -.8, -.2], [-.01, .3, -.055, 3.4, .35], [-.02, .18, .06, 4.4, 0]];   // loin du verre, ailes comprises
+const BJ_TAILLE = new THREE.Vector3(1.5, 1.5, 1.5);   // plus grandes que nature, comme l'image
+const BJ_LUEURS = fusionner(BJ_LUCIOLES.map(([x, y, z, a, p]) => ({geo: BJ_VENTRE, m: new THREE.Matrix4().compose(new THREE.Vector3(x, y, z),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(p, a, 0, "YXZ")), BJ_TAILLE).multiply(M4(0, -.004, -.034, 0, 0, 0, 1, 1, 1.5)), c: 0})));
+function bocalMorceaux(lucioles){ return c => {
+  const o = ombreBois(0, .55), out = [{geo: BJ_COL, m: M4(0, 0, 0), c, ombre: o}, {geo: BJ_COUVERCLE, m: M4(0, 0, 0), c, ombre: o},
+    {geo: BJ_BOUTON, m: M4(0, 0, 0), c, ombre: o}, {geo: BJ_CORDE, m: M4(0, 0, 0), c: BJ.corde, ombre: o}];
+  for(const sx of [-1, 1]) out.push({geo: BJ_ANNEAU, m: M4(sx * .172, .37, 0, 0, Math.PI / 2, 0), c, ombre: o});
+  if(lucioles) for(const [x, y, z, a, p] of BJ_LUCIOLES){
+    const B = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(p, a, 0, "YXZ")), BJ_TAILLE);
+    out.push({geo: BJ_TETE, m: B.clone().multiply(M4(0, .004, .03)), c: BJ.corps}, {geo: BJ_THORAX, m: B.clone().multiply(M4(0, 0, .01, 0, 0, 0, 1, .9, 1.1)), c: BJ.corps});
+    for(const sx of [-1, 1]) out.push({geo: BJ_AILE, m: B.clone().multiply(M4(sx * .026, .016, -.004, 0, sx * .5, sx * .35, 1, .18, .55)), c: BJ.aile});
+  }
+  return out;
+}; }
+const verreBocal = toon({color: 0xE4F2E0, transparent: true, opacity: .32, depthWrite: false});
+const verreBocalPlein = toon({color: 0xE6F2A0, emissive: 0x9CC83C, emissiveIntensity: .35, transparent: true, opacity: .42, depthWrite: false});   // la lueur des lucioles dans le verre
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -640,13 +678,11 @@ const BUILD = {
     g.add(part(G.box, m, .22, .03, .22, 0, 1.19, .05));                                // le fond
   },
   /* Le bocal à lucioles (Grand Carnet : « une lumière douce et vivante ») : trois lucioles qui palpitent */
-  bocalLucioles(g, m){
-    const v = part(G.cyl, verreMat, .32, .4, .32, 0, .21, 0); v.castShadow = false; v.receiveShadow = false; g.add(v);
-    g.add(part(G.cyl, m, .34, .06, .34, 0, .44, 0));                                   // le couvercle de bois
-    g.add(part(G.cyl, 0xD8CBA8, .2, .05, .2, 0, .49, 0));                              // le tissu noué
-    for(const [x, y, z] of [[.05, .14, .05], [-.06, .26, -.03], [.04, .32, -.06]]){
-      const l = part(G.head, lucioleMat, .14, .14, .14, x, y, z); l.castShadow = false; g.add(l);
-    }
+  bocalLucioles(g, m, o){                                                            // le bocal, vide ou avec ses lucioles
+    const pleines = !!(o && o.lucioles);
+    g.add(modeleBois(pleines ? "bocalPlein" : "bocal", m, bocalMorceaux(pleines)));
+    const v = new THREE.Mesh(BJ_VITRE, pleines ? verreBocalPlein : verreBocal); v.renderOrder = 1; v.castShadow = false; g.add(v);
+    if(pleines){ const l = new THREE.Mesh(BJ_LUEURS, lucioleMat); l.castShadow = false; g.add(l); }
   },
   /* Le brasero (dehors) : une vasque de cuivre sur trois pieds, ses braises et ses flammes */
   brasero(g, m){

@@ -34,7 +34,7 @@
 import { $ } from "./outils.js";
 import { scene } from "./monde/scene.js";
 import { OUTILS, GRAINES, POSABLES, MEUBLES, B, poseDehors, RECOLTE, SOL, FLEURS, FLEUR_RARETE, GALERIES, COEUR_MINE, SEMIS, enFleur, quandFleur, graineDeFleur, grainesDe, objet, vitessePousse,
-  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison, garniDe } from "./donnees.js";
+  PRODUITS, enSaisonPlante, quandPlante, CHEMINS, saison, groseillesDeSaison, garniDe, garniNb } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { addOwned, owned, sizeOf, sacAdd, sacTake, sacPlace, porte, gain, doorTile, tientSurSoi, noterPierre, pierresTrouvees, coeurEveille } from "./regles.js";
 import { map, idx, inb, tileOf, centerOf, growth, growthLeft, herbeLeft, baiesLeft, thymLeft, fruitsLeft, fleurLeft, setObj, setEtat, objMesh, lieuEau } from "./monde/ile.js";
@@ -668,7 +668,7 @@ function poser(t){
    (avec sa torche) ----- */
 const aPoser = k => !!(GRAINES[k] || POSABLES[k] || poseDehors(k));
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
-const avecGarni = g => !g ? "" : g === "torche" ? " et sa torche" : " et sa chandelle";   // ce qui est posé dessus revient aussi
+const avecGarni = g => !g ? "" : g === "torche" ? " et sa torche" : g === "luciole" ? " et ses lucioles" : " et sa chandelle";   // ce qui est posé dessus revient aussi
 function poserDehors(t){
   const k = state.main, m = MEUBLES[k], why = poseProblem(t.i);
   if(why){ toast(why); return; }
@@ -676,7 +676,8 @@ function poserDehors(t){
   setObj(t.i, k); jouer("meuble");
   syncBarre(); save();
   toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support === "torche" ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais"
-    : m.support === "bougie" ? " : approche-toi avec une chandelle pour l'y poser, elle ne s'y usera jamais" : ""}`, 3200);
+    : m.support === "bougie" ? " : approche-toi avec une chandelle pour l'y poser, elle ne s'y usera jamais"
+    : m.support === "lucioles" ? " : approche-toi avec 3 lucioles pour les y mettre" : ""}`, 3200);
 }
 function lumiereAction(t){
   const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c);
@@ -719,7 +720,7 @@ function decrocher(t){
   toast(`${m.emoji} ${m.nom} dans ton sac${g ? `, ${avecGarni(g).trim()}` : ""}`, 2400);
 }
 function reprendreLumiere(t){
-  const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c), gains = {[t.o]: 1, ...(g ? {[g]: 1} : {})};
+  const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c), gains = {[t.o]: 1, ...(g ? {[g]: garniNb(t.o)} : {})};
   if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la reprendre", 3000); return; }
   for(const [k, n] of Object.entries(gains)) sacAdd(k, n);
   setObj(t.i, null);

@@ -25,7 +25,7 @@ const LIT = {lit: .5};   // le dessus de la couverture (meubles.js)
 const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLucioles"), "cheminee"]);
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
 const nomLumiere = (it, m) => it.type === "chandelle" ? "la chandelle" : leNom(m);   // le bougeoir : on éteint sa chandelle
-const geste = it => SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? "toucher"
+const geste = it => SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? (it.lucioles ? "toucher" : null)
   : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || ((!LUMIERE[it.type].torche || it.torche) && (!LUMIERE[it.type].bougie || it.bougie))) ? "lumiere" : null;   // une torchère : seulement avec sa torche ; un bougeoir, avec sa chandelle
 
 /* Du repère d'un meuble posé (rot : ses quarts de tour, comme interieurs.js) vers la pièce */

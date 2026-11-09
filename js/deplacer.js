@@ -96,7 +96,7 @@ function lacher(){
   } else if(L.ok && L.dest !== L.i){
     const etat = state.ile[L.i] || {};
     setObj(L.i, null); setObj(L.dest, L.type);
-    if(etat.torche || etat.bougie) setEtat(L.dest, {torche: etat.torche, bougie: etat.bougie});   // sa torche, sa chandelle la suivent
+    if(etat.torche || etat.bougie || etat.lucioles) setEtat(L.dest, {torche: etat.torche, bougie: etat.bougie, lucioles: etat.lucioles});   // sa torche, sa chandelle, ses lucioles la suivent
   } else L.mesh.position.set(centerOf(L.i % N), 0, centerOf(Math.floor(L.i / N)));   // elle revient à sa place
   jouer("meuble"); save();
 }
