@@ -204,6 +204,18 @@ if(!state.lustres){
   if(n > 0) addOwned("chandelleSuif", 5 * n);
   state.lustres = 1; save();
 }
+/* Les chandeliers d'avant (Yo, 9 novembre 2026 : vide, on y pose trois chandelles) : une fois, chaque chandelier posé reçoit
+   ses trois chandelles de suif (il reste allumé) ; chaque chandelier du sac, des coffres et en fabrication donne aussi les
+   trois chandelles qu'il portait */
+if(!state.chandeliers){
+  for(const b of state.buildings){
+    for(const it of (b.deco && b.deco.items) || []) if(it.type === "chandelier" && !it.bougie) it.bougie = "chandelleSuif";
+    for(const j of (b.atelier && b.atelier.queue) || []) if(j.out === "chandelier") addOwned("chandelleSuif", 3);
+  }
+  const n = owned("chandelier");
+  if(n > 0) addOwned("chandelleSuif", 3 * n);
+  state.chandeliers = 1; save();
+}
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");
 let proche = null;

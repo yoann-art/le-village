@@ -60,7 +60,7 @@ export const MEUBLES = {
   bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
   brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
-  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5},   // étape 1.11 : l'argent de la mine
+  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent (Yo, 9 novembre 2026)
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"petit", w:.9, d:.55},   // à la taille des autres meubles (Yo, 8 novembre 2026)
@@ -103,7 +103,7 @@ const source = (niveau, flamme, plus) => ({niveau, couleur: FLAMMES[flamme], ...
 export const LUMIERE = {
   bocalLucioles: source(1, "lucioles", {y: .3, lucioles: true}),
   chandelle:     source(2, "bougie", {y: .41, flamme: true, bougie: true}),    // le bougeoir : seulement avec sa chandelle
-  chandelier:    source(3, "bougie", {y: 1.05, flamme: true}),
+  chandelier:    source(3, "bougie", {y: .95, flamme: true, bougie: true}),          // avec ses trois chandelles
   lanterne:      source(3, "bougie", {y: 1.15, flamme: true, bougie: true}),     // une chandelle derrière des vitres : un peu plus que le bougeoir
   lanterneMurale:source(3, "bougie", {y: 1.27, flamme: true, bougie: true, avance: .12}),   // sa chandelle, allumée tout le temps (Yo : « avec possibilité de l'éteindre »)
   torchere:      source(5, "bois", {y: 1.42, flamme: true, torche: true}),
