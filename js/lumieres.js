@@ -121,19 +121,19 @@ export const lumieresActives = () => actives;
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
 export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= garniNb(type)) || null;
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
-export const poserLabel = type => MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
+export const poserLabel = type => MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser ${garniNb(type) > 1 ? garniNb(type) + " chandelles" : "une chandelle"} ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
   const s = MEUBLES[type].support, bougie = s === "bougie", n = garniNb(type), k = garniDispo(type);
   if(!k && s === "lucioles"){ toast("✨ Il te faut 3 lucioles : elles s'attrapent au bocal, les nuits d'été, dans les herbes hautes", 3600); return false; }
-  if(!k){ toast(bougie ? "🕯️ Il te faut une chandelle : elle se fabrique à l'atelier de décoration de la Chaumière (1 suif, 1 fibre)"
+  if(!k){ toast(bougie ? (n > 1 ? `🕯️ Il te faut ${n} chandelles : elles se fabriquent` : "🕯️ Il te faut une chandelle : elle se fabrique") + ` à l'atelier de décoration de la Chaumière (1 suif, 1 fibre${n > 1 ? " pour 2" : ""})`
     : "🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
   addOwned(k, -n);
   if(k === "torche" && !sacCount("torche")) state.torche = 0;          // plus de torche sur soi : celle qui brûlait est sur la torchère
   const patch = s === "lucioles" ? {lucioles: n} : bougie ? {bougie: k} : {torche: true};
   Object.assign(o, patch); refaire(patch);
   syncBarre(); save(); renderHUD();
-  toast(s === "lucioles" ? "✨ Trois lucioles dans le bocal : elles y brilleront toujours" : bougie ? `🕯️ ${objet(k).nom} posée ${MEUBLES[type].dans} : elle ne s'y usera jamais` : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
+  toast(s === "lucioles" ? "✨ Trois lucioles dans le bocal : elles y brilleront toujours" : bougie ? (n > 1 ? `🕯️ ${n} ${objet(k).pluriel || "chandelles"} posées ${MEUBLES[type].dans} : elles ne s'y useront jamais` : `🕯️ ${objet(k).nom} posée ${MEUBLES[type].dans} : elle ne s'y usera jamais`) : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
   return true;
 }
 export const poserTorche = (o, refaire) => poserGarni(o, "torchere", refaire);
@@ -191,6 +191,18 @@ if(!state.lanternesMurales){
   if(n > 0) addOwned("chandelleSuif", n);
   state.lanternesMurales = 1; save();
   if(refaites.length) import("./monde/batiments.js").then(m => refaites.forEach(m.placeMesh));   // déjà dessinées : refaites
+}
+/* Les lustres d'avant (Yo, 9 novembre 2026 : le lustre vide, on y pose cinq chandelles) : une fois, chaque lustre accroché
+   reçoit ses cinq chandelles de suif (il reste allumé) ; chaque lustre du sac, des cases et des coffres, et chacun en
+   fabrication, donne aussi ses cinq chandelles */
+if(!state.lustres){
+  for(const b of state.buildings){
+    for(const it of (b.deco && b.deco.items) || []) if(it.type === "lustre" && !it.bougie) it.bougie = "chandelleSuif";
+    for(const j of (b.atelier && b.atelier.queue) || []) if(j.out === "lustre") addOwned("chandelleSuif", 5);
+  }
+  const n = owned("lustre");
+  if(n > 0) addOwned("chandelleSuif", 5 * n);
+  state.lustres = 1; save();
 }
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");

@@ -70,7 +70,7 @@ export const MEUBLES = {
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
-  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"]},   // les grandes pièces
+  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent (Yo, 9 novembre 2026)
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
   tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true},
@@ -112,15 +112,15 @@ export const LUMIERE = {
   brasero:       source(6, "bois", {y: .95, flamme: true}),
   cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55}),                // son feu éclaire la pièce, devant le foyer
   feuCamp:       source(8, "bois", {y: .4, flamme: true}),
-  lustre:        source(8, "bougie", {y: 1.95, flamme: true})                           // « éclaire toute la pièce »
+  lustre:        source(8, "bougie", {y: 1.68, flamme: true, bougie: true})             // « éclaire toute la pièce » : avec ses cinq chandelles
 };
 /* Les lumières tenues en main (torche.js) : la torche (niveau 5), la lanterne à main (niveau 7) */
 export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
 /* Ce qui se pose sur un support (MEUBLES[...].support) : la torche sur la torchère (o.torche), la chandelle dans le bougeoir
    (o.bougie : sa clé ; plus tard la bougie de cire d'abeille) ; garniDe : ce qui y est posé, ou null */
 export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"]};
-/* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), sinon une */
-export const garniNb = type => MEUBLES[type] && MEUBLES[type].support === "lucioles" ? 3 : 1;
+/* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), cinq chandelles dans le lustre (nb), sinon une */
+export const garniNb = type => !MEUBLES[type] ? 1 : MEUBLES[type].nb || (MEUBLES[type].support === "lucioles" ? 3 : 1);
 export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : o.bougie || null; };
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
@@ -1043,7 +1043,7 @@ export const ATELIERS = {
        reste ici, pour que le jeu les reconnaisse comme fabriqués : FABRIQUE_A, rangés dans le sac) */
     {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1, plusTard:true},
     {out:"brasero", in:{bloc:2, cuivre:3, charbon:2}, t:60, lvl:1, plusTard:true},
-    {out:"lustre", in:{bronze:2, chandelle:6}, t:90, lvl:1},
+    {out:"lustre", in:{cuivre:3}, t:90, lvl:1},                              // vide : cinq chandelles s'y posent ensuite (Yo, 9 novembre 2026)
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",

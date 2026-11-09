@@ -252,14 +252,14 @@ $("#deco-store").addEventListener("click", () => {
   if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
   const garni = garniDe(sel.type, sel);                                // la torche de la torchère, la chandelle du bougeoir
   const nG = garni ? garniNb(sel.type) : 0;
-  if(garni && placeFor(garni) < nG){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : garni === "luciole" ? "ses lucioles" : "sa chandelle"}`); return; }
+  if(garni && placeFor(garni) < nG){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : garni === "luciole" ? "ses lucioles" : nG > 1 ? "ses chandelles" : "sa chandelle"}`); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);
   removeItemMesh(sel.id);
   let ou = "dans ton sac";
   if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
   if(sel.pierre){ addOwned(sel.pierre, 1); ou += `, et sa pierre (${objet(sel.pierre).nom.toLowerCase()})`; }   // la pierre exposée dans une vitrine revient aussi
-  if(garni){ addOwned(garni, nG); ou += garni === "torche" ? ", et sa torche" : garni === "luciole" ? ", et ses lucioles" : ", et sa chandelle"; }   // ce qui est posé dessus aussi
+  if(garni){ addOwned(garni, nG); ou += garni === "torche" ? ", et sa torche" : garni === "luciole" ? ", et ses lucioles" : nG > 1 ? ", et ses chandelles" : ", et sa chandelle"; }   // ce qui est posé dessus aussi
   toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`, 2400, "ranger");
   sel = null; showSel(); save();
 });

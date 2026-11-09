@@ -24,13 +24,13 @@ const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:
 const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
-  bocalLucioles:CUIVRE, brasero:0xC8743C, lampadaire:C.dark, lustre:0xB98A4A, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
+  bocalLucioles:CUIVRE, brasero:0xC8743C, lampadaire:C.dark, lustre:CUIVRE, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
 
 /* ---------- Les meubles refaits d'après les images de Yo (chantier de la décoration, étape 3) ----------
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -689,6 +689,45 @@ function lanterneMuraleMorceaux(garni){ return c => {
   for(const [x, y] of [[-.06, 1.43], [.06, 1.43], [-.07, 1.1], [.07, 1.1], [0, 1.455], [0, 1.045]]) out.push({geo: TM_RIVET, m: M4(x, y, -.205), c, ombre: o});
   return out;
 }; }
+/* Le lustre (image de Yo, 9 novembre 2026 : « Retire les sources de lumière présentes sur l'image ») : tout en cuivre ; une
+   plaque ronde au plafond (le plafond des pièces à 2.07), une boule, un gros anneau d'où descendent trois chaînes à maillons
+   (deux devant, une derrière, comme l'image), accrochées à trois anses sur la couronne : un large bandeau rond à dix rivets ;
+   cinq coupelles autour, à cheval sur la couronne, une boule pendue sous chacune. Vide quand on l'accroche ; on y pose cinq
+   chandelles de suif (o.bougie), qui ne s'y usent jamais. Un dessin pour le cuivre (et les chandelles), un pour les flammes */
+const LU = {bas: 1.3, haut: 1.42, ri: .39, re: .45, r: .5, fond: 1.365, n: 5, nouee: 1.865};
+const LU_PLAQUE = lathe([[0, 2.0], [.13, 2.0], [.16, 2.012], [.17, 2.035], [.17, 2.07], [0, 2.07]], 24);
+const LU_TIGE = lathe([[0, 1.93], [.035, 1.93], [.03, 1.96], [.045, 1.985], [.06, 2.0], [0, 2.0]], 12);
+const LU_ANNEAU = new THREE.TorusGeometry(.06, .02, 6, 16);
+const LU_COURONNE = lathe([[LU.ri, LU.bas + .01], [LU.ri + .01, LU.bas], [LU.re - .01, LU.bas], [LU.re, LU.bas + .012], [LU.re + .006, (LU.bas + LU.haut) / 2],
+  [LU.re, LU.haut - .012], [LU.re - .01, LU.haut], [LU.ri + .01, LU.haut], [LU.ri, LU.haut - .01], [LU.ri, LU.bas + .01]], 48);
+const LU_RIVET = new THREE.SphereGeometry(.031, 8, 5);
+const LU_COUPE = lathe([[0, 1.33], [.06, 1.33], [.09, 1.345], [.108, 1.375], [.115, 1.41], [.105, 1.418], [.096, 1.39], [.085, LU.fond + .005], [0, LU.fond]], 16);
+const LU_GOUTTE = lathe([[0, 1.24], [.02, 1.245], [.038, 1.265], [.042, 1.285], [.032, 1.305], [.022, 1.32], [.03, 1.335], [0, 1.335]], 10);   // la boule sous la coupelle
+const LU_ANSE = new THREE.TorusGeometry(.032, .012, 5, 10, Math.PI);
+const LU_MAILLON = new THREE.TorusGeometry(.032, .011, 5, 10);
+const LU_CHAINES = [Math.PI, Math.PI / 3, -Math.PI / 3];                                   // une derrière, deux devant (entre les coupelles)
+function luChaine(p0, p1, c, o, out){                                                     // les maillons, l'un dans l'autre, de travers à chaque fois
+  const d = p1.clone().sub(p0), L = d.length(), n = Math.round(L / .08), Y = new THREE.Vector3(0, 1, 0);
+  d.normalize(); const q0 = new THREE.Quaternion().setFromUnitVectors(Y, d);
+  for(let k = 0; k < n; k++){
+    const q = q0.clone().multiply(new THREE.Quaternion().setFromAxisAngle(Y, k % 2 ? Math.PI / 2 : 0));
+    out.push({geo: LU_MAILLON, m: new THREE.Matrix4().compose(p0.clone().addScaledVector(d, L * (k + .5) / n), q, new THREE.Vector3(1, 1.65, 1)), c, ombre: o});
+  }
+}
+function lustreMorceaux(garni){ return c => {
+  const o = ombreBois(1.2, 2.07), out = [{geo: LU_PLAQUE, m: M4(0, 0, 0), c, ombre: o}, {geo: LU_TIGE, m: M4(0, 0, 0), c, ombre: o},
+    {geo: LU_ANNEAU, m: M4(0, LU.nouee - .005, 0), c, ombre: o}, {geo: LU_COURONNE, m: M4(0, 0, 0), c, ombre: o}];
+  for(const a of LU_CHAINES){ const s = Math.sin(a), co = Math.cos(a), r = (LU.ri + LU.re) / 2;
+    out.push({geo: LU_ANSE, m: M4(s * r, LU.haut, co * r, 0, a + Math.PI / 2, 0), c, ombre: o});
+    luChaine(new THREE.Vector3(0, LU.nouee - .06, 0), new THREE.Vector3(s * r, LU.haut + .04, co * r), c, o, out); }
+  for(let k = 0; k < 10; k++){ const a = (k + .5) * Math.PI / 5; out.push({geo: LU_RIVET, m: M4(Math.sin(a) * (LU.re + .004), (LU.bas + LU.haut) / 2, Math.cos(a) * (LU.re + .004), 0, 0, 0, 1, 1, .7), c, ombre: o}); }
+  for(let k = 0; k < LU.n; k++){ const a = k * 2 * Math.PI / LU.n, x = Math.sin(a) * LU.r, z = Math.cos(a) * LU.r;
+    out.push({geo: LU_COUPE, m: M4(x, 0, z), c, ombre: o}, {geo: LU_GOUTTE, m: M4(x, 0, z), c, ombre: o});
+    if(garni) for(const p of chandelleMorceaux(LU.fond)) out.push({...p, m: M4(x, 0, z, 0, a, 0).multiply(p.m)}); }
+  return out;
+}; }
+const LU_FLAMMES = fusionner(Array.from({length: LU.n}, (_, k) => { const a = k * 2 * Math.PI / LU.n;
+  return {geo: CH_FLAMME, m: M4(Math.sin(a) * LU.r, LU.fond + BG.haut - BG.bas + .02, Math.cos(a) * LU.r, 0, 0, 0, 1.25, 1.25, 1.25), c: 0}; }));
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -776,17 +815,11 @@ const BUILD = {
     g.add(part(G.cone4, CUIVRE, .38, .18, .38, 0, 2.31, 0));                           // le chapeau
     g.add(part(G.head, CUIVRE, .2, .2, .2, 0, 2.42, 0));
   },
-  /* Le lustre (bronze et six chandelles, au plafond des grandes pièces : « éclaire toute la pièce ») */
-  lustre(g, m){
-    const r = part(G.tore, m, 1, 1, 1.5, 0, 1.74, 0); r.rotation.x = Math.PI / 2; g.add(r);   // la couronne
-    g.add(part(G.box, m, 1.0, .03, .03, 0, 1.74, 0)); g.add(part(G.box, m, .03, .03, 1.0, 0, 1.74, 0));   // ses rayons
-    g.add(part(G.cyl, m, .04, .7, .04, 0, 2.08, 0));                                   // la chaîne
-    for(let k = 0; k < 6; k++){
-      const a = k * Math.PI / 3, x = Math.sin(a) * .5, z = Math.cos(a) * .5;
-      g.add(part(G.cyl, m, .1, .04, .1, x, 1.78, z));                                  // les coupelles
-      g.add(part(G.cyl, 0xF1E6C8, .07, .18, .07, x, 1.89, z));                         // les chandelles
-      const f = part(G.cone, fireMat, .06, .1, .06, x, 2.03, z); f.castShadow = false; g.add(f);
-    }
+  /* Le lustre (au plafond des grandes pièces : « éclaire toute la pièce ») : vide, ou avec ses cinq chandelles (o.bougie) */
+  lustre(g, m, o){
+    const garni = !!(o && o.bougie);
+    g.add(modeleBois(garni ? "lustreGarni" : "lustre", m, lustreMorceaux(garni)));
+    if(garni){ const f = new THREE.Mesh(LU_FLAMMES, fireMat); f.castShadow = false; g.add(f); }
   },
   /* La vitrine (étape 1.11 ; refaite d'après l'image de Yo, v2.1.180) : la pierre exposée se pose sur le coussin */
   vitrine(g, m, o){

@@ -723,6 +723,17 @@ export async function verifier(){
     updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("Toucher")) throw new Error(`près du bocal plein, le bouton dit « ${btnG.textContent} »`);
     items.splice(items.indexOf(bocal), 1); removeItemMesh(bocal.id);
+    /* le lustre vide (Yo, 9 novembre 2026) : il faut cinq chandelles de suif à la fois ; au plafond, au-dessus du bougeoir
+       (déjà garni : le bouton va au lustre) ; posé ici à la main (il est fait pour les grandes pièces) */
+    const lustre = {id: 99001, type: "lustre", x: chandelle.x, z: chandelle.z, rot: 0}; items.push(lustre); addItemMesh(lustre);
+    const s0 = owned("chandelleSuif"); sacAdd("chandelleSuif", 4); placePlayer(lustre.x + .7, lustre.z, -1, 0); updateLumieres(.016, true);
+    if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Lustre")) throw new Error(`sous le lustre vide, le bouton dit « ${$("#btn-torchere").textContent} »`);
+    $("#btn-torchere").click();
+    if(lustre.bougie || owned("chandelleSuif") !== s0 + 4) throw new Error("le lustre prend moins de cinq chandelles");
+    sacAdd("chandelleSuif", 1); $("#btn-torchere").click();
+    if(lustre.bougie !== "chandelleSuif" || owned("chandelleSuif") !== s0) throw new Error(`les cinq chandelles ne sont pas dans le lustre (${owned("chandelleSuif") - s0} de reste)`);
+    if(!LUMIERE.lustre.bougie) throw new Error("le lustre éclaire sans chandelles");
+    items.splice(items.indexOf(lustre), 1); removeItemMesh(lustre.id);
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
@@ -3173,7 +3184,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
