@@ -107,7 +107,7 @@ export const LUMIERE = {
   lanterne:      source(3, "bougie", {y: 1.15, flamme: true, bougie: true}),     // une chandelle derrière des vitres : un peu plus que le bougeoir
   lanterneMurale:source(4, "huile", {y: 1.32, nuit: true, avance: .12}),
   torchere:      source(5, "bois", {y: 1.42, flamme: true, torche: true}),
-  torchereMurale:source(5, "bois", {y: 1.65, flamme: true, torche: true, avance: .12}),
+  torchereMurale:source(5, "bois", {y: 1.57, flamme: true, torche: true, avance: .12}),
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
   brasero:       source(6, "bois", {y: .95, flamme: true}),
   cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55}),                // son feu éclaire la pièce, devant le foyer

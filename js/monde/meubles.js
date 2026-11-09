@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -644,6 +644,34 @@ function feuMorceaux(c){
   out.push({geo: FC_BROCHE, m: M4(-.51, FC.broche, -.02, 0, 0, -Math.PI / 2), c: FC.piquet, ombre: o});            // la broche, vide
   return out;
 }
+/* La torchère murale (image de Yo, 9 novembre 2026 : « Retire la source de lumière ») : tout en cuivre (sa teinte de métal) ;
+   une plaque au mur aux bords en courbes, deux rivets ; une rosace d'où part un bras en S ; une bague, une coupe (lisse : ses
+   cannelures dépassaient) au bandeau à rivets. Vide quand on l'accroche ; la torche qu'on y pose (o.torche) : celle de la torchère sur pied, un peu plus
+   petite. Le mur est à z −.25 */
+const TM = {k: .85, fond: 1.2};
+const TM_PLAQUE = boiteRonde(.2, .44, .04, .018, 2);
+const TM_LOBE = new THREE.CylinderGeometry(.11, .11, .04, 16).rotateX(Math.PI / 2);
+const TM_RIVET = new THREE.SphereGeometry(.02, 8, 5);
+const TM_ROSACE = lathe([[0, 0], [.075, 0], [.08, .015], [.07, .035], [.045, .045], [0, .045]], 16).rotateX(Math.PI / 2);
+const TM_BRAS = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[1.08, -.2], [1.07, -.1], [1.02, -.05], [.97, -.02], [.95, .04], [.98, .1], [1.05, .12], [1.13, .12]]
+  .map(([y, z]) => new THREE.Vector3(0, y, z))), 24, .03, 8, false);
+const TM_BAGUE = lathe([[0, 1.11], [.05, 1.11], [.058, 1.125], [.058, 1.145], [.05, 1.16], [0, 1.16]], 14);
+const TM_COUPE = lathe([[0, 1.15], [.05, 1.15], [.07, 1.19], [.095, 1.25], [.11, 1.3], [.112, 1.34], [.1, 1.345], [.094, 1.3], [.08, 1.25], [0, TM.fond]], 18);
+const TM_BANDEAU = lathe([[.106, 1.285], [.12, 1.29], [.123, 1.31], [.12, 1.33], [.108, 1.335]], 18);
+function torchereMuraleMorceaux(torche){ return c => {
+  const o = ombreBois(.85, 1.35), z = .12, out = [
+    {geo: TM_PLAQUE, m: M4(0, 1.1, -.23), c, ombre: o}, {geo: TM_LOBE, m: M4(0, 1.26, -.23, 0, 0, 0, 1, .7, 1), c, ombre: o},
+    {geo: TM_LOBE, m: M4(0, .94, -.23, 0, 0, 0, 1, .7, 1), c, ombre: o}, {geo: TM_ROSACE, m: M4(0, 1.08, -.21), c, ombre: o},
+    {geo: TM_BRAS, m: M4(0, 0, 0), c, ombre: o}, {geo: TM_BAGUE, m: M4(0, 0, z), c, ombre: o}, {geo: TM_COUPE, m: M4(0, 0, z), c, ombre: o},
+    {geo: TM_BANDEAU, m: M4(0, 0, z), c, ombre: o}];
+  for(const y of [1.3, .9]) out.push({geo: TM_RIVET, m: M4(0, y, -.205), c, ombre: o});
+  for(let k = 0; k < 6; k++){ const a = k * Math.PI / 3 + Math.PI / 6;
+    out.push({geo: TM_RIVET, m: M4(Math.sin(a) * .124, 1.31, z + Math.cos(a) * .124, 0, 0, 0, .8, .8, .8), c, ombre: o}); }
+  if(torche){ const S = M4(0, TM.fond + .02, z, 0, 0, 0, TM.k, TM.k, TM.k);
+    out.push({geo: TC_BATON, m: S.clone(), c: TC.baton, ombre: o});
+    for(const y of [.165, .192, .219]) out.push({geo: TC_CORDE, m: S.clone().multiply(M4(0, y, 0)), c: TC.corde, ombre: o}); }
+  return out;
+}; }
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -687,11 +715,10 @@ const BUILD = {
     if(torche){ const f = new THREE.Mesh(TC_FLAMME, fireMat); f.position.y = 1.25; f.castShadow = false; g.add(f); }
   },
   /* La torchère murale (en cuivre, contre un mur de la pièce) : une plaque, un bras, une coupelle */
-  torchereMurale(g, m, o){
-    g.add(part(G.box, m, .24, .42, .04, 0, 1.2, -.23));                               // la plaque, sur le mur
-    g.add(part(G.box, m, .05, .05, .26, 0, 1.08, -.1));                                // le bras
-    g.add(part(G.cyl, m, .22, .08, .22, 0, 1.12, .04));                                // la coupelle
-    if(o && o.torche) torcheSur(g, 0, 1.15, .04);
+  torchereMurale(g, m, o){                                                           // la torchère murale vide, et la torche qu'on y a posée
+    const torche = !!(o && o.torche);
+    g.add(modeleBois(torche ? "torchereMuraleGarnie" : "torchereMurale", m, torchereMuraleMorceaux(torche)));
+    if(torche){ const f = new THREE.Mesh(TC_FLAMME, fireMat); f.position.set(0, TM.fond + .02 + .27 * TM.k, .12); f.scale.setScalar(TM.k); f.castShadow = false; g.add(f); }
   },
   /* Le feu de camp (dehors seulement) : un cercle de pierres, des bûches croisées, les flammes */
   feuCamp(g, m){                                                                     // le feu de camp, sa broche vide
