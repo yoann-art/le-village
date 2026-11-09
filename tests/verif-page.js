@@ -26,7 +26,7 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, OISEAUX, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, OISEAUX, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet, garniPose } from "../js/donnees.js";
 import { state, agrandirIle, remiseAZero } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
@@ -723,27 +723,25 @@ export async function verifier(){
     updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("Toucher")) throw new Error(`près du bocal plein, le bouton dit « ${btnG.textContent} »`);
     items.splice(items.indexOf(bocal), 1); removeItemMesh(bocal.id);
-    /* le lustre vide (Yo, 9 novembre 2026) : il faut cinq chandelles de suif à la fois ; au plafond, au-dessus du bougeoir
-       (déjà garni : le bouton va au lustre) ; posé ici à la main (il est fait pour les grandes pièces) */
-    const lustre = {id: 99001, type: "lustre", x: chandelle.x, z: chandelle.z, rot: 0}; items.push(lustre); addItemMesh(lustre);
-    const s0 = owned("chandelleSuif"); sacAdd("chandelleSuif", 4); placePlayer(lustre.x + .7, lustre.z, -1, 0); updateLumieres(.016, true);
-    if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Lustre")) throw new Error(`sous le lustre vide, le bouton dit « ${$("#btn-torchere").textContent} »`);
-    $("#btn-torchere").click();
-    if(lustre.bougie || owned("chandelleSuif") !== s0 + 4) throw new Error("le lustre prend moins de cinq chandelles");
-    sacAdd("chandelleSuif", 1); $("#btn-torchere").click();
-    if(lustre.bougie !== "chandelleSuif" || owned("chandelleSuif") !== s0) throw new Error(`les cinq chandelles ne sont pas dans le lustre (${owned("chandelleSuif") - s0} de reste)`);
-    if(!LUMIERE.lustre.bougie) throw new Error("le lustre éclaire sans chandelles");
-    items.splice(items.indexOf(lustre), 1); removeItemMesh(lustre.id);
-    /* le chandelier d'argent vide (Yo, 9 novembre 2026) : trois chandelles de suif à la fois */
-    const chandelier = {id: 99002, type: "chandelier", x: chandelle.x, z: chandelle.z, rot: 0}; items.push(chandelier); addItemMesh(chandelier);
-    sacAdd("chandelleSuif", 2); updateLumieres(.016, true);
-    if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Chandelier")) throw new Error(`près du chandelier vide, le bouton dit « ${$("#btn-torchere").textContent} »`);
-    $("#btn-torchere").click();
-    if(chandelier.bougie || owned("chandelleSuif") !== s0 + 2) throw new Error("le chandelier prend moins de trois chandelles");
-    sacAdd("chandelleSuif", 1); $("#btn-torchere").click();
-    if(chandelier.bougie !== "chandelleSuif" || owned("chandelleSuif") !== s0) throw new Error(`les trois chandelles ne sont pas dans le chandelier (${owned("chandelleSuif") - s0} de reste)`);
-    if(!LUMIERE.chandelier.bougie) throw new Error("le chandelier éclaire sans chandelles");
-    items.splice(items.indexOf(chandelier), 1); removeItemMesh(chandelier.id);
+    /* le lustre et le chandelier vides (Yo, 9 novembre 2026 : « une à la fois, pareil pour le lustre ») : chaque appui pose
+       une chandelle de suif, jusqu'à la dernière (le bouton s'en va alors) ; au plafond, au-dessus du bougeoir (déjà garni :
+       le bouton va au lustre) ; posés ici à la main ; une partie d'avant (o.bougie sans o.chandelles) : toutes */
+    const s0 = owned("chandelleSuif");
+    for(const [id, type, nom, nb] of [[99001, "lustre", "Lustre", 5], [99002, "chandelier", "Chandelier", 3]]){
+      const it = {id, type, x: chandelle.x, z: chandelle.z, rot: 0}; items.push(it); addItemMesh(it);
+      sacAdd("chandelleSuif", nb); placePlayer(it.x + .7, it.z, -1, 0);
+      for(let k = 1; k <= nb; k++){
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes(nom)) throw new Error(`près du ${nom.toLowerCase()} (${k - 1} chandelles), le bouton dit « ${$("#btn-torchere").textContent} »`);
+        $("#btn-torchere").click();
+        if(it.bougie !== "chandelleSuif" || garniPose(type, it) !== k || owned("chandelleSuif") !== s0 + nb - k) throw new Error(`${nom} : ${garniPose(type, it)} chandelles posées au ${k}e appui (${owned("chandelleSuif") - s0} de reste)`);
+      }
+      updateLumieres(.016, true);
+      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes(nom)) throw new Error(`le ${nom.toLowerCase()} plein propose encore une chandelle`);
+      if(garniPose(type, {bougie: "chandelleSuif"}) !== nb) throw new Error(`un ${nom.toLowerCase()} d'avant n'a pas toutes ses chandelles`);
+      if(!LUMIERE[type].bougie) throw new Error(`le ${nom.toLowerCase()} éclaire sans chandelles`);
+      items.splice(items.indexOf(it), 1); removeItemMesh(it.id);
+    }
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);

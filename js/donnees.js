@@ -60,7 +60,7 @@ export const MEUBLES = {
   bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
   brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
-  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent (Yo, 9 novembre 2026)
+  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"petit", w:.9, d:.55},   // à la taille des autres meubles (Yo, 8 novembre 2026)
@@ -70,7 +70,7 @@ export const MEUBLES = {
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
-  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent (Yo, 9 novembre 2026)
+  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
   tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true},
@@ -122,6 +122,11 @@ export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: 
 /* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), cinq chandelles dans le lustre (nb), sinon une */
 export const garniNb = type => !MEUBLES[type] ? 1 : MEUBLES[type].nb || (MEUBLES[type].support === "lucioles" ? 3 : 1);
 export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : o.bougie || null; };
+/* Le chandelier et le lustre : on y pose les chandelles une à la fois (Yo, 9 novembre 2026 : « une à la fois, pareil pour le
+   lustre ») ; o.chandelles : combien y sont posées (absent avec o.bougie : toutes, comme dans les parties d'avant) */
+export const unAUn = type => !!(MEUBLES[type] && MEUBLES[type].support === "bougie" && MEUBLES[type].nb > 1);
+export const garniPose = (type, o) => !garniDe(type, o) ? 0 : unAUn(type) ? Math.min(o.chandelles || garniNb(type), garniNb(type)) : garniNb(type);
+export const garniPlein = (type, o) => garniPose(type, o) >= garniNb(type);
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
 /* Un meuble qui se prend en main pour aller dehors : posé sur une case, ou accroché à une façade */

@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe, garniDe, garniNb } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe, garniDe, garniNb, garniPose } from "./donnees.js";
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -251,7 +251,7 @@ $("#deco-store").addEventListener("click", () => {
   if(craftable(sel.type) && placeFor(sel.type) < 1){ toast("Ton sac et tes coffres sont pleins : fais de la place"); return; }
   if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
   const garni = garniDe(sel.type, sel);                                // la torche de la torchère, la chandelle du bougeoir
-  const nG = garni ? garniNb(sel.type) : 0;
+  const nG = garni ? garniPose(sel.type, sel) : 0;                    // le chandelier, le lustre : les chandelles posées
   if(garni && placeFor(garni) < nG){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : garni === "luciole" ? "ses lucioles" : nG > 1 ? "ses chandelles" : "sa chandelle"}`); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);

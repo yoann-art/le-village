@@ -3,7 +3,7 @@
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
 import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
-import { MEUBLES, COULEURS, ATELIERS, couleurMeuble } from "../donnees.js";
+import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
@@ -714,7 +714,7 @@ function luChaine(p0, p1, c, o, out){                                           
     out.push({geo: LU_MAILLON, m: new THREE.Matrix4().compose(p0.clone().addScaledVector(d, L * (k + .5) / n), q, new THREE.Vector3(1, 1.65, 1)), c, ombre: o});
   }
 }
-function lustreMorceaux(garni){ return c => {
+function lustreMorceaux(n){ return c => {                        // n : les chandelles posées (une à la fois)
   const o = ombreBois(1.2, 2.07), out = [{geo: LU_PLAQUE, m: M4(0, 0, 0), c, ombre: o}, {geo: LU_TIGE, m: M4(0, 0, 0), c, ombre: o},
     {geo: LU_ANNEAU, m: M4(0, LU.nouee - .005, 0), c, ombre: o}, {geo: LU_COURONNE, m: M4(0, 0, 0), c, ombre: o}];
   for(const a of LU_CHAINES){ const s = Math.sin(a), co = Math.cos(a), r = (LU.ri + LU.re) / 2;
@@ -723,11 +723,11 @@ function lustreMorceaux(garni){ return c => {
   for(let k = 0; k < 10; k++){ const a = (k + .5) * Math.PI / 5; out.push({geo: LU_RIVET, m: M4(Math.sin(a) * (LU.re + .004), (LU.bas + LU.haut) / 2, Math.cos(a) * (LU.re + .004), 0, 0, 0, 1, 1, .7), c, ombre: o}); }
   for(let k = 0; k < LU.n; k++){ const a = k * 2 * Math.PI / LU.n, x = Math.sin(a) * LU.r, z = Math.cos(a) * LU.r;
     out.push({geo: LU_COUPE, m: M4(x, 0, z), c, ombre: o}, {geo: LU_GOUTTE, m: M4(x, 0, z), c, ombre: o});
-    if(garni) for(const p of chandelleMorceaux(LU.fond)) out.push({...p, m: M4(x, 0, z, 0, a, 0).multiply(p.m)}); }
+    if(k < n) for(const p of chandelleMorceaux(LU.fond)) out.push({...p, m: M4(x, 0, z, 0, a, 0).multiply(p.m)}); }
   return out;
 }; }
-const LU_FLAMMES = fusionner(Array.from({length: LU.n}, (_, k) => { const a = k * 2 * Math.PI / LU.n;
-  return {geo: CH_FLAMME, m: M4(Math.sin(a) * LU.r, LU.fond + BG.haut - BG.bas + .02, Math.cos(a) * LU.r, 0, 0, 0, 1.25, 1.25, 1.25), c: 0}; }));
+const LU_FLAMMES = [null, ...Array.from({length: LU.n}, (_, n) => fusionner(Array.from({length: n + 1}, (_, k) => { const a = k * 2 * Math.PI / LU.n;
+  return {geo: CH_FLAMME, m: M4(Math.sin(a) * LU.r, LU.fond + BG.haut - BG.bas + .02, Math.cos(a) * LU.r, 0, 0, 0, 1.25, 1.25, 1.25), c: 0}; })))];   // selon les chandelles posées
 /* Le chandelier d'argent (image de Yo, 9 novembre 2026 : « Retire les sources de lumière. Pareil ») : un pied rond à deux
    marches, un fût tourné (une bague, un vase, deux anneaux, une boule au milieu), deux bras en S à volute, trois coupes, celle
    du milieu plus haute ; tout d'argent (sa teinte). Vide quand on le pose ; on y pose trois chandelles de suif (o.bougie), qui
@@ -743,18 +743,18 @@ const CD_COUPE = lathe([[0, .392], [.034, .392], [.046, .405], [.046, .423], [.0
 const cdTube = (pts, r) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0))), 24, r, 8, false);
 const CD_BRAS = cdTube([[.03, .42], [.08, .432], [.12, .405], [.14, .362], [.17, .334], [.22, .338], [.26, .358], [.284, .385], [.29, .405]], .027);
 const CD_VOLUTE = cdTube([[.14, .366], [.125, .336], [.106, .334], [.1, .352], [.112, .366], [.126, .36]], .021);
-function chandelierMorceaux(garni){ return c => {
+const CD_ORDRE = [[0, CD.fondM], [-CD.x, CD.fondC], [CD.x, CD.fondC]];                     // les chandelles, une à la fois : au milieu, à gauche, à droite
+function chandelierMorceaux(n){ return c => {                                               // n : les chandelles posées
   const o = ombreBois(0, .72), out = [{geo: CD_FUT, m: M4(0, 0, 0), c, ombre: o}, {geo: CD_BOULE, m: M4(0, .42, 0), c, ombre: o}];
   for(const s of [-1, 1]){
     const R = M4(0, 0, 0, 0, s > 0 ? 0 : Math.PI, 0);                                       // le bras de gauche : celui de droite retourné
     out.push({geo: CD_BRAS, m: R, c, ombre: o}, {geo: CD_VOLUTE, m: R, c, ombre: o}, {geo: CD_COUPE, m: M4(s * CD.x, 0, 0), c, ombre: o});
-    if(garni) for(const p of chandelleMorceaux(CD.fondC)) out.push({...p, m: M4(s * CD.x, 0, 0, 0, s, 0).multiply(p.m)});
   }
-  if(garni) out.push(...chandelleMorceaux(CD.fondM));
+  CD_ORDRE.slice(0, n).forEach(([x, y]) => { for(const p of chandelleMorceaux(y)) out.push({...p, m: (x ? M4(x, 0, 0, 0, Math.sign(x), 0) : M4(0, 0, 0)).multiply(p.m)}); });
   return out;
 }; }
-const CD_FLAMMES = fusionner([[-CD.x, CD.fondC], [0, CD.fondM], [CD.x, CD.fondC]].map(([x, y]) =>
-  ({geo: CH_FLAMME, m: M4(x, y + BG.haut - BG.bas + .02, 0, 0, 0, 0, 1.25, 1.25, 1.25), c: 0})));
+const CD_FLAMMES = [null, ...[1, 2, 3].map(n => fusionner(CD_ORDRE.slice(0, n).map(([x, y]) =>
+  ({geo: CH_FLAMME, m: M4(x, y + BG.haut - BG.bas + .02, 0, 0, 0, 0, 1.25, 1.25, 1.25), c: 0}))))];   // selon les chandelles posées
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -774,10 +774,10 @@ const BUILD = {
     const v = new THREE.Mesh(LP_VERRE, garni ? verreLanterne : verreMat); v.position.x = LP.lx; v.applyMatrix4(LP_K); v.renderOrder = 1; v.castShadow = false; g.add(v);
     if(garni){ const f = new THREE.Mesh(CH_FLAMME, fireMat); f.position.set(LP.lx, LP.bas + (BG.haut - BG.bas + .01) * LP.s, 0); f.scale.setScalar(.62); f.applyMatrix4(LP_K); f.castShadow = false; g.add(f); }
   },
-  chandelier(g, m, o){                                                               // l'argent de la mine (étape 1.11) : vide, ou ses trois chandelles
-    const garni = !!(o && o.bougie);
-    g.add(modeleBois(garni ? "chandelierGarni" : "chandelier", m, chandelierMorceaux(garni)));
-    if(garni){ const f = new THREE.Mesh(CD_FLAMMES, fireMat); f.castShadow = false; g.add(f); }
+  chandelier(g, m, o){                                                               // l'argent de la mine (étape 1.11) : vide, ou ses chandelles (une à trois)
+    const n = garniPose("chandelier", o);
+    g.add(modeleBois(n ? "chandelier" + n : "chandelier", m, chandelierMorceaux(n)));
+    if(n){ const f = new THREE.Mesh(CD_FLAMMES[n], fireMat); f.castShadow = false; g.add(f); }
   },
   /* Les lumières (demande de Yo, 11 octobre 2026 ; LUMIERE dans donnees.js) */
   chandelle(g, m, o){                                                                // le bougeoir, et la chandelle qu'on y a posée
@@ -837,11 +837,11 @@ const BUILD = {
     g.add(part(G.cone4, CUIVRE, .38, .18, .38, 0, 2.31, 0));                           // le chapeau
     g.add(part(G.head, CUIVRE, .2, .2, .2, 0, 2.42, 0));
   },
-  /* Le lustre (au plafond des grandes pièces : « éclaire toute la pièce ») : vide, ou avec ses cinq chandelles (o.bougie) */
+  /* Le lustre (au plafond des grandes pièces : « éclaire toute la pièce ») : vide, ou avec ses chandelles (o.bougie, o.chandelles : une à cinq) */
   lustre(g, m, o){
-    const garni = !!(o && o.bougie);
-    g.add(modeleBois(garni ? "lustreGarni" : "lustre", m, lustreMorceaux(garni)));
-    if(garni){ const f = new THREE.Mesh(LU_FLAMMES, fireMat); f.castShadow = false; g.add(f); }
+    const n = garniPose("lustre", o);                                               // une à cinq chandelles
+    g.add(modeleBois(n ? "lustre" + n : "lustre", m, lustreMorceaux(n)));
+    if(n){ const f = new THREE.Mesh(LU_FLAMMES[n], fireMat); f.castShadow = false; g.add(f); }
   },
   /* La vitrine (étape 1.11 ; refaite d'après l'image de Yo, v2.1.180) : la pierre exposée se pose sur le coussin */
   vitrine(g, m, o){

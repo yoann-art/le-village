@@ -12,7 +12,7 @@
    des bâtiments (batiments.js) éclairent l'île comme celles posées sur les cases ; les papillons de nuit viennent
    tourner autour de toutes ces lumières (lumieresIle, insectes.js). */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, objet } from "./donnees.js";
+import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacCount } from "./regles.js";
 import { scene } from "./monde/scene.js";
@@ -30,7 +30,17 @@ import { toast, renderHUD } from "./interface.js";
 const lumieresDehors = Array.from({length: 3}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 scene.add(...lumieresDehors);
 /* Ce meuble éclaire-t-il ? (une torchère, seulement avec sa torche) : sa lumière, ou null */
-const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && (!L.bougie || (o && o.bougie)) && (MEUBLES[type].support !== "lucioles" || (o && o.lucioles)) && !(o && o.eteint) ? L : null; };   // éteinte (gestes.js) : rien ; le bougeoir, avec sa chandelle
+const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && (!L.bougie || (o && o.bougie)) && (MEUBLES[type].support !== "lucioles" || (o && o.lucioles)) && !(o && o.eteint) ? (unAUn(type) ? selonChandelles(type, o, L) : L) : null; };   // éteinte (gestes.js) : rien ; le bougeoir, avec sa chandelle
+/* Le chandelier, le lustre : la lumière grandit avec chaque chandelle posée (Yo, 9 novembre 2026) ; sa force suit le nombre
+   de chandelles, sa portée un peu moins (une seule chandelle éclaire encore autour d'elle) */
+const partielles = new Map();
+function selonChandelles(type, o, L){
+  const nb = garniNb(type), c = garniPose(type, o);
+  if(c >= nb) return L;
+  const cle = type + c;
+  if(!partielles.has(cle)){ const f = c / nb; partielles.set(cle, {...L, force: L.force * f, portee: L.portee * (.55 + .45 * f)}); }
+  return partielles.get(cle);
+}
 /* Toucher le bocal à lucioles (gestes.js) : elles brillent plus fort un instant */
 let eclat = 0;
 export function eclatLucioles(){ eclat = 1.6; }
@@ -119,21 +129,26 @@ export const lumieresActives = () => actives;
 
 /* ----- Poser une torche sur une torchère, une chandelle dans un bougeoir ----- */
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
-export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= garniNb(type)) || null;
+export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
-export const poserLabel = type => MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser ${garniNb(type) > 1 ? garniNb(type) + " chandelles" : "une chandelle"} ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
+export const poserLabel = type => MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
-  const s = MEUBLES[type].support, bougie = s === "bougie", n = garniNb(type), k = garniDispo(type);
+  const s = MEUBLES[type].support, bougie = s === "bougie", un = unAUn(type), nb = garniNb(type), n = un ? 1 : nb;
+  if(un && garniPlein(type, o)) return false;                          // le chandelier, le lustre : déjà toutes ses chandelles
+  const deja = un ? garniPose(type, o) : 0;
+  const k = un && o.bougie ? (owned(o.bougie) >= 1 ? o.bougie : null) : garniDispo(type);   // la suite : la même sorte de chandelle
   if(!k && s === "lucioles"){ toast("✨ Il te faut 3 lucioles : elles s'attrapent au bocal, les nuits d'été, dans les herbes hautes", 3600); return false; }
-  if(!k){ toast(bougie ? (n > 1 ? `🕯️ Il te faut ${n} chandelles : elles se fabriquent` : "🕯️ Il te faut une chandelle : elle se fabrique") + ` à l'atelier de décoration de la Chaumière (1 suif, 1 fibre${n > 1 ? " pour 2" : ""})`
+  if(!k){ toast(bougie ? "🕯️ Il te faut une chandelle : elle se fabrique" + ` à l'atelier de décoration de la Chaumière (1 suif, 1 fibre${un ? " pour 2" : ""})`
     : "🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
   addOwned(k, -n);
   if(k === "torche" && !sacCount("torche")) state.torche = 0;          // plus de torche sur soi : celle qui brûlait est sur la torchère
-  const patch = s === "lucioles" ? {lucioles: n} : bougie ? {bougie: k} : {torche: true};
+  const patch = s === "lucioles" ? {lucioles: n} : un ? {bougie: k, chandelles: deja + 1} : bougie ? {bougie: k} : {torche: true};
   Object.assign(o, patch); refaire(patch);
   syncBarre(); save(); renderHUD();
-  toast(s === "lucioles" ? "✨ Trois lucioles dans le bocal : elles y brilleront toujours" : bougie ? (n > 1 ? `🕯️ ${n} ${objet(k).pluriel || "chandelles"} posées ${MEUBLES[type].dans} : elles ne s'y useront jamais` : `🕯️ ${objet(k).nom} posée ${MEUBLES[type].dans} : elle ne s'y usera jamais`) : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
+  toast(s === "lucioles" ? "✨ Trois lucioles dans le bocal : elles y brilleront toujours"
+    : un ? (deja + 1 >= nb ? `🕯️ Les ${nb} chandelles sont posées ${MEUBLES[type].dans} : elles ne s'y useront jamais` : `🕯️ Chandelle posée ${MEUBLES[type].dans} (${deja + 1} sur ${nb}) : elle ne s'y usera jamais`)
+    : bougie ? `🕯️ ${objet(k).nom} posée ${MEUBLES[type].dans} : elle ne s'y usera jamais` : "🔥 Ta torche est posée sur la torchère : elle ne s'éteindra plus jamais", 3400);
   return true;
 }
 export const poserTorche = (o, refaire) => poserGarni(o, "torchere", refaire);
@@ -222,7 +237,7 @@ let proche = null;
 function bouton(place){
   const p = player.position;
   proche = place && place.b.deco ? place.b.deco.items.find(it => {
-    if(!MEUBLES[it.type] || !MEUBLES[it.type].support || garniDe(it.type, it)) return false;
+    if(!MEUBLES[it.type] || !MEUBLES[it.type].support || garniPlein(it.type, it)) return false;   // le chandelier, le lustre : jusqu'à la dernière chandelle
     const [w, d] = footOf(it);
     return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
   }) || null : null;
