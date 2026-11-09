@@ -106,7 +106,7 @@ export const LUMIERE = {
   chandelier:    source(3, "bougie", {y: 1.05, flamme: true}),
   lanterne:      source(3, "bougie", {y: 1.15, flamme: true, bougie: true}),     // une chandelle derrière des vitres : un peu plus que le bougeoir
   lanterneMurale:source(4, "huile", {y: 1.32, nuit: true, avance: .12}),
-  torchere:      source(5, "bois", {y: 1.66, flamme: true, torche: true}),
+  torchere:      source(5, "bois", {y: 1.42, flamme: true, torche: true}),
   torchereMurale:source(5, "bois", {y: 1.65, flamme: true, torche: true, avance: .12}),
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
   brasero:       source(6, "bois", {y: .95, flamme: true}),
@@ -940,7 +940,7 @@ export const ATELIERS = {
     {out:"coffreReserve", in:{planche:5}, t:20, lvl:1, cat:"Rangement"},
     {out:"coffreCuivre", in:{planche:5, cuivre:2}, t:40, lvl:2},   // le coffre cerclé de cuivre (Yo, 8 novembre 2026)
     /* Les lumières (demande de Yo, 11 octobre 2026) : une torche posée sur la torchère ne s'éteint plus jamais */
-    {out:"torchere", in:{planche:3, pierre:1}, t:30, lvl:1, cat:"Lumières"},
+    {out:"torchere", in:{planche:3, cuivre:1}, t:30, lvl:1, cat:"Lumières"},
     {out:"feuCamp", in:{pierre:6, bois:4}, t:30, lvl:1},
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},

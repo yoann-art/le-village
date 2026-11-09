@@ -3053,6 +3053,11 @@ export async function verifier(){
         $("#deco-done").click();
         const it = scierie.deco.items.find(v => v.type === "torchere");
         if(!it) throw new Error("pas de torchère dans la Scierie");
+        /* la torchère vide (image de Yo, 9 novembre 2026) : pas de flamme tant qu'aucune torche n'y est posée */
+        const {makeMeuble, fireMat: feu} = await import("../js/monde/meubles.js");
+        const aFeu = o => { let f = false; makeMeuble("torchere", undefined, o).traverse(c => { if(c.material === feu) f = true; }); return f; };
+        if(it.torche || aFeu(it)) throw new Error("la torchère n'est pas vide quand on la pose");
+        if(!aFeu({torche: true})) throw new Error("la torche posée sur la torchère n'a pas de flamme");
         placePlayer(it.x, it.z + footOf(it)[1] / 2 + .45, 0, -1);
         updateLumieres(.016, true);
         if($("#btn-torchere").hidden) throw new Error("pas de bouton tout près de la torchère");
@@ -3130,7 +3135,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

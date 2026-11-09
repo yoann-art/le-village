@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -537,6 +537,37 @@ function lanternePendue(c, o, garni){
     for(const p of chandelleMorceaux(0)) out.push({...p, m: S.clone().multiply(p.m)}); }
   return out.map(p => ({...p, m: LP_K.clone().multiply(p.m)}));
 }
+/* La torchère sur pied (image de Yo, 9 novembre 2026 : « Voici la torchère sur pied », « la torchère doit être vide ») : un
+   pied en croix de quatre patins arrondis, un rivet de cuivre au bout de chacun ; un moyeu, un poteau à deux anneaux, un col ;
+   une coupe ronde de bois, un bandeau de cuivre à rivets autour du bord ; le bois prend sa teinte, le cuivre reste. Vide quand
+   on la pose ; la torche qu'on y pose (o.torche) : un bâton, la corde enroulée en haut (les fibres de sa recette), une flamme à
+   trois langues (fireMat, un seul dessin). Le bord de la coupe à TC.bord */
+const TC = {bord: 1.2, fond: 1.06, corde: 0xE3CC96, baton: 0x9A6438};
+const TC_PATIN = boiteRonde(.13, .12, .24, .05, 3);
+const TC_RIVET = new THREE.SphereGeometry(.022, 8, 5);
+const TC_MOYEU = lathe([[0, 0], [.088, 0], [.09, .1], [.08, .13], [.05, .15], [0, .15]], 14);
+const TC_POTEAU = baton(.05, .82, false, false, 12);
+const TC_ANNEAU = lathe([[0, -.035], [.062, -.035], [.074, -.02], [.076, 0], [.074, .02], [.062, .035], [0, .035]], 14);
+const TC_COUPE = lathe([[0, .9], [.07, .9], [.085, .93], [.09, .965], [.11, .975], [.15, 1.01], [.178, 1.06], [.19, 1.13], [.192, TC.bord - .01],
+  [.185, TC.bord], [.168, TC.bord], [.162, 1.13], [.14, 1.08], [.1, TC.fond], [0, TC.fond]], 22);
+const TC_BANDEAU = lathe([[.188, 1.115], [.205, 1.12], [.21, 1.15], [.205, 1.18], [.188, 1.185]], 22);
+const TC_BATON = baton(.05, .34, true, true, 10);
+const TC_CORDE = new THREE.TorusGeometry(.058, .017, 5, 14).rotateX(Math.PI / 2);
+const TC_LANGUE = lathe([[0, 0], [.06, .012], [.1, .05], [.115, .1], [.105, .16], [.075, .22], [.04, .27], [.012, .31], [0, .32]], 14);
+const TC_FLAMME = fusionner([{geo: TC_LANGUE, m: M4(0, 0, 0), c: 0}, {geo: TC_LANGUE, m: M4(-.085, .05, .01, 0, 0, .5, .45, .55, .45), c: 0},
+  {geo: TC_LANGUE, m: M4(.085, .06, -.01, 0, 0, -.45, .4, .5, .4), c: 0}]);
+function torchereMorceaux(torche){ return c => {
+  const o = ombreBois(0, 1.2), out = [{geo: TC_MOYEU, m: M4(0, 0, 0), c, ombre: o}, {geo: TC_POTEAU, m: M4(0, .12, 0), c, ombre: o},
+    {geo: TC_COUPE, m: M4(0, 0, 0), c, ombre: o}, {geo: TC_BANDEAU, m: M4(0, 0, 0), c: CUIVRE, ombre: o}];
+  for(const y of [.33, .82]) out.push({geo: TC_ANNEAU, m: M4(0, y, 0), c, ombre: o});
+  for(let k = 0; k < 4; k++){ const a = Math.PI / 4 + k * Math.PI / 2, s = Math.sin(a), co = Math.cos(a);
+    out.push({geo: TC_PATIN, m: M4(s * .15, .06, co * .15, 0, a, 0), c, ombre: o});                       // le pied en croix
+    out.push({geo: TC_RIVET, m: M4(s * .272, .065, co * .272), c: CUIVRE, ombre: o}); }
+  for(let k = 0; k < 8; k++){ const a = k * Math.PI / 4; out.push({geo: TC_RIVET, m: M4(Math.sin(a) * .208, 1.15, Math.cos(a) * .208), c: CUIVRE, ombre: o}); }
+  if(torche){ out.push({geo: TC_BATON, m: M4(0, TC.fond - .02, 0), c: TC.baton, ombre: o});
+    for(const y of [1.225, 1.252, 1.279]) out.push({geo: TC_CORDE, m: M4(0, y, 0), c: TC.corde, ombre: o}); }
+  return out;
+}; }
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -574,12 +605,10 @@ const BUILD = {
   },
   /* La torchère sur pied : un socle de pierre, un poteau de bois, une coupelle de fer ; la torche posée dessus brûle
      toujours (o.torche) */
-  torchere(g, m, o){
-    g.add(part(G.cyl, C.stone2, .38, .1, .38, 0, .05, 0));                            // le socle
-    g.add(part(G.cyl, m, .09, 1.0, .09, 0, .6, 0));                                   // le poteau
-    g.add(part(G.cyl, C.metal, .26, .08, .26, 0, 1.12, 0));                           // la coupelle
-    for(const [x, z] of [[.11, 0], [-.11, 0], [0, .11], [0, -.11]]) g.add(part(G.box, C.metal, .03, .14, .03, x, 1.2, z));   // ses griffes
-    if(o && o.torche) torcheSur(g, 0, 1.16, 0);
+  torchere(g, m, o){                                                                 // la torchère vide, et la torche qu'on y a posée
+    const torche = !!(o && o.torche);
+    g.add(modeleBois(torche ? "torchereGarnie" : "torchere", m, torchereMorceaux(torche)));
+    if(torche){ const f = new THREE.Mesh(TC_FLAMME, fireMat); f.position.y = 1.25; f.castShadow = false; g.add(f); }
   },
   /* La torchère murale (en cuivre, contre un mur de la pièce) : une plaque, un bras, une coupelle */
   torchereMurale(g, m, o){
