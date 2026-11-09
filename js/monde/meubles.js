@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -606,6 +606,44 @@ function bocalMorceaux(lucioles){ return c => {
 }; }
 const verreBocal = toon({color: 0xE4F2E0, transparent: true, opacity: .32, depthWrite: false});
 const verreBocalPlein = toon({color: 0xE6F2A0, emissive: 0x9CC83C, emissiveIntensity: .35, transparent: true, opacity: .42, depthWrite: false});   // la lueur des lucioles dans le verre
+/* Le feu de camp (image de Yo, 9 novembre 2026 : « Voici le feu de camp. Retire le poisson ») : un cercle de grosses pierres
+   rondes, un rang devant, un rang plus haut derrière ; trois bûches croisées, leurs bouts aux cernes clairs ; deux piquets
+   fourchus, la corde enroulée ; la broche vide posée entre leurs fourches. Les pierres prennent leur teinte. Les flammes à
+   plusieurs langues et la petite qui s'envole, les braises dessous : un seul dessin (fireMat, il vacille, s'éteint par
+   gestes.js) ; tout le reste un autre */
+const FC = {buche: 0x9A5A30, cerne: 0xE0A868, piquet: 0xB5703A, corde: 0xE3CC96, broche: .6};
+const FC_PIERRE = new THREE.SphereGeometry(.1, 8, 6);
+const FC_BUCHE = baton(.075, .5, false, false, 10);
+const FC_CERNE = new THREE.CylinderGeometry(.066, .066, .012, 10);
+const FC_PIQUET = baton(.045, .5, false, true, 8);
+const FC_BRANCHE = baton(.04, .2, false, true, 8);
+const FC_CORDE = new THREE.TorusGeometry(.055, .016, 5, 12).rotateX(Math.PI / 2);
+const FC_BROCHE = baton(.022, 1.02, true, true, 8);
+/* les pierres : [angle, rayon, hauteur, taille] ; devant, un rang bas ; derrière, un rang plus haut, comme l'image */
+const FC_PIERRES = [];
+for(let k = 0; k < 13; k++){ const a = k / 13 * Math.PI * 2 + .1; FC_PIERRES.push([a, .4, .07, 1.05 + (k % 3) * .12]); }
+for(let k = 0; k < 7; k++){ const a = Math.PI * .62 + k / 6 * Math.PI * .76; FC_PIERRES.push([a, .3, .14, .95 + (k % 2) * .15]); }
+const FC_FLAMMES = (() => { const L = lathe([[0, 0], [.06, .012], [.1, .05], [.115, .1], [.105, .16], [.075, .22], [.04, .27], [.012, .31], [0, .32]], 12);
+  return fusionner([[0, .08, -.03, 0, 0, 1.15, 1.2], [-.1, .07, .0, 0, .3, .8, .85], [.1, .07, -.04, 0, -.3, .8, .95], [0, .07, -.1, -.15, 0, .9, 1],
+    [.13, .45, -.02, 0, -.2, .3, .35]].map(([x, y, z, rx, rz, s, h]) => ({geo: L, m: M4(x, y, z, rx, 0, rz, s, h, s), c: 0}))
+    .concat([{geo: new THREE.CylinderGeometry(.16, .18, .03, 12), m: M4(0, .02, 0), c: 0}])); })();
+function feuMorceaux(c){
+  const o = ombreBois(0, .7), out = [];
+  for(const [a, r, y, s] of FC_PIERRES) out.push({geo: FC_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, 0, a * 3, 0, s * 1.05, s * .78, s * .92), c, ombre: o});
+  for(const [x, z, ry, rz] of [[0, .04, .5, .22], [.02, -.06, -.7, -.2], [-.04, 0, 2.2, .18]]){                 // les bûches croisées
+    const B = M4(x, .12, z, 0, ry, Math.PI / 2 + rz);
+    out.push({geo: FC_BUCHE, m: B.clone().multiply(M4(0, -.25, 0)), c: FC.buche, ombre: o});
+    for(const e of [-.252, .252]) out.push({geo: FC_CERNE, m: B.clone().multiply(M4(0, e, 0)), c: FC.cerne, ombre: o});
+  }
+  for(const sx of [-1, 1]){                                                                                         // les piquets fourchus
+    const x = sx * .44;
+    out.push({geo: FC_PIQUET, m: M4(x, 0, -.02, 0, 0, -sx * .05), c: FC.piquet, ombre: o});
+    for(const b of [-1, 1]) out.push({geo: FC_BRANCHE, m: M4(x - sx * .025, FC.broche - .16, -.02, 0, 0, b * .38), c: FC.piquet, ombre: o});
+    for(const y of [.3, .335]) out.push({geo: FC_CORDE, m: M4(x - sx * .012, y, -.02), c: FC.corde, ombre: o});
+  }
+  out.push({geo: FC_BROCHE, m: M4(-.51, FC.broche, -.02, 0, 0, -Math.PI / 2), c: FC.piquet, ombre: o});            // la broche, vide
+  return out;
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -656,15 +694,9 @@ const BUILD = {
     if(o && o.torche) torcheSur(g, 0, 1.15, .04);
   },
   /* Le feu de camp (dehors seulement) : un cercle de pierres, des bûches croisées, les flammes */
-  feuCamp(g, m){
-    for(let k = 0; k < 9; k++){ const a = k * Math.PI * 2 / 9; g.add(part(G.dode, m, .22, .17, .22, Math.sin(a) * .38, .07, Math.cos(a) * .38)); }
-    g.add(part(G.cyl, 0x3A2A22, .52, .03, .52, 0, .015, 0));                           // les cendres
-    for(const r of [0, Math.PI / 3, -Math.PI / 3]){
-      const b = part(G.cyl, 0x7A4E2E, .1, .62, .1, 0, .12, 0); b.rotation.order = "YXZ"; b.rotation.set(Math.PI / 2 - .25, r, 0); g.add(b);
-    }
-    g.add(part(G.cone, fireMat, .28, .5, .28, 0, .36, 0));                             // les flammes
-    g.add(part(G.cone, fireMat, .18, .34, .18, .1, .28, .06));
-    g.add(part(G.cone, fireMat, .16, .3, .16, -.09, .27, -.05));
+  feuCamp(g, m){                                                                     // le feu de camp, sa broche vide
+    g.add(modeleBois("feuCamp", m, feuMorceaux));
+    const f = new THREE.Mesh(FC_FLAMMES, fireMat); f.castShadow = false; g.add(f);
   },
   /* La lanterne murale (cuivre, verre, une chandelle) : au mur d'une pièce ou sur une façade ; elle s'allume seule à la
      nuit tombée (nuitMat) */

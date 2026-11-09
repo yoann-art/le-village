@@ -111,7 +111,7 @@ export const LUMIERE = {
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
   brasero:       source(6, "bois", {y: .95, flamme: true}),
   cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55}),                // son feu éclaire la pièce, devant le foyer
-  feuCamp:       source(8, "bois", {y: .55, flamme: true}),
+  feuCamp:       source(8, "bois", {y: .4, flamme: true}),
   lustre:        source(8, "bougie", {y: 1.95, flamme: true})                           // « éclaire toute la pièce »
 };
 /* Les lumières tenues en main (torche.js) : la torche (niveau 5), la lanterne à main (niveau 7) */
@@ -943,7 +943,7 @@ export const ATELIERS = {
     {out:"coffreCuivre", in:{planche:5, cuivre:2}, t:40, lvl:2},   // le coffre cerclé de cuivre (Yo, 8 novembre 2026)
     /* Les lumières (demande de Yo, 11 octobre 2026) : une torche posée sur la torchère ne s'éteint plus jamais */
     {out:"torchere", in:{planche:3, cuivre:1}, t:30, lvl:1, cat:"Lumières"},
-    {out:"feuCamp", in:{pierre:6, bois:4}, t:30, lvl:1},
+    {out:"feuCamp", in:{pierre:6, bois:4, fibre:2}, t:30, lvl:1},   // la corde des piquets (image de Yo, 9 novembre 2026)
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"fauteuil", in:{planche:4, fibre:3}, t:40, lvl:1},   // le fauteuil : du bois et des coussins de lin (Yo, 7 novembre 2026)
