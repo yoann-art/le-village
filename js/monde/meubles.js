@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -522,7 +522,7 @@ function lanterneMorceaux(garni){ return c => {
   for(const y of [.5, 1.39, 1.58]) out.push({geo: LP_ANNEAU, m: M4(X, y, 0), c, ombre: o});         // les anneaux du poteau
   return out;
 }; }
-function lanternePendue(c, o, garni){
+function lanternePendue(c, o, garni, K = LP_K){
   const L = LP.lx, out = [
     {geo: LP_BOUTON, m: M4(L, .97, 0), c, ombre: o}, {geo: LP_COUPE, m: M4(L, 0, 0), c, ombre: o},
     {geo: LP_BORD, m: M4(L, 0, 0), c, ombre: o}, {geo: LP_DOME, m: M4(L, 0, 0), c, ombre: o}, {geo: LP_ANNEAU_HAUT, m: M4(L, 1.525, 0), c, ombre: o}];
@@ -535,7 +535,7 @@ function lanternePendue(c, o, garni){
   }
   if(garni){ const S = new THREE.Matrix4().makeTranslation(L, LP.bas, 0).multiply(new THREE.Matrix4().makeScale(LP.s, LP.s, LP.s));
     for(const p of chandelleMorceaux(0)) out.push({...p, m: S.clone().multiply(p.m)}); }
-  return out.map(p => ({...p, m: LP_K.clone().multiply(p.m)}));
+  return out.map(p => ({...p, m: K.clone().multiply(p.m)}));
 }
 /* La torchère sur pied (image de Yo, 9 novembre 2026 : « Voici la torchère sur pied », « la torchère doit être vide ») : un
    pied en croix de quatre patins arrondis, un rivet de cuivre au bout de chacun ; un moyeu, un poteau à deux anneaux, un col ;
@@ -672,6 +672,23 @@ function torchereMuraleMorceaux(torche){ return c => {
     for(const y of [.165, .192, .219]) out.push({geo: TC_CORDE, m: S.clone().multiply(M4(0, y, 0)), c: TC.corde, ombre: o}); }
   return out;
 }; }
+/* La lanterne murale (image de Yo, 9 novembre 2026 : « Retire la source de lumière pareil que les autres ») : tout en cuivre ;
+   une plaque au mur à deux arrondis et six rivets, une rosace, un bras en S qui finit en crosse enroulée ; la lanterne de la
+   lanterne sur pied (lanternePendue), aux trois quarts, pend à son anneau. Vide quand on l'accroche ; on y pose une chandelle
+   de suif (o.bougie). Le mur est à z −.25 */
+const LW = {k: .75, z: .12, anneau: 1.5};
+const LW_K = new THREE.Matrix4().makeTranslation(0, LW.anneau, LW.z).multiply(new THREE.Matrix4().makeScale(LW.k, LW.k, LW.k))
+  .multiply(new THREE.Matrix4().makeTranslation(-LP.lx, -LP.pivot, 0));
+const LW_BRAS = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[1.25, -.2], [1.3, -.12], [1.42, -.05], [1.53, .02], [1.59, .1], [1.58, .17], [1.53, .2],
+  [1.49, .17], [1.5, .13], [1.535, .135]].map(([y, z]) => new THREE.Vector3(0, y, z))), 32, .026, 8, false);
+function lanterneMuraleMorceaux(garni){ return c => {
+  const o = ombreBois(.9, 1.6), out = [
+    {geo: TM_PLAQUE, m: M4(0, 1.25, -.23), c, ombre: o}, {geo: TM_LOBE, m: M4(0, 1.41, -.23, 0, 0, 0, 1, .7, 1), c, ombre: o},
+    {geo: TM_LOBE, m: M4(0, 1.09, -.23, 0, 0, 0, 1, .7, 1), c, ombre: o}, {geo: TM_ROSACE, m: M4(0, 1.25, -.21), c, ombre: o},
+    {geo: LW_BRAS, m: M4(0, 0, 0), c, ombre: o}, ...lanternePendue(c, o, garni, LW_K)];
+  for(const [x, y] of [[-.06, 1.43], [.06, 1.43], [-.07, 1.1], [.07, 1.1], [0, 1.455], [0, 1.045]]) out.push({geo: TM_RIVET, m: M4(x, y, -.205), c, ombre: o});
+  return out;
+}; }
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -727,14 +744,11 @@ const BUILD = {
   },
   /* La lanterne murale (cuivre, verre, une chandelle) : au mur d'une pièce ou sur une façade ; elle s'allume seule à la
      nuit tombée (nuitMat) */
-  lanterneMurale(g, m){
-    g.add(part(G.box, m, .2, .36, .04, 0, 1.25, -.23));                               // la plaque, sur le mur
-    g.add(part(G.box, m, .04, .04, .3, 0, 1.56, -.1));                                 // le bras
-    g.add(part(G.cyl, m, .02, .08, .02, 0, 1.52, .05));                                // le crochet
-    const v = part(G.box, nuitMat, .18, .24, .18, 0, 1.32, .05); v.castShadow = false; g.add(v);   // le verre
-    for(const [x, z] of [[-.1, -.05], [.1, -.05], [-.1, .15], [.1, .15]]) g.add(part(G.box, m, .025, .26, .025, x, 1.32, z));   // les montants
-    g.add(part(G.cone4, m, .28, .12, .28, 0, 1.5, .05));                               // le chapeau
-    g.add(part(G.box, m, .22, .03, .22, 0, 1.19, .05));                                // le fond
+  lanterneMurale(g, m, o){                                                           // la lanterne murale, et la chandelle qu'on y a posée
+    const garni = !!(o && o.bougie);
+    g.add(modeleBois(garni ? "lanterneMuraleGarnie" : "lanterneMurale", m, lanterneMuraleMorceaux(garni)));
+    const v = new THREE.Mesh(LP_VERRE, garni ? verreLanterne : verreMat); v.position.x = LP.lx; v.applyMatrix4(LW_K); v.renderOrder = 1; v.castShadow = false; g.add(v);
+    if(garni){ const f = new THREE.Mesh(CH_FLAMME, fireMat); f.position.set(LP.lx, LP.bas + (BG.haut - BG.bas + .01) * LP.s, 0); f.scale.setScalar(.62); f.applyMatrix4(LW_K); f.castShadow = false; g.add(f); }
   },
   /* Le bocal à lucioles (Grand Carnet : « une lumière douce et vivante ») : trois lucioles qui palpitent */
   bocalLucioles(g, m, o){                                                            // le bocal, vide ou avec ses lucioles

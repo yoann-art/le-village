@@ -709,7 +709,7 @@ function accrocher(t){
   if(!m || !m.facade || (t.b.facade || []).some(v => v.col === t.col) || !sacTake(k, 1)) return;
   (t.b.facade || (t.b.facade = [])).push({type: k, col: t.col});
   placeMesh(t.b); syncBarre(); save(); jouer("meuble");
-  toast(`${m.emoji} ${m.nom} accrochée à la façade${m.support ? " : approche-toi avec une torche pour l'allumer" : " : elle s'allumera seule à la nuit tombée"}`, 3400);
+  toast(`${m.emoji} ${m.nom} accrochée à la façade${m.support === "bougie" ? " : approche-toi avec une chandelle pour l'y poser" : m.support ? " : approche-toi avec une torche pour l'allumer" : " : elle s'allumera seule à la nuit tombée"}`, 3400);
 }
 function decrocher(t){
   const f = t.f, m = MEUBLES[f.type], g = garniDe(f.type, f), gains = {[f.type]: 1, ...(g ? {[g]: 1} : {})};

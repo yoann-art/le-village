@@ -3133,23 +3133,39 @@ export async function verifier(){
     if(map.obj[i] || owned("torche") !== torches + 1) throw new Error("la torchère et sa torche ne sont pas revenues dans le sac");
     return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, déplacé d'un appui long, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
   });
-  if(scierie) await etape("Les autres lumières : une lanterne murale accrochée à la façade de la Scierie, qui s'allume seule la nuit", async () => {
+  if(scierie) await etape("Les autres lumières : une lanterne murale accrochée à la façade de la Scierie, vide, sa chandelle, l'éteindre et la rallumer", async () => {
+    const {updateGestes, faireGeste} = await import("../js/gestes.js");
     const s = sizeOf(scierie.type), x = scierie.x, z = scierie.z;              // la colonne de gauche (la porte est au milieu)
     const devant = () => { pickUp(idx(x, z + s)); placePlayer(centerOf(x), centerOf(z + s) + .1, 0, -1); frames(3); return $("#btn-act").dataset.action; };
     place(2); sacAdd("lanterneMurale", 1); enMain("lanterneMurale");
     if(!devant().includes("Accrocher la lanterne murale")) throw new Error(`devant la façade, la lanterne en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
-    if(!(scierie.facade || []).some(f => f.type === "lanterneMurale" && f.col === 0) || !lumieresFacades().length) throw new Error("la lanterne n'est pas accrochée à la façade");
-    let jour, nuit;
+    const f = (scierie.facade || []).find(v => v.type === "lanterneMurale" && v.col === 0);
+    if(!f || !lumieresFacades().length) throw new Error("la lanterne n'est pas accrochée à la façade");
+    /* vide quand on l'accroche (Yo, 9 novembre 2026) ; sa chandelle de suif posée, elle éclaire, le jour aussi */
+    if(f.bougie) throw new Error("la lanterne murale n'est pas vide quand on l'accroche");
+    const c0 = owned("chandelleSuif"); sacAdd("chandelleSuif", 1);
+    let vide, garnie, eteinte;
     try {
-      forcerHeure(13); updateCiel(0, 0); updateLumieres(1.1, true); jour = lumieresActives();
-      forcerHeure(23); updateCiel(0, 0); updateLumieres(1.1, true); nuit = lumieresActives();
+      forcerHeure(13); updateCiel(0, 0); updateLumieres(1.1, true); vide = lumieresActives();
+      if(!devant().includes("Poser une chandelle dans la lanterne")) throw new Error(`devant la lanterne vide, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(f.bougie !== "chandelleSuif" || owned("chandelleSuif") !== c0) throw new Error("la chandelle n'est pas posée dans la lanterne murale");
+      updateLumieres(1.1, true); garnie = lumieresActives();
+      if(!(garnie > vide)) throw new Error(`la lanterne murale garnie n'éclaire pas le jour (${vide} lumière vide, ${garnie} garnie)`);
+      /* l'éteindre et la rallumer, devant la façade (Yo : « avec possibilité de l'éteindre ») */
+      devant(); updateGestes(true);
+      if($("#btn-geste").hidden || !$("#btn-geste").textContent.includes("Éteindre la lanterne murale")) throw new Error(`devant la lanterne murale, le geste dit « ${$("#btn-geste").textContent} »`);
+      faireGeste(); updateLumieres(1.1, true); eteinte = lumieresActives();
+      if(!f.eteint || eteinte !== vide) throw new Error("la lanterne murale ne s'éteint pas");
+      updateGestes(true); faireGeste();
+      if(f.eteint) throw new Error("la lanterne murale ne se rallume pas");
     } finally { forcerHeure(null); updateCiel(0, 0); }
-    if(!(nuit > jour)) throw new Error(`la lanterne murale ne s'allume pas seule la nuit (${jour} lumière le jour, ${nuit} la nuit)`);
     if(!devant().includes("Décrocher la lanterne murale")) throw new Error(`devant la lanterne accrochée, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
-    if((scierie.facade || []).length || owned("lanterneMurale") !== 1) throw new Error("la lanterne n'est pas revenue dans le sac");
-    return "accrochée, éteinte le jour, allumée la nuit, puis décrochée";
+    if((scierie.facade || []).length || owned("lanterneMurale") !== 1 || owned("chandelleSuif") !== c0 + 1) throw new Error("la lanterne et sa chandelle ne sont pas revenues dans le sac");
+    sacTake("lanterneMurale", 1); sacTake("chandelleSuif", 1);               // le sac comme avant (les essais suivants y mettent leurs outils)
+    return "accrochée vide, sa chandelle posée, elle éclaire le jour, éteinte et rallumée au geste, puis décrochée avec sa chandelle";
   });
   /* les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026) : une photo du modèle, le reste dessiné */
   await etape("Les icônes : la photo des modèles refaits d'après les images de Yo", async () => {
@@ -3157,7 +3173,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

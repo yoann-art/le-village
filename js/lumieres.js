@@ -177,6 +177,21 @@ if(!state.bocaux){
   if(n > 0) addOwned("luciole", 3 * n);
   state.bocaux = 1; save();
 }
+/* Les lanternes murales d'avant (Yo, 9 novembre 2026 : vide, on y pose une chandelle ; allumée tout le temps) : une fois,
+   chaque lanterne murale accrochée (pièces, façades) reçoit sa chandelle de suif ; chaque lanterne murale du sac, des cases et
+   des coffres, et chacune en fabrication, rend la chandelle de suif de son ancienne recette */
+if(!state.lanternesMurales){
+  const refaites = [];
+  for(const b of state.buildings){
+    for(const it of (b.deco && b.deco.items) || []) if(it.type === "lanterneMurale" && !it.bougie) it.bougie = "chandelleSuif";
+    for(const f of b.facade || []) if(f.type === "lanterneMurale" && !f.bougie){ f.bougie = "chandelleSuif"; if(!refaites.includes(b)) refaites.push(b); }
+    for(const j of (b.atelier && b.atelier.queue) || []) if(j.out === "lanterneMurale") addOwned("chandelleSuif", 1);
+  }
+  const n = owned("lanterneMurale");
+  if(n > 0) addOwned("chandelleSuif", n);
+  state.lanternesMurales = 1; save();
+  if(refaites.length) import("./monde/batiments.js").then(m => refaites.forEach(m.placeMesh));   // déjà dessinées : refaites
+}
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");
 let proche = null;

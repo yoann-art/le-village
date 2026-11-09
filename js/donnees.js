@@ -56,7 +56,7 @@ export const MEUBLES = {
   torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:"torche", une:true},
   torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:"torche", une:true},
   /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
-  lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true},
+  lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true, support:"bougie", dans:"dans la lanterne"},   // vide, une chandelle s'y pose (Yo, 9 novembre 2026)
   bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
   brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
@@ -105,7 +105,7 @@ export const LUMIERE = {
   chandelle:     source(2, "bougie", {y: .41, flamme: true, bougie: true}),    // le bougeoir : seulement avec sa chandelle
   chandelier:    source(3, "bougie", {y: 1.05, flamme: true}),
   lanterne:      source(3, "bougie", {y: 1.15, flamme: true, bougie: true}),     // une chandelle derrière des vitres : un peu plus que le bougeoir
-  lanterneMurale:source(4, "huile", {y: 1.32, nuit: true, avance: .12}),
+  lanterneMurale:source(3, "bougie", {y: 1.27, flamme: true, bougie: true, avance: .12}),   // sa chandelle, allumée tout le temps (Yo : « avec possibilité de l'éteindre »)
   torchere:      source(5, "bois", {y: 1.42, flamme: true, torche: true}),
   torchereMurale:source(5, "bois", {y: 1.57, flamme: true, torche: true, avance: .12}),
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
@@ -1037,7 +1037,7 @@ export const ATELIERS = {
     {out:"bocalBronze", in:{verre:2, bronze:2}, t:90, lvl:1},
     {out:"torchereMurale", in:{cuivre:2}, t:40, lvl:1, cat:"Lumières"},     // demande de Yo (11 octobre 2026)
     {out:"lanterneMain", in:{cuivre:2, verre:1, chandelleSuif:1}, t:60, lvl:1},
-    {out:"lanterneMurale", in:{cuivre:2, verre:1, chandelleSuif:1}, t:60, lvl:1},
+    {out:"lanterneMurale", in:{cuivre:2, verre:1}, t:60, lvl:1},              // vide : la chandelle se pose ensuite
     /* Gardés pour une mise à jour ou un événement (choix de Yo, 7 novembre 2026, page « Les objets de l'île ») : plus
        proposés à l'enclume ni au catalogue ; ceux déjà fabriqués ou posés dans une partie en cours restent (la recette
        reste ici, pour que le jeu les reconnaisse comme fabriqués : FABRIQUE_A, rangés dans le sac) */

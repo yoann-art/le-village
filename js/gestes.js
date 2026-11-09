@@ -6,7 +6,7 @@
    - allumer ou éteindre une lumière (la chandelle, les lanternes, la torchère et sa torche, le lustre, le chandelier, le feu
      de camp, le brasero, le lampadaire, la cheminée), dedans comme dehors ; éteinte, elle le reste (o.eteint, sauvegardé) ;
    - toucher le bocal à lucioles : elles brillent plus fort un instant.
-   Dans une pièce : les meubles posés ; dehors : les lumières posées sur les cases tout autour. */
+   Dans une pièce : les meubles posés ; dehors : les lumières posées sur les cases tout autour, et celles accrochées aux façades. */
 import { $ } from "./outils.js";
 import { MEUBLES, LUMIERE } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
@@ -15,6 +15,7 @@ import { footOf } from "./monde/meubles.js";
 import { refreshItemMesh } from "./monde/interieurs.js";
 import { map, N, idx, inb, tileOf, centerOf, setEtat } from "./monde/ile.js";
 import { currentPlace } from "./lieux.js";
+import { placeMesh, lumieresFacades } from "./monde/batiments.js";
 import { eclatLucioles } from "./lumieres.js";
 import { toast } from "./interface.js";
 import { jouer } from "./sons.js";
@@ -83,6 +84,13 @@ function prochain(place){
     if(!geste(it)) continue;
     const dist = Math.hypot(centerOf(x) - p.x, centerOf(z) - p.z);
     if(dist < dmin && dist < 1.4){ dmin = dist; best = {it, i, refaire: null}; }
+  }
+  /* les lumières accrochées à la façade de devant d'un bâtiment (la lanterne murale, la torchère murale : Yo, 9 novembre 2026,
+     « avec possibilité de l'éteindre ») : on se tient devant elles */
+  for(const {x, z, f, b} of lumieresFacades()){
+    if(!geste(f)) continue;
+    const dist = Math.hypot(x - p.x, z - p.z);
+    if(dist < dmin && dist < 1.2){ dmin = dist; best = {it: f, refaire: () => placeMesh(b)}; }
   }
   return best;
 }
