@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -825,6 +825,40 @@ function chemineeMorceaux(n){ return c => {
   }
   return out;
 }; }
+/* Le petit tapis (image de Yo, 10 novembre 2026 : « Voici le petit tapis ») : un tapis de fibres tressées ; le milieu en
+   damier, des brins plats qui passent l'un sur l'autre (une petite bosse arrondie par case, couchée tantôt en long, tantôt en
+   large) ; tout autour, un gros boudin roulé comme une corde, à anneaux, aux coins arrondis, plus foncé. Tout prend la teinte du
+   tissu (le bord plus sombre). Presque plat : on marche dessus */
+const PT = {w: .8, d: .55, r: .1, pas: .072, k: .78};
+const PT_BOSSE = new THREE.SphereGeometry(1, 6, 2, 0, Math.PI * 2, 0, Math.PI / 2);   // un brin (le dessus d'une demi-boule allongée)
+const PT_ANNEAU = new THREE.SphereGeometry(1, 8, 4);
+function petitTapisMorceaux(c){
+  const o = ombreBois(0, .09), bord = new THREE.Color(c).multiplyScalar(PT.k).getHex(), fond = new THREE.Color(c).multiplyScalar(.7).getHex();
+  const out = [{geo: new THREE.BoxGeometry(2 * PT.w - .14, .012, 2 * PT.d - .14), m: M4(0, .006, 0), c: fond, ombre: o}];
+  /* le damier tressé */
+  const nx = Math.floor((2 * PT.w - .2) / PT.pas), nz = Math.floor((2 * PT.d - .2) / PT.pas);
+  for(let a = 0; a < nx; a++) for(let b = 0; b < nz; b++){
+    const x = (a - (nx - 1) / 2) * PT.pas, z = (b - (nz - 1) / 2) * PT.pas, long = (a + b) % 2;
+    for(const e of [-.0175, .0175]){ const [ex, ez] = long ? [0, e] : [e, 0];             // deux brins côte à côte par case
+      out.push({geo: PT_BOSSE, m: M4(x + ex, .012, z + ez, 0, long ? Math.PI / 2 : 0, 0, .021, .018, .04), c, ombre: o}); }
+  }
+  /* le boudin du bord : des anneaux serrés le long d'un rectangle aux coins arrondis */
+  const W = PT.w - .045, D = PT.d - .045, R = PT.r, L = [2 * (W - R), 2 * (D - R)], tour = 2 * (L[0] + L[1]) + 2 * Math.PI * R, n = Math.round(tour / .048);
+  const point = t => {                                                                   // la place et la direction sur le tour (t de 0 à tour)
+    const segs = [[L[0], -W + R, D, 1, 0, W - R, D - R, 0], [L[1], W, D - R, 0, -1, W - R, -D + R, Math.PI / 2],
+      [L[0], W - R, -D, -1, 0, -W + R, -D + R, Math.PI], [L[1], -W, -D + R, 0, 1, -W + R, D - R, 1.5 * Math.PI]];   // un côté, puis le coin qui le suit
+    for(const [l, x0, z0, dx, dz, cx, cz, a0] of segs){
+      if(t <= l) return [x0 + dx * t, z0 + dz * t, Math.atan2(dx, dz)];
+      t -= l; const q = Math.PI / 2 * R;
+      if(t <= q){ const a = a0 + t / R; return [cx + Math.sin(a) * R, cz + Math.cos(a) * R, Math.atan2(Math.cos(a), -Math.sin(a))]; }
+      t -= q;
+    }
+    return [-W + R, D, Math.PI / 2];
+  };
+  for(let k = 0; k < n; k++){ const [x, z, a] = point(k * tour / n);
+    out.push({geo: PT_ANNEAU, m: M4(x, .036, z, 0, a, 0, .05, .036, .032), c: bord, ombre: o}); }
+  return out;
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -934,10 +968,7 @@ const BUILD = {
     g.add(modeleBois(n ? "cheminee" + n : "cheminee", m, chemineeMorceaux(n)));
     if(n){ const f = new THREE.Mesh(FC_FLAMMES, fireMat); f.position.set(0, .07, -.06); f.scale.setScalar([0, .85, .95, 1.05][n]); f.castShadow = false; g.add(f); }
   },
-  petitTapis(g, m){
-    g.add(part(G.box, m, 1.6, .02, 1.1, 0, .012, 0));                                 // bordure
-    g.add(part(G.box, C.cream, 1.3, .025, .8, 0, .014, 0));
-  },
+  petitTapis(g, m){ g.add(modeleBois("petitTapis", m, petitTapisMorceaux)); },   // tressé, son bord roulé (image de Yo, 10 novembre 2026)
   table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
   tableBanquet(g, m){ g.add(modeleBois("tableBanquet", m, tableBanquetMorceaux)); },
   lit(g, m){ g.add(modeleBois("lit", m, litMorceaux)); },
