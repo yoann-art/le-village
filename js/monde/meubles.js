@@ -38,7 +38,7 @@ const ORIGIN = {vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, t
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1048,6 +1048,82 @@ function beteEnPierre(cle, c){
   STATUES.set(k, g);
   return g;
 }
+/* Le miroir (image de Yo, 10 novembre 2026 : « Voici le miroir » ; « Vrai reflet devant, à mesurer ») : un miroir ovale sur pied ;
+   un épais cadre ovale, deux montants un peu penchés et leurs boutons ronds là où il pivote, une traverse en arc, deux pieds en
+   arche. Le bois prend sa teinte. La glace : un vrai reflet (la pièce et le personnage, vus dans la glace) seulement quand le
+   personnage est tout près devant (MIROIR.pres) ; sinon, un reflet peint (un dégradé clair, des traits de lumière en biais).
+   Le reflet : la scène dessinée une deuxième fois, en petit (256 × 384), depuis une caméra de l'autre côté de la glace */
+const MI = {cy: .92, rx: .27, ry: .44, z: .02, pied: .42};
+export const MIROIR = {joueur: null, pres: 2.2, actifs: 0};   // le personnage (main.js) ; à moins de pres, la glace reflète
+const MI_CADRE = new THREE.TorusGeometry(1, .16, 10, 40);
+const MI_GLACE = new THREE.CircleGeometry(1, 40);
+const MI_MONTANT = boiteRonde(.1, .82, .12, .04, 2), MI_BOUTON = new THREE.SphereGeometry(.05, 12, 8), MI_RONDELLE = new THREE.CylinderGeometry(.06, .06, .05, 14).rotateZ(Math.PI / 2);
+const MI_ARC = new THREE.TorusGeometry(.38, .055, 8, 20, Math.PI);
+const MI_PIED = new THREE.TorusGeometry(.1, .045, 8, 12, Math.PI);
+function miroirMorceaux(c){
+  const o = ombreBois(0, 1.45), out = [];
+  out.push({geo: MI_CADRE, m: M4(0, MI.cy, 0, 0, 0, 0, MI.rx + .03, MI.ry + .03, .25), c, ombre: o});        // le cadre ovale
+  out.push({geo: MI_GLACE, m: M4(0, MI.cy, -.015, 0, Math.PI, 0, MI.rx + .02, MI.ry + .02, 1), c, ombre: o});   // le dos de bois
+  for(const s of [-1, 1]){
+    out.push({geo: MI_MONTANT, m: M4(s * .4, .53, 0, 0, 0, s * .06), c, ombre: o});                           // les montants, penchés vers le miroir
+    out.push({geo: MI_RONDELLE, m: M4(s * .355, MI.cy, 0), c, ombre: o}, {geo: MI_BOUTON, m: M4(s * .4, MI.cy, 0), c, ombre: o});
+    out.push({geo: MI_PIED, m: M4(s * .43, 0, 0, 0, Math.PI / 2, 0, 1, 1.2, 1), c, ombre: o});                 // les pieds en arche
+  }
+  out.push({geo: MI_ARC, m: M4(0, .1, 0, 0, 0, 0, 1.1, .5, 1.2), c, ombre: o});                               // la traverse en arc
+  return out;
+}
+const MI_VS = `uniform mat4 textureMatrix; varying vec4 vProj; varying vec2 vUv;
+void main(){ vUv = uv; vProj = textureMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const MI_FS = `uniform sampler2D tDiffuse; uniform float uActif; varying vec4 vProj; varying vec2 vUv;
+void main(){
+  float s = fract((vUv.x + vUv.y) * 1.3);
+  float trait = (smoothstep(.0, .03, s) - smoothstep(.1, .14, s)) * .45 + (smoothstep(.25, .27, s) - smoothstep(.31, .33, s)) * .3;
+  vec3 peint = mix(vec3(.5, .62, .7), vec3(.72, .82, .88), vUv.y) + trait * .7;
+  vec3 reflet = texture2DProj(tDiffuse, vProj).rgb * .9 + vec3(.03, .05, .07) + trait * .2;
+  gl_FragColor = vec4(mix(peint, reflet, uActif), 1.0);
+}`;
+let enReflet = false;
+const RF = {plan: new THREE.Plane(), normale: new THREE.Vector3(), pos: new THREE.Vector3(), cam: new THREE.Vector3(), rot: new THREE.Matrix4(), regard: new THREE.Vector3(),
+  vue: new THREE.Vector3(), cible: new THREE.Vector3(), clip: new THREE.Vector4(), q: new THREE.Vector4(), virt: new THREE.PerspectiveCamera()};
+function glaceMiroir(){
+  const cible = new THREE.WebGLRenderTarget(256, 384, {minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat});
+  const mat = new THREE.ShaderMaterial({uniforms: {tDiffuse: {value: cible.texture}, textureMatrix: {value: new THREE.Matrix4()}, uActif: {value: 0}}, vertexShader: MI_VS, fragmentShader: MI_FS});
+  const glace = new THREE.Mesh(MI_GLACE, mat);
+  glace.scale.set(MI.rx, MI.ry, 1); glace.position.set(0, MI.cy, MI.z); glace.castShadow = false; glace.receiveShadow = false;
+  glace.userData.cible = cible;
+  glace.onBeforeRender = (renderer, scene, camera) => {
+    const u = mat.uniforms;
+    glace.getWorldPosition(RF.pos);
+    const j = MIROIR.joueur, pres = j && !enReflet && Math.hypot(j.position.x - RF.pos.x, j.position.z - RF.pos.z) < MIROIR.pres;
+    RF.rot.extractRotation(glace.matrixWorld); RF.normale.set(0, 0, 1).applyMatrix4(RF.rot);
+    RF.cam.setFromMatrixPosition(camera.matrixWorld);
+    if(!pres || RF.vue.subVectors(RF.pos, RF.cam).dot(RF.normale) > 0){ u.uActif.value = 0; return; }   // loin, ou vu de dos : le reflet peint
+    /* la caméra virtuelle : le reflet de la caméra dans la glace (comme le Reflector de three.js) */
+    RF.vue.reflect(RF.normale).negate().add(RF.pos);
+    RF.rot.extractRotation(camera.matrixWorld);
+    RF.regard.set(0, 0, -1).applyMatrix4(RF.rot).add(RF.cam);
+    RF.cible.subVectors(RF.pos, RF.regard).reflect(RF.normale).negate().add(RF.pos);
+    const v = RF.virt;
+    v.position.copy(RF.vue); v.up.set(0, 1, 0).applyMatrix4(RF.rot).reflect(RF.normale); v.lookAt(RF.cible);
+    v.far = camera.far; v.updateMatrixWorld(); v.projectionMatrix.copy(camera.projectionMatrix);
+    u.textureMatrix.value.set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1).multiply(v.projectionMatrix).multiply(v.matrixWorldInverse).multiply(glace.matrixWorld);
+    /* coupé au plan de la glace (ce qui est derrière elle n'apparaît pas) */
+    RF.plan.setFromNormalAndCoplanarPoint(RF.normale, RF.pos).applyMatrix4(v.matrixWorldInverse);
+    RF.clip.set(RF.plan.normal.x, RF.plan.normal.y, RF.plan.normal.z, RF.plan.constant);
+    const P = v.projectionMatrix.elements;
+    RF.q.x = (Math.sign(RF.clip.x) + P[8]) / P[0]; RF.q.y = (Math.sign(RF.clip.y) + P[9]) / P[5]; RF.q.z = -1; RF.q.w = (1 + P[10]) / P[14];
+    RF.clip.multiplyScalar(2 / RF.clip.dot(RF.q));
+    P[2] = RF.clip.x; P[6] = RF.clip.y; P[10] = RF.clip.z + 1; P[14] = RF.clip.w;
+    /* la scène dessinée dans la glace : sans elle, sans refaire les ombres */
+    const avant = renderer.getRenderTarget(), ombres = renderer.shadowMap.autoUpdate, info = renderer.info.render, d0 = info.calls, t0 = info.triangles;
+    enReflet = true; glace.visible = false; renderer.shadowMap.autoUpdate = false;
+    renderer.setRenderTarget(cible); renderer.state.buffers.depth.setMask(true); renderer.clear(); renderer.render(scene, v);
+    renderer.setRenderTarget(avant); renderer.shadowMap.autoUpdate = ombres; glace.visible = true; enReflet = false;
+    info.calls += d0; info.triangles += t0;                            // le compteur de performance compte aussi le reflet (render() remet ses chiffres à zéro)
+    u.uActif.value = 1; MIROIR.actifs++;
+  };
+  return glace;
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1167,6 +1243,7 @@ const BUILD = {
       f.position.y = VS.col; f.rotation.set(p, a, 0, "YXZ"); f.scale.setScalar(.55); g.add(f);
     });
   },
+  miroir(g, m){ g.add(modeleBois("miroir", m, miroirMorceaux), glaceMiroir()); },   // le cadre et le pied (un dessin), la glace qui reflète
   rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)
   grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
   etabli(g, m){

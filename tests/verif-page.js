@@ -848,12 +848,24 @@ export async function verifier(){
       items.splice(items.indexOf(st), 1); removeItemMesh(st.id);
       state.carnet.gibier = JSON.parse(avant);
     }
+    /* le miroir (Yo, 10 novembre 2026 : « Vrai reflet devant, à mesurer ») : la glace reflète quand le personnage est devant,
+       pas quand il est loin */
+    {
+      const {MIROIR} = await import("../js/monde/meubles.js"), mi = {id: 99050, type: "miroir", x: chandelle.x, z: chandelle.z - 1.2, rot: 0};
+      items.push(mi); addItemMesh(mi);
+      placePlayer(mi.x, mi.z + 6, 0, -1); await wait(400); const a0 = MIROIR.actifs; await wait(400);
+      if(MIROIR.actifs !== a0) throw new Error("le miroir reflète alors que le personnage est loin");
+      placePlayer(mi.x, mi.z + 1, 0, -1); await wait(600);
+      if(MIROIR.actifs === a0) throw new Error("devant le miroir, la glace ne reflète pas");
+      items.splice(items.indexOf(mi), 1); removeItemMesh(mi.id);
+    }
     /* les chaises autour d'une table (Yo, 10 novembre 2026) : deux côte à côte sur chaque grand côté, une à chaque bout, six ;
        rangées sous la table ; la septième n'a pas de place ; s'asseoir la fait reculer, se lever la range ; la table tournée
        (appui long, « Tourner ») emmène ses chaises */
     {
       const {placerDans, modifier} = await import("../js/decorer.js"), {aSaPlace, placesTable} = await import("../js/donnees.js");
       const mis = items.splice(0);                                      // la pièce vidée le temps de l'essai
+      placePlayer(currentPlace().room.doorX, currentPlace().room.d / 2 - .3, 0, -1);   // le personnage sur le paillasson : il ne gêne aucune place
       try {
         const t = {id: 99020, type: "table", x: 0, z: -.5, rot: 0}; items.push(t); addItemMesh(t);
         const cs = [];
@@ -3347,7 +3359,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
