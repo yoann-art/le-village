@@ -3,8 +3,16 @@
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
 import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
-import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose } from "../donnees.js";
+import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose, FLEURS, enFleur, saison } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
+import { fleurModele } from "./fleurs.js";
+import { paqueretteModele } from "./paquerette.js";
+import { pissenlitModele } from "./pissenlit.js";
+import { coquelicotModele } from "./coquelicot.js";
+import { bleuetModele } from "./bleuet.js";
+import { perceNeigeModele } from "./perceNeige.js";
+import { violetteModele } from "./violette.js";
+import { muguetModele } from "./muguet.js";
 
 const C = {wood:0x8B5A3C, light:0xB07A4A, dark:0x654028, metal:0x6F7884, gold:0xE2B24D, white:0xF4EFE6, blue:0x4E6DB3,
   red:0xA9322A, cream:0xE8C48A, stone:0xAEB0B3, stone2:0x8E9195, soot:0x2A2522, clay:0xC8643C, leaf:0x57B25C, yellow:0xF2C14E};
@@ -30,7 +38,7 @@ const ORIGIN = {rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -940,6 +948,37 @@ function rideauMorceaux(ferme){ return c => {
   }
   return out;
 }; }
+/* Le pot de fleurs (image de Yo, 10 novembre 2026 : « Voici le pot de fleurs ») : un pot rond, un peu évasé, de grosses
+   pierres arrondies maçonnées (deux rangs, décalés), un large rebord épais ; dedans, la terre brune et ses petites mottes.
+   La pierre prend sa teinte ; la terre reste brune. On y plante une fleur sauvage (o.fleur, lumieres.js) : le modèle de la
+   fleur sur l'île, qui fleurit en sa vraie saison (sinon ses feuilles) ; jamais de tas de terre sous elle, la terre reste à plat */
+const PO = {bas: .2, haut: .24, h: .3, rebord: .29, dedans: .2, terre: .34, n: 7};
+const PO_COEUR = lathe([[0, 0], [PO.bas - .015, 0], [PO.haut - .015, PO.h], [0, PO.h]], 18);
+const PO_REBORD = lathe([[PO.dedans, .27], [PO.rebord - .02, .27], [PO.rebord - .003, .282], [PO.rebord + .004, .31], [PO.rebord, .345], [PO.rebord - .02, .366],
+  [PO.rebord - .05, .372], [PO.dedans + .03, .372], [PO.dedans + .008, .365], [PO.dedans, .35], [PO.dedans - .004, .3]], 28);   // le rebord, de l'extérieur vers l'intérieur
+const PO_TERRE = new THREE.CylinderGeometry(PO.dedans + .002, PO.dedans + .002, .02, 20);
+const PO_MOTTE = new THREE.SphereGeometry(1, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2);
+const PO_PIERRE = boiteRonde(.15, .13, .07, .035, 1);
+const PO_PIERRE2 = boiteRonde(.12, .12, .07, .035, 1);
+function potMorceaux(c){
+  const o = ombreBois(0, PO.terre + .06), sombre = new THREE.Color(c).multiplyScalar(.7).getHex(), out = [];
+  out.push({geo: PO_COEUR, m: M4(0, 0, 0), c: sombre, ombre: o}, {geo: PO_REBORD, m: M4(0, 0, 0), c, ombre: o});
+  const pente = Math.atan2(PO.haut - PO.bas, PO.h);
+  for(let r = 0; r < 2; r++) for(let k = 0; k < PO.n; k++){                           // deux rangs de pierres, décalés
+    const a = (k + (r ? .5 : 0)) / PO.n * Math.PI * 2, y = r ? .2 : .075, rr = PO.bas + (PO.haut - PO.bas) * y / PO.h + .012;
+    out.push({geo: (k + r) % 3 ? PO_PIERRE : PO_PIERRE2, m: M4(Math.sin(a) * rr, y, Math.cos(a) * rr, -pente, a, 0, 1, r ? .9 : 1.05, 1), c, ombre: o});
+  }
+  out.push({geo: PO_TERRE, m: M4(0, PO.terre, 0), c: 0x7A3A22, ombre: o});         // la terre, à plat
+  for(const [x, z, s] of [[.06, .04, .022], [-.08, .02, .018], [.01, -.09, .02], [-.03, .09, .016], [.1, -.05, .014], [-.1, -.07, .017]])
+    out.push({geo: PO_MOTTE, m: M4(x, PO.terre + .01, z, 0, 0, 0, s, s * .7, s), c: 0x6E3420, ombre: o});
+  return out;
+}
+/* La fleur plantée : celle de l'île, à sa couleur, en fleur dans sa saison */
+function fleurDuPot(k){
+  const f = FLEURS[k], c = f.couleurs[0], e = enFleur(f) ? 2 : 1, s = saison();
+  return k === "paquerette" ? paqueretteModele(s, e, c) : k === "pissenlit" ? pissenlitModele(s, e) : k === "coquelicot" ? coquelicotModele(s, e, c)
+    : k === "bleuet" ? bleuetModele(s, e, c) : k === "perceNeige" ? perceNeigeModele(s, e) : k === "violette" ? violetteModele(s, e, c) : k === "muguet" ? muguetModele(s, e) : fleurModele(k, c, e);
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -947,11 +986,9 @@ const BUILD = {
   fauteuil(g, m){ g.add(modeleBois("fauteuil", m, fauteuilMorceaux)); },
   chaise(g, m){ g.add(modeleBois("chaise", m, chaiseMorceaux)); },
   tabouret(g, m){ g.add(modeleBois("tabouret", m, tabouretMorceaux)); },
-  pot(g, m){
-    g.add(part(G.cyl, m, .4, .3, .4, 0, .15, 0));                                     // pot
-    g.add(part(G.cyl, m, .46, .06, .46, 0, .3, 0));                                   // rebord
-    g.add(part(G.leaf, C.leaf, .5, .45, .5, 0, .5, 0));                                // feuillage
-    for(const [x,y,z,c] of [[-.1,.66,.08,C.red],[.12,.62,.05,C.yellow],[0,.6,-.12,C.white]]) g.add(part(G.head, c, .28, .28, .28, x, y, z));   // fleurs
+  pot(g, m, o){                                                                      // vide, sa terre ; ou la fleur qu'on y a plantée (o.fleur)
+    g.add(modeleBois("pot", m, potMorceaux));
+    if(o && o.fleur && FLEURS[o.fleur]){ const f = fleurDuPot(o.fleur); f.scale.setScalar(.8); f.position.y = PO.terre + .01; g.add(f); }
   },
   lanterne(g, m, o){                                                                 // la lanterne sur pied, et la chandelle qu'on y a posée
     const garni = !!(o && o.bougie);

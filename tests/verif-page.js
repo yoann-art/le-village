@@ -767,6 +767,17 @@ export async function verifier(){
       if(garniPose("cheminee", it) || garniDe("cheminee", it) || LUMIERE.cheminee.buche !== true) throw new Error("toutes ses bûches brûlées, la cheminée brûle encore");
       items.splice(items.indexOf(it), 1); removeItemMesh(it.id);
     }
+    /* le pot de fleurs vide (Yo, 10 novembre 2026 : « On plante une fleur ») : une fleur sauvage du sac s'y plante */
+    {
+      const it = {id: 99004, type: "pot", x: chandelle.x, z: chandelle.z, rot: 0}; items.push(it); addItemMesh(it);
+      const f0 = owned("paquerette"); sacAdd("paquerette", 1); placePlayer(it.x + .7, it.z, -1, 0); updateLumieres(.016, true);
+      if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Pot de fleurs")) throw new Error(`près du pot vide, le bouton dit « ${$("#btn-torchere").textContent} »`);
+      $("#btn-torchere").click();
+      if(it.fleur !== "paquerette" || owned("paquerette") !== f0) throw new Error(`la pâquerette n'est pas plantée dans le pot (${it.fleur})`);
+      updateLumieres(.016, true);
+      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Pot de fleurs")) throw new Error("le pot fleuri propose encore une fleur");
+      items.splice(items.indexOf(it), 1); removeItemMesh(it.id);
+    }
     /* le rideau (Yo, 10 novembre 2026 : « qu'il s'accroche uniquement aux fenêtres et assombrisse la pièce ») : un par fenêtre,
        pas un de plus ; fermé au geste, il cache la lumière de sa fenêtre ; rouvert, plus rien */
     {
@@ -3251,7 +3262,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

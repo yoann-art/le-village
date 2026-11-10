@@ -12,7 +12,7 @@
    des bâtiments (batiments.js) éclairent l'île comme celles posées sur les cases ; les papillons de nuit viennent
    tourner autour de toutes ces lumières (lumieresIle, insectes.js). */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet, BUCHE, resteFeu } from "./donnees.js";
+import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet, BUCHE, resteFeu, FLEURS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacCount } from "./regles.js";
 import { scene } from "./monde/scene.js";
@@ -130,9 +130,11 @@ export const lumieresActives = () => actives;
 
 /* ----- Poser une torche sur une torchère, une chandelle dans un bougeoir ----- */
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
-export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
+export const garniDispo = type => MEUBLES[type].support === "fleur" && FLEURS[state.main] && owned(state.main) > 0 ? state.main   // le pot : la fleur tenue en main d'abord
+  : (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
-export const poserLabel = type => MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
+export const poserLabel = type => MEUBLES[type].support === "fleur" ? (k => k ? `🌸 Planter ${FLEURS[k].une ? "une" : "un"} ${FLEURS[k].nom.toLowerCase()} ${MEUBLES[type].dans}` : `🌸 Planter une fleur ${MEUBLES[type].dans}`)(garniDispo(type))
+  : MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
   const s = MEUBLES[type].support, bougie = s === "bougie", un = unAUn(type), nb = garniNb(type), n = un ? 1 : nb;
@@ -140,6 +142,7 @@ export function poserGarni(o, type, refaire){
   const deja = un ? garniPose(type, o) : 0;
   const k = un && o.bougie ? (owned(o.bougie) >= 1 ? o.bougie : null) : garniDispo(type);   // la suite : la même sorte de chandelle
   if(s === "buche") return poserBuche(o, type, k, deja, nb, refaire);
+  if(s === "fleur") return planter(o, type, k, refaire);
   if(!k && s === "lucioles"){ toast("✨ Il te faut 3 lucioles : elles s'attrapent au bocal, les nuits d'été, dans les herbes hautes", 3600); return false; }
   if(!k){ toast(bougie ? "🕯️ Il te faut une chandelle : elle se fabrique" + ` à l'atelier de décoration de la Chaumière (1 suif, 1 fibre${un ? " pour 2" : ""})`
     : "🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
@@ -164,6 +167,17 @@ function poserBuche(o, type, k, deja, nb, refaire){
   syncBarre(); save(); renderHUD();
   const min = Math.round(BUCHE / 60);
   toast(deja + 1 >= nb ? `🪵 Les ${nb} bûches sont ${MEUBLES[type].dans} : de quoi brûler ${nb * min} minutes` : `🪵 Bûche posée ${MEUBLES[type].dans} (${deja + 1} sur ${nb}) : elle brûle ${min} minutes`, 3400);
+  return true;
+}
+/* Une fleur sauvage plantée dans le pot (Yo, 10 novembre 2026) : la fleur cueillie y reprend racine ; elle fleurit en sa
+   vraie saison (FLEURS[...].saisons), sinon ses feuilles */
+function planter(o, type, k, refaire){
+  if(!k){ toast("🌸 Il te faut une fleur sauvage : cueille-en une sur l'île (pâquerette, coquelicot, bleuet…)", 3600); return false; }
+  addOwned(k, -1);
+  o.fleur = k; refaire({fleur: k});
+  syncBarre(); save(); renderHUD();
+  const f = FLEURS[k], quand = f.saisons.map(s => ({printemps: "au printemps", ete: "en été", automne: "en automne", hiver: "en hiver"})[s]);
+  toast(`🌸 ${f.nom} ${f.une ? "plantée" : "planté"} ${MEUBLES[type].dans} : ${f.une ? "elle" : "il"} fleurit ${quand.length > 1 ? quand.slice(0, -1).join(", ") + " et " + quand.at(-1) : quand[0]}`, 3600);
   return true;
 }
 /* Les bûches qui brûlent : dans la pièce, une fois par seconde, la cheminée est refaite quand une bûche a fini (son feu

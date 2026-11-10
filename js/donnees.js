@@ -40,7 +40,7 @@ export const MEUBLES = {
   chaise:   {nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
   fauteuil: {nom:"Fauteuil", emoji:"💺", gabarit:"petit", w:1.05, d:.9},
   tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
-  pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5},
+  pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5, support:"fleur", dans:"dans le pot"},   // vide, sa terre ; on y plante une fleur sauvage (Yo, 10 novembre 2026)
   /* La lanterne sur pied (Yo, 8 novembre 2026 : refaite d'après son image, vide « pour que cela soit réaliste ») : on y pose
      une chandelle de suif, comme dans le bougeoir (plus tard une bougie de cire d'abeille) */
   lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true, support:"bougie", dans:"dans la lanterne"},
@@ -119,10 +119,10 @@ export const LUMIERE = {
 export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
 /* Ce qui se pose sur un support (MEUBLES[...].support) : la torche sur la torchère (o.torche), la chandelle dans le bougeoir
    (o.bougie : sa clé ; plus tard la bougie de cire d'abeille) ; garniDe : ce qui y est posé, ou null */
-export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"], buche: ["bois"]};
+export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"], buche: ["bois"], fleur: []};   // fleur : rempli après FLEURS
 /* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), cinq chandelles dans le lustre (nb), sinon une */
 export const garniNb = type => !MEUBLES[type] ? 1 : MEUBLES[type].nb || (MEUBLES[type].support === "lucioles" ? 3 : 1);
-export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? "bois" : null) : o.bougie || null; };
+export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? "bois" : null) : s === "fleur" ? (o.fleur || null) : o.bougie || null; };
 /* Les bûches de la cheminée (Yo, 10 novembre 2026 : « Une bûche = 1 bois de mon sac », « Les bûches s'usent et le feu
    s'éteint ») : chaque bûche brûle BUCHE secondes, en vrai temps (même le jeu fermé), l'une après l'autre ; o.feu : l'heure
    où la dernière finit (Date.now) ; éteinte au geste, le feu s'arrête : o.reste, les secondes qui restent */
@@ -1282,6 +1282,7 @@ export const FLEURS = {
 /* Ce qu'il y a sur l'île au début d'une partie (décidé avec Yo le 18 octobre 2026, ile.js) : les pierres des champs, et la
    flore sauvage (herbes hautes, groseilliers, thym ; les fleurs : combien de chaque commune et de chaque peu commune) */
 export const PIERRES_ILE = 30;
+GARNIS.fleur.push(...Object.keys(FLEURS));                          // le pot : toutes les fleurs sauvages qu'on cueille
 export const FLORE_ILE = {herbe: 60, buisson: 18, thym: 24, fleurCommune: 7, fleurPeuCommune: 5};   // fleurs : seulement les sauvages (4 × 7 + 3 × 5 = 43 ; choix de Yo le 22 octobre 2026 : 7 de chaque, la marguerite en réserve)
 /* les galets de plage (décidé par Yo le 20 octobre 2026 : un décor, une vingtaine de groupes sur le sable) */
 export const GALETS_ILE = 20;
