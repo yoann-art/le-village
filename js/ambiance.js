@@ -53,7 +53,7 @@ function autour(x, z, r, test){
   return {n, d: best};
 }
 const arbre = (o, hiver) => !!o && (hiver ? o === "pin" : RECOLTE[o] && RECOLTE[o].outil === "hache" && o !== "buisson");
-const feuDehors = (o, i) => (o === "feuCamp" || o === "brasero") && !(state.ile[i] || {}).eteint;   // éteint : plus de crépitement
+const feuDehors = (o, i) => (o === "feuCamp" ? resteFeu(state.ile[i]) > 0 : o === "brasero") && !(state.ile[i] || {}).eteint;   // éteint, ou ses bûches brûlées : plus de crépitement
 
 /* Le tonnerre : un peu après l'éclair (le son va moins vite que la lumière), plus ou moins loin */
 let eclairAvant = 0;

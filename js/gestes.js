@@ -54,7 +54,9 @@ function allonger(it){
 /* Allumer ou éteindre : le meuble de la pièce (it), ou la case de l'île (i) */
 function basculer(c, m){
   let eteint;
-  if(c.i !== undefined){ eteint = !(state.ile[c.i] || {}).eteint; setEtat(c.i, {eteint: eteint || undefined}); }   // setEtat refait la case
+  if(c.i !== undefined){ const o = state.ile[c.i] || {}; eteint = !o.eteint;
+    if(MEUBLES[map.obj[c.i]] && MEUBLES[map.obj[c.i]].support === "buche"){ const f = {...o}; figerFeu(f, eteint); setEtat(c.i, {eteint: eteint || undefined, feu: f.feu, reste: f.reste}); }   // le feu de camp : ses bûches s'arrêtent de brûler
+    else setEtat(c.i, {eteint: eteint || undefined}); }   // setEtat refait la case
   else { const it = c.it; eteint = !it.eteint; if(MEUBLES[it.type].support === "buche") figerFeu(it, eteint);   // la cheminée : ses bûches s'arrêtent de brûler
     if(eteint) it.eteint = true; else delete it.eteint; c.refaire(); }
   save(); jouer(eteint ? "meuble" : "peindre");

@@ -849,11 +849,13 @@ export async function verifier(){
     for(const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if(dedansIle(px + a, pz + b) && !carte.obj[ix(px + a, pz + b)] && carte.type[ix(px + a, pz + b)] !== "water"){ i = ix(px + a, pz + b); break; }
     if(i < 0) return "dedans : assis, levé, allongé, la chandelle éteinte et rallumée (dehors : pas de case libre à côté pour l'essai)";
     setObj(i, "feuCamp"); updateGestes(true);
+    if(!btnG.hidden && btnG.textContent.includes("le feu de camp")) throw new Error(`près du feu de camp vide, le bouton dit « ${btnG.textContent} »`);   // sans bûches, rien à éteindre
+    setEtat(i, {feu: Date.now() + 2 * BUCHE * 1000}); updateGestes(true);
     if(!btnG.textContent.includes("Éteindre le feu de camp")) throw new Error(`près du feu de camp, le bouton dit « ${btnG.textContent} »`);
     faireGeste();
-    if(!(state.ile[i] || {}).eteint) throw new Error("le feu de camp ne s'éteint pas");
+    if(!(state.ile[i] || {}).eteint || Math.abs(resteFeu(state.ile[i]) - 2 * BUCHE) > 2) throw new Error(`le feu de camp ne s'éteint pas, ou son feu ne s'arrête pas (${resteFeu(state.ile[i] || {})} s)`);
     updateGestes(true); faireGeste();
-    if((state.ile[i] || {}).eteint) throw new Error("le feu de camp ne se rallume pas");
+    if((state.ile[i] || {}).eteint || Math.abs(resteFeu(state.ile[i]) - 2 * BUCHE) > 2) throw new Error("le feu de camp ne se rallume pas, ou a perdu son feu");
     setObj(i, null);
     return "assis sur la chaise puis levé à sa place, assis dans le fauteuil puis sur le banc, la table de banquet posée, allongé dans un lit (les yeux en l'air), relevé quand le lit disparaît ; la chandelle et un feu de camp dehors éteints puis rallumés";
   });
@@ -3138,14 +3140,22 @@ export async function verifier(){
     }
     if(i < 0) throw new Error("pas de case libre pour le feu de camp");
     const devant = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(3); return $("#btn-act").dataset.action; };
-    place(2); sacAdd("feuCamp", 1); enMain("feuCamp");
+    place(3); sacAdd("feuCamp", 1); enMain("feuCamp");   // une place de plus : les bûches rendues
     if(!devant().includes("Poser le feu de camp")) throw new Error(`le feu de camp en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
     if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp n'est pas posé");
-    { /* le feu de camp refait (image de Yo, 9 novembre 2026) : ses flammes d'un seul dessin, qui s'éteignent avec lui */
-      const {makeMeuble, fireMat: feu} = await import("../js/monde/meubles.js");
+    { /* le feu de camp refait (image de Yo, 9 novembre 2026) : ses flammes d'un seul dessin, qui s'éteignent avec lui ; vide, sans
+         flammes (Yo, 10 novembre 2026) */
+      const {makeMeuble, fireMat: feu} = await import("../js/monde/meubles.js"), allume = {feu: Date.now() + BUCHE * 1000};
       const flammes = o => { let n = 0; makeMeuble("feuCamp", undefined, o).traverse(c => { if(c.material === feu && c.visible) n++; }); return n; };
-      if(flammes() !== 1 || flammes({eteint: true}) !== 0) throw new Error(`le feu de camp a ${flammes()} flammes allumées, ${flammes({eteint: true})} éteint`);
+      if(flammes() !== 0 || flammes(allume) !== 1 || flammes({...allume, eteint: true}) !== 0) throw new Error(`le feu de camp a ${flammes()} flammes vide, ${flammes(allume)} avec une bûche, ${flammes({...allume, eteint: true})} éteint`);
+    }
+    /* trois bûches, une à la fois, 1 bois chacune (Yo, 10 novembre 2026) */
+    const b0 = owned("bois"); sacAdd("bois", 3);
+    for(let k = 1; k <= 3; k++){
+      if(!devant().includes("Mettre une bûche dans le feu de camp")) throw new Error(`devant le feu de camp (${k - 1} bûches), le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(garniPose("feuCamp", state.ile[i]) !== k || owned("bois") !== b0 + 3 - k) throw new Error(`feu de camp : ${garniPose("feuCamp", state.ile[i])} bûches au ${k}e appui`);
     }
     forcerHeure(23); updateCiel(0, 0);
     try {
@@ -3164,7 +3174,9 @@ export async function verifier(){
     if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp ne revient pas à sa place");
     if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
-    if(map.obj[i] || owned("feuCamp") !== 1) throw new Error("le feu de camp n'est pas revenu dans le sac");
+    if(map.obj[i] || owned("feuCamp") !== 1) throw new Error(`le feu de camp n'est pas revenu dans le sac (« ${$("#toast").textContent} », ${owned("feuCamp")} dans le sac, case : ${map.obj[i]})`);
+    if(owned("bois") !== b0 + 2) throw new Error(`repris, le feu de camp rend ${owned("bois") - b0} bûches (2 entières, celle qui brûle est perdue)`);
+    sacTake("bois", 2);
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
     if(map.obj[i] !== "torchere") throw new Error(`la torchère n'est pas posée dehors (le bouton dit « ${$("#btn-act").dataset.action} », en main : ${state.main})`);

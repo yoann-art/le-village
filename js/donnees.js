@@ -69,7 +69,7 @@ export const MEUBLES = {
   armoire:  {nom:"Armoire", emoji:"🚪", gabarit:"moyen", w:1.3, d:.7, une:true},   // l'armoire (Yo, 8 novembre 2026)
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
   cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"], une:true, support:"buche", dans:"dans la cheminée", nb:3},   // vide ; trois bûches s'y posent, une à la fois, et brûlent (Yo, 10 novembre 2026)
-  feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
+  feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true, support:"buche", dans:"dans le feu de camp", nb:3},   // vide ; trois bûches, une à la fois, qui brûlent (Yo, 10 novembre 2026)
   lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4},
@@ -111,7 +111,7 @@ export const LUMIERE = {
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
   brasero:       source(6, "bois", {y: .95, flamme: true}),
   cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55, buche: true}),   // son feu éclaire la pièce, devant le foyer, tant que ses bûches brûlent
-  feuCamp:       source(8, "bois", {y: .4, flamme: true}),
+  feuCamp:       source(8, "bois", {y: .4, flamme: true, buche: true}),               // tant que ses bûches brûlent
   lustre:        source(8, "bougie", {y: 1.68, flamme: true, bougie: true})             // « éclaire toute la pièce » : avec ses cinq chandelles
 };
 /* Les lumières tenues en main (torche.js) : la torche (niveau 5), la lanterne à main (niveau 7) */
@@ -959,7 +959,7 @@ export const ATELIERS = {
     {out:"coffreCuivre", in:{planche:5, cuivre:2}, t:40, lvl:2},   // le coffre cerclé de cuivre (Yo, 8 novembre 2026)
     /* Les lumières (demande de Yo, 11 octobre 2026) : une torche posée sur la torchère ne s'éteint plus jamais */
     {out:"torchere", in:{planche:3, cuivre:1}, t:30, lvl:1, cat:"Lumières"},
-    {out:"feuCamp", in:{pierre:6, bois:4, fibre:2}, t:30, lvl:1},   // la corde des piquets (image de Yo, 9 novembre 2026)
+    {out:"feuCamp", in:{pierre:6, bois:1, fibre:2}, t:30, lvl:1},   // la corde des piquets (image de Yo, 9 novembre 2026) ; 1 bois : les piquets et la broche, les bûches se mettent à part (Yo, 10 novembre 2026)
     {out:"tabouret", in:{planche:2}, t:20, lvl:1, cat:"Meubles"},
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"fauteuil", in:{planche:4, fibre:3}, t:40, lvl:1},   // le fauteuil : du bois et des coussins de lin (Yo, 7 novembre 2026)

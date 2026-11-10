@@ -627,10 +627,10 @@ const FC_FLAMMES = (() => { const L = lathe([[0, 0], [.06, .012], [.1, .05], [.1
   return fusionner([[0, .08, -.03, 0, 0, 1.15, 1.2], [-.1, .07, .0, 0, .3, .8, .85], [.1, .07, -.04, 0, -.3, .8, .95], [0, .07, -.1, -.15, 0, .9, 1],
     [.13, .45, -.02, 0, -.2, .3, .35]].map(([x, y, z, rx, rz, s, h]) => ({geo: L, m: M4(x, y, z, rx, 0, rz, s, h, s), c: 0}))
     .concat([{geo: new THREE.CylinderGeometry(.16, .18, .03, 12), m: M4(0, .02, 0), c: 0}])); })();
-function feuMorceaux(c){
+function feuMorceaux(n){ return c => {                                                                         // n : les bûches qui restent
   const o = ombreBois(0, .7), out = [];
   for(const [a, r, y, s] of FC_PIERRES) out.push({geo: FC_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, 0, a * 3, 0, s * 1.05, s * .78, s * .92), c, ombre: o});
-  for(const [x, z, ry, rz] of [[0, .04, .5, .22], [.02, -.06, -.7, -.2], [-.04, 0, 2.2, .18]]){                 // les bûches croisées
+  for(const [x, z, ry, rz] of [[0, .04, .5, .22], [.02, -.06, -.7, -.2], [-.04, 0, 2.2, .18]].slice(0, n)){     // les bûches croisées, celles qu'on y a mises
     const B = M4(x, .12, z, 0, ry, Math.PI / 2 + rz);
     out.push({geo: FC_BUCHE, m: B.clone().multiply(M4(0, -.25, 0)), c: FC.buche, ombre: o});
     for(const e of [-.252, .252]) out.push({geo: FC_CERNE, m: B.clone().multiply(M4(0, e, 0)), c: FC.cerne, ombre: o});
@@ -643,7 +643,7 @@ function feuMorceaux(c){
   }
   out.push({geo: FC_BROCHE, m: M4(-.51, FC.broche, -.02, 0, 0, -Math.PI / 2), c: FC.piquet, ombre: o});            // la broche, vide
   return out;
-}
+}; }
 /* La torchère murale (image de Yo, 9 novembre 2026 : « Retire la source de lumière ») : tout en cuivre (sa teinte de métal) ;
    une plaque au mur aux bords en courbes, deux rivets ; une rosace d'où part un bras en S ; une bague, une coupe (lisse : ses
    cannelures dépassaient) au bandeau à rivets. Vide quand on l'accroche ; la torche qu'on y pose (o.torche) : celle de la torchère sur pied, un peu plus
@@ -869,9 +869,10 @@ const BUILD = {
     if(torche){ const f = new THREE.Mesh(TC_FLAMME, fireMat); f.position.set(0, TM.fond + .02 + .27 * TM.k, .12); f.scale.setScalar(TM.k); f.castShadow = false; g.add(f); }
   },
   /* Le feu de camp (dehors seulement) : un cercle de pierres, des bûches croisées, les flammes */
-  feuCamp(g, m){                                                                     // le feu de camp, sa broche vide
-    g.add(modeleBois("feuCamp", m, feuMorceaux));
-    const f = new THREE.Mesh(FC_FLAMMES, fireMat); f.castShadow = false; g.add(f);
+  feuCamp(g, m, o){                                                                  // le feu de camp, sa broche vide ; vide, ou ses bûches qui brûlent (une à trois)
+    const n = garniPose("feuCamp", o);
+    g.add(modeleBois(n ? "feuCamp" + n : "feuCampVide", m, feuMorceaux(n)));
+    if(n){ const f = new THREE.Mesh(FC_FLAMMES, fireMat); f.scale.setScalar([0, .8, .9, 1][n]); f.castShadow = false; g.add(f); }
   },
   /* La lanterne murale (cuivre, verre, une chandelle) : au mur d'une pièce ou sur une façade ; elle s'allume seule à la
      nuit tombée (nuitMat) */

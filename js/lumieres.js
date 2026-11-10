@@ -170,9 +170,21 @@ function poserBuche(o, type, k, deja, nb, refaire){
    s'éteint avec la dernière) */
 const vus = new WeakMap();
 let veille = 0;
+const vusIle = new Map();
 function bruler(place, dt){
-  if((veille -= dt) > 0 || !place || !place.b.deco) return;
+  if((veille -= dt) > 0) return;
   veille = 1;
+  if(!place){                                                       // dehors : les feux de camp de l'île
+    for(let i = 0; i < map.obj.length; i++){
+      const t = map.obj[i];
+      if(!t || !MEUBLES[t] || MEUBLES[t].support !== "buche"){ if(vusIle.has(i)) vusIle.delete(i); continue; }
+      const n = garniPose(t, state.ile[i]);
+      if(vusIle.has(i) && vusIle.get(i) !== n) setEtat(i, {});      // setEtat refait la case
+      vusIle.set(i, n);
+    }
+    return;
+  }
+  if(!place.b.deco) return;
   for(const it of place.b.deco.items) if(MEUBLES[it.type] && MEUBLES[it.type].support === "buche"){
     const n = garniPose(it.type, it);
     if(vus.has(it) && vus.get(it) !== n) refreshItemMesh(it);
@@ -265,6 +277,15 @@ if(!state.cheminees){
     if(it.eteint) it.reste = 3 * BUCHE; else it.feu = Date.now() + 3 * BUCHE * 1000;
   }
   state.cheminees = 1; save();
+}
+/* Les feux de camp d'avant (Yo, 10 novembre 2026 : vide, on y met trois bûches qui brûlent) : une fois, chaque feu de camp
+   posé sur l'île reçoit ses trois bûches, et brûle */
+if(!state.feuxCamp){
+  for(let i = 0; i < map.obj.length; i++) if(map.obj[i] === "feuCamp"){
+    const c = state.ile[i] || {}, patch = c.eteint ? {reste: 3 * BUCHE} : {feu: Date.now() + 3 * BUCHE * 1000};
+    if(objMesh(i)) setEtat(i, patch); else Object.assign(state.ile[i] || (state.ile[i] = {o: "feuCamp"}), patch);
+  }
+  state.feuxCamp = 1; save();
 }
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");
