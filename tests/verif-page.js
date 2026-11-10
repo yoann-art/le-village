@@ -848,16 +848,11 @@ export async function verifier(){
       items.splice(items.indexOf(st), 1); removeItemMesh(st.id);
       state.carnet.gibier = JSON.parse(avant);
     }
-    /* le miroir (Yo, 10 novembre 2026 : « Vrai reflet devant, à mesurer ») : la glace reflète quand le personnage est devant,
-       pas quand il est loin */
+    /* le miroir (Yo, 10 novembre 2026 : « Retire le reflet du miroir, il n'est pas beau ») : une glace peinte, sans second dessin */
     {
-      const {MIROIR} = await import("../js/monde/meubles.js"), mi = {id: 99050, type: "miroir", x: chandelle.x, z: chandelle.z - 1.2, rot: 0};
-      items.push(mi); addItemMesh(mi);
-      placePlayer(mi.x, mi.z + 6, 0, -1); await wait(400); const a0 = MIROIR.actifs; await wait(400);
-      if(MIROIR.actifs !== a0) throw new Error("le miroir reflète alors que le personnage est loin");
-      placePlayer(mi.x, mi.z + 1, 0, -1); await wait(600);
-      if(MIROIR.actifs === a0) throw new Error("devant le miroir, la glace ne reflète pas");
-      items.splice(items.indexOf(mi), 1); removeItemMesh(mi.id);
+      const {makeMeuble} = await import("../js/monde/meubles.js"), g = makeMeuble("miroir");
+      let cible = false; g.traverse(o => { if(o.isMesh && (o.onBeforeRender.toString().length > 30 || (o.material.uniforms && o.material.uniforms.tDiffuse))) cible = true; });
+      if(cible) throw new Error("le miroir reflète encore");
     }
     /* l'herbier encadré (Yo, 10 novembre 2026 : « Vide ») : au mur, six fleurs séchées, une à la fois */
     {

@@ -1051,11 +1051,9 @@ function beteEnPierre(cle, c){
 }
 /* Le miroir (image de Yo, 10 novembre 2026 : « Voici le miroir » ; « Vrai reflet devant, à mesurer ») : un miroir ovale sur pied ;
    un épais cadre ovale, deux montants un peu penchés et leurs boutons ronds là où il pivote, une traverse en arc, deux pieds en
-   arche. Le bois prend sa teinte. La glace : un vrai reflet (la pièce et le personnage, vus dans la glace) seulement quand le
-   personnage est tout près devant (MIROIR.pres) ; sinon, un reflet peint (un dégradé clair, des traits de lumière en biais).
-   Le reflet : la scène dessinée une deuxième fois, en petit (256 × 384), depuis une caméra de l'autre côté de la glace */
+   arche. Le bois prend sa teinte. La glace : un reflet peint (un dégradé clair, des traits de lumière en biais) ; le vrai reflet
+   (v2.1.206) retiré à la demande de Yo (« Retire le reflet du miroir, il n'est pas beau ») */
 const MI = {cy: .92, rx: .27, ry: .44, z: .02, pied: .42};
-export const MIROIR = {joueur: null, pres: 2.2, actifs: 0};   // le personnage (main.js) ; à moins de pres, la glace reflète
 const MI_CADRE = new THREE.TorusGeometry(1, .16, 10, 40);
 const MI_GLACE = new THREE.CircleGeometry(1, 40);
 const MI_MONTANT = boiteRonde(.1, .82, .12, .04, 2), MI_BOUTON = new THREE.SphereGeometry(.05, 12, 8), MI_RONDELLE = new THREE.CylinderGeometry(.06, .06, .05, 14).rotateZ(Math.PI / 2);
@@ -1073,56 +1071,17 @@ function miroirMorceaux(c){
   out.push({geo: MI_ARC, m: M4(0, .1, 0, 0, 0, 0, 1.1, .5, 1.2), c, ombre: o});                               // la traverse en arc
   return out;
 }
-const MI_VS = `uniform mat4 textureMatrix; varying vec4 vProj; varying vec2 vUv;
-void main(){ vUv = uv; vProj = textureMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-const MI_FS = `uniform sampler2D tDiffuse; uniform float uActif; varying vec4 vProj; varying vec2 vUv;
+const MI_VS = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const MI_FS = `varying vec2 vUv;
 void main(){
   float s = fract((vUv.x + vUv.y) * 1.3);
   float trait = (smoothstep(.0, .03, s) - smoothstep(.1, .14, s)) * .45 + (smoothstep(.25, .27, s) - smoothstep(.31, .33, s)) * .3;
-  vec3 peint = mix(vec3(.5, .62, .7), vec3(.72, .82, .88), vUv.y) + trait * .7;
-  vec3 reflet = texture2DProj(tDiffuse, vProj).rgb * .9 + vec3(.03, .05, .07) + trait * .2;
-  gl_FragColor = vec4(mix(peint, reflet, uActif), 1.0);
+  gl_FragColor = vec4(mix(vec3(.5, .62, .7), vec3(.72, .82, .88), vUv.y) + trait * .7, 1.0);
 }`;
-let enReflet = false;
-const RF = {plan: new THREE.Plane(), normale: new THREE.Vector3(), pos: new THREE.Vector3(), cam: new THREE.Vector3(), rot: new THREE.Matrix4(), regard: new THREE.Vector3(),
-  vue: new THREE.Vector3(), cible: new THREE.Vector3(), clip: new THREE.Vector4(), q: new THREE.Vector4(), virt: new THREE.PerspectiveCamera()};
+const matGlace = new THREE.ShaderMaterial({vertexShader: MI_VS, fragmentShader: MI_FS});
 function glaceMiroir(){
-  const cible = new THREE.WebGLRenderTarget(256, 384, {minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat});
-  const mat = new THREE.ShaderMaterial({uniforms: {tDiffuse: {value: cible.texture}, textureMatrix: {value: new THREE.Matrix4()}, uActif: {value: 0}}, vertexShader: MI_VS, fragmentShader: MI_FS});
-  const glace = new THREE.Mesh(MI_GLACE, mat);
+  const glace = new THREE.Mesh(MI_GLACE, matGlace);
   glace.scale.set(MI.rx, MI.ry, 1); glace.position.set(0, MI.cy, MI.z); glace.castShadow = false; glace.receiveShadow = false;
-  glace.userData.cible = cible;
-  glace.onBeforeRender = (renderer, scene, camera) => {
-    const u = mat.uniforms;
-    glace.getWorldPosition(RF.pos);
-    const j = MIROIR.joueur, pres = j && !enReflet && Math.hypot(j.position.x - RF.pos.x, j.position.z - RF.pos.z) < MIROIR.pres;
-    RF.rot.extractRotation(glace.matrixWorld); RF.normale.set(0, 0, 1).applyMatrix4(RF.rot);
-    RF.cam.setFromMatrixPosition(camera.matrixWorld);
-    if(!pres || RF.vue.subVectors(RF.pos, RF.cam).dot(RF.normale) > 0){ u.uActif.value = 0; return; }   // loin, ou vu de dos : le reflet peint
-    /* la caméra virtuelle : le reflet de la caméra dans la glace (comme le Reflector de three.js) */
-    RF.vue.reflect(RF.normale).negate().add(RF.pos);
-    RF.rot.extractRotation(camera.matrixWorld);
-    RF.regard.set(0, 0, -1).applyMatrix4(RF.rot).add(RF.cam);
-    RF.cible.subVectors(RF.pos, RF.regard).reflect(RF.normale).negate().add(RF.pos);
-    const v = RF.virt;
-    v.position.copy(RF.vue); v.up.set(0, 1, 0).applyMatrix4(RF.rot).reflect(RF.normale); v.lookAt(RF.cible);
-    v.far = camera.far; v.updateMatrixWorld(); v.projectionMatrix.copy(camera.projectionMatrix);
-    u.textureMatrix.value.set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1).multiply(v.projectionMatrix).multiply(v.matrixWorldInverse).multiply(glace.matrixWorld);
-    /* coupé au plan de la glace (ce qui est derrière elle n'apparaît pas) */
-    RF.plan.setFromNormalAndCoplanarPoint(RF.normale, RF.pos).applyMatrix4(v.matrixWorldInverse);
-    RF.clip.set(RF.plan.normal.x, RF.plan.normal.y, RF.plan.normal.z, RF.plan.constant);
-    const P = v.projectionMatrix.elements;
-    RF.q.x = (Math.sign(RF.clip.x) + P[8]) / P[0]; RF.q.y = (Math.sign(RF.clip.y) + P[9]) / P[5]; RF.q.z = -1; RF.q.w = (1 + P[10]) / P[14];
-    RF.clip.multiplyScalar(2 / RF.clip.dot(RF.q));
-    P[2] = RF.clip.x; P[6] = RF.clip.y; P[10] = RF.clip.z + 1; P[14] = RF.clip.w;
-    /* la scène dessinée dans la glace : sans elle, sans refaire les ombres */
-    const avant = renderer.getRenderTarget(), ombres = renderer.shadowMap.autoUpdate, info = renderer.info.render, d0 = info.calls, t0 = info.triangles;
-    enReflet = true; glace.visible = false; renderer.shadowMap.autoUpdate = false;
-    renderer.setRenderTarget(cible); renderer.state.buffers.depth.setMask(true); renderer.clear(); renderer.render(scene, v);
-    renderer.setRenderTarget(avant); renderer.shadowMap.autoUpdate = ombres; glace.visible = true; enReflet = false;
-    info.calls += d0; info.triangles += t0;                            // le compteur de performance compte aussi le reflet (render() remet ses chiffres à zéro)
-    u.uActif.value = 1; MIROIR.actifs++;
-  };
   return glace;
 }
 /* Le bouquet (image de Yo, 10 novembre 2026 : « Voici le bouquet » ; « Couché sur le côté ») : des fleurs de l'île, comme
@@ -1477,7 +1436,7 @@ const BUILD = {
   },
   herbier(g, m, o){ const l = (o && o.fleurs) || []; g.add(modeleBois("herbier" + l.join(","), m, herbierMorceaux(l))); },   // ses fleurs séchées (une forme par herbier)
   bouquet(g){ g.add(modeleBois("bouquet", 0, bouquetMorceaux)); },   // couché, ses couleurs à lui
-  miroir(g, m){ g.add(modeleBois("miroir", m, miroirMorceaux), glaceMiroir()); },   // le cadre et le pied (un dessin), la glace qui reflète
+  miroir(g, m){ g.add(modeleBois("miroir", m, miroirMorceaux), glaceMiroir()); },   // le cadre et le pied (un dessin), la glace peinte
   rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)
   grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
   etabli(g, m){

@@ -83,7 +83,7 @@ export const MEUBLES = {
   aquariumMoyen: {nom:"Aquarium", emoji:"🐟", gabarit:"moyen", w:1.2, d:.55, support:"poisson", dans:"dans l'aquarium", nb:3},   // un bac sur un meuble ; trois poissons, un à la fois (Yo, 10 novembre 2026)
   herbier:  {nom:"Herbier encadré", emoji:"🖼️", gabarit:"petit", w:.7, d:.5, mur:true, support:"fleur", dans:"dans l'herbier", nb:6},   // au mur, vide ; six fleurs séchées, une à une (Yo, 10 novembre 2026)
   bouquet:  {nom:"Bouquet", emoji:"💐", gabarit:"petit", w:.6, d:.4, dessus:true},   // couché sur le côté, au sol ou sur une table (Yo, 10 novembre 2026)
-  miroir:   {nom:"Miroir", emoji:"🪞", gabarit:"moyen", w:.9, d:.45},   // un miroir ovale sur pied ; un vrai reflet quand on est devant (Yo, 10 novembre 2026)
+  miroir:   {nom:"Miroir", emoji:"🪞", gabarit:"moyen", w:.9, d:.45},   // un miroir ovale sur pied, sa glace peinte (le vrai reflet retiré : Yo, 10 novembre 2026)
   rideau:   {nom:"Rideau", emoji:"🪟", gabarit:"moyen", w:1.3, d:.5, mur:true, fenetre:true},   // seulement aux fenêtres ; s'ouvre et se ferme, fermé il assombrit la pièce (Yo, 10 novembre 2026)
   /* Plans de travail (plan:true) : un par bâtiment, construit avec des ressources (ATELIERS, cost)
      depuis le haut du catalogue, posé où l'on veut dans sa pièce, jamais rangé */
