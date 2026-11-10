@@ -1188,11 +1188,20 @@ const AQ_VERRE = lathe([[0, AQ.socle + .015], ...AQ_PROFIL(AQ.r, 1.0), [.14, .56
 const AQ_EAU = lathe([[0, AQ.socle + .02], ...AQ_PROFIL(AQ.r - .012, Math.asin((AQ.eau - AQ.cy) / ((AQ.r - .012) * .92))), [0, AQ.eau]], 28);
 const AQ_PLATEAU = lathe([[0, .1], [.21, .1], [.225, .108], [.228, .12], [.218, AQ.socle], [0, AQ.socle]], 24);
 const AQ_PIED = boiteRonde(.05, .11, .05, .02, 1), AQ_GALET = new THREE.SphereGeometry(1, 7, 5);
-const matEau = toon({color: 0x5EB6E2, transparent: true, opacity: .5, depthWrite: false});
-const matBocal = toon({color: 0xE4F4FA, transparent: true, opacity: .22, depthWrite: false, side: THREE.DoubleSide});
+/* Yo (10 novembre 2026 : « on voit mal les poissons ; il faut aussi que l'eau soit plus claire ») : l'eau, un voile bleu très
+   léger ; le verre plus fin ; les poissons, les plantes et les galets éclairés comme dans un aquarium (leurs couleurs pleines,
+   sans l'ombre de la pièce : MAT_AQUA), les poissons dessinés après l'eau et le verre (ils gardent leurs couleurs) */
+const matEau = toon({color: 0xB4E2F2, transparent: true, opacity: .18, depthWrite: false});
+const matBocal = toon({color: 0xEEF8FC, transparent: true, opacity: .1, depthWrite: false, side: THREE.DoubleSide});
+const MAT_AQUA = new THREE.MeshBasicMaterial({vertexColors: true});
+const MAT_POISSON_AQUA = new THREE.MeshBasicMaterial({vertexColors: true, transparent: true, side: THREE.DoubleSide});
 function aquariumMorceaux(c){
   const o = ombreBois(0, .6), out = [{geo: AQ_PLATEAU, m: M4(0, 0, 0), c, ombre: o}];
   for(const [x, z] of [[.13, .13], [-.13, .13], [.13, -.13], [-.13, -.13]]) out.push({geo: AQ_PIED, m: M4(x, .055, z), c, ombre: o});
+  return out;
+}
+const AQ_DECOR = (() => {                                            // les galets et la plante du petit aquarium (éclairés)
+  const out = [{geo: new THREE.CylinderGeometry(.12, .07, .04, 16), m: M4(0, AQ.socle + .04, 0), c: 0xE2CDA0}];   // le lit de sable clair
   /* les galets : un lit clair, quelques gris, deux gros */
   for(let k = 0; k < 30; k++){ const a = k * 2.4, y = AQ.socle + .05 + (k % 4) * .008, rmax = AQ.r * .98 * Math.cos(Math.asin(Math.max(-1, (y - AQ.cy) / (AQ.r * .92)))) - .02,
       r = (.15 + (k % 7) / 7 * .85) * rmax, s = k % 9 === 0 ? .026 : .013 + (k % 3) * .004;   // dans le fond rond du bocal
@@ -1201,8 +1210,8 @@ function aquariumMorceaux(c){
   const T = (x, y, z, rx, rz, l) => out.push({geo: AQ_GALET, m: M4(x, y, z, rx, 0, rz, .012, l, .006), c: 0x6EAA3A});
   for(const [x, z] of [[-.05, .02], [-.03, -.02]]){ T(x, AQ.socle + .12, z, 0, 0, .08);
     for(let k = 0; k < 4; k++){ const y = AQ.socle + .07 + k * .035, s = k % 2 ? 1 : -1; T(x + s * .025, y, z, 0, s * .9, .03); } }
-  return out;
-}
+  return fusionner(out);
+})();
 /* Un poisson allégé pour les aquariums : les sommets proches fondus en un (une grille de CASES cases sur sa longueur), ses
    formes et ses couleurs gardées, dix fois moins de triangles (ses modèles font 5 000 à 20 000 triangles) ; en cache */
 const LEGERS = new Map();
@@ -1237,7 +1246,7 @@ function poissonLeger(k, robe){
     LEGERS.set(cle, m);
   }
   const g = new THREE.Group();
-  for(const {geo, mat} of LEGERS.get(cle)){ const me = new THREE.Mesh(geo, mat); me.castShadow = false; g.add(me); }
+  for(const {geo} of LEGERS.get(cle)){ const me = new THREE.Mesh(geo, MAT_POISSON_AQUA); me.castShadow = false; me.renderOrder = 3; g.add(me); }   // éclairé, devant l'eau
   return g;
 }
 /* Le poisson de l'aquarium : son modèle allégé, petit, qui tourne dans le bocal */
@@ -1288,7 +1297,11 @@ function aquariumMoyenMorceaux(c){
   for(const y of [y0, y1]) for(const z of [-hz, hz]) Mx(AM_ARETE_X, 0, y, z, 0xE8F2F4);
   for(const y of [y0, y1]) for(const x of [-hx, hx]) Mx(AM_ARETE_Z, x, y, 0, 0xE8F2F4);
   for(const x of [-hx, hx]) for(const z of [-hz, hz]) Mx(AM_ARETE_Y, x, (y0 + y1) / 2, z, 0xE8F2F4);
-  /* les galets, les pierres */
+  return out;
+}
+const AM_DECOR = (() => {                                            // les galets, les pierres, les plantes de l'aquarium moyen (éclairés)
+  const out = [], y0 = AM.bas, Mx = (geo, x, y, z, cc, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => out.push({geo, m: M4(x, y, z, rx, ry, rz, sx, sy, sz), c: cc});
+  out.push({geo: new THREE.BoxGeometry(AM.l - .03, .03, AM.p - .03), m: M4(0, y0 + .02, 0), c: 0xE2CDA0});   // le lit de sable clair
   for(let k = 0; k < 60; k++){ const x = ((k * 37) % 100) / 100 * (AM.l - .1) - (AM.l - .1) / 2, z = ((k * 61) % 100) / 100 * (AM.p - .1) - (AM.p - .1) / 2, s = .018 + (k % 3) * .004;
     Mx(AQ_GALET, x, y0 + .03 + (k % 3) * .006, z, [0xE8D2A8, 0xD8B888, 0xF0E0C0][k % 3], 0, k, 0, s, s * .75, s); }
   for(const [x, z, s] of [[-.28, -.04, .09], [-.16, .06, .06], [.3, -.05, .075]]) Mx(AQ_GALET, x, y0 + .04, z, 0x8A8480, 0, x * 9, 0, s, s * .75, s);
@@ -1297,8 +1310,8 @@ function aquariumMoyenMorceaux(c){
     for(let j = 0; j < 4; j++) Mx(AQ_GALET, x + Math.sin(j * 1.6 + k) * .02, y0 + .07 + j * h / 4, -.08, 0x5E9A34, 0, 0, Math.sin(j + k) * .4, .014, h / 7, .006); }
   for(let j = 0; j < 7; j++) Mx(AQ_GALET, .04 + (j % 2 ? .03 : -.03), y0 + .08 + j * .02, -.02, 0x7AB84A, 0, 0, 0, .016, .016, .008);
   for(let j = 0; j < 6; j++){ const s = j % 2 ? 1 : -1; Mx(AQ_GALET, .4 + s * .04, y0 + .1 + j * .035, -.1, 0x6EAA3A, 0, 0, s * .8, .022, .05, .008); }
-  return out;
-}
+  return fusionner(out);
+})();
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1419,14 +1432,14 @@ const BUILD = {
     });
   },
   aquarium(g, m, o){                                                                 // le bocal, l'eau, et le poisson qu'on y a mis
-    g.add(modeleBois("aquarium", m, aquariumMorceaux));
+    g.add(modeleBois("aquarium", m, aquariumMorceaux), new THREE.Mesh(AQ_DECOR, MAT_AQUA));   // le socle ; les galets et la plante, éclairés
     const e = new THREE.Mesh(AQ_EAU, matEau); e.renderOrder = 1; e.castShadow = false; g.add(e);
     const v = new THREE.Mesh(AQ_VERRE, matBocal); v.renderOrder = 2; v.castShadow = false; g.add(v);
     const p = o && o.poisson ? poissonAquarium(o.poisson, o.robe) : null;
     if(p) g.add(p);
   },
   aquariumMoyen(g, m, o){                                                            // le meuble, le bac, l'eau, et ses poissons
-    g.add(modeleBois("aquariumMoyen", m, aquariumMoyenMorceaux));
+    g.add(modeleBois("aquariumMoyen", m, aquariumMoyenMorceaux), new THREE.Mesh(AM_DECOR, MAT_AQUA));   // le meuble ; le fond du bac, éclairé
     const e = new THREE.Mesh(AM_EAU, matEau); e.position.y = (AM.bas + AM.eau) / 2; e.renderOrder = 1; e.castShadow = false; g.add(e);
     const v = new THREE.Mesh(AM_VERRE, matBocal); v.position.y = (AM.bas + AM.haut) / 2; v.renderOrder = 2; v.castShadow = false; g.add(v);
     (o && o.poissons || []).slice(0, 3).forEach((cle, j) => {
