@@ -178,7 +178,7 @@ function planter(o, type, k, refaire){
   if(nb > 1){                                                       // le vase : un bouquet, une fleur coupée après l'autre
     o.fleurs = [...(o.fleurs || []), k]; refaire({fleurs: o.fleurs});
     syncBarre(); save(); renderHUD();
-    toast(`🌸 ${f.nom} ${f.une ? "mise" : "mis"} ${MEUBLES[type].dans} (${o.fleurs.length} sur ${nb})${o.fleurs.length >= nb ? " : le bouquet est fait" : ""}`, 3000);
+    toast(`🌸 ${f.nom} ${f.une ? "mise" : "mis"} ${MEUBLES[type].dans} (${o.fleurs.length} sur ${nb})${o.fleurs.length >= nb ? (type === "herbier" ? " : l'herbier est complet, ses fleurs y resteront séchées" : " : le bouquet est fait") : ""}`, 3000);
     return true;
   }
   o.fleur = k; refaire({fleur: k});

@@ -38,7 +38,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1179,6 +1179,45 @@ function bouquetMorceaux(){
   for(const p of out) p.m = C.clone().multiply(p.m);
   return out;
 }
+/* L'herbier encadré (image de Yo, 10 novembre 2026 : « Voici l'herbier encadré » ; « Vide ») : au mur ; un cadre de bois épais
+   aux coins arrondis, un fond de papier crème, une corde tressée à une cheville ronde. Vide quand on l'accroche ; on y pose
+   jusqu'à six fleurs cueillies, une à une (o.fleurs), séchées en relief, chacune sa tige, deux feuilles et sa petite étiquette,
+   deux rangées de trois. Le cadre prend la teinte de son bois ; les fleurs gardent leurs couleurs. Le mur est à z −.25 */
+const HB = {cy: 1.32, l: .62, z: -.21, papier: 0xEEDDB4};
+const HB_MONTANT = boiteRonde(.075, HB.l, .06, .03, 2), HB_TRAVERSE = boiteRonde(HB.l, .075, .06, .03, 2);
+const HB_BOULE = new THREE.SphereGeometry(1, 7, 5), HB_CORDE = new THREE.CylinderGeometry(.009, .009, 1, 6).translate(0, .5, 0);
+const HB_PLACES = [[-.17, .1], [0, .1], [.17, .1], [-.17, -.13], [0, -.13], [.17, -.13]];
+function fleurSechee(out, k, x, y, o){
+  const f = FLEURS[k];
+  if(!f) return;
+  const z = HB.z + .04, c = f.couleurs[0], V = (a, b, d) => new THREE.Vector3(a, b, d);
+  const B = (px, py, sx, sy, rz, col, pz = z) => out.push({geo: HB_BOULE, m: M4(px, py, pz, 0, 0, rz, sx, sy, .006), c: col, ombre: o});
+  out.push({geo: new THREE.BoxGeometry(.006, .1, .006), m: M4(x, y - .02, z), c: 0x6E8A3A, ombre: o});                 // la tige
+  for(const s of [-1, 1]) B(x + s * .022, y - .045, .028, .01, s * .6, 0x6E8A3A);                                      // deux feuilles
+  out.push({geo: new THREE.BoxGeometry(.08, .022, .004), m: M4(x, y - .085, z - .006), c: 0xE8D2A0, ombre: o});         // l'étiquette
+  out.push({geo: new THREE.BoxGeometry(.045, .003, .003), m: M4(x, y - .085, z - .003), c: 0x6A5040, ombre: o});        // son écriture
+  const h = y + .04;
+  if(f.forme === "coupe") for(let a = 0; a < 4; a++){ const t = a / 4 * Math.PI * 2 + .4; B(x + Math.cos(t) * .022, h + Math.sin(t) * .022, .026, .022, t, c); }
+  else if(f.forme === "boule"){ B(x, h, .03, .03, 0, c); for(let a = 0; a < 10; a++){ const t = a / 10 * Math.PI * 2; B(x + Math.cos(t) * .03, h + Math.sin(t) * .03, .014, .006, t, c); } }
+  else if(f.forme === "epi") for(let a = 0; a < 5; a++) B(x, h - .02 + a * .014, .012, .01, 0, c);
+  else if(f.forme === "clochette"){ for(let a = 0; a < 3; a++) B(x + .018, h + .01 - a * .022, .009, .011, 0, c); }
+  else for(let a = 0; a < 11; a++){ const t = a / 11 * Math.PI * 2; B(x + Math.cos(t) * .022, h + Math.sin(t) * .022, .02, .007, t, c); }   // en étoile
+  if(f.forme !== "epi" && f.forme !== "clochette") B(x, h, .011, .011, 0, f.coeur || c, z + .003);                       // son cœur (le pissenlit : tout jaune)
+}
+function herbierMorceaux(fleurs){ return c => {
+  const o = ombreBois(HB.cy - .35, HB.cy + .45), out = [], d = HB.l / 2 - .0375;
+  for(const s of [-1, 1]) out.push({geo: HB_MONTANT, m: M4(s * d, HB.cy, HB.z), c, ombre: o}, {geo: HB_TRAVERSE, m: M4(0, HB.cy + s * d, HB.z), c, ombre: o});
+  out.push({geo: new THREE.BoxGeometry(HB.l - .1, HB.l - .1, .012), m: M4(0, HB.cy, HB.z - .012), c: HB.papier, ombre: o});   // le papier
+  /* la corde à la cheville */
+  out.push({geo: HB_BOULE, m: M4(0, HB.cy + .44, -.23, 0, 0, 0, .032, .032, .03), c, ombre: o});
+  for(const s of [-1, 1]){
+    const a = new THREE.Vector3(s * .17, HB.cy + d + .03, HB.z - .01), b = new THREE.Vector3(0, HB.cy + .43, -.21), dv = b.clone().sub(a);
+    out.push({geo: HB_CORDE, m: new THREE.Matrix4().compose(a, new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dv.clone().normalize()), new THREE.Vector3(1, dv.length(), 1)), c: 0xD8A868, ombre: o});
+    out.push({geo: HB_BOULE, m: M4(s * .17, HB.cy + d + .03, HB.z, 0, 0, 0, .022, .022, .02), c, ombre: o});
+  }
+  fleurs.slice(0, 6).forEach((k, j) => fleurSechee(out, k, HB_PLACES[j][0], HB.cy + HB_PLACES[j][1], o));
+  return out;
+}; }
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1298,6 +1337,7 @@ const BUILD = {
       f.position.y = VS.col; f.rotation.set(p, a, 0, "YXZ"); f.scale.setScalar(.55); g.add(f);
     });
   },
+  herbier(g, m, o){ const l = (o && o.fleurs) || []; g.add(modeleBois("herbier" + l.join(","), m, herbierMorceaux(l))); },   // ses fleurs séchées (une forme par herbier)
   bouquet(g){ g.add(modeleBois("bouquet", 0, bouquetMorceaux)); },   // couché, ses couleurs à lui
   miroir(g, m){ g.add(modeleBois("miroir", m, miroirMorceaux), glaceMiroir()); },   // le cadre et le pied (un dessin), la glace qui reflète
   rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)

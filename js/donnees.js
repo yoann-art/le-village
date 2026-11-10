@@ -79,6 +79,7 @@ export const MEUBLES = {
   /* dessus : un petit objet qui se pose au sol ou sur une table (Yo, 10 novembre 2026 : « Tout ce qui peut être posé sur une table
      doit l'être » ; l'étagère, pour plus tard) */
   vase:     {nom:"Vase", emoji:"🏺", gabarit:"petit", w:.35, d:.35, dessus:true, support:"fleur", dans:"dans le vase", nb:3},   // au sol ou sur une table ; un bouquet de trois fleurs, une à la fois (Yo, 10 novembre 2026)
+  herbier:  {nom:"Herbier encadré", emoji:"🖼️", gabarit:"petit", w:.7, d:.5, mur:true, support:"fleur", dans:"dans l'herbier", nb:6},   // au mur, vide ; six fleurs séchées, une à une (Yo, 10 novembre 2026)
   bouquet:  {nom:"Bouquet", emoji:"💐", gabarit:"petit", w:.6, d:.4, dessus:true},   // couché sur le côté, au sol ou sur une table (Yo, 10 novembre 2026)
   miroir:   {nom:"Miroir", emoji:"🪞", gabarit:"moyen", w:.9, d:.45},   // un miroir ovale sur pied ; un vrai reflet quand on est devant (Yo, 10 novembre 2026)
   rideau:   {nom:"Rideau", emoji:"🪟", gabarit:"moyen", w:1.3, d:.5, mur:true, fenetre:true},   // seulement aux fenêtres ; s'ouvre et se ferme, fermé il assombrit la pièce (Yo, 10 novembre 2026)
@@ -1015,6 +1016,7 @@ export const ATELIERS = {
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
     {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2, cat:"Décoration"},
     {out:"vase", in:{pierre:3}, t:30, lvl:1, cat:"Décoration"},
+    {out:"herbier", in:{planche:2, toile:1, fibre:1}, t:30, lvl:1, cat:"Décoration"},   // le cadre, le papier, la corde (Yo, 10 novembre 2026)
     {out:"bouquet", in:{coquelicot:2, bleuet:2, paquerette:2, pissenlit:2, fibre:1}, t:20, lvl:1, cat:"Décoration"},   // les fleurs de l'île, la corde (Yo, 10 novembre 2026)   // un vase de pierres (Yo, 10 novembre 2026)
     {out:"rideau", in:{toile:2, planche:1}, t:40, lvl:1, cat:"Décoration"},   // les deux pans de toile, la tringle (Yo, 10 novembre 2026)
     {out:"vitrine", in:{planche:4, verre:2, toile:1}, t:60, lvl:1, cat:"Décoration"}   // étape 1.11 : bois et verre (Grand Carnet) ; la toile du coussin (Yo, 8 novembre 2026)
@@ -1122,7 +1124,7 @@ export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tab
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", bocalLucioles:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
   brasero:"metal", lampadaire:"metal", enclume:"metal",
-  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois"};
+  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois"};
 /* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */
 export const DEPART = {chandelier:"argent"};
 const nomBois = p => p.nom.replace(/^Bois d(e |')/, "").replace(/^./, c => c.toUpperCase());
@@ -1190,7 +1192,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

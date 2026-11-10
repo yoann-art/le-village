@@ -859,6 +859,22 @@ export async function verifier(){
       if(MIROIR.actifs === a0) throw new Error("devant le miroir, la glace ne reflète pas");
       items.splice(items.indexOf(mi), 1); removeItemMesh(mi.id);
     }
+    /* l'herbier encadré (Yo, 10 novembre 2026 : « Vide ») : au mur, six fleurs séchées, une à la fois */
+    {
+      const room = currentPlace().room, hb = {id: 99060, type: "herbier", x: 0, z: -room.d / 2 + .25, rot: 0};
+      items.push(hb); addItemMesh(hb);
+      const f0 = owned("paquerette"); sacAdd("paquerette", 6); placePlayer(hb.x, hb.z + .9, 0, -1);
+      for(let k = 1; k <= 6; k++){
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Herbier")) throw new Error(`près de l'herbier (${k - 1} fleurs), le bouton dit « ${$("#btn-torchere").textContent} »`);
+        $("#btn-torchere").click();
+        if((hb.fleurs || []).length !== k) throw new Error(`l'herbier a ${(hb.fleurs || []).length} fleurs au ${k}e appui`);
+      }
+      updateLumieres(.016, true);
+      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Herbier")) throw new Error("l'herbier complet propose encore une fleur");
+      if(owned("paquerette") !== f0) throw new Error("les fleurs de l'herbier ne sont pas prises dans le sac");
+      items.splice(items.indexOf(hb), 1); removeItemMesh(hb.id);
+    }
     /* les chaises autour d'une table (Yo, 10 novembre 2026) : deux côte à côte sur chaque grand côté, une à chaque bout, six ;
        rangées sous la table ; la septième n'a pas de place ; s'asseoir la fait reculer, se lever la range ; la table tournée
        (appui long, « Tourner ») emmène ses chaises */
@@ -3359,7 +3375,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
