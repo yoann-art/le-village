@@ -832,6 +832,43 @@ export async function verifier(){
       if(surLaTable(t, items).length !== 4) throw new Error(`${surLaTable(t, items).length} objets sur la table au lieu de 4`);
       for(const o of [...autres, t]){ items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
     }
+    /* les chaises autour d'une table (Yo, 10 novembre 2026) : deux côte à côte sur chaque grand côté, une à chaque bout, six ;
+       rangées sous la table ; la septième n'a pas de place ; s'asseoir la fait reculer, se lever la range ; la table tournée
+       (appui long, « Tourner ») emmène ses chaises */
+    {
+      const {placerDans, modifier} = await import("../js/decorer.js"), {aSaPlace, placesTable} = await import("../js/donnees.js");
+      const mis = items.splice(0);                                      // la pièce vidée le temps de l'essai
+      try {
+        const t = {id: 99020, type: "table", x: 0, z: -.5, rot: 0}; items.push(t); addItemMesh(t);
+        const cs = [];
+        for(const [k, [dx, dz]] of [[-.45, .9], [.45, .9], [-.45, -.9], [.45, -.9], [1.3, 0], [-1.3, 0], [0, 1]].entries()){
+          const c = {id: 99021 + k, type: "chaise", x: 0, z: 0, rot: 0};
+          placerDans(currentPlace(), c, t.x + dx, t.z + dz); items.push(c); addItemMesh(c); cs.push(c);
+        }
+        const assises = cs.filter(c => aSaPlace(c, t));
+        if(assises.length !== 6 || aSaPlace(cs[6], t)) throw new Error(`${assises.length} chaises à leur place autour de la table (la septième : ${aSaPlace(cs[6], t) ? "aussi" : "à côté"})`);
+        items.splice(items.indexOf(cs[6]), 1); removeItemMesh(cs[6].id); cs.pop();   // la septième ôtée : elle gênerait le geste
+        /* une chaise seule, centrée */
+        for(const c of cs.slice(0, 2)) items.splice(items.indexOf(c), 1);
+        const seule = {id: 99030, type: "chaise", x: 0, z: 0, rot: 0}; placerDans(currentPlace(), seule, t.x + .1, t.z + .9);
+        if(!aSaPlace(seule, t) || Math.abs(seule.x - t.x) > .01) throw new Error(`une chaise seule ne se centre pas sur le grand côté (${seule.x})`);
+        items.push(...cs.slice(0, 2));
+        /* s'asseoir : elle recule ; se lever : elle se range */
+        const c0 = cs[0], x0 = c0.x, z0 = c0.z;
+        placePlayer(c0.x, c0.z + .9, 0, -1); updateGestes(true);
+        if(!btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise rangée, le bouton dit « ${btnG.textContent} »`);
+        faireGeste();
+        if(posture() !== "assis" || !c0.tiree || Math.hypot(c0.x - x0, c0.z - z0) < .3) throw new Error("la chaise rangée ne recule pas pour s'asseoir");
+        updateGestes(true); faireGeste(); updateGestes(true);
+        if(posture() || c0.tiree || c0.x !== x0 || c0.z !== z0) throw new Error("levé, la chaise ne se range pas sous la table");
+        /* la table tournée emmène ses chaises */
+        modifier(currentPlace(), t); $("#deco-rot").click();
+        const toujours = cs.filter(c => aSaPlace(c, t)).length;
+        $("#deco-ok").click();
+        if(t.rot !== 1 || toujours !== 6) throw new Error(`la table tournée (${t.rot}) n'emmène pas ses chaises (${toujours} à leur place)`);
+        for(const o of [...cs, t]){ if(items.includes(o)) items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
+      } finally { items.splice(0, items.length, ...mis); }
+    }
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);

@@ -6,7 +6,7 @@
    au centimètre, décidé par Yo le 1er octobre 2026.
    La déco est gardée dans le bâtiment (b.deco), elle le suit s'il est déplacé ou agrandi. */
 import { $ } from "./outils.js";
-import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe, garniDe, garniNb, garniPose, garniRendu } from "./donnees.js";
+import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE_A, PLUS_TARD, objet, icone, REVETEMENTS, teintesDe, departDe, garniDe, garniNb, garniPose, garniRendu , placesTable, aSaPlace } from "./donnees.js";
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
@@ -24,6 +24,10 @@ let deco = null;                     // la pièce qu'on décore : {b, room}
 let sel = null;                      // le meuble choisi
 let lift = null;                     // hors du mode décoration, le meuble soulevé : {place, it, pid, x, y, x0, y0, from, last}
 let ici = null;                      // la pièce où l'on pose un coffre de réserve (voir placerDans)
+/* Modifier un objet déjà posé (Yo, 10 novembre 2026 : « quand on clique sur un objet pour le déplacer, on puisse faire la rotation
+   et changer sa couleur ; l'onglet Décoration sert uniquement pour les murs, les sols et poser un objet en stock ») : un appui
+   long hors de Décorer le choisit (seul) ; dans Décorer, seul l'objet qu'on vient de poser se modifie (nouveau) */
+let seul = false, nouveau = null;
 const cur = () => ici || deco || lift.place;   // la pièce où l'on bouge un meuble
 const items = () => cur().b.deco.items;
 
@@ -58,7 +62,7 @@ function problem(it){
   }
   if(c !== "mur" && c !== "plafond" && Math.abs(it.x - room.doorX) < (w + MAT_W)/2 && it.z + d/2 > room.d/2 - MAT_D) return "paillasson";
   for(const o of items()){
-    if(o === it) continue;
+    if(o === it || aSaPlace(it, o) || aSaPlace(o, it)) continue;     // une chaise rangée sous sa table : pas de gêne entre elles
     const co = couche(o.type), sol = c === "dessus" || c === "meuble";
     if(co !== c && !(sol && (co === "meuble" || co === "dessus") && !o.y && !it.y)) continue;   // au sol, un petit objet gêne un meuble, et l'inverse
     if(c === "dessus" && co === "dessus") continue;
@@ -83,6 +87,7 @@ function snap(v, half, lim){
 function settle(it, x, z){
   const [w, d] = footOf(it), hw = cur().room.w/2, hd = cur().room.d/2;
   const cm = v => Math.round(v * 100) / 100;
+  if(it.type === "chaise"){ const p = placeLibre(it, x, z); if(p){ it.x = p.x; it.z = p.z; it.rot = p.rot; return; } }   // près d'une table : à une place, rangée
   if(MEUBLES[it.type].dessus){                                      // un petit objet : au quart de P près ; sur une table, à sa hauteur
     it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, Math.round(x * 4) / 4)));
     it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, Math.round(z * 4) / 4)));
@@ -114,6 +119,24 @@ function fenetreSuivante(it){
   for(let k = 1; k < n; k++){ surFenetre(it, fenetresPiece[(k0 + k) % n]); if(!problem(it)) return true; }
   Object.assign(it, avant);
   return false;
+}
+/* La place libre autour d'une table la plus proche de (x, z), à moins de .7 ; une place est prise si une autre chaise la touche
+   (la place du milieu et les deux côte à côte se gênent : une chaise centrée, ou deux) */
+function placeLibre(ch, x, z){
+  const libres = [];
+  for(const t of items()) for(const p of placesTable(t)){
+    const d = Math.hypot(p.x - x, p.z - z);
+    if(d < .7 && !items().some(o => o !== ch && o.type === "chaise" && Math.abs(o.x - p.x) < .69 && Math.abs(o.z - p.z) < .69)) libres.push([d, p]);
+  }
+  libres.sort((a, b) => a[0] - b[0]);
+  return libres.length ? libres[0][1] : null;
+}
+/* Les chaises rangées sous une table la suivent quand elle bouge ou tourne : à la même place autour d'elle */
+const chaisesDe = t => MEUBLES[t.type].places ? items().filter(o => aSaPlace(o, t)).map(ch => ({ch, p: placesTable(t).find(p => Math.abs(p.x - ch.x) < .02 && Math.abs(p.z - ch.z) < .02)})) : [];
+function suivre(t, chaises){
+  if(!chaises || !chaises.length) return;
+  const ps = placesTable(t);
+  for(const {ch, p} of chaises){ const q = ps.find(v => v.lx === p.lx && v.lz === p.lz && v.dr === p.dr); if(q){ ch.x = q.x; ch.z = q.z; ch.rot = q.rot; placeItemMesh(ch); } }
 }
 /* La place libre la plus proche du milieu de la pièce */
 function findSpot(it){
@@ -160,9 +183,10 @@ function showPlate(it){
 }
 function showSel(){
   $("#deco-sel").hidden = !sel;
+  $("#deco-ok").hidden = !seul; $("#deco-cat-row").hidden = seul;
   $("#deco-store").hidden = !!(sel && (MEUBLES[sel.type].plan || sel.reserve));   // un plan de travail, un coffre de réserve ne se rangent pas ici
   const pb = showPlate(sel);
-  if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
+  if(!sel){ hint(seul ? "" : "« ➕ Meubles » pour poser un objet ; pour en déplacer un déjà posé, un appui long dessus, hors de Décorer"); return; }
   if(sel.reserve && !pb){ hint("🗃️ Coffre de réserve : glisse-le du doigt. Pour l'emporter, ouvre-le : « Déplacer le coffre »"); return; }
   const m = MEUBLES[sel.type], la = m.une ? "la" : "le";
   hint(pb ? WHY[pb] : m.dessus ? `${m.emoji} ${m.nom} : glisse-${la} du doigt, au sol ou sur une table` : m.fenetre ? `${m.emoji} ${m.nom} : glisse-${la} d'une fenêtre à l'autre ; « Tourner » ${la} passe à la fenêtre suivante`
@@ -174,7 +198,7 @@ function showSel(){
 export function startDeco(){
   const place = currentPlace();
   if(!place || deco) return;
-  deco = place; pose = null;
+  deco = place; pose = null; seul = false; nouveau = null;
   if(!deco.b.deco) deco.b.deco = {items: [], next: 1};
   if(!deco.b.deco.sol) deco.b.deco.sol = {};
   if(!deco.b.deco.murs) deco.b.deco.murs = {};
@@ -185,10 +209,26 @@ export function startDeco(){
   $("#actions").hidden = true; $("#joy").hidden = true; $("#deco-bar").hidden = false;
   sel = null; showSel();
 }
+/* Un appui long sur un objet posé (hors de Décorer) : il est choisi, la barre Tourner, Couleur, Ranger, Poser apparaît ; le doigt
+   qui l'a choisi peut déjà le faire glisser */
+export function modifier(place, it, pid, cx, cy){
+  if(deco || !place) return;
+  deco = place; seul = true; pose = null; sel = it; nouveau = null;
+  if(!deco.b.deco.sol) deco.b.deco.sol = {};
+  if(!deco.b.deco.murs) deco.b.deco.murs = {};
+  view.target.set(0, 0, 0); view.width = place.room.w + 1;
+  resetJoy();
+  $("#actions").hidden = true; $("#joy").hidden = true; $("#deco-bar").hidden = false;
+  if(pid !== undefined) drag = {pid, rel: true, x0: cx, y0: cy, from: {x: it.x, z: it.z}, last: {x: it.x, z: it.z, y: it.y}, chaises: chaisesDe(it)};
+  raiseItemMesh(it.id, (it.y || 0) + .08); jouer("meuble");
+  showSel();
+}
+export const modifiant = () => seul;
 export function finishDeco(){
   if(!deco) return;
+  if(sel) raiseItemMesh(sel.id, sel.y || 0);
   drag = null; sel = null; plate.visible = false; pose = null; peint = null;
-  deco = null;
+  deco = null; seul = false; nouveau = null;
   $("#deco-bar").hidden = true;
   $("#place-hint").hidden = true; $("#place-hint").classList.remove("bad");
   $("#actions").hidden = false; $("#joy").hidden = false;
@@ -262,7 +302,7 @@ export function addMeuble(type){
   }
   else if(craftable(type)) addOwned(type, -1);                         // pris dans le sac, ou dans un coffre
   items().push(it); addItemMesh(it); jouer("meuble");
-  sel = it; showSel(); save();
+  sel = it; nouveau = it.id; showSel(); save();
 }
 /* Ce qui s'accroche au mur : « Tourner » le fait passer au mur suivant (le fond, la droite, la gauche), à la place
    libre la plus proche du milieu de ce mur (demande de Yo, 12 octobre 2026) */
@@ -288,10 +328,11 @@ $("#deco-rot").addEventListener("click", () => {
     placeItemMesh(sel); showSel(); save(); return;
   }
   if(surLaTable(sel).length){ showSel(); hint(WHY.charge, true); return; }
-  const before = {x: sel.x, z: sel.z, rot: sel.rot, y: sel.y};
+  const before = {x: sel.x, z: sel.z, rot: sel.rot, y: sel.y}, chaises = chaisesDe(sel);
   sel.rot = (sel.rot + 1) % 4;
   settle(sel, sel.x, sel.z);
-  if(problem(sel)){ Object.assign(sel, before); showSel(); hint("Pas la place de le tourner ici", true); return; }
+  suivre(sel, chaises);
+  if(problem(sel)){ Object.assign(sel, before); suivre(sel, chaises); showSel(); hint("Pas la place de le tourner ici", true); return; }
   placeItemMesh(sel); showSel(); save();
 });
 $("#deco-store").addEventListener("click", () => {
@@ -313,6 +354,7 @@ $("#deco-store").addEventListener("click", () => {
   else if(garni){ addOwned(garni, nG); ou += ", et " + leGarni; }        // ce qui est posé dessus aussi
   toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`, 2400, "ranger");
   sel = null; showSel(); save();
+  if(seul) finishDeco();                                             // l'objet rangé : plus rien à modifier
 });
 /* ----- Couleurs : du meuble choisi, ou des murs et du sol de la pièce (palette gratuite) ----- */
 const hexCss = n => "#" + n.toString(16).padStart(6, "0");
@@ -417,6 +459,7 @@ wrap.addEventListener("click", e => {
 });
 
 $("#deco-done").addEventListener("click", finishDeco);
+$("#deco-ok").addEventListener("click", finishDeco);
 $("#btn-deco").addEventListener("click", startDeco);
 
 /* ----- Le doigt : en décoration, toucher un meuble le choisit, le faire glisser le déplace ;
@@ -426,9 +469,9 @@ let drag = null;                     // {pid, ox, oz, last} : écart doigt-meubl
 let press = null;                    // appui long en cours sur un meuble : {id, pid, x, y, sx, sy, timer}
 function endDrag(){
   if(!drag) return;
-  if(problem(sel)){ sel.x = drag.last.x; sel.z = drag.last.z; if(drag.last.y) sel.y = drag.last.y; else delete sel.y; placeItemMesh(sel); }   // place refusée : il revient
+  if(problem(sel)){ sel.x = drag.last.x; sel.z = drag.last.z; if(drag.last.y) sel.y = drag.last.y; else delete sel.y; placeItemMesh(sel); suivre(sel, drag.chaises); }   // place refusée : il revient (et ses chaises)
   if(drag.bouge) jouer("meuble");                                 // le meuble déplacé est reposé
-  drag = null; showSel(); save();
+  drag = null; if(sel) raiseItemMesh(sel.id, (sel.y || 0) + (seul ? .08 : 0)); showSel(); save();
 }
 function cancelPress(){ if(press){ clearTimeout(press.timer); press = null; } }
 function startLift(){
@@ -439,14 +482,9 @@ function startLift(){
   ici = place;
   const charge = surLaTable(it).length;
   ici = null;
-  if(charge){ toast(`${MEUBLES[it.type].emoji} ${WHY.charge}`, 2200); return; }   // une table chargée reste en place
   try{ if(navigator.vibrate) navigator.vibrate(30); }catch(_){}
-  lift = {place, it, pid, x, y, x0: x, y0: y, from: {x: it.x, z: it.z}, last: {x: it.x, z: it.z, y: it.y}};
-  view.target.set(0, 0, 0); view.width = place.room.w + 1;
-  resetJoy();
-  $("#actions").hidden = true; $("#joy").hidden = true;
-  raiseItemMesh(it.id, (it.y || 0) + .15); jouer("meuble");               // le meuble soulevé (Yo : le même son que pour le poser)
-  showLift();
+  if(!charge){ modifier(place, it, pid, x, y); return; }            // il se modifie : glisser, tourner, couleur, ranger
+  modifier(place, it); hint(`${MEUBLES[it.type].emoji} ${WHY.charge}`, true);   // une table chargée : la couleur seulement
 }
 function showLift(){
   const m = MEUBLES[lift.it.type], pb = showPlate(lift.it);
@@ -486,10 +524,13 @@ canvas.addEventListener("pointerdown", e => {
     return;
   }
   const id = pickItem(aim(e.clientX, e.clientY));
-  const it = id !== null ? items().find(v => v.id === id) : null;
+  let it = id !== null ? items().find(v => v.id === id) : null;
+  if(it && !seul && it.id !== nouveau){ sel = null; showSel(); hint(`Pour déplacer ${MEUBLES[it.type].une ? "la" : "le"} ${MEUBLES[it.type].nom.toLowerCase()} : touche « Terminé », puis un appui long dessus`); return; }
+  if(seul && it !== sel) it = null;                                  // on modifie un seul objet : le doigt ailleurs ne choisit rien
+  if(!it && seul) return;
   sel = it || null;
   if(it && surLaTable(it).length){ showSel(); hint(`${MEUBLES[it.type].emoji} ${WHY.charge}`, true); return; }   // une table chargée reste en place
-  if(it && groundAt(e.clientX, e.clientY, hit)) drag = {pid: e.pointerId, ox: it.x - hit.x, oz: it.z - hit.z, last: {x: it.x, z: it.z}, y: it.y};
+  if(it && groundAt(e.clientX, e.clientY, hit)) drag = {pid: e.pointerId, ox: it.x - hit.x, oz: it.z - hit.z, last: {x: it.x, z: it.z, y: it.y}, chaises: chaisesDe(it)};
   showSel();
 });
 canvas.addEventListener("pointermove", e => {
@@ -500,8 +541,11 @@ canvas.addEventListener("pointermove", e => {
   if(lift && e.pointerId === lift.pid){ lift.x = e.clientX; lift.y = e.clientY; updateLift(); }
   if(peint && e.pointerId === peint.pid && pose){ const c = caseSous(e.clientX, e.clientY); if(c && c !== peint.dernier){ peint.dernier = c; poser(c); } return; }   // le doigt glisse : case après case
   if(!deco || !drag || e.pointerId !== drag.pid || !groundAt(e.clientX, e.clientY, hit)) return;
+  if(drag.rel && !groundAt(drag.x0, drag.y0, hit0)) return;
   if(!drag.bouge){ drag.bouge = true; jouer("meuble"); }          // le meuble choisi commence à glisser : il se soulève
-  settle(sel, hit.x + drag.ox, hit.z + drag.oz);
+  if(drag.rel) settle(sel, drag.from.x + hit.x - hit0.x, drag.from.z + hit.z - hit0.z);
+  else settle(sel, hit.x + drag.ox, hit.z + drag.oz);
+  suivre(sel, drag.chaises);
   if(!problem(sel)) drag.last = {x: sel.x, z: sel.z, y: sel.y};
   placeItemMesh(sel); showSel();
 });

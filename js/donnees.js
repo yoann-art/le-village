@@ -72,8 +72,8 @@ export const MEUBLES = {
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true, support:"buche", dans:"dans le feu de camp", nb:3},   // vide ; trois bûches, une à la fois, qui brûlent (Yo, 10 novembre 2026)
   lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
-  table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4, plateau:.75},   // plateau : on y pose les petits objets (le vase)
-  tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true, plateau:.75},
+  table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4, plateau:.75, places:[-.4, 0, .4]},   // places : le long des grands côtés (et une à chaque bout)   // plateau : on y pose les petits objets (le vase)
+  tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true, plateau:.75, places:[-1.05, -.4, 0, .4, 1.05]},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
   /* dessus : un petit objet qui se pose au sol ou sur une table (Yo, 10 novembre 2026 : « Tout ce qui peut être posé sur une table
@@ -142,6 +142,20 @@ export const garniPose = (type, o) => !garniDe(type, o) ? 0 : o.fleurs ? Math.mi
 /* Ce qu'on récupère en le rangeant : les bûches entières (celle qui brûle est perdue), sinon tout ce qui est posé */
 export const garniRendu = (type, o) => MEUBLES[type] && MEUBLES[type].support === "buche" ? Math.floor(resteFeu(o) / BUCHE + 1e-6) : garniPose(type, o);
 export const garniPlein = (type, o) => garniPose(type, o) >= garniNb(type);
+/* Les chaises autour des tables (Yo, 10 novembre 2026 : une chaise centrée, ou deux côte à côte, sur chaque grand côté ; une à
+   chaque bout ; « glissées sous la table pour les ranger ») : les places d'une table posée, dans la pièce ; une chaise à sa place
+   a le siège sous le plateau (RANGEE : son milieu juste au-delà du bord), tournée vers la table */
+export const RANGEE = .12, TIREE = .38;
+export function placesTable(t){
+  const m = MEUBLES[t.type];
+  if(!m || !m.places) return [];
+  const a = -(t.rot || 0) * Math.PI / 2, c = Math.cos(a), s = Math.sin(a), loc = [];
+  for(const x of m.places) for(const sz of [1, -1]) loc.push([x, sz * (m.d / 2 + RANGEE), sz > 0 ? 2 : 0]);
+  for(const sx of [1, -1]) loc.push([sx * (m.w / 2 + RANGEE), 0, sx > 0 ? 1 : 3]);
+  return loc.map(([lx, lz, dr]) => ({x: Math.round((t.x + lx * c + lz * s) * 100) / 100, z: Math.round((t.z - lx * s + lz * c) * 100) / 100, rot: ((t.rot || 0) + dr) % 4, lx, lz, dr}));
+}
+export const aSaPlace = (ch, t) => ch.type === "chaise" && !!MEUBLES[t.type].places && placesTable(t).some(p => Math.abs(p.x - ch.x) < .02 && Math.abs(p.z - ch.z) < .02 && p.rot === (ch.rot || 0));
+export const tableDeLaChaise = (ch, items) => items.find(t => aSaPlace(ch, t)) || null;
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
 /* Un meuble qui se prend en main pour aller dehors : posé sur une case, ou accroché à une façade */

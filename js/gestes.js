@@ -8,11 +8,11 @@
    - toucher le bocal à lucioles : elles brillent plus fort un instant.
    Dans une pièce : les meubles posés ; dehors : les lumières posées sur les cases tout autour, et celles accrochées aux façades. */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE, resteFeu, figerFeu } from "./donnees.js";
+import { MEUBLES, LUMIERE, resteFeu, figerFeu, tableDeLaChaise, TIREE } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { player, poser, seLever, posture, poseObjet, regard } from "./monde/personnage.js";
 import { footOf } from "./monde/meubles.js";
-import { refreshItemMesh } from "./monde/interieurs.js";
+import { refreshItemMesh, placeItemMesh } from "./monde/interieurs.js";
 import { map, N, idx, inb, tileOf, centerOf, setEtat } from "./monde/ile.js";
 import { currentPlace } from "./lieux.js";
 import { placeMesh, lumieresFacades } from "./monde/batiments.js";
@@ -37,7 +37,21 @@ const versMeuble = (it, x, z) => { const a = -(it.rot || 0) * Math.PI / 2, c = M
 
 /* S'asseoir : sur la chaise ou le fauteuil, face au devant (le dossier derrière) ; sur le banc, à la place la plus proche, du côté où l'on est ;
    sur le tabouret, tourné comme on était */
+/* Une chaise rangée sous sa table (Yo, 10 novembre 2026 : « quand le joueur veut s'asseoir elles se décalent automatiquement ») :
+   elle recule d'abord (it.tiree : sa place rangée), et se range quand on se lève */
+function tirer(it){
+  const place = currentPlace(), items = place && place.b.deco ? place.b.deco.items : [];
+  if(it.type !== "chaise" || it.tiree || !tableDeLaChaise(it, items)) return;
+  const f = versPiece(it, 0, 1);
+  it.tiree = {x: it.x, z: it.z};
+  it.x = Math.round((it.x - (f.x - it.x) * TIREE) * 100) / 100; it.z = Math.round((it.z - (f.z - it.z) * TIREE) * 100) / 100;
+  placeItemMesh(it);
+}
+function ranger(items){
+  for(const it of items) if(it.tiree){ it.x = it.tiree.x; it.z = it.tiree.z; delete it.tiree; placeItemMesh(it); save(); }
+}
 function asseoir(it){
+  tirer(it);
   const p = player.position, h = SIEGES[it.type];
   if(it.type === "chaise" || it.type === "fauteuil"){ const q = versPiece(it, 0, it.type === "fauteuil" ? .06 : .1), f = versPiece(it, 0, 1); poser({type: "assis", it, x: q.x, y: h, z: q.z, fx: f.x - it.x, fz: f.z - it.z}); return; }
   if(it.type === "banc"){
@@ -104,6 +118,7 @@ const DEDANS_SANS = ["mine", "foret", "grotte", "marais", "trajet"];
 /* À chaque image (main.js) ; actif : le personnage est libre (ni décoration, ni fenêtre ouverte) */
 export function updateGestes(actif){
   const place = currentPlace();
+  if(!posture() && place && place.b.deco) ranger(place.b.deco.items);   // levé : la chaise tirée se range sous la table
   if(posture()){                                       // assis ou allongé : le bouton le relève ; l'objet rangé, déplacé ou tourné, il se relève seul
     const it = poseObjet(), items = place && place.b.deco ? place.b.deco.items : [];
     if(!items.includes(it) || !ou || it.x !== ou.x || it.z !== ou.z || (it.rot || 0) !== ou.rot) seLever();
