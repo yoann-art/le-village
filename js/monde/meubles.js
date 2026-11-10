@@ -29,7 +29,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:CUIVRE, brasero:0xC8743C, lampadaire:C.dark, lustre:CUIVRE, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -38,7 +38,7 @@ const ORIGIN = {vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, t
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1124,6 +1124,61 @@ function glaceMiroir(){
   };
   return glace;
 }
+/* Le bouquet (image de Yo, 10 novembre 2026 : « Voici le bouquet » ; « Couché sur le côté ») : des fleurs de l'île, comme
+   l'image : trois coquelicots ouverts (et deux boutons penchés), trois bleuets, trois pâquerettes (un peu plus grandes que
+   sur l'île, comme les marguerites de l'image), deux pissenlits ; des feuilles ; les tiges serrées, nouées d'une corde à
+   nœud. Fait debout puis couché sur le côté, les fleurs vers le haut ; ses couleurs ne changent pas ; un seul dessin */
+const BQT = {lien: .15, haut: .5};
+const BQT_TIGE = new THREE.CylinderGeometry(.011, .011, 1, 5).translate(0, .5, 0);
+const BQT_PETALE = new THREE.SphereGeometry(1, 6, 4), BQT_COEUR = new THREE.SphereGeometry(1, 8, 6);
+const BQT_COUPE = lathe([[0, -.01], [.03, -.005], [.065, .025], [.085, .06], [.08, .075], [.06, .05], [.03, .02], [0, .015]], 14);
+const BQT_NOEUD = new THREE.TorusGeometry(.04, .011, 6, 16), BQT_BOUCLE = new THREE.TorusGeometry(.035, .009, 6, 14);
+const BQT_FLEURS = [   // [sorte, x, y, z] : la tête de chaque fleur (debout, la face vers +z)
+  ["coquelicot", 0, .5, .02], ["coquelicot", -.1, .41, .06], ["coquelicot", .11, .42, .04],
+  ["bleuet", -.13, .48, -.02], ["bleuet", .02, .44, .09], ["bleuet", .16, .37, -.03],
+  ["paquerette", .07, .48, -.05], ["paquerette", -.06, .36, .1], ["paquerette", .04, .35, .11],
+  ["pissenlit", .13, .49, 0], ["pissenlit", -.13, .34, .05], ["bouton", .1, .56, -.04], ["bouton", -.18, .43, -.02]];
+const tigeEntre = (a, b) => { const d = b.clone().sub(a), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+  return new THREE.Matrix4().compose(a, q, new THREE.Vector3(1, d.length(), 1)); };
+function bouquetMorceaux(){
+  const VERT = 0x7A9A3A, FEUILLE = 0x6E9A40, out = [], o = ombreBois(0, .25), V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const face = (x, y, z) => { const n = V(x * 1.4, .35, 1).normalize(); return new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), n); };   // la face, tournée vers l'extérieur
+  const P = (geo, pos, q, s, c) => out.push({geo, m: new THREE.Matrix4().compose(pos, q, s), c, ombre: o});
+  BQT_FLEURS.forEach(([k, x, y, z], j) => {
+    const bas = V((j % 5 - 2) * .012, 0, ((j * 3) % 5 - 2) * .01), lien = V(bas.x * .5, BQT.lien, bas.z * .5), tete = V(x, y, z);
+    out.push({geo: BQT_TIGE, m: tigeEntre(bas, lien), c: VERT, ombre: o}, {geo: BQT_TIGE, m: tigeEntre(lien, tete), c: VERT, ombre: o});
+    const q = face(x, y, z), qr = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), Math.PI / 2), M = new THREE.Matrix4().compose(tete, q, V(1, 1, 1));
+    const ici = (dx, dy, dz) => V(dx, dy, dz).applyMatrix4(M);
+    if(k === "coquelicot"){                                                              // une coupe rouge ouverte, son cœur noir
+      P(BQT_COUPE, tete, q.clone().multiply(qr), V(.82, .82, .82), 0xD8382A);
+      P(BQT_COEUR, ici(0, 0, .024), q, V(.02, .02, .012), 0x3A2420);
+    } else if(k === "bleuet"){                                                           // des pétales en étoile, un cœur bleu nuit
+      for(let a = 0; a < 10; a++){ const t = a / 10 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .035, Math.sin(t) * .035, 0), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.034, .011, .009), 0x3E64D8); }
+      P(BQT_COEUR, ici(0, 0, .006), q, V(.018, .018, .012), 0x2A3480);
+    } else if(k === "paquerette"){                                                       // des pétales blancs, un cœur jaune
+      for(let a = 0; a < 12; a++){ const t = a / 12 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .03, Math.sin(t) * .03, 0), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.026, .011, .005), 0xF6F2E6); }
+      P(BQT_COEUR, ici(0, 0, .006), q, V(.014, .014, .008), 0xF2C22E);
+    } else if(k === "pissenlit"){                                                        // un pompon jaune
+      P(BQT_COEUR, tete, q, V(.042, .042, .03), 0xF2C42A);
+      for(let a = 0; a < 10; a++){ const t = a / 10 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .036, Math.sin(t) * .036, -.004), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.02, .009, .008), 0xF2B820); }
+    } else {                                                                             // un bouton penché : rouge dans ses sépales
+      P(BQT_COEUR, tete, q, V(.016, .024, .016), 0xC83228);
+      P(BQT_COEUR, ici(0, .008, -.004), q, V(.018, .016, .018), VERT);
+    }
+  });
+  for(const [x, y, a] of [[-.1, .26, .8], [.11, .28, -.8], [-.05, .22, .3], [.06, .3, -.4], [0, .27, 0]])   // des feuilles
+    P(BQT_PETALE, V(x, y, .02), new THREE.Quaternion().setFromEuler(new THREE.Euler(.3, 0, a)), V(.018, .07, .008), FEUILLE);
+  /* la corde : un tour serré, le nœud, deux boucles, deux bouts */
+  const CORDE = 0xE0B068;
+  P(BQT_NOEUD, V(0, BQT.lien, 0), new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), Math.PI / 2), V(1, 1, 1), CORDE);
+  for(const s of [-1, 1]) P(BQT_BOUCLE, V(s * .04, BQT.lien + .005, .045), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, s * .4)), V(1, .7, 1), CORDE);
+  for(const s of [-1, 1]) out.push({geo: BQT_TIGE, m: tigeEntre(V(0, BQT.lien, .045), V(s * .03, BQT.lien - .09, .05)), c: CORDE, ombre: o});
+  P(BQT_COEUR, V(0, BQT.lien, .047), new THREE.Quaternion(), V(.016, .016, .012), CORDE);
+  /* couché sur le côté : la longueur le long de x, les fleurs vers le haut, posé sur ses tiges */
+  const C = new THREE.Matrix4().makeTranslation(-.25, .075, 0).multiply(new THREE.Matrix4().makeRotationZ(-Math.PI / 2)).multiply(new THREE.Matrix4().makeRotationY(-Math.PI / 2));
+  for(const p of out) p.m = C.clone().multiply(p.m);
+  return out;
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1243,6 +1298,7 @@ const BUILD = {
       f.position.y = VS.col; f.rotation.set(p, a, 0, "YXZ"); f.scale.setScalar(.55); g.add(f);
     });
   },
+  bouquet(g){ g.add(modeleBois("bouquet", 0, bouquetMorceaux)); },   // couché, ses couleurs à lui
   miroir(g, m){ g.add(modeleBois("miroir", m, miroirMorceaux), glaceMiroir()); },   // le cadre et le pied (un dessin), la glace qui reflète
   rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)
   grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
