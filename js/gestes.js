@@ -26,7 +26,7 @@ const LIT = {lit: .5};   // le dessus de la couverture (meubles.js)
 const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLucioles"), "cheminee"]);
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
 const nomLumiere = (it, m) => it.type === "chandelle" ? "la chandelle" : leNom(m);   // le bougeoir : on éteint sa chandelle
-const geste = it => it.type === "rideau" ? "rideau" : SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? (it.lucioles ? "toucher" : null)
+const geste = it => it.type === "statue" ? "statue" : it.type === "rideau" ? "rideau" : SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? (it.lucioles ? "toucher" : null)
   : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || ((!LUMIERE[it.type].torche || it.torche) && (!LUMIERE[it.type].bougie || it.bougie) && (!LUMIERE[it.type].buche || resteFeu(it) > 0))) ? "lumiere" : null;   // la cheminée, avec ses bûches   // une torchère : seulement avec sa torche ; un bougeoir, avec sa chandelle
 
 /* Du repère d'un meuble posé (rot : ses quarts de tour, comme interieurs.js) vers la pièce */
@@ -128,7 +128,7 @@ export function updateGestes(actif){
   cible = actif && !(place && DEDANS_SANS.includes(place.b.type)) ? prochain(place) : null;
   if(!cible){ if(!btn.hidden) btn.hidden = true; return; }
   const it = cible.it, m = MEUBLES[it.type], g = geste(it);
-  montrer(g === "rideau" ? (it.ferme ? "🪟 Ouvrir le rideau" : "🪟 Fermer le rideau") : g === "assis" ? `🪑 S'asseoir` : g === "allonge" ? `🛏️ S'allonger` : g === "toucher" ? `✨ Toucher ${leNom(m)}`
+  montrer(g === "statue" ? "🗿 Sculpter" : g === "rideau" ? (it.ferme ? "🪟 Ouvrir le rideau" : "🪟 Fermer le rideau") : g === "assis" ? `🪑 S'asseoir` : g === "allonge" ? `🛏️ S'allonger` : g === "toucher" ? `✨ Toucher ${leNom(m)}`
     : it.eteint ? `🔥 Allumer ${nomLumiere(it, m)}` : `🌙 Éteindre ${nomLumiere(it, m)}`);
 }
 function montrer(txt){
@@ -144,6 +144,7 @@ export function faireGeste(){
   if(g === "assis" || g === "allonge"){ (g === "assis" ? asseoir : allonger)(it); ou = {x: it.x, z: it.z, rot: it.rot || 0}; jouer("meuble"); }
   else if(g === "toucher"){ eclatLucioles(); jouer("cueillir"); }
   else if(g === "lumiere") basculer(c, m);
+  else if(g === "statue") import("./statues.js").then(s => s.sculpterMenu(it, c.refaire));   // la liste des bêtes du carnet
   else if(g === "rideau"){ if(it.ferme) delete it.ferme; else it.ferme = true; c.refaire(); save(); jouer("meuble"); }   // fermé, il assombrit la pièce (interieurs.js)
   return true;
 }

@@ -62,7 +62,7 @@ export const MEUBLES = {
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
   chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dessus:true, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
-  statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
+  statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.5, d:.5, une:true, dessus:true},   // un socle ; elle prend la forme d'une bête du carnet (statues.js, Yo, 10 novembre 2026)
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"petit", w:.9, d:.55},   // à la taille des autres meubles (Yo, 8 novembre 2026)
   banc:     {nom:"Banc", emoji:"🛋️", gabarit:"moyen", w:1.6, d:.6},
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},

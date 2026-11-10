@@ -59,6 +59,7 @@ export function vent(t = Date.now()){
 }
 
 /* ----- Les modèles, en formes simples et rondes (style jouet), la tête vers -z ----- */
+export const modeleGibier = k => modele(k);                    // la petite statue (statues.js)
 function modele(k){
   if(GIBIER[k].forme === "sanglier") return modeleMonstre("sanglier");   // le même que dans la grotte
   const p = GIBIER[k], g = new THREE.Group(), c = p.couleur, c2 = p.c2, pattes = [], tete = new THREE.Group();

@@ -832,6 +832,22 @@ export async function verifier(){
       if(surLaTable(t, items).length !== 4) throw new Error(`${surLaTable(t, items).length} objets sur la table au lieu de 4`);
       for(const o of [...autres, t]){ items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
     }
+    /* la petite statue (Yo, 10 novembre 2026 : « elle doit prendre la forme de l'animal ou insecte capturé ») : un bloc brut ;
+       « Sculpter » propose les bêtes du carnet ; elle prend la forme de celle qu'on choisit */
+    {
+      const {betesSculptables, sculpter} = await import("../js/statues.js"), {makeMeuble} = await import("../js/monde/meubles.js");
+      const avant = JSON.stringify(state.carnet.gibier || {}), st = {id: 99040, type: "statue", x: chandelle.x, z: chandelle.z + 1.6, rot: 0};   // à l'écart du bougeoir (son geste passerait avant)
+      (state.carnet.gibier || (state.carnet.gibier = {})).renard = (state.carnet.gibier.renard || {n: 1});
+      if(!betesSculptables().some(b => b.cle === "gibier:renard")) throw new Error("le renard du carnet ne se sculpte pas");
+      items.push(st); addItemMesh(st); placePlayer(st.x + .7, st.z, -1, 0); updateGestes(true);
+      if(btnG.hidden || !btnG.textContent.includes("Sculpter")) throw new Error(`près de la statue, le bouton dit « ${btnG.textContent} »`);
+      const tri = o => { let n = 0; makeMeuble("statue", undefined, o).traverse(c => { if(c.isMesh) n += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; }); return n; };
+      sculpter(st, "gibier:renard");
+      if(st.bete !== "gibier:renard" || tri(st) <= tri({})) throw new Error("la statue ne prend pas la forme du renard");
+      for(const b of betesSculptables()) if(!tri({bete: b.cle})) throw new Error(`${b.nom} : pas de statue`);
+      items.splice(items.indexOf(st), 1); removeItemMesh(st.id);
+      state.carnet.gibier = JSON.parse(avant);
+    }
     /* les chaises autour d'une table (Yo, 10 novembre 2026) : deux côte à côte sur chaque grand côté, une à chaque bout, six ;
        rangées sous la table ; la septième n'a pas de place ; s'asseoir la fait reculer, se lever la range ; la table tournée
        (appui long, « Tourner ») emmène ses chaises */
@@ -3331,7 +3347,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

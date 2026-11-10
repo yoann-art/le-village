@@ -38,7 +38,7 @@ const ORIGIN = {vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, t
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -999,6 +999,55 @@ function vaseMorceaux(c){
 }
 /* Les fleurs du bouquet : penchées hors du col, tournées chacune de son côté */
 const VS_BOUQUET = [[0, -.12, .55], [2.2, .32, .48], [4.3, .3, .5]];
+/* La petite statue (image de Yo, 10 novembre 2026 : « la petite statue qui doit prendre la forme de l'animal ou insecte
+   capturé ») : un socle rond, épais, au bord arrondi ; dessus, un bloc de pierre brute, ou la bête sculptée (o.bete, statues.js) :
+   son vrai modèle (insecte, oiseau, poisson, gibier), tout en pierre (la teinte de la statue, un peu plus claire ou plus
+   sombre selon ses couleurs, pour garder ses formes), à la taille d'une statuette, en un seul dessin */
+const ST = {socle: .1, h: .5, l: .6};   // la bête : au plus .5 de haut, .6 de long (de trois quarts, elle dépasse un peu du socle)
+const ST_SOCLE = lathe([[0, 0], [.2, 0], [.225, .012], [.232, .05], [.225, .088], [.205, ST.socle], [0, ST.socle]], 28);
+const ST_BLOC = boiteRonde(.26, .3, .22, .06, 2);
+let fabriqueBete = null;
+export function formeStatue(f){ fabriqueBete = f; }
+const STATUES = new Map();
+/* Le dos d'une forme fine (une aile) : les triangles retournés, les normales inversées */
+function envers(geo){
+  const g = geo.index ? geo.clone() : geo.clone();
+  if(g.index){ const I = g.index.array.slice(); for(let i = 0; i < I.length; i += 3){ const t = I[i + 1]; I[i + 1] = I[i + 2]; I[i + 2] = t; } g.setIndex(new THREE.BufferAttribute(I, 1)); }
+  else { const P = g.attributes.position, N = g.attributes.normal; for(let i = 0; i < P.count; i += 3) for(const A of [P, N]){ const x = A.getX(i + 1), y = A.getY(i + 1), z = A.getZ(i + 1); A.setXYZ(i + 1, A.getX(i + 2), A.getY(i + 2), A.getZ(i + 2)); A.setXYZ(i + 2, x, y, z); } }
+  const N = g.attributes.normal; for(let i = 0; i < N.count; i++) N.setXYZ(i, -N.getX(i), -N.getY(i), -N.getZ(i));
+  return g;
+}
+function beteEnPierre(cle, c){
+  const k = cle + "|" + c;
+  if(STATUES.has(k)) return STATUES.get(k);
+  let modele = null;
+  try{ modele = fabriqueBete && fabriqueBete(cle); }catch(e){ modele = null; }
+  if(!modele){ STATUES.set(k, null); return null; }
+  modele.updateMatrixWorld(true);
+  const morceaux = [], base = new THREE.Color(c), lum = new THREE.Color();
+  const parcourir = o => {
+    if(o.isLOD){ if(o.levels[0]) parcourir(o.levels[0].object); return; }
+    if(o.visible === false) return;
+    if(o.isMesh && o.geometry && o.geometry.attributes.position && !(o.material && o.material.visible === false)){
+      const mc = o.material && o.material.color ? o.material.color : null, l = mc ? (mc.r * .3 + mc.g * .59 + mc.b * .11) : .7;
+      lum.copy(base).multiplyScalar(.82 + .3 * Math.min(1, l));
+      let geo = o.geometry;
+      if(!geo.attributes.normal){ geo = geo.clone(); geo.computeVertexNormals(); }   // les ailes fines des papillons : leurs normales
+      morceaux.push({geo, m: o.matrixWorld.clone(), c: lum.getHex()});
+      if(o.material && o.material.side === THREE.DoubleSide) morceaux.push({geo: envers(geo), m: o.matrixWorld.clone(), c: lum.getHex()});   // les ailes : vues des deux côtés
+    }
+    for(const e of o.children) parcourir(e);
+  };
+  parcourir(modele);
+  if(!morceaux.length){ STATUES.set(k, null); return null; }
+  const g = fusionner(morceaux);
+  g.computeBoundingBox();
+  const b = g.boundingBox, s = Math.min(ST.h / (b.max.y - b.min.y || 1), ST.l / Math.max(b.max.x - b.min.x, b.max.z - b.min.z, .01));
+  g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); g.scale(s, s, s); g.translate(0, ST.socle, 0);
+  g.computeBoundingSphere();
+  STATUES.set(k, g);
+  return g;
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1130,10 +1179,10 @@ const BUILD = {
     g.add(part(G.box, C.light, .14, .06, .1, .52, .64, .12));                          // poignée
     g.add(part(G.box, C.light, .45, .08, .2, -.15, .65, -.18));                        // pièce de bois en cours
   },
-  statue(g, m){
-    g.add(part(G.box, C.stone2, .5, .24, .5, 0, .12, 0));                             // socle
-    g.add(part(G.head, m, 1.2, 1.7, 1.2, 0, .6, 0));                                  // corps arrondi
-    g.add(part(G.head, m, .9, .9, .9, 0, 1.1, 0));                                    // tête
+  statue(g, m, o){                                                                   // le socle ; le bloc brut, ou la bête sculptée (statues.js)
+    const bete = o && o.bete ? beteEnPierre(o.bete, m) : null;
+    g.add(modeleBois(bete ? "statueSocle" : "statue", m, c => [{geo: ST_SOCLE, m: M4(0, 0, 0), c, ombre: ombreBois(0, .5)}, ...(bete ? [] : [{geo: ST_BLOC, m: M4(0, ST.socle + .15, 0, 0, .3, 0), c, ombre: ombreBois(0, .5)}])]));
+    if(bete){ const b = new THREE.Mesh(bete, MAT_UNI); b.rotation.y = (o.bete.startsWith("gibier:") ? Math.PI : 0) + Math.PI / 5; b.castShadow = b.receiveShadow = true; g.add(b); }   // de trois quarts, comme l'image (le gibier a la tête vers −z)
   },
   atelierDeco(g, m){
     g.add(part(G.box, m, 1.6, .1, .75, 0, .55, 0));                                   // plateau

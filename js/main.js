@@ -53,6 +53,7 @@ import "./sac.js";
 import { updateAmbiance } from "./ambiance.js";
 import "./pas.js";                                       // les pas, selon le sol (les sons, étape 2b)
 import "./barre.js";
+import "./statues.js";                                    // la petite statue : sculpter une bête du carnet
 import "./saisons.js";
 import "./station.js";
 import { debutImage, finImage, temps, noterPreparation } from "./performance.js";   // le compteur de performance (demande de Yo, 16 octobre 2026)
