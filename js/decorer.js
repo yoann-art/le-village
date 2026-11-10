@@ -350,7 +350,8 @@ $("#deco-store").addEventListener("click", () => {
   let ou = "dans ton sac";
   if(craftable(sel.type)){ const r = addOwned(sel.type, 1); if(!r.sac) ou = "dans un coffre (ton sac est plein)"; }
   if(sel.pierre){ addOwned(sel.pierre, 1); ou += `, et sa pierre (${objet(sel.pierre).nom.toLowerCase()})`; }   // la pierre exposée dans une vitrine revient aussi
-  if(garni && sel.fleurs){ for(const k of sel.fleurs) addOwned(k, 1); ou += sel.type === "vase" ? ", et son bouquet" : ", et ses fleurs"; }   // le vase, l'herbier : chaque fleur
+  if(garni && sel.poissons){ for(const v of sel.poissons) addOwned(v.split("|")[0], 1); ou += ", et ses poissons"; }   // l'aquarium moyen : chaque poisson
+  else if(garni && sel.fleurs){ for(const k of sel.fleurs) addOwned(k, 1); ou += sel.type === "vase" ? ", et son bouquet" : ", et ses fleurs"; }   // le vase, l'herbier : chaque fleur
   else if(garni){ addOwned(garni, nG); ou += ", et " + leGarni; }        // ce qui est posé dessus aussi
   toast(`${MEUBLES[sel.type].emoji} Rangé ${ou}`, 2400, "ranger");
   sel = null; showSel(); save();

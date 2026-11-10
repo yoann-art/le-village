@@ -886,6 +886,22 @@ export async function verifier(){
       updateLumieres(.5, true);                                          // il nage
       items.splice(items.indexOf(aq), 1); removeItemMesh(aq.id);
     }
+    /* l'aquarium moyen (Yo, 10 novembre 2026) : trois poissons, un à la fois */
+    {
+      const am = {id: 99080, type: "aquariumMoyen", x: chandelle.x, z: chandelle.z + 1.8, rot: 0};
+      items.push(am); addItemMesh(am);
+      const p0 = owned("gardon"); sacAdd("gardon", 3); placePlayer(am.x, am.z + .9, 0, -1);
+      for(let k = 1; k <= 3; k++){
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Aquarium")) throw new Error(`près de l'aquarium moyen (${k - 1} poissons), le bouton dit « ${$("#btn-torchere").textContent} »`);
+        $("#btn-torchere").click();
+        if((am.poissons || []).length !== k) throw new Error(`l'aquarium moyen a ${(am.poissons || []).length} poissons au ${k}e appui`);
+      }
+      updateLumieres(.5, true);
+      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Aquarium")) throw new Error("l'aquarium moyen plein propose encore un poisson");
+      if(owned("gardon") !== p0) throw new Error("les poissons ne sont pas pris dans le sac");
+      items.splice(items.indexOf(am), 1); removeItemMesh(am.id);
+    }
     /* les chaises autour d'une table (Yo, 10 novembre 2026) : deux côte à côte sur chaque grand côté, une à chaque bout, six ;
        rangées sous la table ; la septième n'a pas de place ; s'asseoir la fait reculer, se lever la range ; la table tournée
        (appui long, « Tourner ») emmène ses chaises */
@@ -3386,7 +3402,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

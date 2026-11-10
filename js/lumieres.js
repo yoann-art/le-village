@@ -197,7 +197,14 @@ function mettrePoisson(o, type, k, refaire){
   if(!k){ toast("🐟 Il te faut un poisson : pêche-en un à l'étang ou en mer, puis reviens", 3600); return false; }
   addOwned(k, -1);
   const robes = k === "koi" && state.carnet.poissons.koi && state.carnet.poissons.koi.couleurs ? Object.keys(state.carnet.poissons.koi.couleurs) : [];
-  const patch = {poisson: k, robe: robes.length ? robes[Math.floor(Math.random() * robes.length)] : undefined};
+  const robe = robes.length ? robes[Math.floor(Math.random() * robes.length)] : undefined, nb = garniNb(type);
+  if(nb > 1){                                                       // l'aquarium moyen : un poisson après l'autre (« gardon », « koi|kohaku »)
+    o.poissons = [...(o.poissons || []), robe ? `${k}|${robe}` : k]; refaire({poissons: o.poissons}); syncBarre(); save(); renderHUD();
+    const P = POISSONS[k];
+    toast(`🐟 ${P.une ? "La" : "Le"} ${P.nom.toLowerCase()} nage ${MEUBLES[type].dans} (${o.poissons.length} sur ${nb})`, 3000);
+    return true;
+  }
+  const patch = {poisson: k, robe};
   for(const [c, v] of Object.entries(patch)) if(v === undefined) delete o[c]; else o[c] = v;
   refaire(patch); syncBarre(); save(); renderHUD();
   const P = POISSONS[k];

@@ -80,6 +80,7 @@ export const MEUBLES = {
      doit l'être » ; l'étagère, pour plus tard) */
   vase:     {nom:"Vase", emoji:"🏺", gabarit:"petit", w:.35, d:.35, dessus:true, support:"fleur", dans:"dans le vase", nb:3},   // au sol ou sur une table ; un bouquet de trois fleurs, une à la fois (Yo, 10 novembre 2026)
   aquarium: {nom:"Petit aquarium", emoji:"🐠", gabarit:"petit", w:.55, d:.55, dessus:true, support:"poisson", dans:"dans l'aquarium"},   // un bocal d'eau ; on y met un poisson pêché, qui y nage (Yo, 10 novembre 2026)
+  aquariumMoyen: {nom:"Aquarium", emoji:"🐟", gabarit:"moyen", w:1.2, d:.55, support:"poisson", dans:"dans l'aquarium", nb:3},   // un bac sur un meuble ; trois poissons, un à la fois (Yo, 10 novembre 2026)
   herbier:  {nom:"Herbier encadré", emoji:"🖼️", gabarit:"petit", w:.7, d:.5, mur:true, support:"fleur", dans:"dans l'herbier", nb:6},   // au mur, vide ; six fleurs séchées, une à une (Yo, 10 novembre 2026)
   bouquet:  {nom:"Bouquet", emoji:"💐", gabarit:"petit", w:.6, d:.4, dessus:true},   // couché sur le côté, au sol ou sur une table (Yo, 10 novembre 2026)
   miroir:   {nom:"Miroir", emoji:"🪞", gabarit:"moyen", w:.9, d:.45},   // un miroir ovale sur pied ; un vrai reflet quand on est devant (Yo, 10 novembre 2026)
@@ -129,7 +130,7 @@ export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), 
 export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"], buche: ["bois"], fleur: [], poisson: []};   // fleur, poisson : remplis après FLEURS et POISSONS
 /* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), cinq chandelles dans le lustre (nb), sinon une */
 export const garniNb = type => !MEUBLES[type] ? 1 : MEUBLES[type].nb || (MEUBLES[type].support === "lucioles" ? 3 : 1);
-export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? "bois" : null) : s === "fleur" ? (o.fleur || (o.fleurs && o.fleurs[0]) || null) : s === "poisson" ? (o.poisson || null) : o.bougie || null; };
+export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? "bois" : null) : s === "fleur" ? (o.fleur || (o.fleurs && o.fleurs[0]) || null) : s === "poisson" ? (o.poisson || (o.poissons && o.poissons[0] && o.poissons[0].split("|")[0]) || null) : o.bougie || null; };
 /* Les bûches de la cheminée (Yo, 10 novembre 2026 : « Une bûche = 1 bois de mon sac », « Les bûches s'usent et le feu
    s'éteint ») : chaque bûche brûle BUCHE secondes, en vrai temps (même le jeu fermé), l'une après l'autre ; o.feu : l'heure
    où la dernière finit (Date.now) ; éteinte au geste, le feu s'arrête : o.reste, les secondes qui restent */
@@ -140,8 +141,8 @@ export function figerFeu(o, eteint){
   if(eteint){ o.reste = resteFeu(o); delete o.feu; } else { o.feu = Date.now() + (o.reste || 0) * 1000; delete o.reste; }
 }/* Le chandelier et le lustre : on y pose les chandelles une à la fois (Yo, 9 novembre 2026 : « une à la fois, pareil pour le
    lustre ») ; o.chandelles : combien y sont posées (absent avec o.bougie : toutes, comme dans les parties d'avant) */
-export const unAUn = type => !!(MEUBLES[type] && (((MEUBLES[type].support === "bougie" || MEUBLES[type].support === "fleur") && MEUBLES[type].nb > 1) || MEUBLES[type].support === "buche"));
-export const garniPose = (type, o) => !garniDe(type, o) ? 0 : o.fleurs ? Math.min(o.fleurs.length, garniNb(type)) : MEUBLES[type].support === "buche" ? Math.min(Math.ceil(resteFeu(o) / BUCHE - 1e-6), garniNb(type))
+export const unAUn = type => !!(MEUBLES[type] && ((["bougie", "fleur", "poisson"].includes(MEUBLES[type].support) && MEUBLES[type].nb > 1) || MEUBLES[type].support === "buche"));
+export const garniPose = (type, o) => !garniDe(type, o) ? 0 : o.fleurs ? Math.min(o.fleurs.length, garniNb(type)) : o.poissons ? Math.min(o.poissons.length, garniNb(type)) : MEUBLES[type].support === "buche" ? Math.min(Math.ceil(resteFeu(o) / BUCHE - 1e-6), garniNb(type))
   : unAUn(type) ? Math.min(o.chandelles || garniNb(type), garniNb(type)) : garniNb(type);
 /* Ce qu'on récupère en le rangeant : les bûches entières (celle qui brûle est perdue), sinon tout ce qui est posé */
 export const garniRendu = (type, o) => MEUBLES[type] && MEUBLES[type].support === "buche" ? Math.floor(resteFeu(o) / BUCHE + 1e-6) : garniPose(type, o);
@@ -986,6 +987,7 @@ export const ATELIERS = {
     {out:"chaise", in:{planche:3}, t:30, lvl:1},
     {out:"fauteuil", in:{planche:4, fibre:3}, t:40, lvl:1},   // le fauteuil : du bois et des coussins de lin (Yo, 7 novembre 2026)
     {out:"miroir", in:{planche:4, verre:2}, t:60, lvl:1, cat:"Décoration"},   // le cadre et le pied de bois, la glace (Yo, 10 novembre 2026)
+    {out:"aquariumMoyen", in:{planche:5, verre:4, pierre:3}, t:60, lvl:2, cat:"Décoration"},   // le meuble, le bac, les galets (Yo, 10 novembre 2026)
     {out:"banc", in:{planche:4}, t:40, lvl:1},
     {out:"tonneau", in:{planche:5, cuivre:1}, t:60, lvl:2},   // les cerclages de cuivre (Yo, 8 novembre 2026)
     {out:"table", in:{planche:6}, t:90, lvl:2},
@@ -1126,7 +1128,7 @@ export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tab
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", bocalLucioles:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
   brasero:"metal", lampadaire:"metal", enclume:"metal",
-  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois", aquarium:"bois"};
+  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois", aquarium:"bois", aquariumMoyen:"bois"};
 /* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */
 export const DEPART = {chandelier:"argent"};
 const nomBois = p => p.nom.replace(/^Bois d(e |')/, "").replace(/^./, c => c.toUpperCase());
@@ -1194,7 +1196,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier","aquarium"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier","aquarium","aquariumMoyen"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;
