@@ -3517,7 +3517,19 @@ export async function verifier(){
     const sans = types.filter(k => owned(k) < 1 && !manque.includes(k));
     if(sans.length) throw new Error(`pas donnés : ${sans.join(", ")}`);
     if(donnerTout().recus.length) throw new Error("touché deux fois, il redonne des objets qu'on a déjà");
+    const un = recus[0]; if(un){ addOwned(un, -1); if(donnerTout().recus.includes(un)) throw new Error(`${objet(un).nom} posé ou rangé, 🎁 le redonne`); }   // une seule fois, même posé
     return `${recus.length} objets donnés${manque.length ? `, ${manque.length} sans place (sac et coffres pleins)` : ""} ; une deuxième fois, rien de plus`;
+  });
+  /* la remise à neuf (Yo, 10 novembre 2026 : « garde uniquement les plans de travail et les coffres vides ») : sur la partie
+     d'essai, à la fin (elle vide la décoration) */
+  await etape("La remise à neuf de la décoration : seuls les plans de travail et les coffres, vides", async () => {
+    const {remiseANeuf} = await import("../js/remise.js"), {MEUBLES} = await import("../js/donnees.js");
+    const r = remiseANeuf();
+    for(const b of state.buildings) for(const it of (b.deco && b.deco.items) || []) if(!(MEUBLES[it.type].plan || it.type === "coffre")) throw new Error(`il reste ${objet(it.type).nom} dans ${B[b.type].nom}`);
+    if(state.coffres.some(co => co.items.length)) throw new Error("un coffre n'est pas vide");
+    if(state.sac.some(it => MEUBLES[it.k] && !MEUBLES[it.k].plan && it.k !== "coffre")) throw new Error("il reste de la décoration dans le sac");
+    if(Object.keys(state.cadeaux).length) throw new Error("🎁 ne repart pas de zéro");
+    return `${r.pieces} objets retirés des pièces, ${r.ile} de l'île, ${r.facades} des façades, ${r.rangés} du sac ; les coffres vidés`;
   });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */

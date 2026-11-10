@@ -54,6 +54,7 @@ import { updateAmbiance } from "./ambiance.js";
 import "./pas.js";                                       // les pas, selon le sol (les sons, étape 2b)
 import "./barre.js";
 import "./statues.js";                                    // la petite statue : sculpter une bête du carnet
+import "./remise.js";                                     // la remise à neuf de la décoration (une fois, Yo, 10 novembre 2026)
 import "./saisons.js";
 import "./station.js";
 import { debutImage, finImage, temps, noterPreparation } from "./performance.js";   // le compteur de performance (demande de Yo, 16 octobre 2026)

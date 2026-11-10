@@ -25,7 +25,7 @@ import { isInside, currentPlace } from "./lieux.js";
 import { vuePremiere } from "./vue.js";
 import { saison, MEUBLES, FABRIQUE_A } from "./donnees.js";
 import { addOwned, owned } from "./regles.js";
-import { save } from "./sauvegarde.js";
+import { state, save } from "./sauvegarde.js";
 import { syncBarre } from "./barre.js";
 import { meteo } from "./monde/meteo.js";
 import { seriesIci } from "./monde/series.js";
@@ -309,16 +309,18 @@ function afficher(){
    de les créer ») : un de chaque objet qui se fabrique, qu'on n'a pas encore dans son sac ou ses coffres, et de quoi les garnir ;
    ce qui n'a pas de place reste à donner : on refait de la place, on touche à nouveau */
 const GARNITURE = {chandelleSuif: 10, luciole: 3, torche: 2, bois: 6};
+/* Une seule fois chaque objet (Yo, 10 novembre 2026 : « qu'une seule fois ; à l'heure actuelle plusieurs chaises
+   apparaissent ») : state.cadeaux retient ce qui a été donné, posé ou rangé ensuite ; la garniture aussi, une fois */
 export function donnerTout(){
-  const recus = [], manque = [];
+  const recus = [], manque = [], deja = state.cadeaux || (state.cadeaux = {});
   for(const k of Object.keys(MEUBLES)){
-    if(!FABRIQUE_A[k] || MEUBLES[k].plan || owned(k) >= 1) continue;
-    (addOwned(k, 1).reste ? manque : recus).push(k);
+    if(!FABRIQUE_A[k] || MEUBLES[k].plan || deja[k]) continue;
+    if(addOwned(k, 1).reste) manque.push(k); else { recus.push(k); deja[k] = 1; }
   }
-  for(const [k, n] of Object.entries(GARNITURE)){ const v = n - owned(k); if(v > 0 && addOwned(k, v).reste) manque.push(k); }
+  if(!deja.garniture){ let ok = true; for(const [k, n] of Object.entries(GARNITURE)){ const v = n - owned(k); if(v > 0 && addOwned(k, v).reste){ manque.push(k); ok = false; } } if(ok) deja.garniture = 1; }
   syncBarre(); save();
   toast(`🎁 ${recus.length} objet${recus.length > 1 ? "s" : ""} dans ton sac et tes coffres, et de quoi les garnir`
-    + (manque.length ? ` ; ${manque.length} n'ont pas eu de place : fais de la place, puis touche encore 🎁` : ""), 4200);
+    + (manque.length ? ` ; ${manque.length} n'ont pas eu de place : fais de la place, puis touche encore 🎁` : recus.length ? "" : " : tu as déjà reçu tous les objets"), 4200);
   return {recus, manque};
 }
 boite.addEventListener("click", e => {
