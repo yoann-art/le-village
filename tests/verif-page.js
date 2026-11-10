@@ -3399,6 +3399,15 @@ export async function verifier(){
       return `la tête tourne de ${Math.round(tour * 180 / Math.PI)}° pour un tiers d'écran, on avance où l'on regarde, le joystick tourne la vue de ${Math.round(virage * 180 / Math.PI)}° en une demi-seconde, le point au centre, la case regardée (tout droit ou les yeux baissés), la main droite tient la hache et frappe, la gauche la torche, rien en main on ne voit plus de main, on entre dans la Scierie, la décoration se fait en vue de dessus`;
     } finally { choisirVue(avant); }
   });
+  /* « 🎁 Tous les objets » (Yo, 10 novembre 2026 : pour les essayer sans les fabriquer) : un de chaque objet qui se fabrique */
+  await etape("Tous les objets d'un coup, pour les essayer", async () => {
+    const {donnerTout} = await import("../js/performance.js"), {MEUBLES, FABRIQUE_A} = await import("../js/donnees.js");
+    const {recus, manque} = donnerTout(), types = Object.keys(MEUBLES).filter(k => FABRIQUE_A[k] && !MEUBLES[k].plan);
+    const sans = types.filter(k => owned(k) < 1 && !manque.includes(k));
+    if(sans.length) throw new Error(`pas donnés : ${sans.join(", ")}`);
+    if(donnerTout().recus.length) throw new Error("touché deux fois, il redonne des objets qu'on a déjà");
+    return `${recus.length} objets donnés${manque.length ? `, ${manque.length} sans place (sac et coffres pleins)` : ""} ; une deuxième fois, rien de plus`;
+  });
   await etape("Jamais coincé", async () => {
     /* le personnage posé au milieu d'un bâtiment (comme une partie rouverte au mauvais endroit) se dégage tout seul */
     const b = state.buildings.find(b => b.type === "scierie");

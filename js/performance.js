@@ -23,7 +23,10 @@ import { toast, openSheet, closeSheet, wrap } from "./interface.js";
 import { player } from "./monde/personnage.js";
 import { isInside, currentPlace } from "./lieux.js";
 import { vuePremiere } from "./vue.js";
-import { saison } from "./donnees.js";
+import { saison, MEUBLES, FABRIQUE_A } from "./donnees.js";
+import { addOwned, owned } from "./regles.js";
+import { save } from "./sauvegarde.js";
+import { syncBarre } from "./barre.js";
 import { meteo } from "./monde/meteo.js";
 import { seriesIci } from "./monde/series.js";
 
@@ -288,7 +291,8 @@ boite.className = "perf"; boite.id = "perf"; boite.hidden = true;
 document.body.appendChild(boite);
 const fmt = n => Math.round(n).toLocaleString("fr-FR");
 boite.innerHTML = `<div class="perf-chiffres"></div><button class="perf-b" data-rapport>📋 Rapport</button>`
-  + ` <button class="perf-b" data-session="120000">⏱️ 2 min</button> <button class="perf-b" data-session="300000">⏱️ 5 min</button>`;   // les boutons restent en place (seuls les chiffres changent)
+  + ` <button class="perf-b" data-session="120000">⏱️ 2 min</button> <button class="perf-b" data-session="300000">⏱️ 5 min</button>`
+  + ` <button class="perf-b" data-cadeau>🎁 Tous les objets</button>`;   // les boutons restent en place (seuls les chiffres changent)
 const chiffres = boite.querySelector(".perf-chiffres");
 const minSec = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, "0")}`;
 function afficher(){
@@ -301,8 +305,25 @@ function afficher(){
     + (sac ? `<div class="perf-l mauvais">⚠️ ${sac} saccade${sac > 1 ? "s" : ""} en 10 s</div>` : "")
     + (S ? `<div class="perf-l">⏱️ mesure ${minSec(S.joue)} / ${minSec(S.duree)} (touche ⏱️ pour finir)</div>` : "");
 }
+/* Pour essayer les objets refaits (Yo, 10 novembre 2026 : « mets tous les objets dans ma partie actuelle sans que j'aie besoin
+   de les créer ») : un de chaque objet qui se fabrique, qu'on n'a pas encore dans son sac ou ses coffres, et de quoi les garnir ;
+   ce qui n'a pas de place reste à donner : on refait de la place, on touche à nouveau */
+const GARNITURE = {chandelleSuif: 10, luciole: 3, torche: 2, bois: 6};
+export function donnerTout(){
+  const recus = [], manque = [];
+  for(const k of Object.keys(MEUBLES)){
+    if(!FABRIQUE_A[k] || MEUBLES[k].plan || owned(k) >= 1) continue;
+    (addOwned(k, 1).reste ? manque : recus).push(k);
+  }
+  for(const [k, n] of Object.entries(GARNITURE)){ const v = n - owned(k); if(v > 0 && addOwned(k, v).reste) manque.push(k); }
+  syncBarre(); save();
+  toast(`🎁 ${recus.length} objet${recus.length > 1 ? "s" : ""} dans ton sac et tes coffres, et de quoi les garnir`
+    + (manque.length ? ` ; ${manque.length} n'ont pas eu de place : fais de la place, puis touche encore 🎁` : ""), 4200);
+  return {recus, manque};
+}
 boite.addEventListener("click", e => {
   if(e.target.closest("[data-rapport]")) montrerRapport();
+  if(e.target.closest("[data-cadeau]")) donnerTout();
   const b = e.target.closest("[data-session]");
   if(b){ if(S) finirSession(); else lancerSession(+b.dataset.session); }
 });
