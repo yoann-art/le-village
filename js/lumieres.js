@@ -12,13 +12,13 @@
    des bâtiments (batiments.js) éclairent l'île comme celles posées sur les cases ; les papillons de nuit viennent
    tourner autour de toutes ces lumières (lumieresIle, insectes.js). */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet, BUCHE, resteFeu, FLEURS } from "./donnees.js";
+import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet, BUCHE, resteFeu, FLEURS, POISSONS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacCount } from "./regles.js";
 import { scene } from "./monde/scene.js";
 import { map, N, centerOf, setEtat, objMesh } from "./monde/ile.js";
 import { lumieresDedans, refreshItemMesh } from "./monde/interieurs.js";
-import { fireMat, nuitMat, lucioleMat, footOf } from "./monde/meubles.js";
+import { fireMat, nuitMat, lucioleMat, footOf, nagerAquariums } from "./monde/meubles.js";
 import { lumieresFacades } from "./monde/batiments.js";
 import { nuitIci, HALO } from "./monde/ciel.js";
 import { player } from "./monde/personnage.js";
@@ -124,6 +124,7 @@ export function updateLumieres(dt, actif){
   else actives = 0;
   bouton(actif && place && !DEDANS_SANS.includes(place.b.type) ? place : null);
   bruler(place, dt);
+  nagerAquariums(t);                                                // les poissons des aquariums (meubles.js)
 }
 /* Pour la vérification : combien de vraies lumières sont allumées ici */
 export const lumieresActives = () => actives;
@@ -131,9 +132,11 @@ export const lumieresActives = () => actives;
 /* ----- Poser une torche sur une torchère, une chandelle dans un bougeoir ----- */
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
 export const garniDispo = type => MEUBLES[type].support === "fleur" && FLEURS[state.main] && owned(state.main) > 0 ? state.main   // le pot : la fleur tenue en main d'abord
+  : MEUBLES[type].support === "poisson" && POISSONS[state.main] && owned(state.main) > 0 ? state.main   // l'aquarium : le poisson tenu en main d'abord
   : (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
-export const poserLabel = type => MEUBLES[type].support === "fleur" ? (k => `🌸 ${MEUBLES[type].nb > 1 ? "Mettre" : "Planter"} ${k ? `${FLEURS[k].une ? "une" : "un"} ${FLEURS[k].nom.toLowerCase()}` : "une fleur"} ${MEUBLES[type].dans}`)(garniDispo(type))
+export const poserLabel = type => MEUBLES[type].support === "poisson" ? (k => `🐟 Mettre ${k ? `${POISSONS[k].une ? "une" : "un"} ${POISSONS[k].nom.toLowerCase()}` : "un poisson"} ${MEUBLES[type].dans}`)(garniDispo(type))
+  : MEUBLES[type].support === "fleur" ? (k => `🌸 ${MEUBLES[type].nb > 1 ? "Mettre" : "Planter"} ${k ? `${FLEURS[k].une ? "une" : "un"} ${FLEURS[k].nom.toLowerCase()}` : "une fleur"} ${MEUBLES[type].dans}`)(garniDispo(type))
   : MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
@@ -143,6 +146,7 @@ export function poserGarni(o, type, refaire){
   const k = un && o.bougie ? (owned(o.bougie) >= 1 ? o.bougie : null) : garniDispo(type);   // la suite : la même sorte de chandelle
   if(s === "buche") return poserBuche(o, type, k, deja, nb, refaire);
   if(s === "fleur") return planter(o, type, k, refaire);
+  if(s === "poisson") return mettrePoisson(o, type, k, refaire);
   if(!k && s === "lucioles"){ toast("✨ Il te faut 3 lucioles : elles s'attrapent au bocal, les nuits d'été, dans les herbes hautes", 3600); return false; }
   if(!k){ toast(bougie ? "🕯️ Il te faut une chandelle : elle se fabrique" + ` à l'atelier de décoration de la Chaumière (1 suif, 1 fibre${un ? " pour 2" : ""})`
     : "🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
@@ -185,6 +189,19 @@ function planter(o, type, k, refaire){
   syncBarre(); save(); renderHUD();
   const quand = f.saisons.map(s => ({printemps: "au printemps", ete: "en été", automne: "en automne", hiver: "en hiver"})[s]);
   toast(`🌸 ${f.nom} ${f.une ? "plantée" : "planté"} ${MEUBLES[type].dans} : ${f.une ? "elle" : "il"} fleurit ${quand.length > 1 ? quand.slice(0, -1).join(", ") + " et " + quand.at(-1) : quand[0]}`, 3600);
+  return true;
+}
+/* Un poisson pêché dans l'aquarium (Yo, 10 novembre 2026) : il quitte le sac et y nage ; une koï prend la robe d'une koï du
+   carnet ; rangé, l'aquarium le rend */
+function mettrePoisson(o, type, k, refaire){
+  if(!k){ toast("🐟 Il te faut un poisson : pêche-en un à l'étang ou en mer, puis reviens", 3600); return false; }
+  addOwned(k, -1);
+  const robes = k === "koi" && state.carnet.poissons.koi && state.carnet.poissons.koi.couleurs ? Object.keys(state.carnet.poissons.koi.couleurs) : [];
+  const patch = {poisson: k, robe: robes.length ? robes[Math.floor(Math.random() * robes.length)] : undefined};
+  for(const [c, v] of Object.entries(patch)) if(v === undefined) delete o[c]; else o[c] = v;
+  refaire(patch); syncBarre(); save(); renderHUD();
+  const P = POISSONS[k];
+  toast(`🐟 ${P.une ? "La" : "Le"} ${P.nom.toLowerCase()} nage ${MEUBLES[type].dans}`, 3000);
   return true;
 }
 /* Les bûches qui brûlent : dans la pièce, une fois par seconde, la cheminée est refaite quand une bûche a fini (son feu

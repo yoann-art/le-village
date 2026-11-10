@@ -342,7 +342,7 @@ $("#deco-store").addEventListener("click", () => {
   if(sel.pierre && placeFor(sel.pierre) < (sel.pierre === sel.type ? 2 : 1)){ toast("Ton sac et tes coffres sont pleins : fais de la place pour la pierre de la vitrine"); return; }
   const nG = garniDe(sel.type, sel) ? garniRendu(sel.type, sel) : 0;  // le chandelier, le lustre : les chandelles posées ; la cheminée : ses bûches entières
   const garni = nG ? garniDe(sel.type, sel) : null;                    // la torche de la torchère, la chandelle du bougeoir
-  const leGarni = garni === "torche" ? "sa torche" : garni === "luciole" ? "ses lucioles" : garni && MEUBLES[sel.type].support === "fleur" ? "sa fleur" : garni === "bois" ? (nG > 1 ? "ses bûches" : "sa bûche") : nG > 1 ? "ses chandelles" : "sa chandelle";
+  const leGarni = garni === "torche" ? "sa torche" : garni === "luciole" ? "ses lucioles" : garni && MEUBLES[sel.type].support === "fleur" ? "sa fleur" : garni && MEUBLES[sel.type].support === "poisson" ? "son poisson" : garni === "bois" ? (nG > 1 ? "ses bûches" : "sa bûche") : nG > 1 ? "ses chandelles" : "sa chandelle";
   if(garni && placeFor(garni) < nG){ toast(`Ton sac et tes coffres sont pleins : fais de la place pour ${garni === "torche" ? "la torche de la torchère" : leGarni}`); return; }
   const list = items();
   list.splice(list.indexOf(sel), 1);

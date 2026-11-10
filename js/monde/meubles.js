@@ -6,6 +6,7 @@ import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose, FLEURS, enFleur, saison } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
 import { fleurModele, fleurCoupee } from "./fleurs.js";
+import { MODELES_POISSONS } from "./poissons3d.js";
 import { paqueretteModele } from "./paquerette.js";
 import { pissenlitModele } from "./pissenlit.js";
 import { coquelicotModele } from "./coquelicot.js";
@@ -38,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1218,6 +1219,52 @@ function herbierMorceaux(fleurs){ return c => {
   fleurs.slice(0, 6).forEach((k, j) => fleurSechee(out, k, HB_PLACES[j][0], HB.cy + HB_PLACES[j][1], o));
   return out;
 }; }
+/* Le petit aquarium (image de Yo, 10 novembre 2026 : « Voici le petit aquarium ») : un bocal rond de verre au col épais,
+   l'eau bleue, des galets clairs et gris au fond, une plante d'eau ; sur un socle de bois rond à quatre pieds (sa teinte). Sans
+   poisson quand on le pose ; on y met un poisson pêché (o.poisson ; la koï, sa robe : o.robe), qui fait le tour du bocal
+   (nagerAquariums, à chaque image). Le bois, les galets, la plante : un dessin ; l'eau, le verre, le poisson : un chacun */
+const AQ = {socle: .13, cy: .34, r: .22, eau: .45};
+const AQ_PROFIL = (r, haut) => { const p = []; for(let a = -1.42; a <= haut + 1e-6; a += (haut + 1.42) / 14) p.push([r * Math.cos(a), AQ.cy + r * .92 * Math.sin(a)]); return p; };
+const AQ_VERRE = lathe([[0, AQ.socle + .015], ...AQ_PROFIL(AQ.r, 1.0), [.14, .56], [.165, .57], [.17, .59], [.155, .605], [.135, .595], [.13, .575]], 28);
+const AQ_EAU = lathe([[0, AQ.socle + .02], ...AQ_PROFIL(AQ.r - .012, Math.asin((AQ.eau - AQ.cy) / ((AQ.r - .012) * .92))), [0, AQ.eau]], 28);
+const AQ_PLATEAU = lathe([[0, .1], [.21, .1], [.225, .108], [.228, .12], [.218, AQ.socle], [0, AQ.socle]], 24);
+const AQ_PIED = boiteRonde(.05, .11, .05, .02, 1), AQ_GALET = new THREE.SphereGeometry(1, 7, 5);
+const matEau = toon({color: 0x5EB6E2, transparent: true, opacity: .5, depthWrite: false});
+const matBocal = toon({color: 0xE4F4FA, transparent: true, opacity: .22, depthWrite: false, side: THREE.DoubleSide});
+function aquariumMorceaux(c){
+  const o = ombreBois(0, .6), out = [{geo: AQ_PLATEAU, m: M4(0, 0, 0), c, ombre: o}];
+  for(const [x, z] of [[.13, .13], [-.13, .13], [.13, -.13], [-.13, -.13]]) out.push({geo: AQ_PIED, m: M4(x, .055, z), c, ombre: o});
+  /* les galets : un lit clair, quelques gris, deux gros */
+  for(let k = 0; k < 30; k++){ const a = k * 2.4, y = AQ.socle + .05 + (k % 4) * .008, rmax = AQ.r * .98 * Math.cos(Math.asin(Math.max(-1, (y - AQ.cy) / (AQ.r * .92)))) - .02,
+      r = (.15 + (k % 7) / 7 * .85) * rmax, s = k % 9 === 0 ? .026 : .013 + (k % 3) * .004;   // dans le fond rond du bocal
+    out.push({geo: AQ_GALET, m: M4(Math.cos(a) * r, y, Math.sin(a) * r, 0, a, 0, s, s * .75, s), c: k % 4 === 0 ? 0x8A8680 : [0xE8D2A8, 0xD8B888, 0xF0E0C0][k % 3]}); }
+  /* la plante d'eau : une tige et des feuilles longues */
+  const T = (x, y, z, rx, rz, l) => out.push({geo: AQ_GALET, m: M4(x, y, z, rx, 0, rz, .012, l, .006), c: 0x6EAA3A});
+  for(const [x, z] of [[-.05, .02], [-.03, -.02]]){ T(x, AQ.socle + .12, z, 0, 0, .08);
+    for(let k = 0; k < 4; k++){ const y = AQ.socle + .07 + k * .035, s = k % 2 ? 1 : -1; T(x + s * .025, y, z, 0, s * .9, .03); } }
+  return out;
+}
+/* Le poisson de l'aquarium : son vrai modèle, petit, qui tourne dans le bocal */
+const AQUA = new Set();
+function poissonAquarium(k, robe){
+  const M = MODELES_POISSONS[k];
+  if(!M) return null;
+  const f = M.fabrique(M.couleurs ? (robe || M.couleurs[0]) : undefined), b = new THREE.Box3().setFromObject(f), l = Math.max(b.max.x - b.min.x, .01);
+  f.scale.multiplyScalar(.15 / l);
+  const c = new THREE.Box3().setFromObject(f).getCenter(new THREE.Vector3()); f.position.sub(c);   // son milieu au milieu
+  const g = new THREE.Group(); g.add(f); g.userData.t0 = Math.random() * 10; AQUA.add(g);
+  g.position.set(.085, AQ.cy - .02, 0); g.rotation.y = Math.PI / 2 + Math.PI;
+  return g;
+}
+export function nagerAquariums(t){
+  for(const g of AQUA){
+    if(!g.parent || !g.parent.parent){ if(g.userData.vu) AQUA.delete(g); continue; }   // l'aquarium rangé, ou la pièce quittée
+    g.userData.vu = true;
+    const a = (t + g.userData.t0) * .55, r = .085;
+    g.position.set(Math.cos(a) * r, AQ.cy - .02 + Math.sin(t * 1.3 + g.userData.t0) * .015, Math.sin(a) * r);
+    g.rotation.y = Math.PI / 2 - a + Math.PI;                       // la tête (vers −x) devant, dans le sens où il nage
+  }
+}
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1336,6 +1383,13 @@ const BUILD = {
       const [a, p, h] = VS_BOUQUET[j], f = fleurCoupee(k, FLEURS[k].couleurs[0], h);
       f.position.y = VS.col; f.rotation.set(p, a, 0, "YXZ"); f.scale.setScalar(.55); g.add(f);
     });
+  },
+  aquarium(g, m, o){                                                                 // le bocal, l'eau, et le poisson qu'on y a mis
+    g.add(modeleBois("aquarium", m, aquariumMorceaux));
+    const e = new THREE.Mesh(AQ_EAU, matEau); e.renderOrder = 1; e.castShadow = false; g.add(e);
+    const v = new THREE.Mesh(AQ_VERRE, matBocal); v.renderOrder = 2; v.castShadow = false; g.add(v);
+    const p = o && o.poisson ? poissonAquarium(o.poisson, o.robe) : null;
+    if(p) g.add(p);
   },
   herbier(g, m, o){ const l = (o && o.fleurs) || []; g.add(modeleBois("herbier" + l.join(","), m, herbierMorceaux(l))); },   // ses fleurs séchées (une forme par herbier)
   bouquet(g){ g.add(modeleBois("bouquet", 0, bouquetMorceaux)); },   // couché, ses couleurs à lui
