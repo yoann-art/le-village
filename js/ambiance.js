@@ -10,7 +10,7 @@
    - la roue à eau près de la Scierie (niveau 2 et plus), le feu près d'un feu de camp, d'un brasero ou d'une cheminée.
    Dans la forêt et le Marais, seulement le vent, les feuilles et la pluie (leurs sons à eux viendront à l'étape 5) ; dans la
    mine et la grotte, rien. Tout se règle quatre fois par seconde (main.js) ; les boucles tues s'arrêtent (sons.js). */
-import { RECOLTE, saison } from "./donnees.js";
+import { RECOLTE, saison, resteFeu } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 import { player } from "./monde/personnage.js";
 import { map, idx, inb, tileOf, N, H, lieuEau } from "./monde/ile.js";
@@ -103,7 +103,7 @@ export function updateAmbiance(dt){
       cible[hiver ? "ambHiver" : "ambVent"] = vent * .25;
       if(pluie) cible.ambPluieToit = orage ? 1 : .8;
       const items = (place.b.deco && place.b.deco.items) || [];
-      const feu = items.find(it => (it.type === "cheminee" || it.type === "feuCamp" || it.type === "brasero") && !it.eteint);
+      const feu = items.find(it => (it.type === "cheminee" ? resteFeu(it) > 0 : it.type === "feuCamp" || it.type === "brasero") && !it.eteint);   // la cheminée : tant que ses bûches brûlent
       if(feu){ const p = player.position; cible.ambFeu = clamp(1 - (Math.hypot(p.x - feu.x, p.z - feu.z) - 1) / 6); }
     }
   }

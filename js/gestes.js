@@ -8,7 +8,7 @@
    - toucher le bocal à lucioles : elles brillent plus fort un instant.
    Dans une pièce : les meubles posés ; dehors : les lumières posées sur les cases tout autour, et celles accrochées aux façades. */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE } from "./donnees.js";
+import { MEUBLES, LUMIERE, resteFeu, figerFeu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { player, poser, seLever, posture, poseObjet, regard } from "./monde/personnage.js";
 import { footOf } from "./monde/meubles.js";
@@ -27,7 +27,7 @@ const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLuci
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
 const nomLumiere = (it, m) => it.type === "chandelle" ? "la chandelle" : leNom(m);   // le bougeoir : on éteint sa chandelle
 const geste = it => SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? (it.lucioles ? "toucher" : null)
-  : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || ((!LUMIERE[it.type].torche || it.torche) && (!LUMIERE[it.type].bougie || it.bougie))) ? "lumiere" : null;   // une torchère : seulement avec sa torche ; un bougeoir, avec sa chandelle
+  : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || ((!LUMIERE[it.type].torche || it.torche) && (!LUMIERE[it.type].bougie || it.bougie) && (!LUMIERE[it.type].buche || resteFeu(it) > 0))) ? "lumiere" : null;   // la cheminée, avec ses bûches   // une torchère : seulement avec sa torche ; un bougeoir, avec sa chandelle
 
 /* Du repère d'un meuble posé (rot : ses quarts de tour, comme interieurs.js) vers la pièce */
 const versPiece = (it, lx, lz) => { const a = -(it.rot || 0) * Math.PI / 2, c = Math.cos(a), s = Math.sin(a);
@@ -55,7 +55,8 @@ function allonger(it){
 function basculer(c, m){
   let eteint;
   if(c.i !== undefined){ eteint = !(state.ile[c.i] || {}).eteint; setEtat(c.i, {eteint: eteint || undefined}); }   // setEtat refait la case
-  else { const it = c.it; eteint = !it.eteint; if(eteint) it.eteint = true; else delete it.eteint; c.refaire(); }
+  else { const it = c.it; eteint = !it.eteint; if(MEUBLES[it.type].support === "buche") figerFeu(it, eteint);   // la cheminée : ses bûches s'arrêtent de brûler
+    if(eteint) it.eteint = true; else delete it.eteint; c.refaire(); }
   save(); jouer(eteint ? "meuble" : "peindre");
   toast(eteint ? `🌙 ${m.nom} éteint${m.une ? "e" : ""}` : `🔥 ${m.nom} allumé${m.une ? "e" : ""}`, 1600);
 }

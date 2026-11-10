@@ -12,7 +12,7 @@
    des bâtiments (batiments.js) éclairent l'île comme celles posées sur les cases ; les papillons de nuit viennent
    tourner autour de toutes ces lumières (lumieresIle, insectes.js). */
 import { $ } from "./outils.js";
-import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet } from "./donnees.js";
+import { MEUBLES, LUMIERE, LUMIERE_MAIN, GARNIS, garniDe, garniNb, garniPose, garniPlein, unAUn, objet, BUCHE, resteFeu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, sacCount } from "./regles.js";
 import { scene } from "./monde/scene.js";
@@ -30,7 +30,7 @@ import { toast, renderHUD } from "./interface.js";
 const lumieresDehors = Array.from({length: 3}, () => new THREE.PointLight(0xFFB070, 0, 6, 1.5));
 scene.add(...lumieresDehors);
 /* Ce meuble éclaire-t-il ? (une torchère, seulement avec sa torche) : sa lumière, ou null */
-const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && (!L.bougie || (o && o.bougie)) && (MEUBLES[type].support !== "lucioles" || (o && o.lucioles)) && !(o && o.eteint) ? (unAUn(type) ? selonChandelles(type, o, L) : L) : null; };   // éteinte (gestes.js) : rien ; le bougeoir, avec sa chandelle
+const eclaire = (type, o) => { const L = LUMIERE[type]; return L && (!L.torche || (o && o.torche)) && (!L.bougie || (o && o.bougie)) && (!L.buche || resteFeu(o) > 0) && (MEUBLES[type].support !== "lucioles" || (o && o.lucioles)) && !(o && o.eteint) ? (MEUBLES[type].support === "bougie" && unAUn(type) ? selonChandelles(type, o, L) : L) : null; };   // la cheminée : tant que ses bûches brûlent   // éteinte (gestes.js) : rien ; le bougeoir, avec sa chandelle
 /* Le chandelier, le lustre : la lumière grandit avec chaque chandelle posée (Yo, 9 novembre 2026) ; sa force suit le nombre
    de chandelles, sa portée un peu moins (une seule chandelle éclaire encore autour d'elle) */
 const partielles = new Map();
@@ -123,6 +123,7 @@ export function updateLumieres(dt, actif){
   else if(["mine", "foret", "trajet"].includes(place.b.type)) actives = allumer(lumieresDehors, [], 1);   // seulement la torche en main
   else actives = 0;
   bouton(actif && place && !DEDANS_SANS.includes(place.b.type) ? place : null);
+  bruler(place, dt);
 }
 /* Pour la vérification : combien de vraies lumières sont allumées ici */
 export const lumieresActives = () => actives;
@@ -131,13 +132,14 @@ export const lumieresActives = () => actives;
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
 export const garniDispo = type => (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
-export const poserLabel = type => MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
+export const poserLabel = type => MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
   const s = MEUBLES[type].support, bougie = s === "bougie", un = unAUn(type), nb = garniNb(type), n = un ? 1 : nb;
   if(un && garniPlein(type, o)) return false;                          // le chandelier, le lustre : déjà toutes ses chandelles
   const deja = un ? garniPose(type, o) : 0;
   const k = un && o.bougie ? (owned(o.bougie) >= 1 ? o.bougie : null) : garniDispo(type);   // la suite : la même sorte de chandelle
+  if(s === "buche") return poserBuche(o, type, k, deja, nb, refaire);
   if(!k && s === "lucioles"){ toast("✨ Il te faut 3 lucioles : elles s'attrapent au bocal, les nuits d'été, dans les herbes hautes", 3600); return false; }
   if(!k){ toast(bougie ? "🕯️ Il te faut une chandelle : elle se fabrique" + ` à l'atelier de décoration de la Chaumière (1 suif, 1 fibre${un ? " pour 2" : ""})`
     : "🔥 Il te faut une torche : elle se fabrique à l'établi de la Scierie (1 bois, 2 fibres)", 3600); return false; }
@@ -152,6 +154,31 @@ export function poserGarni(o, type, refaire){
   return true;
 }
 export const poserTorche = (o, refaire) => poserGarni(o, "torchere", refaire);
+/* Une bûche dans la cheminée (1 bois du sac) : elle s'ajoute au feu (allumé s'il était éteint), et brûle BUCHE secondes */
+function poserBuche(o, type, k, deja, nb, refaire){
+  if(!k){ toast("🪵 Il te faut du bois : ramasse les branches au sol, ou coupe un arbre avec ta hache", 3600); return false; }
+  addOwned(k, -1);
+  const patch = {feu: Date.now() + (resteFeu(o) + BUCHE) * 1000, reste: undefined, eteint: undefined};
+  for(const [c, v] of Object.entries(patch)) if(v === undefined) delete o[c]; else o[c] = v;
+  refaire(patch); vus.set(o, garniPose(type, o));
+  syncBarre(); save(); renderHUD();
+  const min = Math.round(BUCHE / 60);
+  toast(deja + 1 >= nb ? `🪵 Les ${nb} bûches sont ${MEUBLES[type].dans} : de quoi brûler ${nb * min} minutes` : `🪵 Bûche posée ${MEUBLES[type].dans} (${deja + 1} sur ${nb}) : elle brûle ${min} minutes`, 3400);
+  return true;
+}
+/* Les bûches qui brûlent : dans la pièce, une fois par seconde, la cheminée est refaite quand une bûche a fini (son feu
+   s'éteint avec la dernière) */
+const vus = new WeakMap();
+let veille = 0;
+function bruler(place, dt){
+  if((veille -= dt) > 0 || !place || !place.b.deco) return;
+  veille = 1;
+  for(const it of place.b.deco.items) if(MEUBLES[it.type] && MEUBLES[it.type].support === "buche"){
+    const n = garniPose(it.type, it);
+    if(vus.has(it) && vus.get(it) !== n) refreshItemMesh(it);
+    vus.set(it, n);
+  }
+}
 
 /* Les chandelles d'avant (Yo, 8 novembre 2026 : le bougeoir vide, la chandelle à poser dedans) : une fois, chaque chandelle
    posée devient un bougeoir garni de sa chandelle de suif ; chaque chandelle du sac, des cases et des coffres, un bougeoir et
@@ -230,6 +257,14 @@ if(!state.chandeliers){
   const n = owned("chandelier");
   if(n > 0) addOwned("chandelleSuif", 3 * n);
   state.chandeliers = 1; save();
+}
+/* Les cheminées d'avant (Yo, 10 novembre 2026 : vide, on y pose trois bûches qui brûlent) : une fois, chaque cheminée posée
+   reçoit ses trois bûches, et brûle (éteinte, elle les garde pour plus tard) */
+if(!state.cheminees){
+  for(const b of state.buildings) for(const it of (b.deco && b.deco.items) || []) if(it.type === "cheminee"){
+    if(it.eteint) it.reste = 3 * BUCHE; else it.feu = Date.now() + 3 * BUCHE * 1000;
+  }
+  state.cheminees = 1; save();
 }
 /* Dans une pièce, tout près d'une torchère sans torche : le bouton */
 const btn = $("#btn-torchere");

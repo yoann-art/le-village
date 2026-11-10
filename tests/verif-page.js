@@ -26,7 +26,7 @@
    lumière suit l'heure, les vitres s'allument la nuit), ne jamais rester coincé. Lancée à chaque envoi sur GitHub par
    .github/workflows/verification.yml (via tests/verif.mjs), dans un navigateur neuf.
    Elle refuse de tourner sur une partie déjà avancée, pour ne jamais abîmer la vraie partie de Yo. */
-import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, OISEAUX, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet, garniPose } from "../js/donnees.js";
+import { B, POISSONS, RECOLTE, OUTILS, COMBAT, FLEURS, FLEUR_RARETE, INSECTES, OISEAUX, GRAINES, ATELIERS, CRISTAUX, PIERRES, PIERRES_ILE, FLORE_ILE, GALETS_ILE, traversable, enFleur, graineDeFleur, objet, garniPose, garniRendu, garniDe, BUCHE, resteFeu, figerFeu } from "../js/donnees.js";
 import { state, agrandirIle, remiseAZero } from "../js/sauvegarde.js";
 import { sacAdd, sacCount, sacTake, owned, sizeOf, payer, hasAll, addOwned, upCost, noterPierre, placesSac } from "../js/regles.js";
 import { ressemerMaintenant } from "../js/monde/semis.js";
@@ -740,6 +740,31 @@ export async function verifier(){
       if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes(nom)) throw new Error(`le ${nom.toLowerCase()} plein propose encore une chandelle`);
       if(garniPose(type, {bougie: "chandelleSuif"}) !== nb) throw new Error(`un ${nom.toLowerCase()} d'avant n'a pas toutes ses chandelles`);
       if(!LUMIERE[type].bougie) throw new Error(`le ${nom.toLowerCase()} éclaire sans chandelles`);
+      items.splice(items.indexOf(it), 1); removeItemMesh(it.id);
+    }
+    /* la cheminée vide (Yo, 10 novembre 2026 : « Une bûche à la fois en 3 gestes », « Une bûche = 1 bois de mon sac », « Les
+       bûches s'usent et le feu s'éteint ») */
+    {
+      const it = {id: 99003, type: "cheminee", x: chandelle.x, z: chandelle.z, rot: 0}; items.push(it); addItemMesh(it);
+      const b0 = owned("bois"); sacAdd("bois", 3); placePlayer(it.x + .7, it.z, -1, 0);
+      for(let k = 1; k <= 3; k++){
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Cheminée")) throw new Error(`près de la cheminée (${k - 1} bûches), le bouton dit « ${$("#btn-torchere").textContent} »`);
+        $("#btn-torchere").click();
+        if(garniPose("cheminee", it) !== k || owned("bois") !== b0 + 3 - k) throw new Error(`cheminée : ${garniPose("cheminee", it)} bûches au ${k}e appui (${owned("bois") - b0} bois de reste)`);
+      }
+      updateLumieres(.016, true);
+      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Cheminée")) throw new Error("la cheminée pleine propose encore une bûche");
+      it.feu = Date.now() + 1.5 * BUCHE * 1000;                         // une bûche et demie de brûlée
+      if(garniPose("cheminee", it) !== 2 || garniRendu("cheminee", it) !== 1) throw new Error(`à moitié brûlée : ${garniPose("cheminee", it)} bûches vues, ${garniRendu("cheminee", it)} rendue`);
+      updateLumieres(.016, true);
+      if($("#btn-torchere").hidden) throw new Error("une bûche brûlée, la cheminée ne propose pas d'en remettre une");
+      figerFeu(it, true); it.eteint = true; const r = resteFeu(it);       // éteinte : le feu s'arrête où il en est
+      if(Math.abs(r - 1.5 * BUCHE) > 2) throw new Error(`éteinte, il reste ${r} s de feu`);
+      figerFeu(it, false); delete it.eteint;
+      if(Math.abs(resteFeu(it) - r) > 2) throw new Error("rallumée, la cheminée a perdu son feu");
+      it.feu = Date.now() - 1;                                          // tout brûlé : le feu s'éteint
+      if(garniPose("cheminee", it) || garniDe("cheminee", it) || LUMIERE.cheminee.buche !== true) throw new Error("toutes ses bûches brûlées, la cheminée brûle encore");
       items.splice(items.indexOf(it), 1); removeItemMesh(it.id);
     }
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
@@ -3047,7 +3072,7 @@ export async function verifier(){
       const {addItemMesh, removeItemMesh} = await import("../js/monde/interieurs.js");
       const tenues = state.barre.slice(); state.barre.fill(null);
       await entrer(scierie);
-      const it = {id: 9990, type: "cheminee", x: 0, z: -1, rot: 0};
+      const it = {id: 9990, type: "cheminee", x: 0, z: -1, rot: 0, feu: Date.now() + 600000};   // avec ses bûches qui brûlent
       try {
         scierie.deco.items.push(it); addItemMesh(it); updateTorche(.01);
         updateLumieres(.016, true);
@@ -3192,7 +3217,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

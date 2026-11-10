@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -755,6 +755,76 @@ function chandelierMorceaux(n){ return c => {                                   
 }; }
 const CD_FLAMMES = [null, ...[1, 2, 3].map(n => fusionner(CD_ORDRE.slice(0, n).map(([x, y]) =>
   ({geo: CH_FLAMME, m: M4(x, y + BG.haut - BG.bas + .02, 0, 0, 0, 0, 1.25, 1.25, 1.25), c: 0}))))];   // selon les chandelles posées
+/* La cheminée (image de Yo, 10 novembre 2026 : « Retire les bûches elles sont ajoutées quand on récupère les ressources ») :
+   un mur de grosses pierres arrondies (elles prennent sa teinte ; le mortier entre elles un peu plus sombre) ; l'arche du foyer,
+   neuf pierres taillées, la clé en haut ; le fond en petites briques ; un épais manteau de chêne sur deux consoles ; une marche
+   de dalles devant ; le chenet de fer. Vide quand on la pose ; on y met trois bûches (o.feu, une à la fois), couchées sur le
+   chenet comme l'image ; elles brûlent et s'usent (donnees.js, BUCHE). Un dessin pour la pierre, le bois et le fer (et les
+   bûches), un pour le feu */
+const CM = {fond: -.4, face: .1, ox: .36, oy: .55, rA: .36, rB: .53, man: 1.12, haut: 1.5, fer: 0x4A3C34, brique: 0xA4664C, cendre: 0x3A302A};
+const CM_BUCHE = baton(.072, .48, false, false, 10), CM_CERNE = new THREE.CylinderGeometry(.064, .064, .012, 10);
+const CM_POTEAU = baton(.026, .18, false, true, 8), CM_BARRE = baton(.017, .48, true, true, 8), CM_TRAVERSE = baton(.015, .26, true, true, 6);
+const CM_BRIQUE = new THREE.BoxGeometry(.165, .1, .05);
+/* le mortier autour de l'arche : du haut des piliers au haut du foyer, moins le demi-cercle de l'ouverture */
+const CM_TYMPAN = (() => { const f = new THREE.Shape(); f.moveTo(-.37, .55); f.lineTo(-.36, .55); f.absarc(0, .55, .36, Math.PI, 0, true);
+  f.lineTo(.37, .55); f.lineTo(.37, .92); f.lineTo(-.37, .92); f.lineTo(-.37, .55);
+  return new THREE.ExtrudeGeometry(f, {depth: .46, bevelEnabled: false, curveSegments: 12}).translate(0, 0, -.38); })();
+const cmPierre = (w, h, d) => boiteRonde(w, h, d, Math.min(.065, w / 2.6, h / 2.6), 2);   // bien arrondies, comme l'image
+/* les pierres du mur : [x0, x1, y0, y1] ; le pilier de droite (celui de gauche en miroir), au-dessus du manteau tout le rang */
+const CM_PILIER = [[.37, .67, 0, .19], [.37, .54, .2, .37], [.55, .68, .2, .37], [.37, .67, .38, .55], [.54, .68, .56, .8], [.47, .68, .81, 1.06]];
+const CM_HAUT = [[-.68, -.42, 1.19, 1.34], [-.41, -.12, 1.19, 1.34], [-.11, .18, 1.19, 1.34], [.19, .45, 1.19, 1.34], [.46, .68, 1.19, 1.34],
+  [-.68, -.5, 1.35, 1.5], [-.49, -.2, 1.35, 1.5], [-.19, .1, 1.35, 1.5], [.11, .4, 1.35, 1.5], [.41, .68, 1.35, 1.5]];
+const CM_GEO = new Map();                                                                  // une forme par taille de pierre
+const cmGeo = (w, h, d) => { const k = `${w.toFixed(3)},${h.toFixed(3)},${d}`; if(!CM_GEO.has(k)) CM_GEO.set(k, cmPierre(w, h, d)); return CM_GEO.get(k); };
+/* les trois bûches, dans l'ordre où on les pose : [x, y, z, tour, pente, longueur] ; la 3e en travers sur les deux autres */
+const CM_BUCHES = [[.02, .125, -.13, .08, 0, 1], [-.06, .125, .02, -.12, 0, .85], [.02, .255, -.05, .55, .1, .9]];
+function chemineeMorceaux(n){ return c => {
+  const o = ombreBois(0, CM.haut), sombre = new THREE.Color(c).multiplyScalar(.68).getHex(), out = [];
+  const bloc = (w, h, d, x, y, z, cc) => out.push({geo: new THREE.BoxGeometry(w, h, d), m: M4(x, y, z), c: cc, ombre: o});
+  const D = CM.face - CM.fond, zc = (CM.face + CM.fond) / 2;
+  /* le cœur du mur (le mortier), un peu en retrait des pierres */
+  for(const s of [-1, 1]) bloc(.3, CM.man, D - .04, s * .52, CM.man / 2, zc - .02, sombre);
+  bloc(1.32, CM.haut - .96, D - .04, 0, (CM.haut - .06 + .9) / 2, zc - .02, sombre);   // son dessus sous celui des pierres
+  out.push({geo: CM_TYMPAN, m: M4(0, 0, 0), c: sombre, ombre: o});
+  /* le foyer : le fond de briques, les côtés, la cendre */
+  bloc(.74, .92, .1, 0, .46, -.31, new THREE.Color(CM.brique).multiplyScalar(.55).getHex());
+  for(let r = 0; r < 8; r++){ const y = .06 + r * .112;
+    for(let k = -3; k <= 3; k++){ const x = k * .18 + (r % 2 ? .09 : 0);
+      if(Math.abs(x) > .3 || (y > CM.oy && Math.hypot(x, y - CM.oy) > CM.rA - .07)) continue;
+      out.push({geo: CM_BRIQUE, m: M4(x, y, -.25), c: CM.brique, ombre: o}); } }
+  for(const s of [-1, 1]) bloc(.02, CM.oy, D - .1, s * (CM.ox - .005), CM.oy / 2, zc - .05, new THREE.Color(CM.brique).multiplyScalar(.75).getHex());
+  bloc(.72, .03, .5, 0, .015, -.05, CM.cendre);
+  /* les pierres du mur : les deux piliers, le haut au-dessus du manteau */
+  for(const s of [-1, 1]) for(const [x0, x1, y0, y1] of CM_PILIER)
+    out.push({geo: cmGeo(x1 - x0 - .012, y1 - y0 - .012, D), m: M4(s * (x0 + x1) / 2, (y0 + y1) / 2, zc), c, ombre: o});
+  for(const [x0, x1, y0, y1] of CM_HAUT) out.push({geo: cmGeo(x1 - x0 - .012, y1 - y0 - .012, D), m: M4((x0 + x1) / 2, (y0 + y1) / 2, zc), c, ombre: o});
+  /* l'arche : neuf pierres taillées en rayons, la clé un peu plus grande */
+  for(let k = 0; k < 9; k++){ const a = k * Math.PI / 8, cle = k === 4 ? 1.12 : 1, r = (CM.rA + CM.rB) / 2;
+    out.push({geo: cmGeo(.15 * cle, (CM.rB - CM.rA) * cle, D + .02), m: M4(Math.cos(a) * r, CM.oy + Math.sin(a) * r, zc + .01, 0, 0, a - Math.PI / 2), c, ombre: o}); }
+  /* la marche de dalles devant */
+  for(let k = 0; k < 5; k++) out.push({geo: cmGeo(.28, .13, .3), m: M4((k - 2) * .295, .065, .25), c, ombre: o});
+  /* le manteau de chêne et ses deux consoles */
+  out.push({geo: boiteRonde(1.6, .16, .4, .05, 3), m: M4(0, CM.man + .07, .04), c: C.wood, ombre: o});
+  for(const s of [-1, 1]){
+    out.push({geo: boiteRonde(.14, .2, .18, .045, 2), m: M4(s * .55, CM.man - .09, .17), c: C.wood, ombre: o});
+    out.push({geo: boiteRonde(.14, .12, .12, .045, 2), m: M4(s * .55, CM.man - .22, .14), c: C.wood, ombre: o});
+  }
+  /* le chenet de fer : deux poteaux devant, une barre entre eux, la base posée au sol */
+  for(const s of [-1, 1]){
+    out.push({geo: CM_POTEAU, m: M4(s * .22, .02, .09), c: CM.fer, ombre: o});
+    out.push({geo: CM_TRAVERSE, m: M4(s * .22, .045, -.17, Math.PI / 2, 0, 0), c: CM.fer, ombre: o});
+  }
+  out.push({geo: CM_BARRE, m: M4(-.24, .13, .09, 0, 0, -Math.PI / 2), c: CM.fer, ombre: o});
+  out.push({geo: CM_BARRE, m: M4(-.24, .045, .09, 0, 0, -Math.PI / 2), c: CM.fer, ombre: o});
+  out.push({geo: CM_BARRE, m: M4(-.24, .045, -.17, 0, 0, -Math.PI / 2), c: CM.fer, ombre: o});
+  /* les bûches posées */
+  for(const [x, y, z, ry, rz, l] of CM_BUCHES.slice(0, n)){
+    const B = M4(x, y, z, 0, ry, Math.PI / 2 + rz);
+    out.push({geo: CM_BUCHE, m: B.clone().multiply(M4(0, -.24 * l, 0, 0, 0, 0, 1, l, 1)), c: FC.buche, ombre: o});
+    for(const e of [-.242 * l, .242 * l]) out.push({geo: CM_CERNE, m: B.clone().multiply(M4(0, e, 0)), c: FC.cerne, ombre: o});
+  }
+  return out;
+}; }
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -858,12 +928,10 @@ const BUILD = {
   banc(g, m){ g.add(modeleBois("banc", m, bancMorceaux)); },
   etagere(g, m){ g.add(modeleBois("etagere", m, etagereMorceaux)); },
   armoire(g, m){ g.add(modeleBois("armoire", m, armoireMorceaux)); },
-  cheminee(g, m){
-    g.add(part(G.box, m, 1.6, 1.4, .7, 0, .7, -.05));                                 // maçonnerie
-    g.add(part(G.box, C.soot, .9, .65, .1, 0, .38, .3));                               // foyer
-    g.add(part(G.box, fireMat, .6, .25, .06, 0, .2, .33));                             // flammes
-    g.add(part(G.box, C.wood, 1.8, .12, .8, 0, 1.1, 0));                               // tablette
-    g.add(part(G.box, C.stone2, 1.0, .6, .5, 0, 1.7, -.1));                            // hotte
+  cheminee(g, m, o){                                                                 // vide, ou ses bûches qui brûlent (une à trois)
+    const n = garniPose("cheminee", o);
+    g.add(modeleBois(n ? "cheminee" + n : "cheminee", m, chemineeMorceaux(n)));
+    if(n){ const f = new THREE.Mesh(FC_FLAMMES, fireMat); f.position.set(0, .07, -.06); f.scale.setScalar([0, .85, .95, 1.05][n]); f.castShadow = false; g.add(f); }
   },
   petitTapis(g, m){
     g.add(part(G.box, m, 1.6, .02, 1.1, 0, .012, 0));                                 // bordure

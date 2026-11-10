@@ -68,7 +68,7 @@ export const MEUBLES = {
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
   armoire:  {nom:"Armoire", emoji:"🚪", gabarit:"moyen", w:1.3, d:.7, une:true},   // l'armoire (Yo, 8 novembre 2026)
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
-  cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"]},
+  cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"], une:true, support:"buche", dans:"dans la cheminée", nb:3},   // vide ; trois bûches s'y posent, une à la fois, et brûlent (Yo, 10 novembre 2026)
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true},
   lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
@@ -110,7 +110,7 @@ export const LUMIERE = {
   torchereMurale:source(5, "bois", {y: 1.57, flamme: true, torche: true, avance: .12}),
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
   brasero:       source(6, "bois", {y: .95, flamme: true}),
-  cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55}),                // son feu éclaire la pièce, devant le foyer
+  cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55, buche: true}),   // son feu éclaire la pièce, devant le foyer, tant que ses bûches brûlent
   feuCamp:       source(8, "bois", {y: .4, flamme: true}),
   lustre:        source(8, "bougie", {y: 1.68, flamme: true, bougie: true})             // « éclaire toute la pièce » : avec ses cinq chandelles
 };
@@ -118,14 +118,25 @@ export const LUMIERE = {
 export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
 /* Ce qui se pose sur un support (MEUBLES[...].support) : la torche sur la torchère (o.torche), la chandelle dans le bougeoir
    (o.bougie : sa clé ; plus tard la bougie de cire d'abeille) ; garniDe : ce qui y est posé, ou null */
-export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"]};
+export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"], buche: ["bois"]};
 /* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), cinq chandelles dans le lustre (nb), sinon une */
 export const garniNb = type => !MEUBLES[type] ? 1 : MEUBLES[type].nb || (MEUBLES[type].support === "lucioles" ? 3 : 1);
-export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : o.bougie || null; };
-/* Le chandelier et le lustre : on y pose les chandelles une à la fois (Yo, 9 novembre 2026 : « une à la fois, pareil pour le
+export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? "bois" : null) : o.bougie || null; };
+/* Les bûches de la cheminée (Yo, 10 novembre 2026 : « Une bûche = 1 bois de mon sac », « Les bûches s'usent et le feu
+   s'éteint ») : chaque bûche brûle BUCHE secondes, en vrai temps (même le jeu fermé), l'une après l'autre ; o.feu : l'heure
+   où la dernière finit (Date.now) ; éteinte au geste, le feu s'arrête : o.reste, les secondes qui restent */
+export const BUCHE = 600;
+export const resteFeu = o => !o ? 0 : o.eteint ? (o.reste || 0) : Math.max(0, ((o.feu || 0) - Date.now()) / 1000);
+/* Éteindre ou rallumer une cheminée (gestes.js) : son feu s'arrête, puis reprend où il en était */
+export function figerFeu(o, eteint){
+  if(eteint){ o.reste = resteFeu(o); delete o.feu; } else { o.feu = Date.now() + (o.reste || 0) * 1000; delete o.reste; }
+}/* Le chandelier et le lustre : on y pose les chandelles une à la fois (Yo, 9 novembre 2026 : « une à la fois, pareil pour le
    lustre ») ; o.chandelles : combien y sont posées (absent avec o.bougie : toutes, comme dans les parties d'avant) */
-export const unAUn = type => !!(MEUBLES[type] && MEUBLES[type].support === "bougie" && MEUBLES[type].nb > 1);
-export const garniPose = (type, o) => !garniDe(type, o) ? 0 : unAUn(type) ? Math.min(o.chandelles || garniNb(type), garniNb(type)) : garniNb(type);
+export const unAUn = type => !!(MEUBLES[type] && ((MEUBLES[type].support === "bougie" && MEUBLES[type].nb > 1) || MEUBLES[type].support === "buche"));
+export const garniPose = (type, o) => !garniDe(type, o) ? 0 : MEUBLES[type].support === "buche" ? Math.min(Math.ceil(resteFeu(o) / BUCHE - 1e-6), garniNb(type))
+  : unAUn(type) ? Math.min(o.chandelles || garniNb(type), garniNb(type)) : garniNb(type);
+/* Ce qu'on récupère en le rangeant : les bûches entières (celle qui brûle est perdue), sinon tout ce qui est posé */
+export const garniRendu = (type, o) => MEUBLES[type] && MEUBLES[type].support === "buche" ? Math.floor(resteFeu(o) / BUCHE + 1e-6) : garniPose(type, o);
 export const garniPlein = (type, o) => garniPose(type, o) >= garniNb(type);
 /* Un meuble qui se pose aussi dehors, sur l'île (en main, « Poser ») */
 export const poseDehors = k => !!(MEUBLES[k] && MEUBLES[k].dehors);
