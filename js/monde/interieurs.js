@@ -103,6 +103,10 @@ function murMesh(geo, rev, long, sx, sy, sz, x, y, z, mur){
 let murs = [];                                   // les trois murs de la pièce (decorer.js les touche du doigt)
 export const mursPiece = () => murs;
 
+/* Les fenêtres de la pièce où l'on est (décorer.js y accroche les rideaux) : leur place sur le mur et le mur (rot comme les
+   meubles muraux : 0 le fond, 3 la gauche, 1 la droite) */
+export const fenetresPiece = [];
+let piece = null;                                 // le bâtiment de la pièce (ses rideaux fermés assombrissent)
 let room = null, dedans = null;                  // dedans : l'ambiance du bâtiment où l'on est (pas la mine, la forêt, la grotte)
 /* À la première personne (demande de Yo, 13 octobre 2026 ; vue.js) : le mur de devant, avec sa porte fermée, et le plafond,
    qu'on ne voit qu'aux yeux du personnage (vus de dessus, ils cacheraient la pièce) ; main.js les montre (murDevant) */
@@ -125,13 +129,23 @@ export function nuitForet(n){
 export function penombre(n){
   if(!dedans) return;
   hemi.color.setHex(0xFFF1DC).lerp(c1.setHex(0x8C9CC8), n * .7);
-  hemi.intensity = .44 - .2 * n;
-  lamp.intensity = dedans.power * (.6 - .48 * n);
+  /* les rideaux fermés (Yo, 10 novembre 2026) : le jour, chacun enlève la lumière de sa fenêtre ; tous fermés, une pénombre
+     de fin de journée */
+  const f = (1 - n) * rideauxFermes();
+  hemi.intensity = (.44 - .2 * n) * (1 - .45 * f);
+  lamp.intensity = dedans.power * (.6 - .48 * n) * (1 - .7 * f);
   FENETRE.color.setHex(0xCFE4F4).lerp(c1.setHex(0x34446E), n);
   FENETRE.emissive.setHex(0xBFDDF8).lerp(c1.setHex(0x22305A), n);
   FENETRE.emissiveIntensity = .8 - .4 * n;
 }
 export const penombreIci = () => !!dedans;
+/* La part des fenêtres de la pièce cachées par un rideau fermé (0 à 1) */
+export function rideauxFermes(){
+  if(!piece || !piece.deco || !fenetresPiece.length) return 0;
+  let n = 0;
+  for(const it of piece.deco.items) if(it.type === "rideau" && it.ferme) n++;
+  return Math.min(1, n / fenetresPiece.length);
+}
 /* La brume de la grotte du Marais (étape 1.13, morceau 6 ; bible : « brume qui réduit la vue ») : comptée depuis la caméra,
    elle commence juste avant le personnage et cache tout ce qui est à plus de quelques pas (main.js, avec la distance D) */
 let brumeGrotte = false;
@@ -139,6 +153,7 @@ export function ajusterBrume(D){ if(brumeGrotte && interior.fog){ interior.fog.n
 /* Une fenêtre sur un mur : sur le fond (cote = null, à la place x) ou sur un côté (cote = -1 ou 1, à la place z) */
 function fenetre(a, w, d, cote, u){
   const y = 1.35, nx = cote ? -cote : 0, nz = cote ? 0 : 1, bx = cote ? cote * w/2 : u, bz = cote ? u : -d/2;
+  fenetresPiece.push({x: bx, z: bz, rot: cote ? (cote < 0 ? 3 : 1) : 0});
   const box = (long, haut, ep, k, yy, m) => room.add(part(G.box, m, cote ? ep : long, haut, cote ? long : ep, bx + nx * k, yy, bz + nz * k));
   box(.82, .7, .04, .02, y, a.beam);                               // le cadre
   box(.68, .56, .04, .035, y, FENETRE);                            // la vitre
@@ -152,6 +167,7 @@ export function buildRoom(b){
   if(room) interior.remove(room);
   room = new THREE.Group();
   itemMeshes.clear();
+  fenetresPiece.length = 0; piece = b;
   devant = null;
   interior.background.setHex(0x1E1813); interior.fog = null; hemi.color.setHex(0xFFF1DC); hemi.intensity = .7; lampeSur(0, 0); base = null; dedans = null; brumeGrotte = false;
   if(b.type === "foret"){                            // la Forêt profonde (étape 1.7) : construite par foret.js

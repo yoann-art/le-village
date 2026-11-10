@@ -76,6 +76,7 @@ export const MEUBLES = {
   tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
+  rideau:   {nom:"Rideau", emoji:"🪟", gabarit:"moyen", w:1.3, d:.5, mur:true, fenetre:true},   // seulement aux fenêtres ; s'ouvre et se ferme, fermé il assombrit la pièce (Yo, 10 novembre 2026)
   /* Plans de travail (plan:true) : un par bâtiment, construit avec des ressources (ATELIERS, cost)
      depuis le haut du catalogue, posé où l'on veut dans sa pièce, jamais rangé */
   etabli:   {nom:"Établi", emoji:"🪚", gabarit:"moyen", w:1.6, d:.8, plan:true},
@@ -993,6 +994,7 @@ export const ATELIERS = {
     /* Tapis en fibres, comme le prévoit la bible (étape 1.5) */
     {out:"petitTapis", in:{fibre:6}, t:40, lvl:1, cat:"Décoration"},
     {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2, cat:"Décoration"},
+    {out:"rideau", in:{toile:2, planche:1}, t:40, lvl:1, cat:"Décoration"},   // les deux pans de toile, la tringle (Yo, 10 novembre 2026)
     {out:"vitrine", in:{planche:4, verre:2, toile:1}, t:60, lvl:1, cat:"Décoration"}   // étape 1.11 : bois et verre (Grand Carnet) ; la toile du coussin (Yo, 8 novembre 2026)
   ]},
   carriere:{nom:"Table de taille", le:"la table de taille", fem:true, emoji:"⛏️", meuble:"tableTaille", cost:{pierre:10, planche:4},
@@ -1098,7 +1100,7 @@ export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tab
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", bocalLucioles:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
   brasero:"metal", lampadaire:"metal", enclume:"metal",
-  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu"};
+  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu"};
 /* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */
 export const DEPART = {chandelier:"argent"};
 const nomBois = p => p.nom.replace(/^Bois d(e |')/, "").replace(/^./, c => c.toUpperCase());
@@ -1166,7 +1168,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

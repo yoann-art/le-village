@@ -10,7 +10,7 @@ import { B, MEUBLES, MEUBLES_ORDER, COULEURS, COULEURS_ORDER, ATELIERS, FABRIQUE
 import { owned, addOwned, hasAll, placeFor, missingHTML, payer } from "./regles.js";
 import { save } from "./sauvegarde.js";
 import { renderer, ray, aim, groundAt } from "./monde/scene.js";
-import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem, mursPiece } from "./monde/interieurs.js";
+import { interior, buildRoom, addItemMesh, removeItemMesh, placeItemMesh, refreshItemMesh, raiseItemMesh, pickItem, mursPiece, fenetresPiece } from "./monde/interieurs.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player, R, placePlayer } from "./monde/personnage.js";
 import { resetJoy } from "./commandes.js";
@@ -36,7 +36,7 @@ export const decoView = () => deco || lift ? view : null;
 /* ----- Règles de place ----- */
 const MAT_W = 1.1, MAT_D = .7;       // le paillasson (la sortie) reste toujours libre
 const WHY = {paillasson:"Pas sur le paillasson : c'est la sortie", meuble:"Pas sur un autre meuble", tapis:"Pas sur un autre tapis", personnage:"Le personnage est là",
-  mur:"Pas sur une autre lumière du mur", plafond:"Pas sur un autre lustre"};
+  mur:"Pas sur une autre lumière du mur", plafond:"Pas sur un autre lustre", fenetre:"Cette fenêtre a déjà son rideau"};
 /* Trois couches : les tapis au sol, les meubles par-dessus, et ce qui est accroché au mur (la torchère murale, demande de
    Yo, 11 octobre 2026 : toujours contre un mur, on passe dessous). On ne chevauche que sa propre couche. */
 const couche = type => MEUBLES[type].flat ? "tapis" : MEUBLES[type].mur ? "mur" : MEUBLES[type].plafond ? "plafond" : "meuble";
@@ -46,7 +46,7 @@ function problem(it){
   for(const o of items()){
     if(o === it || couche(o.type) !== c) continue;
     const [ow, od] = footOf(o);
-    if(Math.abs(it.x - o.x) < (w + ow)/2 - .001 && Math.abs(it.z - o.z) < (d + od)/2 - .001) return c;
+    if(Math.abs(it.x - o.x) < (w + ow)/2 - .001 && Math.abs(it.z - o.z) < (d + od)/2 - .001) return MEUBLES[it.type].fenetre ? "fenetre" : c;
   }
   if(c !== "meuble") return null;
   const p = player.position;
@@ -67,11 +67,28 @@ function settle(it, x, z){
   const cm = v => Math.round(v * 100) / 100;
   it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, snap(x, w/2, hw))));
   it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, snap(z, d/2, hd))));
+  if(MEUBLES[it.type].fenetre){ const f = fenetrePres(x, z); if(f) surFenetre(it, f); return; }   // le rideau : la fenêtre la plus proche
   if(!MEUBLES[it.type].mur) return;
   const fond = z + hd, gauche = x + hw, droite = hw - x, m = Math.min(fond, gauche, droite);
   if(m === fond){ it.z = cm(-hd + d/2); it.rot = 0; }
   else if(m === gauche){ it.x = cm(-hw + w/2); it.rot = 3; }
   else { it.x = cm(hw - w/2); it.rot = 1; }
+}
+/* Le rideau (Yo, 10 novembre 2026 : « qu'il s'accroche uniquement aux fenêtres ») : la fenêtre de la pièce la plus proche
+   de (x, z), et le rideau posé devant elle, contre son mur */
+const fenetrePres = (x, z) => fenetresPiece.reduce((b, f) => !b || Math.hypot(f.x - x, f.z - z) < Math.hypot(b.x - x, b.z - z) ? f : b, null);
+function surFenetre(it, f){
+  const m = MEUBLES[it.type], e = m.d / 2;
+  it.rot = f.rot;
+  it.x = Math.round((f.rot === 3 ? f.x + e : f.rot === 1 ? f.x - e : f.x) * 100) / 100;
+  it.z = Math.round((f.rot === 0 ? f.z + e : f.z) * 100) / 100;
+}
+/* « Tourner » un rideau : la fenêtre libre suivante */
+function fenetreSuivante(it){
+  const avant = {x: it.x, z: it.z, rot: it.rot}, n = fenetresPiece.length, k0 = fenetresPiece.indexOf(fenetrePres(it.x, it.z));
+  for(let k = 1; k < n; k++){ surFenetre(it, fenetresPiece[(k0 + k) % n]); if(!problem(it)) return true; }
+  Object.assign(it, avant);
+  return false;
 }
 /* La place libre la plus proche du milieu de la pièce */
 function findSpot(it){
@@ -123,7 +140,8 @@ function showSel(){
   if(!sel){ hint("Touche « Meubles », ou un meuble pour le modifier"); return; }
   if(sel.reserve && !pb){ hint("🗃️ Coffre de réserve : glisse-le du doigt. Pour l'emporter, ouvre-le : « Déplacer le coffre »"); return; }
   const m = MEUBLES[sel.type], la = m.une ? "la" : "le";
-  hint(pb ? WHY[pb] : m.mur ? `${m.emoji} ${m.nom} : glisse-${la} du doigt le long des murs ; « Tourner » ${la} change de mur`
+  hint(pb ? WHY[pb] : m.fenetre ? `${m.emoji} ${m.nom} : glisse-${la} d'une fenêtre à l'autre ; « Tourner » ${la} passe à la fenêtre suivante`
+    : m.mur ? `${m.emoji} ${m.nom} : glisse-${la} du doigt le long des murs ; « Tourner » ${la} change de mur`
     : `${m.emoji} ${m.nom} : glisse-${la} du doigt`, !!pb);
 }
 
@@ -190,7 +208,7 @@ $("#deco-cat").addEventListener("click", () => {
         const m = MEUBLES[t], n = owned(t), here_ok = allowedIn(t, here), ok = here_ok && (!craftable(t) || n > 0);
         const where = m.dehorsSeul ? "Seulement dehors, sur ton île : prends-le en main devant une case libre"
           : m.where ? `Seulement dans : ${m.where.map(b => B[b].nom).join(", ")}`
-          : m.mur ? (m.facade ? "Contre un mur, ou dehors sur la façade de devant d'un bâtiment" : "Contre un mur")
+          : m.fenetre ? "Aux fenêtres de la pièce" : m.mur ? (m.facade ? "Contre un mur, ou dehors sur la façade de devant d'un bâtiment" : "Contre un mur")
           : m.plafond ? "Au plafond" : m.dehors ? "Partout, et dehors sur ton île" : "Partout";
         const fab = FABRIQUE_A[t], af = fab && ATELIERS[fab];
         const stock = !craftable(t) ? "Gratuit pour l'instant"
@@ -211,7 +229,7 @@ export function addMeuble(type){
   if(plan){ if(!a || a.meuble !== type || hasPlan(deco.b) || !hasAll(a.cost)) return; }   // plan de travail : construit et payé
   else if(!allowedIn(type, deco.b.type) || (craftable(type) && owned(type) < 1)) return;
   const it = {id: deco.b.deco.next++, type, x: 0, z: 0, rot: 0};
-  if(!findSpot(it)){ toast(`Plus de place pour ${plan ? a.le : "ce meuble"} dans la pièce`); return; }
+  if(!findSpot(it)){ toast(MEUBLES[type].fenetre ? "🪟 Toutes les fenêtres de la pièce ont déjà leur rideau" : `Plus de place pour ${plan ? a.le : "ce meuble"} dans la pièce`); return; }
   if(plan){
     for(const [k, v] of Object.entries(a.cost)) addOwned(k, -v);
     renderHUD();
@@ -236,6 +254,10 @@ function murSuivant(it){
 }
 $("#deco-rot").addEventListener("click", () => {
   if(!sel) return;
+  if(MEUBLES[sel.type].fenetre){
+    if(!fenetreSuivante(sel)){ showSel(); hint("Pas d'autre fenêtre libre", true); return; }
+    placeItemMesh(sel); showSel(); save(); return;
+  }
   if(MEUBLES[sel.type].mur){
     if(!murSuivant(sel)){ showSel(); hint("Pas de place libre sur le mur suivant", true); return; }
     placeItemMesh(sel); showSel(); save(); return;

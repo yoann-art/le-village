@@ -21,7 +21,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:CUIVRE, brasero:0xC8743C, lampadaire:C.dark, lustre:CUIVRE, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -890,6 +890,56 @@ function grandTapisMorceaux(c){
   boudin(out, GT.w - .045, GT.d - .045, .12, teinte(.95), o);
   return out;
 }
+/* Le rideau (image de Yo, 10 novembre 2026 : « Voici le rideau. Il faut pouvoir le fermer et l'ouvrir ») : une tringle de
+   chêne à boules, sur deux petites pattes au mur ; deux pans de toile à grands plis, accrochés par des anneaux ; ouverts, chacun
+   retenu sur le côté par une embrasse de corde tressée et son pompon ; fermés (o.ferme), ils tombent droit et cachent la
+   fenêtre, les embrasses pendues au mur. Seulement devant une fenêtre (décorer.js) ; le mur à z −.25, la fenêtre à y 1 → 1,7 */
+const RD = {haut: 1.79, bas: .9, tringle: 1.83, z: -.06, pince: .58};
+const RD_TRINGLE = new THREE.CylinderGeometry(.027, .027, 1.36, 10).rotateZ(Math.PI / 2);
+const RD_BOULE = new THREE.SphereGeometry(.06, 12, 8), RD_PATTE = new THREE.CylinderGeometry(.012, .012, .18, 6).rotateX(Math.PI / 2);
+const RD_ANNEAU = new THREE.TorusGeometry(.039, .011, 5, 12).rotateY(Math.PI / 2);
+const RD_EMBRASSE = new THREE.TorusGeometry(.075, .026, 6, 16).rotateX(Math.PI / 2);
+const RD_CORDON = new THREE.CylinderGeometry(.01, .01, .1, 5);
+const RD_POMPON = lathe([[0, .1], [.022, .098], [.026, .085], [.016, .07], [.03, .04], [.04, .005], [.03, 0], [0, 0]], 10);
+/* un pan (s : −1 à gauche, 1 à droite) : une toile en grille, plissée ; ouvert, large en haut, pincé à l'embrasse, évasé en bas */
+function rideauPan(ferme, s){
+  const g = new THREE.PlaneGeometry(1, 1, 16, 14), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){
+    const u = P.getX(i) + .5, v = .5 - P.getY(i), y = RD.haut - v * (RD.haut - RD.bas);
+    let larg, centre, amp;
+    if(ferme){ larg = .66; centre = s * .33; amp = .028 + .01 * v; }
+    else {
+      const k = v < RD.pince ? v / RD.pince : (v - RD.pince) / (1 - RD.pince);
+      larg = v < RD.pince ? .5 + (.17 - .5) * Math.sin(k * Math.PI / 2) : .17 + (.38 - .17) * Math.pow(k, .8);
+      centre = s * (v < RD.pince ? .4 + (.5 - .4) * k : .5 - .02 * k);
+      amp = .026 + .024 * Math.max(0, 1 - Math.abs(v - RD.pince) / .5);   // les plis serrés à l'embrasse
+    }
+    const plis = ferme ? 6 : 4;
+    P.setXYZ(i, centre + (u - .5) * larg, y, RD.z + amp * Math.sin(u * Math.PI * 2 * plis) + (ferme ? 0 : .012 * Math.sin(u * Math.PI)));
+  }
+  g.computeVertexNormals();
+  return g;
+}
+const RD_PANS = {ouvert: [rideauPan(false, -1), rideauPan(false, 1)], ferme: [rideauPan(true, -1), rideauPan(true, 1)]};
+function rideauMorceaux(ferme){ return c => {
+  const o = ombreBois(.85, 1.9), corde = new THREE.Color(c).multiply(new THREE.Color(.96, .84, .62)).getHex(), out = [];
+  out.push({geo: RD_TRINGLE, m: M4(0, RD.tringle, RD.z), c: C.wood, ombre: o});
+  for(const s of [-1, 1]){
+    out.push({geo: RD_BOULE, m: M4(s * .7, RD.tringle, RD.z), c: C.wood, ombre: o}, {geo: RD_PATTE, m: M4(s * .6, RD.tringle, RD.z - .09), c: C.wood, ombre: o});
+    out.push({geo: RD_PANS[ferme ? "ferme" : "ouvert"][s > 0 ? 1 : 0], m: M4(0, 0, 0), c, ombre: o});
+    const anneaux = ferme ? [.05, .25, .45, .63] : [.18, .4, .62];
+    for(const x of anneaux) out.push({geo: RD_ANNEAU, m: M4(s * x, RD.tringle, RD.z), c: C.wood, ombre: o});
+    const yp = RD.haut - RD.pince * (RD.haut - RD.bas);
+    if(!ferme){                                                        // l'embrasse autour du pan pincé, son cordon et son pompon devant
+      out.push({geo: RD_EMBRASSE, m: M4(s * .5, yp, RD.z + .01, 0, 0, 0, 1.2, 1.3, .75), c: corde, ombre: o});
+      out.push({geo: RD_CORDON, m: M4(s * .5, yp - .07, RD.z + .07), c: corde, ombre: o}, {geo: RD_POMPON, m: M4(s * .5, yp - .23, RD.z + .07), c: corde, ombre: o});
+    } else {                                                           // fermés : les embrasses pendues au mur, de chaque côté
+      out.push({geo: RD_EMBRASSE, m: M4(s * .74, yp, -.2, Math.PI / 2, 0, 0, .7, .5, .85), c: corde, ombre: o});
+      out.push({geo: RD_CORDON, m: M4(s * .74, yp - .1, -.19), c: corde, ombre: o}, {geo: RD_POMPON, m: M4(s * .74, yp - .25, -.19), c: corde, ombre: o});
+    }
+  }
+  return out;
+}; }
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1003,6 +1053,7 @@ const BUILD = {
   table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
   tableBanquet(g, m){ g.add(modeleBois("tableBanquet", m, tableBanquetMorceaux)); },
   lit(g, m){ g.add(modeleBois("lit", m, litMorceaux)); },
+  rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)
   grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
   etabli(g, m){
     g.add(part(G.box, m, 1.6, .12, .75, 0, .55, 0));                                  // plateau

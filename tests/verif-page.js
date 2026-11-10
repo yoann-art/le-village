@@ -767,6 +767,28 @@ export async function verifier(){
       if(garniPose("cheminee", it) || garniDe("cheminee", it) || LUMIERE.cheminee.buche !== true) throw new Error("toutes ses bûches brûlées, la cheminée brûle encore");
       items.splice(items.indexOf(it), 1); removeItemMesh(it.id);
     }
+    /* le rideau (Yo, 10 novembre 2026 : « qu'il s'accroche uniquement aux fenêtres et assombrisse la pièce ») : un par fenêtre,
+       pas un de plus ; fermé au geste, il cache la lumière de sa fenêtre ; rouvert, plus rien */
+    {
+      const {fenetresPiece, rideauxFermes} = await import("../js/monde/interieurs.js"), n = fenetresPiece.length;
+      sacAdd("rideau", n + 1); $("#btn-deco").click(); await wait(200);
+      for(let k = 0; k <= n; k++) addMeuble("rideau");
+      $("#deco-done").click(); await wait(200);
+      const rs = items.filter(it => it.type === "rideau");
+      if(!n || rs.length !== n || owned("rideau") !== 1) throw new Error(`${rs.length} rideaux accrochés pour ${n} fenêtres (${owned("rideau")} de reste)`);
+      for(const r of rs) if(!fenetresPiece.some(f => Math.hypot(f.x - r.x, f.z - r.z) < .3 && f.rot === r.rot)) throw new Error(`un rideau n'est pas devant une fenêtre (${r.x}, ${r.z})`);
+      const r = rs[0], [nx, nz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][r.rot];
+      placePlayer(r.x + nx * .9, r.z + nz * .9, -nx, -nz); updateGestes(true);
+      if(btnG.hidden || !btnG.textContent.includes("Fermer le rideau")) throw new Error(`près du rideau, le bouton dit « ${btnG.textContent} »`);
+      faireGeste();
+      if(!r.ferme || Math.abs(rideauxFermes() - 1 / n) > .001) throw new Error(`le rideau fermé ne cache pas sa fenêtre (${rideauxFermes()})`);
+      updateGestes(true);
+      if(!btnG.textContent.includes("Ouvrir le rideau")) throw new Error(`près du rideau fermé, le bouton dit « ${btnG.textContent} »`);
+      faireGeste();
+      if(r.ferme || rideauxFermes() !== 0) throw new Error("le rideau ne se rouvre pas");
+      for(const v of rs){ items.splice(items.indexOf(v), 1); removeItemMesh(v.id); }
+      sacTake("rideau", 1);
+    }
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
@@ -3229,7 +3251,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
