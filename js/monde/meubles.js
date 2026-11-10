@@ -5,7 +5,7 @@
 import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose, FLEURS, enFleur, saison } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
-import { fleurModele } from "./fleurs.js";
+import { fleurModele, fleurCoupee } from "./fleurs.js";
 import { paqueretteModele } from "./paquerette.js";
 import { pissenlitModele } from "./pissenlit.js";
 import { coquelicotModele } from "./coquelicot.js";
@@ -29,7 +29,7 @@ const CUIVRE = 0xC8743C;
 const verreMat = toon({color:0xD8EEF8, transparent:true, opacity:.3, depthWrite:false});
 
 /* Couleur « d'origine » de la partie principale de chaque meuble */
-const ORIGIN = {rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
+const ORIGIN = {vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.wood, tabouret:C.wood, pot:C.clay, lanterne:CUIVRE, tonneau:C.light, coffre:C.wood, banc:C.wood,
   etagere:C.wood, vitrine:C.wood, cheminee:C.stone, petitTapis:C.red, table:C.wood, lit:C.blue, grandTapis:C.blue, statue:C.stone,
   chandelier:0xD8DCE2, chandelle:0xC8743C, torchere:C.wood, torchereMurale:0xC8743C, feuCamp:C.stone, lanterneMurale:0xC8743C,
   bocalLucioles:CUIVRE, brasero:0xC8743C, lampadaire:C.dark, lustre:CUIVRE, etabli:C.wood, atelierDeco:C.light, tableTaille:C.stone2, comptoir:C.red, fourneau:C.stone, enclume:0x4A4F57, trone:C.dark};
@@ -38,7 +38,7 @@ const ORIGIN = {rideau:0xE8DCC0, chaise:C.wood, fauteuil:C.wood, tableBanquet:C.
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -979,6 +979,26 @@ function fleurDuPot(k){
   return k === "paquerette" ? paqueretteModele(s, e, c) : k === "pissenlit" ? pissenlitModele(s, e) : k === "coquelicot" ? coquelicotModele(s, e, c)
     : k === "bleuet" ? bleuetModele(s, e, c) : k === "perceNeige" ? perceNeigeModele(s, e) : k === "violette" ? violetteModele(s, e, c) : k === "muguet" ? muguetModele(s, e) : fleurModele(k, c, e);
 }
+/* Le vase (image de Yo, 10 novembre 2026 : « Voici le vase ») : ventru, couvert de pierres arrondies comme une mosaïque, un col
+   étroit, un rebord épais et rond. La pierre prend sa teinte (le mortier un peu plus sombre). Au sol ou sur une table (décorer.js) ;
+   on y met un bouquet de trois fleurs coupées, une à la fois (o.fleurs) */
+const VS = {col: .3, h: .36};
+const VS_PROFIL = [[0, 0], [.085, 0], [.12, .03], [.145, .08], [.152, .14], [.14, .2], [.11, .25], [.075, .285], [.06, .3]];
+const VS_COEUR = lathe([...VS_PROFIL, [0, .3]], 20);
+const VS_COL = lathe([[.05, .26], [.06, .3], [.062, .318], [.074, .322], [.082, .336], [.08, .352], [.068, .36], [.052, .356], [.046, .34], [.045, .3]], 20);
+const VS_PIERRE = boiteRonde(.105, .088, .04, .026, 1), VS_PIERRE2 = boiteRonde(.085, .08, .04, .026, 1);
+const VS_RANGS = [[.04, .108, 6], [.11, .148, 8], [.185, .145, 8], [.248, .108, 6]];   // [hauteur, rayon, nombre de pierres]
+function vaseMorceaux(c){
+  const o = ombreBois(0, VS.h), sombre = new THREE.Color(c).multiplyScalar(.7).getHex(), out = [{geo: VS_COEUR, m: M4(0, 0, 0), c: sombre, ombre: o}, {geo: VS_COL, m: M4(0, 0, 0), c, ombre: o}];
+  VS_RANGS.forEach(([y, r, n], k) => {
+    const pente = k === 0 ? .5 : k === 3 ? -.55 : k === 1 ? .1 : -.15;            // les pierres suivent le ventre du vase
+    for(let j = 0; j < n; j++){ const a = (j + (k % 2 ? .5 : 0)) / n * Math.PI * 2;
+      out.push({geo: (j + k) % 3 ? VS_PIERRE : VS_PIERRE2, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a, 0, 1, 1, 1), c, ombre: o}); }
+  });
+  return out;
+}
+/* Les fleurs du bouquet : penchées hors du col, tournées chacune de son côté */
+const VS_BOUQUET = [[0, -.12, .55], [2.2, .32, .48], [4.3, .3, .5]];
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1090,6 +1110,14 @@ const BUILD = {
   table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
   tableBanquet(g, m){ g.add(modeleBois("tableBanquet", m, tableBanquetMorceaux)); },
   lit(g, m){ g.add(modeleBois("lit", m, litMorceaux)); },
+  vase(g, m, o){                                                                     // vide, ou son bouquet (une à trois fleurs coupées)
+    g.add(modeleBois("vase", m, vaseMorceaux));
+    (o && o.fleurs || []).slice(0, 3).forEach((k, j) => {
+      if(!FLEURS[k]) return;
+      const [a, p, h] = VS_BOUQUET[j], f = fleurCoupee(k, FLEURS[k].couleurs[0], h);
+      f.position.y = VS.col; f.rotation.set(p, a, 0, "YXZ"); f.scale.setScalar(.55); g.add(f);
+    });
+  },
   rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)
   grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
   etabli(g, m){

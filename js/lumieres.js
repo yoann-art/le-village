@@ -133,7 +133,7 @@ export const lumieresActives = () => actives;
 export const garniDispo = type => MEUBLES[type].support === "fleur" && FLEURS[state.main] && owned(state.main) > 0 ? state.main   // le pot : la fleur tenue en main d'abord
   : (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
-export const poserLabel = type => MEUBLES[type].support === "fleur" ? (k => k ? `🌸 Planter ${FLEURS[k].une ? "une" : "un"} ${FLEURS[k].nom.toLowerCase()} ${MEUBLES[type].dans}` : `🌸 Planter une fleur ${MEUBLES[type].dans}`)(garniDispo(type))
+export const poserLabel = type => MEUBLES[type].support === "fleur" ? (k => `🌸 ${MEUBLES[type].nb > 1 ? "Mettre" : "Planter"} ${k ? `${FLEURS[k].une ? "une" : "un"} ${FLEURS[k].nom.toLowerCase()}` : "une fleur"} ${MEUBLES[type].dans}`)(garniDispo(type))
   : MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
@@ -174,9 +174,16 @@ function poserBuche(o, type, k, deja, nb, refaire){
 function planter(o, type, k, refaire){
   if(!k){ toast("🌸 Il te faut une fleur sauvage : cueille-en une sur l'île (pâquerette, coquelicot, bleuet…)", 3600); return false; }
   addOwned(k, -1);
+  const f = FLEURS[k], nb = garniNb(type);
+  if(nb > 1){                                                       // le vase : un bouquet, une fleur coupée après l'autre
+    o.fleurs = [...(o.fleurs || []), k]; refaire({fleurs: o.fleurs});
+    syncBarre(); save(); renderHUD();
+    toast(`🌸 ${f.nom} ${f.une ? "mise" : "mis"} ${MEUBLES[type].dans} (${o.fleurs.length} sur ${nb})${o.fleurs.length >= nb ? " : le bouquet est fait" : ""}`, 3000);
+    return true;
+  }
   o.fleur = k; refaire({fleur: k});
   syncBarre(); save(); renderHUD();
-  const f = FLEURS[k], quand = f.saisons.map(s => ({printemps: "au printemps", ete: "en été", automne: "en automne", hiver: "en hiver"})[s]);
+  const quand = f.saisons.map(s => ({printemps: "au printemps", ete: "en été", automne: "en automne", hiver: "en hiver"})[s]);
   toast(`🌸 ${f.nom} ${f.une ? "plantée" : "planté"} ${MEUBLES[type].dans} : ${f.une ? "elle" : "il"} fleurit ${quand.length > 1 ? quand.slice(0, -1).join(", ") + " et " + quand.at(-1) : quand[0]}`, 3600);
   return true;
 }

@@ -800,6 +800,30 @@ export async function verifier(){
       for(const v of rs){ items.splice(items.indexOf(v), 1); removeItemMesh(v.id); }
       sacTake("rideau", 1);
     }
+    /* le vase (Yo, 10 novembre 2026 : « Bouquet et table ») : posé sur une table, à la hauteur du plateau ; la table chargée ne
+       bouge plus ; un bouquet de trois fleurs, une à la fois */
+    {
+      const {placerDans, surLaTable} = await import("../js/decorer.js");
+      sacAdd("table", 1); $("#btn-deco").click(); await wait(200); addMeuble("table"); $("#deco-done").click(); await wait(200);
+      const t = items.find(it => it.type === "table");
+      if(!t) throw new Error("la table d'essai ne se pose pas");
+      const v = {id: 99005, type: "vase", x: 0, z: 0, rot: 0};
+      if(!placerDans(currentPlace(), v, t.x + .3, t.z)) throw new Error("le vase ne trouve pas de place sur la table");
+      items.push(v); addItemMesh(v);
+      if(v.y !== .75 || surLaTable(t, items).length !== 1) throw new Error(`le vase n'est pas sur la table (hauteur ${v.y}, ${surLaTable(t, items).length} objet dessus)`);
+      const f0 = owned("paquerette"); sacAdd("paquerette", 3);           // une seule pile : le sac de l'essai est presque plein
+      placePlayer(v.x, v.z + .85, 0, -1);
+      for(let k = 1; k <= 3; k++){
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Vase")) throw new Error(`près du vase (${k - 1} fleurs), le bouton dit « ${$("#btn-torchere").textContent} »`);
+        $("#btn-torchere").click();
+        if((v.fleurs || []).length !== k) throw new Error(`le vase a ${(v.fleurs || []).length} fleurs au ${k}e appui`);
+      }
+      updateLumieres(.016, true);
+      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Vase")) throw new Error("le bouquet fait, le vase propose encore une fleur");
+      if(owned("paquerette") !== f0) throw new Error("les fleurs du bouquet ne sont pas prises dans le sac");
+      for(const o of [v, t]){ items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
+    }
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);
     if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près de la chaise, le bouton dit « ${btnG.textContent} »`);
@@ -3262,7 +3286,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

@@ -34,6 +34,18 @@ export function fleurModele(k, couleur, etat){
   g.add(m);
   return g;
 }
+/* Une fleur coupée (le bouquet du vase) : sa tige, une feuille, sa fleur ; elle reste belle hors de sa saison */
+export function fleurCoupee(k, couleur, h = .28){
+  const cle = `coupee|${k}|${couleur}|${h}`;
+  if(!CACHE.has(cle)){
+    const f = FLEURS[k], g = new THREE.Group();
+    g.add(part(G.cyl, VERT, .03, h, .03, 0, h / 2, 0), part(G.leaf2, FEUILLE, .2, .1, .26, .04, h * .45, 0));
+    tete(g, f, couleur, 0, h, 0);
+    CACHE.set(cle, formeUnie(g).geo);
+  }
+  const m = new THREE.Mesh(CACHE.get(cle), MAT_UNI); m.castShadow = true;
+  return m;
+}
 function morceaux(k, couleur, etat){
   const f = FLEURS[k], g = new THREE.Group(), h = f.taille;
   if(etat === 0){ g.add(part(G.leaf2, VERT, .45, .35, .45, 0, .06, 0)); return g; }

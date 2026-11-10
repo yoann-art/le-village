@@ -272,7 +272,7 @@ export function buildRoom(b){
 export function placeItemMesh(it){
   const g = itemMeshes.get(it.id);
   if(!g) return;
-  g.position.x = it.x; g.position.z = it.z;
+  g.position.x = it.x; g.position.z = it.z; g.position.y = it.y || 0;   // un petit objet sur une table : à sa hauteur
   g.rotation.y = -it.rot * Math.PI / 2;
 }
 /* Soulève un meuble qu'on déplace, ou le repose (y = 0) */
