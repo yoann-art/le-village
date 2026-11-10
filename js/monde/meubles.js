@@ -30,7 +30,7 @@ const ORIGIN = {chaise:C.wood, fauteuil:C.wood, tableBanquet:C.wood, armoire:C.w
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -842,8 +842,13 @@ function petitTapisMorceaux(c){
     for(const e of [-.0175, .0175]){ const [ex, ez] = long ? [0, e] : [e, 0];             // deux brins côte à côte par case
       out.push({geo: PT_BOSSE, m: M4(x + ex, .012, z + ez, 0, long ? Math.PI / 2 : 0, 0, .021, .018, .04), c, ombre: o}); }
   }
-  /* le boudin du bord : des anneaux serrés le long d'un rectangle aux coins arrondis */
-  const W = PT.w - .045, D = PT.d - .045, R = PT.r, L = [2 * (W - R), 2 * (D - R)], tour = 2 * (L[0] + L[1]) + 2 * Math.PI * R, n = Math.round(tour / .048);
+  boudin(out, PT.w - .045, PT.d - .045, PT.r, bord, o);
+  return out;
+}
+/* Le boudin du bord d'un tapis : des anneaux serrés le long d'un rectangle aux coins arrondis (demi-largeur W, demi-profondeur D,
+   coins de rayon R) */
+function boudin(out, W, D, R, bord, o){
+  const L = [2 * (W - R), 2 * (D - R)], tour = 2 * (L[0] + L[1]) + 2 * Math.PI * R, n = Math.round(tour / .048);
   const point = t => {                                                                   // la place et la direction sur le tour (t de 0 à tour)
     const segs = [[L[0], -W + R, D, 1, 0, W - R, D - R, 0], [L[1], W, D - R, 0, -1, W - R, -D + R, Math.PI / 2],
       [L[0], W - R, -D, -1, 0, -W + R, -D + R, Math.PI], [L[1], -W, -D + R, 0, 1, -W + R, D - R, 1.5 * Math.PI]];   // un côté, puis le coin qui le suit
@@ -857,6 +862,32 @@ function petitTapisMorceaux(c){
   };
   for(let k = 0; k < n; k++){ const [x, z, a] = point(k * tour / n);
     out.push({geo: PT_ANNEAU, m: M4(x, .036, z, 0, a, 0, .05, .036, .032), c: bord, ombre: o}); }
+}
+/* Le grand tapis (image de Yo, 10 novembre 2026 : « Voici le grand tapis ») : tout en petits nœuds ronds, comme une mosaïque ;
+   un boudin clair tout autour ; une large bande foncée aux losanges clairs (de grands losanges creux aux coins et au milieu
+   des côtés, de petits pleins entre eux) ; le milieu clair traversé d'un treillis de losanges plus foncé. Trois tons de la
+   teinte du tissu ; les nœuds sur une grille (GT.pas), les motifs comptés en nœuds */
+const GT = {w: 1.2, d: .9, pas: .07, nx: 15, nz: 11, cx: 10, cz: 6};                // nœuds de −nx à nx ; le milieu jusqu'à cx, cz
+const GT_NOEUD = new THREE.SphereGeometry(1, 8, 2, 0, Math.PI * 2, 0, Math.PI / 2);
+function grandTapisMorceaux(c){
+  const o = ombreBois(0, .09), teinte = k => new THREE.Color(c).multiplyScalar(k).getHex();
+  const chaud = (r, g, b) => new THREE.Color(c).multiply(new THREE.Color(r, g, b)).getHex();   // plus foncé et plus chaud (le fauve de l'image), pas gris
+  const clair = c, moyen = chaud(.92, .8, .62), fonce = chaud(.88, .74, .54);
+  const out = [{geo: new THREE.BoxGeometry(2 * GT.w - .14, .012, 2 * GT.d - .14), m: M4(0, .006, 0), c: chaud(.8, .66, .48), ombre: o}];
+  const bc = [GT.cx + 3, GT.cz + 3];                                                  // le milieu de la bande, en nœuds
+  const motif = (a, b) => {                                                           // un nœud de la bande : clair s'il fait partie d'un losange
+    for(const [mx, mz, grand] of [[bc[0], bc[1], 1], [0, bc[1], 1], [bc[0], 0, 1], [7, bc[1], 0], [bc[0], 4, 0]]){
+      const d = Math.abs(Math.abs(a) - mx) + Math.abs(Math.abs(b) - mz);
+      if(grand ? d === 2 || d === 0 : d <= 1) return true;
+    }
+    return false;
+  };
+  for(let a = -GT.nx; a <= GT.nx; a++) for(let b = -GT.nz; b <= GT.nz; b++){
+    const milieu = Math.abs(a) <= GT.cx && Math.abs(b) <= GT.cz, m = ((a + b) % 6 + 6) % 6 === 3 || ((a - b) % 6 + 6) % 6 === 3;
+    const col = milieu ? (m ? moyen : clair) : motif(a, b) ? clair : fonce;
+    out.push({geo: GT_NOEUD, m: M4(a * GT.pas, .012, b * GT.pas, 0, (a * 7 + b * 3) % 6, 0, .04, .023, .04), c: col, ombre: o});
+  }
+  boudin(out, GT.w - .045, GT.d - .045, .12, teinte(.95), o);
   return out;
 }
 /* La chandelle seule (son icône) */
@@ -972,11 +1003,7 @@ const BUILD = {
   table(g, m){ g.add(modeleBois("table", m, tableMorceaux)); },
   tableBanquet(g, m){ g.add(modeleBois("tableBanquet", m, tableBanquetMorceaux)); },
   lit(g, m){ g.add(modeleBois("lit", m, litMorceaux)); },
-  grandTapis(g, m){
-    g.add(part(G.box, m, 2.4, .02, 1.8, 0, .012, 0));                                 // bordure
-    g.add(part(G.box, C.cream, 2, .025, 1.4, 0, .014, 0));
-    g.add(part(G.box, C.gold, 1, .028, .6, 0, .016, 0));
-  },
+  grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
   etabli(g, m){
     g.add(part(G.box, m, 1.6, .12, .75, 0, .55, 0));                                  // plateau
     for(const [x,z] of [[-.7,-.28],[.7,-.28],[-.7,.28],[.7,.28]]) g.add(part(G.box, m, .1, .5, .1, x, .25, z));
