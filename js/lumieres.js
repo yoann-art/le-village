@@ -75,7 +75,7 @@ function sourcesDedans(b){
     const L = eclaire(it.type, it);
     if(!L) continue;
     const [fx, fz] = AVANT[(it.rot || 0) % 4], a = L.avance || 0;
-    out.push({x: it.x + fx * a, y: L.y, z: it.z + fz * a, L});
+    out.push({x: it.x + fx * a, y: L.y + (it.y || 0), z: it.z + fz * a, L});   // sur une table : plus haut
   }
   return out;
 }

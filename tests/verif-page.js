@@ -822,7 +822,15 @@ export async function verifier(){
       updateLumieres(.016, true);
       if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Vase")) throw new Error("le bouquet fait, le vase propose encore une fleur");
       if(owned("paquerette") !== f0) throw new Error("les fleurs du bouquet ne sont pas prises dans le sac");
-      for(const o of [v, t]){ items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
+      /* le bougeoir, le bocal, le chandelier, le pot : sur la table aussi (Yo : « tout ce qui peut être posé sur une table doit l'être ») */
+      const autres = []; items.splice(items.indexOf(v), 1); removeItemMesh(v.id);   // le vase ôté : la place pour quatre
+      for(const [j, type] of ["chandelier", "bocalLucioles", "chandelle", "pot"].entries()){
+        const o = {id: 99006 + j, type, x: 0, z: 0, rot: 0};
+        if(!placerDans(currentPlace(), o, t.x + (j < 2 ? -.5 : .5), t.z + (j % 2 ? .3 : -.3)) || o.y !== .75) throw new Error(`${objet(type).nom} ne se pose pas sur la table (hauteur ${o.y})`);
+        items.push(o); addItemMesh(o); autres.push(o);
+      }
+      if(surLaTable(t, items).length !== 4) throw new Error(`${surLaTable(t, items).length} objets sur la table au lieu de 4`);
+      for(const o of [...autres, t]){ items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
     }
     /* s'asseoir sur la chaise, puis se lever à l'endroit d'avant */
     placePlayer(chaise.x + .9, chaise.z, -1, 0); updateGestes(true);

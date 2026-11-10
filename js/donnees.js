@@ -40,7 +40,7 @@ export const MEUBLES = {
   chaise:   {nom:"Chaise", emoji:"🪑", gabarit:"petit", w:.7, d:.7},
   fauteuil: {nom:"Fauteuil", emoji:"💺", gabarit:"petit", w:1.05, d:.9},
   tabouret: {nom:"Tabouret", emoji:"🪵", gabarit:"petit", w:.5, d:.5},
-  pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5, support:"fleur", dans:"dans le pot"},   // vide, sa terre ; on y plante une fleur sauvage (Yo, 10 novembre 2026)
+  pot:      {nom:"Pot de fleurs", emoji:"🪴", gabarit:"petit", w:.5, d:.5, dessus:true, support:"fleur", dans:"dans le pot"},   // vide, sa terre ; on y plante une fleur sauvage (Yo, 10 novembre 2026)
   /* La lanterne sur pied (Yo, 8 novembre 2026 : refaite d'après son image, vide « pour que cela soit réaliste ») : on y pose
      une chandelle de suif, comme dans le bougeoir (plus tard une bougie de cire d'abeille) */
   lanterne: {nom:"Lanterne sur pied", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, une:true, support:"bougie", dans:"dans la lanterne"},
@@ -52,15 +52,15 @@ export const MEUBLES = {
      Le bougeoir (Yo, 8 novembre 2026 : la chandelle refaite d'après son image, le bougeoir vide « pour ensuite fabriquer une
      bougie avec la cire d'abeille ») : sa clé reste « chandelle » (les parties en cours) ; on y pose une chandelle de suif,
      plus tard une bougie de cire d'abeille (la ruche) */
-  chandelle:{nom:"Bougeoir", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, support:"bougie", dans:"dans le bougeoir"},
+  chandelle:{nom:"Bougeoir", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dehors:true, dessus:true, support:"bougie", dans:"dans le bougeoir"},
   torchere: {nom:"Torchère sur pied", emoji:"🔥", gabarit:"petit", w:.5, d:.5, dehors:true, support:"torche", une:true},
   torchereMurale:{nom:"Torchère murale", emoji:"🔥", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, support:"torche", une:true},
   /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
   lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true, support:"bougie", dans:"dans la lanterne"},   // vide, une chandelle s'y pose (Yo, 9 novembre 2026)
-  bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
+  bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, dessus:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
   brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
-  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
+  chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dessus:true, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
   statue:   {nom:"Petite statue", emoji:"🗿", gabarit:"petit", w:.6, d:.6},
   coffre:   {nom:"Coffre", emoji:"📦", gabarit:"petit", w:.9, d:.55},   // à la taille des autres meubles (Yo, 8 novembre 2026)
@@ -76,6 +76,8 @@ export const MEUBLES = {
   tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true, plateau:.75},
   lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
+  /* dessus : un petit objet qui se pose au sol ou sur une table (Yo, 10 novembre 2026 : « Tout ce qui peut être posé sur une table
+     doit l'être » ; l'étagère, pour plus tard) */
   vase:     {nom:"Vase", emoji:"🏺", gabarit:"petit", w:.35, d:.35, dessus:true, support:"fleur", dans:"dans le vase", nb:3},   // au sol ou sur une table ; un bouquet de trois fleurs, une à la fois (Yo, 10 novembre 2026)
   rideau:   {nom:"Rideau", emoji:"🪟", gabarit:"moyen", w:1.3, d:.5, mur:true, fenetre:true},   // seulement aux fenêtres ; s'ouvre et se ferme, fermé il assombrit la pièce (Yo, 10 novembre 2026)
   /* Plans de travail (plan:true) : un par bâtiment, construit avec des ressources (ATELIERS, cost)
