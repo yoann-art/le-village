@@ -68,13 +68,13 @@ export const MEUBLES = {
   etagere:  {nom:"Étagère", emoji:"📚", gabarit:"moyen", w:1.4, d:.5},
   armoire:  {nom:"Armoire", emoji:"🚪", gabarit:"moyen", w:1.3, d:.7, une:true},   // l'armoire (Yo, 8 novembre 2026)
   vitrine:  {nom:"Vitrine", emoji:"💎", gabarit:"moyen", w:1.2, d:.7, vitrine:true},   // étape 1.11 : elle expose une pierre (vitrine.js)
-  cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, where:["chaumiere","taverne","chateau"], une:true, support:"buche", dans:"dans la cheminée", nb:3},   // vide ; trois bûches s'y posent, une à la fois, et brûlent (Yo, 10 novembre 2026)
+  cheminee: {nom:"Cheminée", emoji:"🔥", gabarit:"moyen", w:1.6, d:.8, une:true, support:"buche", dans:"dans la cheminée", nb:3},   // vide ; trois bûches s'y posent, une à la fois, et brûlent (Yo, 10 novembre 2026)
   feuCamp:  {nom:"Feu de camp", emoji:"🔥", gabarit:"moyen", w:1, d:1, dehors:true, dehorsSeul:true, support:"buche", dans:"dans le feu de camp", nb:3},   // vide ; trois bûches, une à la fois, qui brûlent (Yo, 10 novembre 2026)
-  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, where:["marche","taverne","chateau"], support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
+  lustre:   {nom:"Lustre", emoji:"🕯️", gabarit:"moyen", w:1.2, d:1.2, plafond:true, support:"bougie", dans:"dans le lustre", nb:5},   // les grandes pièces ; vide, cinq chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   petitTapis:{nom:"Petit tapis", emoji:"🧶", gabarit:"moyen", w:1.6, d:1.1, flat:true},
   table:    {nom:"Table", emoji:"🍽️", gabarit:"grand", w:2, d:1.4, plateau:.75, places:[-.4, 0, .4]},   // places : le long des grands côtés (et une à chaque bout)   // plateau : on y pose les petits objets (le vase)
   tableBanquet: {nom:"Table de banquet", emoji:"🍽️", gabarit:"grand", w:3.2, d:1.1, une:true, plateau:.75, places:[-1.05, -.4, 0, .4, 1.05]},
-  lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2, where:["chaumiere"]},
+  lit:      {nom:"Lit", emoji:"🛏️", gabarit:"grand", w:1.4, d:2.2},   // dans tous les bâtiments, comme tous les objets (Yo, 10 novembre 2026)
   grandTapis:{nom:"Grand tapis", emoji:"🧶", gabarit:"grand", w:2.4, d:1.8, flat:true},
   /* dessus : un petit objet qui se pose au sol ou sur une table (Yo, 10 novembre 2026 : « Tout ce qui peut être posé sur une table
      doit l'être » ; l'étagère, pour plus tard) */

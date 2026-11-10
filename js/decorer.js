@@ -237,7 +237,7 @@ export function finishDeco(){
 
 /* ----- Catalogue, tourner, ranger ----- */
 /* Un meuble de métier ne se pose que dans ses bâtiments ; les autres, partout */
-const allowedIn = (type, bType) => !MEUBLES[type].dehorsSeul && (!MEUBLES[type].where || MEUBLES[type].where.includes(bType));   // le feu de camp : dehors seulement
+const allowedIn = (type, bType) => !MEUBLES[type].dehorsSeul && (!MEUBLES[type].where || MEUBLES[type].where.includes(bType));   // le feu de camp : dehors seulement ; plus aucun « where » : tout va dans tous les bâtiments (Yo, 10 novembre 2026)
 const GAB = {petit:["Petits meubles", "environ 1 P² au sol"], moyen:["Meubles moyens", "environ 2 P² au sol"], grand:["Grands meubles", "environ 4 P² au sol"]};
 /* Un meuble qui a une recette se fabrique : on pose ce qu'on a en réserve. Sans recette (pas encore
    d'atelier pour lui), il reste gratuit. */
