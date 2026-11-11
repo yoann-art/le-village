@@ -3468,6 +3468,17 @@ export async function verifier(){
       tri = 0; des = 0; makeMeuble("puitsEau").traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 4 || tri > 22000) throw new Error(`le puits : ${des} dessins, ${Math.round(tri)} triangles`);
       setObj(i, null);
+      /* la fontaine (Yo, 11 novembre 2026 ; Grand Carnet : « Coule sans fin ») : posée, pas traversable, son eau qui coule ; légère ; reprise */
+      place(2); sacAdd("fontaine", 1); enMain("fontaine");
+      if(!devant().includes("Poser la fontaine")) throw new Error(`la fontaine en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] !== "fontaine" || islandWalkable(centerOf(i % NN), centerOf(Math.floor(i / NN)))) throw new Error(`la fontaine n'est pas posée, ou on la traverse (${map.obj[i]})`);
+      tri = 0; des = 0; let eau = 0; makeMeuble("fontaine").traverse(c => { if(c.isMesh){ des++; if(c.material.uniforms && c.material.uniforms.temps) eau++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
+      if(des !== 4 || eau !== 2 || tri > 20000) throw new Error(`la fontaine : ${des} dessins, ${eau} eaux qui coulent, ${Math.round(tri)} triangles`);
+      if(!devant().includes("Reprendre la fontaine")) throw new Error(`devant la fontaine, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] || owned("fontaine") !== 1) throw new Error("la fontaine n'est pas revenue dans le sac");
+      sacTake("fontaine", 1);
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3521,7 +3532,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

@@ -2,7 +2,7 @@
    Les modèles 3D des meubles, en formes simples (phase 1), et leur place au sol.
    Chaque modèle est centré sur son pied ; son devant regarde vers le bas de l'écran.
    Chaque meuble a une partie principale (m) qui prend la couleur choisie par le joueur. */
-import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
+import { G, part, toon, fusionner, MAT_UNI, VENT } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose, FLEURS, enFleur, saison } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
 import { fleurModele, fleurCoupee } from "./fleurs.js";
@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1238,6 +1238,86 @@ function seauMorceaux(c){                                                       
   return out;
 }
 const PU_CORDE = new THREE.CylinderGeometry(1, 1, 1, 6).translate(0, -.5, 0);    // la corde qui pend, son haut à l'origine
+/* La fontaine (image de Yo, 11 novembre 2026 : « Voici la fontaine » ; Grand Carnet : « Coule sans fin, on l'entend de loin ») :
+   le grand bassin rond, deux rangs de pierres bombées ; la vasque du milieu et la petite vasque du haut sur leurs pieds de pierre,
+   leurs rebords de pierres ; la boule au sommet. L'eau : les trois bassins qui ondulent, quatre filets qui tombent d'une vasque à
+   l'autre (le mouvement descend), l'écume qui bouillonne où ils tombent ; tout suit VENT.temps (main.js), rien à recalculer en
+   jouant. Une case, un peu plus haute que le personnage */
+const FO = {bas: {r: .44, h: .38, eau: .3, n: 13}, mil: {y: .44, r: .3, haut: .62, eau: .585, n: 11}, sup: {y: .72, r: .19, haut: .84, eau: .815, n: 8}};
+const FO_PIERRE = boiteRonde(1, 1, 1, .36, 1);
+const FO_EAU_VS = `uniform float temps; varying vec2 vUv; varying vec3 vP;
+void main(){ vUv = uv; vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const matBassin = new THREE.ShaderMaterial({uniforms: {temps: VENT.temps}, vertexShader: FO_EAU_VS, transparent: true, depthWrite: false, fragmentShader: `uniform float temps; varying vec3 vP;
+void main(){
+  float a = sin(vP.x * 26.0 + temps * 1.6 + sin(vP.z * 19.0)) * sin(vP.z * 23.0 - temps * 1.3 + sin(vP.x * 17.0));
+  float trait = smoothstep(.55, .85, a);
+  gl_FragColor = vec4(mix(vec3(.30, .74, .82), vec3(.80, .95, .98), trait * .75), .86);
+}`});
+const matFilet = new THREE.ShaderMaterial({uniforms: {temps: VENT.temps}, vertexShader: FO_EAU_VS, transparent: true, depthWrite: false, fragmentShader: `uniform float temps; varying vec2 vUv;
+void main(){
+  float s = fract(vUv.x * 4.0 - temps * 1.8 + sin(vUv.y * 6.283) * .15);
+  float trait = smoothstep(.0, .15, s) - smoothstep(.35, .6, s);
+  gl_FragColor = vec4(mix(vec3(.55, .86, .94), vec3(.93, .99, 1.0), trait * .8), .72);
+}`});
+const matEcume = new THREE.MeshBasicMaterial({color: 0xF4FBFC});
+/* un rang de pierres en anneau : n pierres, au rayon r, à la hauteur y ; pente : penchées vers l'extérieur */
+function anneauPierres(out, al, c, o, n, r, y, h, d, pente = 0, dec = 0){
+  const lg = 2 * Math.PI * r / n + .015;
+  for(let k = 0; k < n; k++){ const a = (k + dec) / n * Math.PI * 2;
+    out.push({geo: FO_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a + (al() - .5) * .05, 0, lg * (.93 + al() * .1), h * (.94 + al() * .1), d), c: new THREE.Color(c).multiplyScalar(.88 + al() * .16).getHex(), ombre: o}); }
+}
+function fontaineMorceaux(c){
+  const o = ombreBois(0, 1), out = [], al = aleaMuret(777), sombre = new THREE.Color(c).multiplyScalar(.78).getHex(), {bas, mil, sup} = FO;
+  anneauPierres(out, al, c, o, bas.n, bas.r, .095, .19, .1);                      // le grand bassin : deux rangs
+  anneauPierres(out, al, c, o, bas.n, bas.r, .285, .19, .11, 0, .5);
+  out.push({geo: lathe([[0, .02], [bas.r - .04, .02], [bas.r - .04, .06], [0, .06]], 20), m: M4(0, 0, 0), c: sombre, ombre: o});   // son fond
+  out.push({geo: lathe([[0, 0], [.15, 0], [.16, .05], [.12, .1], [.1, .1], [.09, mil.y], [0, mil.y]], 16), m: M4(0, 0, 0), c, ombre: o});   // le pied du milieu
+  anneauPierres(out, al, c, o, 7, .13, .07, .1, .07);
+  out.push({geo: lathe([[0, mil.y], [.11, mil.y], [.2, mil.y + .05], [mil.r - .03, mil.haut - .06], [0, mil.haut - .06]], 20), m: M4(0, 0, 0), c: sombre, ombre: o});   // la vasque du milieu
+  anneauPierres(out, al, c, o, 9, .19, mil.y + .07, .1, .07, .7);
+  anneauPierres(out, al, c, o, mil.n, mil.r, mil.haut - .045, .1, .085, 0, .3);
+  out.push({geo: lathe([[0, mil.haut - .04], [.075, mil.haut - .04], [.08, mil.haut + .02], [.065, mil.haut + .03], [.06, sup.y], [0, sup.y]], 14), m: M4(0, 0, 0), c, ombre: o});   // le pied du haut
+  anneauPierres(out, al, c, o, 6, .085, mil.haut + .01, .06, .05);
+  out.push({geo: lathe([[0, sup.y], [.07, sup.y], [.13, sup.y + .04], [sup.r - .02, sup.haut - .04], [0, sup.haut - .04]], 16), m: M4(0, 0, 0), c: sombre, ombre: o});   // la petite vasque
+  anneauPierres(out, al, c, o, 7, .12, sup.y + .045, .07, .05, .7, .5);
+  anneauPierres(out, al, c, o, sup.n, sup.r, sup.haut - .035, .075, .06, 0);
+  out.push({geo: lathe([[0, sup.eau - .02], [.055, sup.eau - .02], [.055, .88], [.07, .89], [.072, .92], [.05, .93], [0, .93]], 14), m: M4(0, 0, 0), c, ombre: o});   // le fût, son anneau
+  out.push({geo: PU_BOULE, m: M4(0, .99, 0, 0, 0, 0, .065, .065, .065), c, ombre: o});   // la boule
+  return out;
+}
+const FO_BASSINS = (() => {                                                         // l'eau des trois bassins, ensemble
+  const dis = (r, y) => new THREE.CircleGeometry(r, 24).rotateX(-Math.PI / 2).translate(0, y, 0);
+  return mergeGeos([dis(FO.bas.r - .05, FO.bas.eau), dis(FO.mil.r - .04, FO.mil.eau), dis(FO.sup.r - .035, FO.sup.eau)]);
+})();
+/* les quatre filets : deux de la petite vasque vers celle du milieu, deux de celle du milieu vers le bassin */
+const FO_CHUTES = [[FO.sup, FO.mil, .55], [FO.sup, FO.mil, -.55], [FO.mil, {eau: FO.bas.eau, r: FO.bas.r}, .95], [FO.mil, {eau: FO.bas.eau, r: FO.bas.r}, -.95]];
+const FO_FILETS = mergeGeos(FO_CHUTES.map(([de, vers, a]) => {
+  const d = new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), r0 = de.r + .01, r1 = vers === FO.mil ? FO.mil.r - .07 : FO.bas.r - .1;
+  const P = (r, y) => d.clone().multiplyScalar(r).setY(y);
+  const courbe = new THREE.CubicBezierCurve3(P(r0 - .03, de.haut - .015), P(r0 + .05, de.haut), P(r1 + .02, (de.haut + vers.eau) / 2), P(r1, vers.eau));
+  return new THREE.TubeGeometry(courbe, 14, .034, 6, false).scale(1, 1, 1);
+}));
+const FO_BULLE = new THREE.SphereGeometry(1, 7, 5);
+const FO_ECUME = mergeGeos(FO_CHUTES.flatMap(([de, vers, a], j) => {                  // l'écume, où tombe chaque filet
+  const r1 = vers === FO.mil ? FO.mil.r - .07 : FO.bas.r - .1, x = Math.sin(a) * r1, z = Math.cos(a) * r1, out = [];
+  for(let k = 0; k < 6; k++){ const b = k / 6 * Math.PI * 2 + j, rr = .02 + (k % 2) * .018, s = .014 + (k % 3) * .006;
+    out.push(FO_BULLE.clone().scale(s, s * .8, s).translate(x + Math.cos(b) * rr, vers.eau + .005, z + Math.sin(b) * rr)); }
+  return out;
+}));
+function mergeGeos(geos){                                                           // des formes sans couleur, en une seule
+  let n = 0; for(const g of geos) n += (g.index ? g.index.count : g.attributes.position.count);
+  const pos = [], uv = [];
+  for(const g0 of geos){ const g = g0.index ? g0.toNonIndexed() : g0, P = g.attributes.position, U = g.attributes.uv;
+    for(let i = 0; i < P.count; i++){ pos.push(P.getX(i), P.getY(i), P.getZ(i)); uv.push(U ? U.getX(i) : 0, U ? U.getY(i) : 0); } }
+  const r = new THREE.BufferGeometry(); r.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); r.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  r.computeVertexNormals(); return r;
+}
+/* pour la préparation au chargement (main.js) : l'eau de la fontaine, déjà prête quand on en pose une */
+export function echantillonsFontaine(){
+  const g = new THREE.Group();
+  for(const [geo, mat] of [[FO_BASSINS, matBassin], [FO_FILETS, matFilet], [FO_ECUME, matEcume]]){ const m = new THREE.Mesh(geo, mat); m.visible = false; m.scale.setScalar(.001); g.add(m); }
+  return g;
+}
 /* Le portail (image de Yo, 11 novembre 2026 : « Voici le portail. Il faut qu'il puisse s'ouvrir et se fermer ») : deux piliers
    carrés, leur chapeau et leur boule ; deux battants de planches, le haut en arc, leur cadre, deux traverses ; des pentures de cuivre
    cloutées, le verrou de cuivre au milieu. Tout du même bois. Une case de large (les piliers au bord, à .5 du milieu). Les battants
@@ -1803,6 +1883,13 @@ const BUILD = {
   cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
     const v = (o && o.voisins) || "", bras = brasDe(o);
     g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
+  },
+  fontaine(g, m, o){                                                                 // la pierre ; l'eau des bassins, les filets, l'écume
+    g.add(modeleBois("fontaine", m, fontaineMorceaux));
+    const eau = new THREE.Mesh(FO_BASSINS, matBassin), filets = new THREE.Mesh(FO_FILETS, matFilet), ecume = new THREE.Mesh(FO_ECUME, matEcume);
+    eau.renderOrder = 1; filets.renderOrder = 2;
+    for(const e of [eau, filets, ecume]){ e.castShadow = false; e.receiveShadow = false; g.add(e); }
+    ecume.onBeforeRender = () => { const t = VENT.temps.value; ecume.position.y = .006 * Math.sin(t * 9); ecume.rotation.y = .04 * Math.sin(t * 5); ecume.updateMatrixWorld(true); };   // elle bouillonne
   },
   puitsEau(g, m, o){                                                                 // la margelle, le toit ; le treuil, la corde et le seau
     g.add(modeleBois("puitsEau", m, puitsMorceaux));

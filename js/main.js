@@ -44,6 +44,7 @@ import { updateCiel, nuitIci } from "./monde/ciel.js";
 import { updateMeteo, couvertIci, meteo } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
 import { echantillonsInsectes } from "./insectes.js";
+import { echantillonsFontaine } from "./monde/meubles.js";
 import { echantillonsOiseaux } from "./oiseaux.js";
 import "./monde/semis.js";                                 // la nature qui se ressème, une fois par jour (décidé avec Yo le 18 octobre 2026)
 import { vuePremiere, activerVue, tangageVue, horizon, premiereActive } from "./vue.js";
@@ -252,7 +253,7 @@ function camera_(now, dt, marche){
 $("#version").textContent = "v" + VERSION;
 renderHUD();
 { const t0 = performance.now(), betes = new THREE.Group();                                  // la carte graphique prête avant la première marche (scene.js),
-  garde("préparation", () => { betes.add(echantillonsInsectes(), echantillonsOiseaux()); scene.add(betes); preparer(); preparerMains(); });   // les insectes et les oiseaux compris
+  garde("préparation", () => { betes.add(echantillonsInsectes(), echantillonsOiseaux(), echantillonsFontaine()); scene.add(betes); preparer(); preparerMains(); });   // les insectes et les oiseaux compris
   scene.remove(betes); noterPreparation(performance.now() - t0); }
 /* Préparer les polices (mission de Yo, 16 octobre 2026 : les saccades) : la première fois qu'un texte en gras apparaissait
    (le nom de ce qu'on vise, sur le bouton d'action, en marchant vers une pierre), le navigateur préparait cette police à ce
