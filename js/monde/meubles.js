@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1175,6 +1175,79 @@ function clotureMorceaux(bras, voisins){ return c => {
   }
   return out;
 }; }
+/* Le portail (image de Yo, 11 novembre 2026 : « Voici le portail. Il faut qu'il puisse s'ouvrir et se fermer ») : deux piliers
+   carrés, leur chapeau et leur boule ; deux battants de planches, le haut en arc, leur cadre, deux traverses ; des pentures de cuivre
+   cloutées, le verrou de cuivre au milieu. Tout du même bois. Une case de large (les piliers au bord, à .5 du milieu). Les battants
+   tournent sur leurs gonds (o.ouvert ; o.bouge : quand, pour les faire pivoter doucement) et s'ouvrent vers l'arrière (-z) ; le sens
+   du portail : ses voisins (clôture, muret) ou o.rot (0 à 3, un quart de tour chacun) */
+const PL = {gond: .39, bas: .04, cote: .6, haut: .8, pilier: .2, hp: .64, ouvre: Math.PI / 2 * .92, temps: 700};
+PL.yc = (PL.haut * PL.haut - PL.cote * PL.cote - PL.gond * PL.gond) / (2 * (PL.haut - PL.cote)); PL.R = PL.haut - PL.yc;
+const ptHaut = x => PL.yc + Math.sqrt(Math.max(0, PL.R * PL.R - x * x));          // le haut en arc des deux battants
+function ptForme(x0, x1, bas, ep = 0){                                               // de x0 à x1, du bas jusqu'à l'arc (moins ep)
+  const s = new THREE.Shape(); s.moveTo(x0, bas); s.lineTo(x1, bas);
+  for(let k = 0; k <= 6; k++){ const x = x1 + (x0 - x1) * k / 6; s.lineTo(x, ptHaut(x) - ep); }
+  s.lineTo(x0, bas); return s;
+}
+function ptBande(x0, x1, ep){                                                        // la bande du cadre, sous l'arc
+  const s = new THREE.Shape(), n = 6;
+  for(let k = 0; k <= n; k++){ const x = x0 + (x1 - x0) * k / n; k ? s.lineTo(x, ptHaut(x)) : s.moveTo(x, ptHaut(x)); }
+  for(let k = n; k >= 0; k--){ const x = x0 + (x1 - x0) * k / n; s.lineTo(x, ptHaut(x) - ep); }
+  return s;
+}
+const ptExtrude = (s, d) => new THREE.ExtrudeGeometry(s, {depth: d, bevelEnabled: true, bevelThickness: .006, bevelSize: .006, bevelSegments: 1, curveSegments: 4}).translate(0, 0, -d / 2);
+const PT_BOULE = new THREE.SphereGeometry(1, 14, 10), PT_CLOU = new THREE.SphereGeometry(1, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2);
+const PT_CARRE = boiteRonde(1, 1, 1, .09, 2), PT_BOITE = boiteRonde(1, 1, 1, .2, 1), PT_TIGE = new THREE.CylinderGeometry(1, 1, 1, 10), PT_LOSANGE = boiteRonde(1, 1, 1, .15, 1);
+const PT_GEO = {};                                                                   // les formes en arc d'un battant (s : -1 à gauche, 1 à droite)
+for(const s of [-1, 1]){
+  const a = s * .006, b = s * (PL.gond - .005), planches = [], n = 5;
+  for(let k = 0; k < n; k++){ const x0 = a + (b - a) * k / n, x1 = a + (b - a) * (k + 1) / n - s * .006; planches.push(ptExtrude(ptForme(Math.min(x0, x1), Math.max(x0, x1), PL.bas), .03)); }
+  PT_GEO[s] = {planches, arc: ptExtrude(ptBande(Math.min(a, b), Math.max(a, b), .06), .05)};
+}
+function piliersMorceaux(c){
+  const o = ombreBois(0, PL.hp + .2), out = [];
+  for(const s of [-1, 1]){
+    const x = s * .5;
+    out.push({geo: PT_CARRE, m: M4(x, PL.hp / 2, 0, 0, 0, 0, PL.pilier, PL.hp, PL.pilier), c, ombre: o},
+      {geo: PT_CARRE, m: M4(x, PL.hp + .035, 0, 0, 0, 0, PL.pilier + .05, .075, PL.pilier + .05), c, ombre: o},
+      {geo: PT_BOULE, m: M4(x, PL.hp + .145, 0, 0, 0, 0, .075, .072, .075), c, ombre: o});
+  }
+  return out;
+}
+/* un battant (s : -1 à gauche, 1 à droite), son gond à l'origine */
+function battantMorceaux(s){ return c => {
+  const o = ombreBois(0, PL.haut), sombre = new THREE.Color(c).multiplyScalar(.86).getHex(), out = [], cu = CUIVRE;
+  const X = x => s * x;                                                              // de l'axe du portail vers ce battant
+  for(const g of PT_GEO[s].planches) out.push({geo: g, m: M4(0, 0, 0), c: sombre, ombre: o});
+  out.push({geo: PT_GEO[s].arc, m: M4(0, 0, .012), c, ombre: o});
+  const hBord = ptHaut(X(.36)) - .03 - PL.bas, hMil = ptHaut(X(.035)) - .03 - PL.bas;
+  out.push({geo: PT_BOITE, m: M4(X(.36), PL.bas + hBord / 2, .012, 0, 0, 0, .05, hBord, .05), c, ombre: o},   // le montant du gond
+    {geo: PT_BOITE, m: M4(X(.036), PL.bas + hMil / 2, .012, 0, 0, 0, .06, hMil, .05), c, ombre: o});        // le montant du milieu
+  for(const y of [.17, .51]){
+    out.push({geo: PT_BOITE, m: M4(X(.2), y, .016, 0, 0, 0, .27, .07, .045), c, ombre: o});                // la traverse
+    out.push({geo: PT_CLOU, m: M4(X(.09), y, .039, Math.PI / 2, 0, 0, .014, .01, .014), c, ombre: o});     // son clou
+    out.push({geo: PT_BOITE, m: M4(X(.315), y, .043, 0, 0, 0, .16, .05, .012), c: cu, ombre: o},            // la penture
+      {geo: PT_LOSANGE, m: M4(X(.24), y, .043, 0, 0, Math.PI / 4, .045, .045, .012), c: cu, ombre: o},
+      {geo: PT_TIGE, m: M4(X(.393), y, .012, 0, 0, 0, .016, .09, .016), c: cu, ombre: o});                 // le gond
+    for(const x of [.36, .3, .25]) out.push({geo: PT_CLOU, m: M4(X(x), y, .049, Math.PI / 2, 0, 0, .009, .006, .009), c: cu, ombre: o});
+  }
+  out.push({geo: PT_BOITE, m: M4(X(.035), .42, .043, 0, 0, 0, .035, .13, .01), c: cu, ombre: o});         // la plaque du verrou
+  for(const y of [.375, .465]) out.push({geo: PT_CLOU, m: M4(X(.035), y, .048, Math.PI / 2, 0, 0, .008, .006, .008), c: cu, ombre: o});
+  if(s < 0){                                                                         // le verrou : sa tige, son bouton, sur le battant de gauche
+    out.push({geo: PT_TIGE, m: M4(.005, .42, .06, 0, 0, Math.PI / 2, .013, .15, .013), c: cu, ombre: o},
+      {geo: PT_BOULE, m: M4(-.07, .42, .06, 0, 0, 0, .02, .02, .02), c: cu, ombre: o},
+      {geo: PT_BOULE, m: M4(.08, .42, .06, 0, 0, 0, .016, .016, .016), c: cu, ombre: o});
+  }
+  const t = new THREE.Matrix4().makeTranslation(-s * PL.gond, 0, 0);                // le gond à l'origine
+  for(const p of out) p.m = t.clone().multiply(p.m);
+  return out;
+}; }
+const lissePt = t => t * t * (3 - 2 * t);
+/* le sens du portail : l'axe de ses voisins, sinon o.rot ; o.rot ≥ 2 : il s'ouvre de l'autre côté */
+export function sensPortail(o){
+  const v = (o && o.voisins) || "", r = (o && o.rot) || 0, retourne = r >= 2;
+  const axeNS = /[eo]/.test(v) ? false : /[ns]/.test(v) ? true : r % 2 === 1;
+  return (axeNS ? 1 : 0) + (retourne ? 2 : 0);
+}
 /* Le muret de pierre (image de Yo, 11 novembre 2026 : « Voici le Muret de pierre ») : de la pierre sèche, deux rangs de pierres
    rondes et bombées de tailles variées, couronnés de grandes pierres plates (deux par case) ; des touffes de mousse jaune-vert sur
    les coins et dans les creux (la vraie mousse des vieux murets). Mi-cuisse (.55), on voit par-dessus. Dehors, un morceau par case,
@@ -1667,6 +1740,18 @@ const BUILD = {
   cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
     const v = (o && o.voisins) || "", bras = brasDe(o);
     g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
+  },
+  portail(g, m, o){                                                                  // les piliers ; les deux battants sur leurs gonds
+    g.add(modeleBois("portailPiliers", m, piliersMorceaux));
+    const ouvert = !!(o && o.ouvert), depuis = (o && o.bouge) || 0;
+    for(const s of [-1, 1]){
+      const pivot = new THREE.Group(), b = modeleBois("portail:" + s, m, battantMorceaux(s));
+      pivot.position.x = s * PL.gond; pivot.add(b); g.add(pivot);
+      const angle = () => { const t = Math.min(1, Math.max(0, (Date.now() - depuis) / PL.temps)), k = lissePt(ouvert ? t : 1 - t); return -s * PL.ouvre * k; };
+      pivot.rotation.y = angle();
+      if(Date.now() - depuis < PL.temps) b.onBeforeRender = () => { pivot.rotation.y = angle(); pivot.updateMatrixWorld(true); };   // ils pivotent doucement
+    }
+    g.rotation.y = sensPortail(o) * Math.PI / 2;
   },
   muret(g, m, o){                                                                    // ses bras selon ses voisins (ile.js), comme la clôture
     const v = (o && o.voisins) || "", bras = brasDe(o);

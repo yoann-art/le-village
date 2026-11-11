@@ -98,7 +98,7 @@ export function islandWalkable(wx, wz){
   if(!inb(x,z)) return false;
   const i = idx(x,z);
   if(occ.has(i)){ const b = state.buildings.find(v => v.id === occ.get(i)); return !!b && dansCour(b, x, z); }   // la cour du Château (regles.js)
-  return (map.type[i] !== "water" || passageCases.has(i)) && traversable(map.obj[i]) && !occ.has(i);   // on traverse les herbes hautes, le thym et les fleurs
+  return (map.type[i] !== "water" || passageCases.has(i)) && (traversable(map.obj[i]) || map.obj[i] === "portail" && !!(state.ile[i] && state.ile[i].ouvert)) && !occ.has(i);   // on traverse les herbes hautes, le thym, les fleurs, le portail ouvert
 }
 let walkable = islandWalkable;
 export function setWalkable(fn){ walkable = fn; }

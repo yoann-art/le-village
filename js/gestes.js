@@ -26,7 +26,7 @@ const LIT = {lit: .5};   // le dessus de la couverture (meubles.js)
 const ALLUMABLES = new Set([...Object.keys(LUMIERE).filter(k => k !== "bocalLucioles"), "cheminee"]);
 const leNom = m => `${m.une ? "la" : "le"} ${m.nom.toLowerCase()}`;
 const nomLumiere = (it, m) => it.type === "chandelle" ? "la chandelle" : leNom(m);   // le bougeoir : on éteint sa chandelle
-const geste = it => it.type === "statue" || it.type === "trophee" ? "statue" : it.type === "rideau" ? "rideau" : SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? (it.lucioles ? "toucher" : null)
+const geste = it => it.type === "portail" ? "portail" : it.type === "statue" || it.type === "trophee" ? "statue" : it.type === "rideau" ? "rideau" : SIEGES[it.type] ? "assis" : LIT[it.type] ? "allonge" : it.type === "bocalLucioles" ? (it.lucioles ? "toucher" : null)
   : ALLUMABLES.has(it.type) && (!LUMIERE[it.type] || ((!LUMIERE[it.type].torche || it.torche) && (!LUMIERE[it.type].bougie || it.bougie) && (!LUMIERE[it.type].buche || resteFeu(it) > 0))) ? "lumiere" : null;   // la cheminée, avec ses bûches   // une torchère : seulement avec sa torche ; un bougeoir, avec sa chandelle
 
 /* Du repère d'un meuble posé (rot : ses quarts de tour, comme interieurs.js) vers la pièce */
@@ -77,6 +77,12 @@ function basculer(c, m){
   toast(eteint ? `🌙 ${m.nom} éteint${m.une ? "e" : ""}` : `🔥 ${m.nom} allumé${m.une ? "e" : ""}`, 1600);
 }
 
+/* Ouvrir ou fermer le portail (Yo, 11 novembre 2026) : ouvert, on passe ; jamais fermé sur le personnage */
+export function ouvrirPortail(i){
+  const o = state.ile[i] || {}, ouvert = !o.ouvert;
+  if(!ouvert && idx(tileOf(player.position.x), tileOf(player.position.z)) === i){ toast("🚪 Sors du portail pour le fermer", 1800); return; }
+  setEtat(i, {ouvert: ouvert || undefined, bouge: Date.now()}); save(); jouer("meuble");
+}
 /* L'objet le plus proche, à portée de main : {it, refaire} (dans la pièce) ou {it: l'état de la case, i, refaire} (dehors) */
 function prochain(place){
   const p = player.position;
@@ -128,7 +134,7 @@ export function updateGestes(actif){
   cible = actif && !(place && DEDANS_SANS.includes(place.b.type)) ? prochain(place) : null;
   if(!cible){ if(!btn.hidden) btn.hidden = true; return; }
   const it = cible.it, m = MEUBLES[it.type], g = geste(it);
-  montrer(g === "statue" ? (it.type === "trophee" ? "🦌 Sculpter" : "🗿 Sculpter") : g === "rideau" ? (it.ferme ? "🪟 Ouvrir le rideau" : "🪟 Fermer le rideau") : g === "assis" ? `🪑 S'asseoir` : g === "allonge" ? `🛏️ S'allonger` : g === "toucher" ? `✨ Toucher ${leNom(m)}`
+  montrer(g === "portail" ? (it.ouvert ? "🚪 Fermer le portail" : "🚪 Ouvrir le portail") : g === "statue" ? (it.type === "trophee" ? "🦌 Sculpter" : "🗿 Sculpter") : g === "rideau" ? (it.ferme ? "🪟 Ouvrir le rideau" : "🪟 Fermer le rideau") : g === "assis" ? `🪑 S'asseoir` : g === "allonge" ? `🛏️ S'allonger` : g === "toucher" ? `✨ Toucher ${leNom(m)}`
     : it.eteint ? `🔥 Allumer ${nomLumiere(it, m)}` : `🌙 Éteindre ${nomLumiere(it, m)}`);
 }
 function montrer(txt){
@@ -145,6 +151,7 @@ export function faireGeste(){
   else if(g === "toucher"){ eclatLucioles(); jouer("cueillir"); }
   else if(g === "lumiere") basculer(c, m);
   else if(g === "statue") import("./statues.js").then(s => s.sculpterMenu(it, c.refaire));   // la liste des bêtes du carnet
+  else if(g === "portail") ouvrirPortail(c.i);
   else if(g === "rideau"){ if(it.ferme) delete it.ferme; else it.ferme = true; c.refaire(); save(); jouer("meuble"); }   // fermé, il assombrit la pièce (interieurs.js)
   return true;
 }

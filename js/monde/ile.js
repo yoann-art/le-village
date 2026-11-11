@@ -796,7 +796,7 @@ function buildObj(i){
     const st = stageOf(i);
     const etat = st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1;
     g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : o === "coquelicot" ? coquelicotModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "bleuet" ? bleuetModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "perceNeige" ? perceNeigeModele(saison(), etat, r, neigeBranches()) : o === "violette" ? violetteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "muguet" ? muguetModele(saison(), etat, r) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
-  } else if(o === "cloture" || o === "muret"){      // la clôture, le muret (Yo, 11 novembre 2026) : joints à leurs voisins
+  } else if(o === "cloture" || o === "muret" || o === "portail"){   // la clôture, le muret, le portail (Yo, 11 novembre 2026) : joints à leurs voisins
     g.add(makeMeuble(o, undefined, {...(state.ile[i] || {}), voisins: voisinsCloture(i, o)}));
   } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
     g.add(makeMeuble(o, undefined, state.ile[i]));
@@ -898,16 +898,18 @@ export function setObj(i, o, plante){
   map.obj[i] = o;
   state.ile[i] = plante ? {o, plante} : {o};
   refreshObj(i);
-  for(const t of ["cloture", "muret"]) if(avant === t || o === t) for(const j of casesAutour(i)) if(map.obj[j] === t) refreshObj(j);   // les clôtures (les murets) voisins se joignent
+  if(JOINTS.includes(avant) || JOINTS.includes(o)) for(const j of casesAutour(i)) if(JOINTS.includes(map.obj[j])) refreshObj(j);   // les clôtures, les murets, les portails voisins se joignent
 }
 /* Les cases voisines (est, ouest, sud, nord) ; les côtés où une clôture touche celle-ci : « e », « n », « o », « s » */
 const casesAutour = i => { const x = i % N, l = []; if(x < N - 1) l.push(i + 1); if(x > 0) l.push(i - 1); if(i + N < N * N) l.push(i + N); if(i - N >= 0) l.push(i - N); return l; };
+const JOINTS = ["cloture", "muret", "portail"];
+/* une clôture se joint aux clôtures et aux portails, un muret aux murets et aux portails, un portail à tous */
 export function voisinsCloture(i, t = "cloture"){
-  const x = i % N, v = [];
-  if(x < N - 1 && map.obj[i + 1] === t) v.push("e");
-  if(i - N >= 0 && map.obj[i - N] === t) v.push("n");
-  if(x > 0 && map.obj[i - 1] === t) v.push("o");
-  if(i + N < N * N && map.obj[i + N] === t) v.push("s");
+  const x = i % N, v = [], lie = j => map.obj[j] === t || map.obj[j] === "portail" || (t === "portail" && JOINTS.includes(map.obj[j]));
+  if(x < N - 1 && lie(i + 1)) v.push("e");
+  if(i - N >= 0 && lie(i - N)) v.push("n");
+  if(x > 0 && lie(i - 1)) v.push("o");
+  if(i + N < N * N && lie(i + N)) v.push("s");
   return v.join("");
 }
 /* Change l'état de ce qui est sur une case (herbes cueillies, buisson vide ou arrosé…) ; undefined efface */

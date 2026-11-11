@@ -674,9 +674,10 @@ function poserDehors(t){
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
   setObj(t.i, k); jouer("meuble");
-  if(k === "cloture" || k === "muret"){                             // seul(e), la clôture (le muret) se pose en travers, devant soi
+  if(k === "cloture" || k === "muret" || k === "portail"){          // seul(e), la clôture (le muret) se pose en travers, devant soi
     const dx = t.x - tileOf(player.position.x), dz = t.z - tileOf(player.position.z);
-    if(Math.abs(dx) > Math.abs(dz)) setEtat(t.i, {rot: 1});
+    if(k === "portail"){ const r = Math.abs(dx) > Math.abs(dz) ? (dx < 0 ? 1 : 3) : (dz < 0 ? 0 : 2); if(r) setEtat(t.i, {rot: r}); }   // il s'ouvre devant soi
+    else if(Math.abs(dx) > Math.abs(dz)) setEtat(t.i, {rot: 1});
   }
   syncBarre(); save();
   toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support === "torche" ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais"
