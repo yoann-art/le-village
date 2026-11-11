@@ -3412,6 +3412,21 @@ export async function verifier(){
       $("#btn-act").click();
       if(map.obj[i] || owned("cloture") !== 1) throw new Error("la clôture n'est pas revenue dans le sac");
       sacTake("cloture", 1);
+      /* le muret de pierre (Yo, 11 novembre 2026) : posé, en travers, joint à son voisin, pas traversable, repris */
+      place(2); sacAdd("muret", 1); enMain("muret");
+      if(!devant().includes("Poser le muret")) throw new Error(`le muret en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] !== "muret" || state.ile[i].rot) throw new Error(`le muret n'est pas posé en travers devant soi (${map.obj[i]})`);
+      if(traversable("muret")) throw new Error("on traverse le muret");
+      setObj(j2, "muret");
+      if(voisinsCloture(i, "muret") !== (j2 === i + 1 ? "e" : "o")) throw new Error(`deux murets voisins ne se joignent pas (${voisinsCloture(i, "muret")})`);
+      setObj(j2, null);
+      tri = 0; des = 0; makeMeuble("muret", undefined, {voisins: "enos"}).traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
+      if(des !== 1 || tri > 9000) throw new Error(`le muret en croix : ${des} dessins, ${Math.round(tri)} triangles`);
+      if(!devant().includes("Reprendre le muret")) throw new Error(`devant le muret, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] || owned("muret") !== 1) throw new Error("le muret n'est pas revenu dans le sac");
+      sacTake("muret", 1);
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3465,7 +3480,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

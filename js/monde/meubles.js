@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1167,6 +1167,59 @@ function clotureMorceaux(bras, voisins){ return c => {
   }
   return out;
 }; }
+/* Le muret de pierre (image de Yo, 11 novembre 2026 : « Voici le Muret de pierre ») : de la pierre sèche, deux rangs de pierres
+   rondes et bombées de tailles variées, couronnés de grandes pierres plates (deux par case) ; des touffes de mousse jaune-vert sur
+   les coins et dans les creux (la vraie mousse des vieux murets). Mi-cuisse (.55), on voit par-dessus. Dehors, un morceau par case,
+   joint à ses voisins comme la clôture (o.voisins, mêmes bras) ; le fond plus sombre entre les pierres. La pierre des champs */
+const MU = {h: .55, d: .46, cap: .15, rangs: [[0, .23, .44], [.2, .22, .42]]};   // [bas, hauteur, profondeur] des deux rangs
+const MU_CAP = boiteRonde(1, 1, 1, .3, 2), MU_PIERRE = boiteRonde(1, 1, 1, .4, 2), MU_FOND = new THREE.BoxGeometry(1, 1, 1);
+const MU_MOUSSE = new THREE.SphereGeometry(1, 8, 5), MOUSSE_M = [0xB4C832, 0x98B22A, 0xC4D444];
+const aleaMuret = s => () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+/* la mousse : une touffe de petites boules aplaties, autour de (x, y, z) */
+function touffe(out, x, y, z, t, al, o){
+  const n = 6 + Math.floor(al() * 4);
+  for(let k = 0; k < n; k++){ const a = al() * Math.PI * 2, r = t * (.2 + al() * .8), s = t * (.35 + al() * .3);
+    out.push({geo: MU_MOUSSE, m: M4(x + Math.cos(a) * r, y + al() * t * .25, z + Math.sin(a) * r * .7, 0, 0, 0, s, s * .7, s), c: MOUSSE_M[k % 3], ombre: o}); }
+}
+/* un pan droit de u0 à u1 le long de l'axe x (avant/arrière en z), graine : son tirage */
+function panMuret(out, c, o, u0, u1, graine, mousse){
+  const al = aleaMuret(graine * 7919 + 13), L = u1 - u0, teinte = () => new THREE.Color(c).multiplyScalar(.9 + al() * .14).getHex();
+  out.push({geo: MU_FOND, m: M4((u0 + u1) / 2, (MU.h - MU.cap) / 2, 0, 0, 0, 0, L - .06, MU.h - MU.cap, MU.d - .24), c: new THREE.Color(c).multiplyScalar(.5).getHex(), ombre: o});
+  for(const [bas, h, d] of MU.rangs){                                // deux rangs de pierres rondes, de largeurs variées
+    let u = u0;
+    while(u1 - u > .06){
+      let w = .13 + al() * .24; if(u1 - u - w < .12) w = u1 - u;
+      const hh = h * (.88 + al() * .16);
+      out.push({geo: MU_PIERRE, m: M4(u + w / 2, bas + hh / 2, (al() - .5) * .03, 0, (al() - .5) * .08, (al() - .5) * .06, w + .02, hh, d), c: teinte(), ombre: o});
+      u += w;
+    }
+  }
+  const n = Math.max(1, Math.round(L / .5)), wc = L / n;             // les grandes pierres plates du dessus
+  for(let k = 0; k < n; k++)
+    out.push({geo: MU_CAP, m: M4(u0 + wc * (k + .5), MU.h - MU.cap / 2, 0, (al() - .5) * .04, (al() - .5) * .05, (al() - .5) * .04, wc - .014, MU.cap, MU.d), c: teinte(), ombre: o});
+  if(mousse){                                                        // la mousse : un coin du dessus, un creux, un pied
+    const g = al() < .5 ? -1 : 1;
+    touffe(out, u0 + L / 2 + g * L * .38, MU.h - .01, -MU.d * .2, .12, al, o);
+    touffe(out, u0 + L * (.3 + al() * .4), MU.h - MU.cap, MU.d / 2 - .01, .075, al, o);
+    if(al() < .6) touffe(out, u0 + L / 2 - g * L * .4, .1, MU.d * .48, .085, al, o);
+  }
+}
+function muretMorceaux(bras, voisins){ return c => {
+  const o = ombreBois(0, MU.h), out = [], fin = d => voisins.includes(d) ? .5 : .46;
+  const droit = bras === "eo" || bras === "oe" || bras === "ns" || bras === "sn";
+  const tourne = (debut, k) => { for(let j = debut; j < out.length; j++){ const m = out[j].m.clone(); out[j].m = new THREE.Matrix4().makeRotationY(k).multiply(m); } };
+  if(droit){
+    const ax = bras.includes("e"), d0 = ax ? "o" : "n", d1 = ax ? "e" : "s", n = out.length;
+    panMuret(out, c, o, -fin(d0), fin(d1), 1, true);
+    if(!ax) tourne(n, -Math.PI / 2);
+    return out;
+  }
+  const n0 = out.length;                                             // le coin : un pilier carré au milieu, puis chaque bras
+  panMuret(out, c, o, -MU.d / 2, MU.d / 2, 2, false);
+  const ROT = {e: 0, n: Math.PI / 2, o: Math.PI, s: -Math.PI / 2};
+  for(const d of bras){ const n = out.length; panMuret(out, c, o, MU.d / 2, fin(d), 3 + "enos".indexOf(d), d === bras[0]); tourne(n, ROT[d]); }
+  return out;
+}; }
 /* Le trophée de gibier (image de Yo, 11 novembre 2026 : « Voici le trophée de gibier. Il faut qu'il fonctionne comme la petite
    statue » ; « Le gibier seulement ») : au mur, un écusson de bois en forme de bouclier (sa teinte), un cadre en relief, une
    plaque de cuivre à deux clous et ses feuilles gravées. Vide quand on l'accroche ; « Sculpter » (statues.js) y met le buste
@@ -1606,6 +1659,10 @@ const BUILD = {
   cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
     const v = (o && o.voisins) || "", bras = v.length > 1 ? v : v.length === 1 ? v + OPPOSE[v] : (o && o.rot ? "ns" : "eo");
     g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
+  },
+  muret(g, m, o){                                                                    // ses bras selon ses voisins (ile.js), comme la clôture
+    const v = (o && o.voisins) || "", bras = v.length > 1 ? v : v.length === 1 ? v + OPPOSE[v] : (o && o.rot ? "ns" : "eo");
+    g.add(modeleBois("muret:" + bras + ":" + v, m, muretMorceaux(bras, v)));
   },
   trophee(g, m, o){                                                                  // l'écusson ; le buste du gibier sculpté (statues.js)
     g.add(modeleBois("trophee", m, tropheeMorceaux));

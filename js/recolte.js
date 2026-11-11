@@ -674,7 +674,7 @@ function poserDehors(t){
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
   setObj(t.i, k); jouer("meuble");
-  if(k === "cloture"){                                               // seule, la clôture se pose en travers, devant soi
+  if(k === "cloture" || k === "muret"){                             // seul(e), la clôture (le muret) se pose en travers, devant soi
     const dx = t.x - tileOf(player.position.x), dz = t.z - tileOf(player.position.z);
     if(Math.abs(dx) > Math.abs(dz)) setEtat(t.i, {rot: 1});
   }

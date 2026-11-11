@@ -796,8 +796,8 @@ function buildObj(i){
     const st = stageOf(i);
     const etat = st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1;
     g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : o === "coquelicot" ? coquelicotModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "bleuet" ? bleuetModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "perceNeige" ? perceNeigeModele(saison(), etat, r, neigeBranches()) : o === "violette" ? violetteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "muguet" ? muguetModele(saison(), etat, r) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
-  } else if(o === "cloture"){                       // la clôture (Yo, 11 novembre 2026) : jointe à ses voisines
-    g.add(makeMeuble(o, undefined, {...(state.ile[i] || {}), voisins: voisinsCloture(i)}));
+  } else if(o === "cloture" || o === "muret"){      // la clôture, le muret (Yo, 11 novembre 2026) : joints à leurs voisins
+    g.add(makeMeuble(o, undefined, {...(state.ile[i] || {}), voisins: voisinsCloture(i, o)}));
   } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
     g.add(makeMeuble(o, undefined, state.ile[i]));
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
@@ -898,16 +898,16 @@ export function setObj(i, o, plante){
   map.obj[i] = o;
   state.ile[i] = plante ? {o, plante} : {o};
   refreshObj(i);
-  if(avant === "cloture" || o === "cloture") for(const j of casesAutour(i)) if(map.obj[j] === "cloture") refreshObj(j);   // les clôtures voisines se joignent
+  for(const t of ["cloture", "muret"]) if(avant === t || o === t) for(const j of casesAutour(i)) if(map.obj[j] === t) refreshObj(j);   // les clôtures (les murets) voisins se joignent
 }
 /* Les cases voisines (est, ouest, sud, nord) ; les côtés où une clôture touche celle-ci : « e », « n », « o », « s » */
 const casesAutour = i => { const x = i % N, l = []; if(x < N - 1) l.push(i + 1); if(x > 0) l.push(i - 1); if(i + N < N * N) l.push(i + N); if(i - N >= 0) l.push(i - N); return l; };
-export function voisinsCloture(i){
+export function voisinsCloture(i, t = "cloture"){
   const x = i % N, v = [];
-  if(x < N - 1 && map.obj[i + 1] === "cloture") v.push("e");
-  if(i - N >= 0 && map.obj[i - N] === "cloture") v.push("n");
-  if(x > 0 && map.obj[i - 1] === "cloture") v.push("o");
-  if(i + N < N * N && map.obj[i + N] === "cloture") v.push("s");
+  if(x < N - 1 && map.obj[i + 1] === t) v.push("e");
+  if(i - N >= 0 && map.obj[i - N] === t) v.push("n");
+  if(x > 0 && map.obj[i - 1] === t) v.push("o");
+  if(i + N < N * N && map.obj[i + N] === t) v.push("s");
   return v.join("");
 }
 /* Change l'état de ce qui est sur une case (herbes cueillies, buisson vide ou arrosé…) ; undefined efface */
