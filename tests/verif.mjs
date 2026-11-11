@@ -4,7 +4,7 @@
    note toute erreur du jeu, garde une capture d'écran (capture.png), et s'arrête en erreur si quelque chose
    ne va pas (croix rouge sur GitHub). Le jeu doit être servi sur http://localhost:8000.
    Sur le PC (pour refaire une vérification de GitHub, où le jeu tourne vraiment pendant l'essai) :
-   npm install --no-save playwright@1.47.2, puis NAVIGATEUR=msedge node tests/verif.mjs (le serveur « jeu » lancé). */
+   npm install --no-save playwright@1.64.1, puis NAVIGATEUR=msedge node tests/verif.mjs (le serveur « jeu » lancé). */
 import { chromium } from "playwright";
 
 const erreurs = [];

@@ -86,7 +86,7 @@ fleur refaite (`paquerette.js`, `pissenlit.js`, `coquelicot.js`, `bleuet.js`, `p
 
 - `tests/verif-page.js` : une suite de gestes joués dans la page (partie neuve obligatoire) ; `tests/verif.mjs` : la lance
   dans un navigateur sans écran (Playwright), puis rouvre en paysage ; écrit les annotations de GitHub et `capture.png`.
-- `.github/workflows/verification.yml` : à chaque envoi sur `main` (Chromium, Playwright 1.47.2, Node 22).
+- `.github/workflows/verification.yml` : à chaque envoi sur `main` (Chromium, Playwright 1.64.1, Node 22).
 - Sur le PC : serveur « jeu » lancé, `NAVIGATEUR=msedge node tests/verif.mjs` (environ 8 minutes ; le Chromium de
   Playwright ne démarre pas sur ce PC, Edge oui).
 

@@ -24,7 +24,7 @@ jobs:
           node-version: 22
       - name: Installer le navigateur de test
         run: |
-          npm install --no-save playwright@1.47.2
+          npm install --no-save playwright@1.64.1
           npx playwright install --with-deps chromium
       - name: Lancer le jeu et jouer les gestes de base
         run: |
