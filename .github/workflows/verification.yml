@@ -25,7 +25,8 @@ jobs:
       - name: Installer le navigateur de test
         run: |
           # en cas d'échec, la fin du journal en annotation (lisible sans compte : Claude la lit depuis le PC de Yo)
-          { npm install --no-save playwright@1.64.1 && npx playwright install --with-deps chromium; } > installation.log 2>&1 || {
+          # sans --with-deps : la machine de GitHub a déjà ce qu'il faut, et le miroir d'Ubuntu ne répondait plus (11 novembre 2026)
+          { npm install --no-save playwright@1.64.1 && npx playwright install chromium; } > installation.log 2>&1 || {
             echo "::error title=Installation du navigateur de test::$(tail -n 40 installation.log | cut -c1-200 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
             exit 1
           }
