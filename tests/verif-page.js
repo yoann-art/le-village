@@ -870,32 +870,59 @@ export async function verifier(){
       if(owned("paquerette") !== f0) throw new Error("les fleurs de l'herbier ne sont pas prises dans le sac");
       items.splice(items.indexOf(hb), 1); removeItemMesh(hb.id);
     }
-    /* le petit aquarium (Yo, 10 novembre 2026) : un poisson pêché du sac y va et y nage */
+    /* les aquariums (Yo, 10 et 11 novembre 2026) : leur bouton ouvre leur fenêtre ; on y choisit le poisson qu'on met, et celui
+       qu'on retire (il revient dans le sac) ; le petit en prend un, le moyen trois, le grand cinq */
     {
+      const {closeSheet} = await import("../js/interface.js");
+      const ouvrir = async (nom) => {
+        updateLumieres(.016, true);
+        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes(nom)) throw new Error(`près du ${nom}, le bouton dit « ${$("#btn-torchere").textContent} »`);
+        $("#btn-torchere").click(); await import("../js/aquariums.js"); await new Promise(r => setTimeout(r, 30));
+        if(!$("#sheet").textContent.includes("Tes poissons")) throw new Error(`le bouton du ${nom} n'ouvre pas sa fenêtre`);
+      };
+      const mettre = k => { const b = document.querySelector(`[data-aq-mettre="${k}"]`); if(!b || b.disabled) throw new Error(`la fenêtre ne propose pas de mettre ${k}`); b.click(); };
+      const plein = k => { const b = document.querySelector(`[data-aq-mettre="${k}"]`); return !b || b.disabled; };
+      const vider = () => { for(let n = 0; n < 6 && document.querySelector('[data-aq-sortir="0"]'); n++) document.querySelector('[data-aq-sortir="0"]').click(); };   // tous ses poissons reviennent
+      /* le petit aquarium : un gardon choisi, puis retiré */
       const aq = {id: 99070, type: "aquarium", x: chandelle.x, z: chandelle.z + 1.6, rot: 0};
       items.push(aq); addItemMesh(aq);
-      const p0 = owned("gardon"); sacAdd("gardon", 1); placePlayer(aq.x + .7, aq.z, -1, 0); updateLumieres(.016, true);
-      if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("aquarium")) throw new Error(`près de l'aquarium vide, le bouton dit « ${$("#btn-torchere").textContent} »`);
-      $("#btn-torchere").click();
-      if(aq.poisson !== "gardon" || owned("gardon") !== p0) throw new Error(`le gardon n'est pas dans l'aquarium (${aq.poisson})`);
+      const p0 = owned("gardon"), q0 = owned("perche"); sacAdd("gardon", 5); sacAdd("perche", 2); placePlayer(aq.x + .7, aq.z, -1, 0);
+      await ouvrir("aquarium");
+      mettre("gardon");
+      if(aq.poisson !== "gardon" || owned("gardon") !== p0 + 4) throw new Error(`le gardon n'est pas dans le petit aquarium (${aq.poisson})`);
+      if(!plein("perche")) throw new Error("le petit aquarium plein propose encore un poisson");
       updateLumieres(.5, true);                                          // il nage
-      items.splice(items.indexOf(aq), 1); removeItemMesh(aq.id);
-    }
-    /* l'aquarium moyen (Yo, 10 novembre 2026) : trois poissons, un à la fois */
-    {
+      document.querySelector('[data-aq-sortir="0"]').click();
+      if(aq.poisson || owned("gardon") !== p0 + 5) throw new Error("le gardon retiré du petit aquarium n'est pas revenu dans le sac");
+      closeSheet(); items.splice(items.indexOf(aq), 1); removeItemMesh(aq.id);
+      /* l'aquarium moyen : gardon, perche, gardon ; on retire la perche, celle du milieu */
       const am = {id: 99080, type: "aquariumMoyen", x: chandelle.x, z: chandelle.z + 1.8, rot: 0};
-      items.push(am); addItemMesh(am);
-      const p0 = owned("gardon"); sacAdd("gardon", 3); placePlayer(am.x, am.z + .9, 0, -1);
-      for(let k = 1; k <= 3; k++){
-        updateLumieres(.016, true);
-        if($("#btn-torchere").hidden || !$("#btn-torchere").textContent.includes("Aquarium")) throw new Error(`près de l'aquarium moyen (${k - 1} poissons), le bouton dit « ${$("#btn-torchere").textContent} »`);
-        $("#btn-torchere").click();
-        if((am.poissons || []).length !== k) throw new Error(`l'aquarium moyen a ${(am.poissons || []).length} poissons au ${k}e appui`);
-      }
+      items.push(am); addItemMesh(am); placePlayer(am.x, am.z + .9, 0, -1);
+      await ouvrir("Aquarium");
+      for(const k of ["gardon", "perche", "gardon"]) mettre(k);
+      if((am.poissons || []).join() !== "gardon,perche,gardon") throw new Error(`l'aquarium moyen a ${(am.poissons || []).join()}`);
+      if(!plein("gardon")) throw new Error("l'aquarium moyen plein propose encore un poisson");
       updateLumieres(.5, true);
-      if(!$("#btn-torchere").hidden && $("#btn-torchere").textContent.includes("Aquarium")) throw new Error("l'aquarium moyen plein propose encore un poisson");
-      if(owned("gardon") !== p0) throw new Error("les poissons ne sont pas pris dans le sac");
-      items.splice(items.indexOf(am), 1); removeItemMesh(am.id);
+      document.querySelector('[data-aq-sortir="1"]').click();
+      if(am.poissons.join() !== "gardon,gardon" || owned("perche") !== q0 + 2) throw new Error(`la perche choisie n'est pas sortie de l'aquarium moyen (${am.poissons.join()})`);
+      vider(); if(am.poissons) throw new Error("l'aquarium moyen ne se vide pas");
+      closeSheet(); items.splice(items.indexOf(am), 1); removeItemMesh(am.id);
+      /* le grand aquarium : cinq poissons, un modèle léger */
+      const ga = {id: 99090, type: "grandAquarium", x: chandelle.x, z: chandelle.z + 1.8, rot: 0};
+      items.push(ga); addItemMesh(ga); placePlayer(ga.x, ga.z + 1, 0, -1);
+      await ouvrir("Grand aquarium");
+      for(const k of ["gardon", "gardon", "perche", "gardon", "perche"]) mettre(k);
+      if((ga.poissons || []).length !== 5 || !plein("gardon")) throw new Error(`le grand aquarium a ${(ga.poissons || []).length} poissons, ou en propose encore`);
+      updateLumieres(.5, true);
+      document.querySelector('[data-aq-sortir="4"]').click(); document.querySelector('[data-aq-sortir="0"]').click();
+      if(ga.poissons.join() !== "gardon,perche,gardon") throw new Error(`les poissons choisis ne sont pas sortis du grand aquarium (${ga.poissons.join()})`);
+      const {makeMeuble} = await import("../js/monde/meubles.js"); let tri = 0, des = 0;
+      makeMeuble("grandAquarium", 0, ga).traverse(o => { if(o.isMesh){ des++; tri += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
+      if(tri > 30000 || des > 8) throw new Error(`le grand aquarium est trop lourd : ${Math.round(tri)} triangles, ${des} dessins`);
+      vider(); if(ga.poissons) throw new Error("le grand aquarium ne se vide pas");
+      closeSheet(); items.splice(items.indexOf(ga), 1); removeItemMesh(ga.id);
+      if(owned("gardon") !== p0 + 5 || owned("perche") !== q0 + 2) throw new Error("des poissons se sont perdus dans les aquariums");
+      addOwned("gardon", -5); addOwned("perche", -2);
     }
     /* les chaises autour d'une table (Yo, 10 novembre 2026) : deux côte à côte sur chaque grand côté, une à chaque bout, six ;
        rangées sous la table ; la septième n'a pas de place ; s'asseoir la fait reculer, se lever la range ; la table tournée
@@ -3397,7 +3424,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

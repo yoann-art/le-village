@@ -193,12 +193,12 @@ function planter(o, type, k, refaire){
 }
 /* Un poisson pêché dans l'aquarium (Yo, 10 novembre 2026) : il quitte le sac et y nage ; une koï prend la robe d'une koï du
    carnet ; rangé, l'aquarium le rend */
-function mettrePoisson(o, type, k, refaire){
+export function mettrePoisson(o, type, k, refaire){
   if(!k){ toast("🐟 Il te faut un poisson : pêche-en un à l'étang ou en mer, puis reviens", 3600); return false; }
   addOwned(k, -1);
   const robes = k === "koi" && state.carnet.poissons.koi && state.carnet.poissons.koi.couleurs ? Object.keys(state.carnet.poissons.koi.couleurs) : [];
   const robe = robes.length ? robes[Math.floor(Math.random() * robes.length)] : undefined, nb = garniNb(type);
-  if(nb > 1){                                                       // l'aquarium moyen : un poisson après l'autre (« gardon », « koi|kohaku »)
+  if(nb > 1){                                                       // l'aquarium moyen, le grand : un poisson après l'autre (« gardon », « koi|kohaku »)
     o.poissons = [...(o.poissons || []), robe ? `${k}|${robe}` : k]; refaire({poissons: o.poissons}); syncBarre(); save(); renderHUD();
     const P = POISSONS[k];
     toast(`🐟 ${P.une ? "La" : "Le"} ${P.nom.toLowerCase()} nage ${MEUBLES[type].dans} (${o.poissons.length} sur ${nb})`, 3000);
@@ -338,11 +338,13 @@ let proche = null;
 function bouton(place){
   const p = player.position;
   proche = place && place.b.deco ? place.b.deco.items.find(it => {
-    if(!MEUBLES[it.type] || !MEUBLES[it.type].support || garniPlein(it.type, it)) return false;   // le chandelier, le lustre : jusqu'à la dernière chandelle
+    if(!MEUBLES[it.type] || !MEUBLES[it.type].support || (MEUBLES[it.type].support !== "poisson" && garniPlein(it.type, it))) return false;   // le chandelier, le lustre : jusqu'à la dernière chandelle ; l'aquarium : toujours (on y choisit ses poissons)
     const [w, d] = footOf(it);
     return Math.abs(p.x - it.x) < w/2 + .8 && Math.abs(p.z - it.z) < d/2 + .8;
   }) || null : null;
   if(proche){ const m = MEUBLES[proche.type], txt = `${m.emoji} ${m.nom}`; if(btn.textContent !== txt) btn.textContent = txt; }   // son nom (demande de Yo)
   if(btn.hidden === !!proche) btn.hidden = !proche;
 }
-btn.addEventListener("click", () => { const it = proche; if(it) poserGarni(it, it.type, () => refreshItemMesh(it)); });
+btn.addEventListener("click", () => { const it = proche; if(!it) return;
+  if(MEUBLES[it.type].support === "poisson") import("./aquariums.js").then(a => a.aquariumMenu(it));   // l'aquarium : choisir le poisson à mettre, à retirer (Yo, 11 novembre 2026)
+  else poserGarni(it, it.type, () => refreshItemMesh(it)); });

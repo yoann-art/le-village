@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1312,6 +1312,54 @@ const AM_DECOR = (() => {                                            // les gale
   for(let j = 0; j < 6; j++){ const s = j % 2 ? 1 : -1; Mx(AQ_GALET, .4 + s * .04, y0 + .1 + j * .035, -.1, 0x6EAA3A, 0, 0, s * .8, .022, .05, .008); }
   return fusionner(out);
 })();
+/* Le grand aquarium (image de Yo, 11 novembre 2026 : « Voici le grand aquarium ») : un long meuble bas de bois à trois portes
+   (un panneau, une feuille sculptée, un bouton rond chacune ; un plateau à rebord, des pieds découpés ; sa teinte) ; dessus un
+   long bac de verre aux arêtes arrondies, l'eau claire, un lit de galets clairs, la grosse pierre moussue à gauche et ses
+   petites pierres, deux pierres à droite, de longues herbes d'eau de chaque côté, une touffe devant, une petite plante à
+   feuilles rondes au milieu. Vide quand on le pose ; cinq poissons, choisis un à un (o.poissons) */
+const GA = {meuble: .55, bas: .63, haut: 1.12, l: 1.7, p: .5, eau: 1.04};
+const GA_CAISSON = boiteRonde(1.76, .46, .54, .04, 2), GA_PLATEAU = boiteRonde(1.84, .07, .6, .03, 2), GA_PIED = boiteRonde(.18, .12, .12, .035, 1);
+const GA_PORTE = boiteRonde(.52, .36, .04, .015, 1), GA_PANNEAU = boiteRonde(.42, .27, .03, .012, 1);
+const GA_ARETE_X = boiteRonde(GA.l, .028, .028, .013, 1), GA_ARETE_Y = boiteRonde(.028, GA.haut - GA.bas, .028, .013, 1), GA_ARETE_Z = boiteRonde(.028, .028, GA.p, .013, 1);
+const GA_VERRE = new THREE.BoxGeometry(GA.l - .01, GA.haut - GA.bas - .01, GA.p - .01), GA_EAU = new THREE.BoxGeometry(GA.l - .04, GA.eau - GA.bas - .02, GA.p - .04);
+function grandAquariumMorceaux(c){
+  const o = ombreBois(0, GA.haut), out = [], Mx = (geo, x, y, z, cc = c, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => out.push({geo, m: M4(x, y, z, rx, ry, rz, sx, sy, sz), c: cc, ombre: o});
+  /* le meuble : le caisson, le plateau, les pieds, les trois portes (le bouton de chacune comme sur l'image) */
+  Mx(GA_CAISSON, 0, .32, 0); Mx(GA_PLATEAU, 0, GA.meuble + .035, 0);
+  for(const s of [-1, 1]){ Mx(GA_PIED, s * .8, .06, .2); Mx(GA_PIED, s * .8, .06, -.2); }
+  for(const [x, b] of [[-.56, -.34], [0, .2], [.56, .35]]){
+    Mx(GA_PORTE, x, .32, .27); Mx(GA_PANNEAU, x, .32, .29); Mx(AM_BOUTON, b, .3, .31, c, 0, 0, 0, 1.2, 1.2, 1.2);
+    for(const a of [-.7, 0, .7]) Mx(AQ_GALET, x + Math.sin(a) * .04, .37 + Math.cos(a) * .04, .307, c, 0, 0, -a, .016, .042, .008);   // la feuille sculptée
+  }
+  /* les arêtes du bac */
+  const y0 = GA.bas, y1 = GA.haut, hx = GA.l / 2, hz = GA.p / 2;
+  for(const y of [y0, y1]) for(const z of [-hz, hz]) Mx(GA_ARETE_X, 0, y, z, 0xE8F2F4);
+  for(const y of [y0, y1]) for(const x of [-hx, hx]) Mx(GA_ARETE_Z, x, y, 0, 0xE8F2F4);
+  for(const x of [-hx, hx]) for(const z of [-hz, hz]) Mx(GA_ARETE_Y, x, (y0 + y1) / 2, z, 0xE8F2F4);
+  return out;
+}
+const GA_DECOR = (() => {                                            // les galets, les pierres, les plantes du grand aquarium (éclairés)
+  const out = [], y0 = GA.bas, Mx = (geo, x, y, z, cc, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => out.push({geo, m: M4(x, y, z, rx, ry, rz, sx, sy, sz), c: cc});
+  out.push({geo: new THREE.BoxGeometry(GA.l - .03, .03, GA.p - .03), m: M4(0, y0 + .02, 0), c: 0xE2CDA0});   // le lit de sable clair
+  for(let k = 0; k < 90; k++){ const x = ((k * 37) % 100) / 100 * (GA.l - .1) - (GA.l - .1) / 2, z = ((k * 61) % 100) / 100 * (GA.p - .1) - (GA.p - .1) / 2, s = .02 + (k % 3) * .005;
+    Mx(AQ_GALET, x, y0 + .03 + (k % 3) * .006, z, [0xE8D2A8, 0xD8B888, 0xF0E0C0][k % 3], 0, k, 0, s, s * .7, s); }
+  /* la grosse pierre moussue, ses petites pierres ; deux pierres à droite */
+  Mx(AQ_GALET, -.42, y0 + .1, -.06, 0x7E7872, 0, .3, .1, .2, .14, .13);
+  for(const [x, z, s] of [[-.47, .02, .05], [-.36, -.02, .045], [-.4, -.1, .05]]) Mx(AQ_GALET, x, y0 + .2 + s * .3, z, 0x7C9A3C, 0, x * 7, 0, s, s * .35, s);   // la mousse
+  for(const [x, z, s] of [[-.22, .04, .09], [-.6, .1, .06], [-.3, .15, .045], [-.12, .12, .035], [.3, .02, .08], [.44, .06, .06]]) Mx(AQ_GALET, x, y0 + .04 + s * .3, z, 0x86807A, 0, x * 9, 0, s * 1.2, s * .8, s);
+  /* les longues herbes d'eau, à gauche et à droite */
+  const herbe = (x, z, h, k) => { for(let j = 0; j < 8; j++) Mx(AQ_GALET, x + Math.sin(j * .9 + k) * .022, y0 + .05 + j * h / 8, z, k % 2 ? 0x5E9A34 : 0x6EAE3E, 0, 0, Math.cos(j * .9 + k) * .35, .02, h / 9, .006); };   // un ruban qui ondule
+  for(let k = 0; k < 6; k++) herbe(-.74 + k * .045, -.14 + (k % 2) * .05, .26 + (k % 3) * .06, k);
+  for(let k = 0; k < 7; k++) herbe(.5 + k * .045, -.15 + (k % 2) * .05, .28 + (k % 3) * .07, k + 3);
+  /* la touffe devant la grosse pierre, la petite plante à feuilles rondes au milieu */
+  for(let j = 0; j < 7; j++){ const a = (j - 3) * .35; Mx(AQ_GALET, -.24 + Math.sin(a) * .04, y0 + .08 + Math.cos(a) * .02, .12, 0x72B444, 0, 0, -a, .018, .06, .007); }
+  Mx(AQ_GALET, .06, y0 + .15, -.04, 0x5E9A34, 0, 0, 0, .008, .13, .008);
+  for(let j = 0; j < 6; j++){ const s = j % 2 ? 1 : -1, y = y0 + .1 + j * .04, l = .07 - j * .007;
+    Mx(AQ_GALET, .06 + s * l / 2, y - .01, -.04, 0x5E9A34, 0, 0, -s * 1.1, .005, l / 2, .005);   // la petite branche
+    Mx(AQ_GALET, .06 + s * l, y + .015, -.04, 0x86C452, 0, 0, s * .4, .028, .022, .008); }      // sa feuille ronde
+  Mx(AQ_GALET, .06, y0 + .29, -.04, 0x86C452, 0, 0, 0, .022, .026, .008);
+  return fusionner(out);
+})();
 /* La chandelle seule (son icône) */
 export const chandelleSeule = () => modeleBois("chandelleSeule", 0, () => chandelleMorceaux(0));
 
@@ -1445,6 +1493,15 @@ const BUILD = {
     (o && o.poissons || []).slice(0, 3).forEach((cle, j) => {
       const [k, robe] = cle.split("|"), p = poissonAquarium(k, robe, .2);
       if(p){ p.userData.bac = {l: .38, y: AM.bas + .14 + j * .08, z: (j - 1) * .1, vite: .35 + j * .07}; p.position.set((j - 1) * .3, p.userData.bac.y, (j - 1) * .1); g.add(p); }
+    });
+  },
+  grandAquarium(g, m, o){                                                            // le meuble, le long bac, l'eau, et ses cinq poissons
+    g.add(modeleBois("grandAquarium", m, grandAquariumMorceaux), new THREE.Mesh(GA_DECOR, MAT_AQUA));   // le meuble ; le fond du bac, éclairé
+    const e = new THREE.Mesh(GA_EAU, matEau); e.position.y = (GA.bas + GA.eau) / 2; e.renderOrder = 1; e.castShadow = false; g.add(e);
+    const v = new THREE.Mesh(GA_VERRE, matBocal); v.position.y = (GA.bas + GA.haut) / 2; v.renderOrder = 2; v.castShadow = false; g.add(v);
+    (o && o.poissons || []).slice(0, 5).forEach((cle, j) => {
+      const [k, robe] = cle.split("|"), p = poissonAquarium(k, robe, .2);
+      if(p){ p.userData.bac = {l: .62, y: GA.bas + .16 + (j % 3) * .08 + (j > 2 ? .04 : 0), z: (j - 2) * .07, vite: .28 + j * .05}; p.position.set((j - 2) * .25, p.userData.bac.y, (j - 2) * .07); g.add(p); }
     });
   },
   herbier(g, m, o){ const l = (o && o.fleurs) || []; g.add(modeleBois("herbier" + l.join(","), m, herbierMorceaux(l))); },   // ses fleurs séchées (une forme par herbier)
