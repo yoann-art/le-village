@@ -24,8 +24,12 @@ jobs:
           node-version: 22
       - name: Installer le navigateur de test
         run: |
-          npm install --no-save playwright@1.64.1
-          npx playwright install --with-deps chromium
+          # en cas d'échec, la fin du journal en annotation (lisible sans compte : Claude la lit depuis le PC de Yo)
+          { npm install --no-save playwright@1.64.1 && npx playwright install --with-deps chromium; } > installation.log 2>&1 || {
+            echo "::error title=Installation du navigateur de test::$(tail -n 40 installation.log | cut -c1-200 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/
+/%0A/g')"
+            exit 1
+          }
       - name: Lancer le jeu et jouer les gestes de base
         run: |
           python3 -m http.server 8000 >/dev/null 2>&1 &
