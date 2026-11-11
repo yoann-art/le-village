@@ -3452,6 +3452,22 @@ export async function verifier(){
       $("#btn-act").click();
       if(map.obj[i] || owned("portail") !== 1) throw new Error("le portail n'est pas revenu dans le sac");
       sacTake("portail", 1);
+      /* le puits (Yo, 11 novembre 2026 ; Grand Carnet : « Remplit l'arrosoir ») : posé, pas traversable, il remplit l'arrosoir
+         (la manivelle tourne : o.tire) ; léger ; sans arrosoir, on le reprend */
+      place(2); sacAdd("puitsEau", 1); enMain("puitsEau");
+      if(!devant().includes("Poser le puits")) throw new Error(`le puits en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] !== "puitsEau" || islandWalkable(centerOf(i % NN), centerOf(Math.floor(i / NN)))) throw new Error(`le puits n'est pas posé, ou on le traverse (${map.obj[i]})`);
+      if(!devant().includes("Reprendre le puits")) throw new Error(`devant le puits, les mains vides, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      if(!owned("arrosoir")) sacAdd("arrosoir", 1);
+      enMain("arrosoir"); state.eau = 0;
+      if(!devant().includes("Remplir l'arrosoir")) throw new Error(`l'arrosoir en main devant le puits, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(state.eau !== OUTILS.arrosoir.eau || !state.ile[i].tire) throw new Error(`le puits ne remplit pas l'arrosoir (${state.eau})`);
+      if(!devant().includes("Arrosoir plein")) throw new Error(`l'arrosoir plein devant le puits, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      tri = 0; des = 0; makeMeuble("puitsEau").traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
+      if(des !== 4 || tri > 22000) throw new Error(`le puits : ${des} dessins, ${Math.round(tri)} triangles`);
+      setObj(i, null);
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3505,7 +3521,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

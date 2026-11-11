@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1175,6 +1175,70 @@ function clotureMorceaux(bras, voisins){ return c => {
   }
   return out;
 }; }
+/* Le puits (image de Yo, 11 novembre 2026 : « Voici le puits » ; « Retire la mousse ») : la margelle ronde de pierres bombées en
+   quatre rangs décalés, couronnée de pierres plates ; l'eau sombre au fond ; deux montants de bois, leur linteau, leurs jambes de
+   force ; le toit à deux pans de bardeaux arrondis, sa poutre de faîte ; le treuil, sa corde enroulée, la manivelle de cuivre à
+   poignée de bois ; le seau de bois cerclé de cuivre. Une case ; 1,55 de haut. Il remplit l'arrosoir (Grand Carnet) : o.tire, le
+   moment où l'on tire de l'eau : la manivelle tourne, le seau descend et remonte (PU.temps) */
+const PU = {r: .395, ep: .14, rang: .15, n: 11, haut: .62, axe: .98, poteau: .4, faite: 1.52, egout: 1.2, bord: .55, bois: 0xC8955A, corde: 0xE3CC96, temps: 1300};
+PU.pente = Math.atan2(PU.faite - PU.egout, PU.bord); PU.long = Math.hypot(PU.faite - PU.egout, PU.bord);
+const PU_PIERRE = boiteRonde(1, 1, 1, .36, 1), PU_CARRE = boiteRonde(1, 1, 1, .12, 1), PU_TUILE = boiteRonde(1, 1, 1, .3, 1);
+const PU_EAU = new THREE.CylinderGeometry(1, 1, 1, 20), PU_TIGE = new THREE.CylinderGeometry(1, 1, 1, 10), PU_BOULE = new THREE.SphereGeometry(1, 8, 6);
+const PU_ANNEAU = new THREE.TorusGeometry(1, .38, 6, 14), PU_ANSE = new THREE.TorusGeometry(1, .09, 5, 12, Math.PI);
+const PU_SEAU = lathe([[0, 0], [.072, 0], [.078, .004], [.094, .12], [.086, .12], [.07, .012], [0, .012]], 14);
+function puitsMorceaux(c){
+  const o = ombreBois(0, PU.faite), out = [], w = PU.bois, al = aleaMuret(4242), teinte = () => new THREE.Color(c).multiplyScalar(.88 + al() * .16).getHex();
+  for(let r = 0; r < 4; r++) for(let k = 0; k < PU.n; k++){                         // la margelle : quatre rangs de pierres bombées, décalés
+    const a = (k + (r % 2) * .5) / PU.n * Math.PI * 2, lg = 2 * Math.PI * PU.r / PU.n + .02;
+    out.push({geo: PU_PIERRE, m: M4(Math.sin(a) * PU.r, r * PU.rang + PU.rang / 2, Math.cos(a) * PU.r, 0, a + (al() - .5) * .06, 0, lg * (.92 + al() * .12), PU.rang * (.95 + al() * .1), PU.ep), c: teinte(), ombre: o});
+  }
+  for(let k = 0; k < 10; k++){ const a = (k + .25) / 10 * Math.PI * 2;                // les pierres plates du dessus
+    out.push({geo: PU_PIERRE, m: M4(Math.sin(a) * PU.r, PU.haut - .045, Math.cos(a) * PU.r, 0, a, 0, 2 * Math.PI * PU.r / 10 + .015, .09, PU.ep + .04), c: teinte(), ombre: o}); }
+  out.push({geo: PU_EAU, m: M4(0, .32, 0, 0, 0, 0, PU.r - .04, .02, PU.r - .04), c: 0x24343C, ombre: o});   // l'eau sombre, au fond
+  for(const s of [-1, 1]){
+    const x = s * PU.poteau;
+    out.push({geo: PU_CARRE, m: M4(x, (PU.haut + PU.egout + .06) / 2, 0, 0, 0, 0, .11, PU.egout + .06 - PU.haut, .11), c: w, ombre: o});   // le montant
+    for(const d of [-1, 1]){ const bx = x + s * d * .1;                                // les jambes de force, dedans et dehors
+      out.push({geo: PU_CARRE, m: M4(bx, PU.egout - .07, 0, 0, 0, s * d * Math.PI / 4, .05, .2, .07), c: w, ombre: o}); }
+    out.push({geo: PU_CARRE, m: M4(x + s * .062, PU.axe, 0, 0, 0, 0, .015, .16, .1), c: CUIVRE, ombre: o});   // la plaque du palier
+    for(const y of [PU.axe - .05, PU.axe + .05]) out.push({geo: PU_BOULE, m: M4(x + s * .07, y, 0, 0, 0, 0, .012, .012, .012), c: CUIVRE, ombre: o});
+  }
+  out.push({geo: PU_CARRE, m: M4(0, PU.egout + .03, 0, 0, 0, 0, 1.1, .08, .09), c: w, ombre: o});        // le linteau
+  for(const sz of [-1, 1]){                                                          // les deux pans : une planche, deux rangs de bardeaux
+    const dir = new THREE.Vector3(0, -Math.sin(PU.pente), sz * Math.cos(PU.pente)), nor = new THREE.Vector3(0, Math.cos(PU.pente), sz * Math.sin(PU.pente));
+    const pos = s => new THREE.Vector3(0, PU.faite, 0).addScaledVector(dir, s);
+    const p0 = pos(PU.long / 2).addScaledVector(nor, -.02);
+    out.push({geo: PU_CARRE, m: M4(p0.x, p0.y, p0.z, sz * PU.pente, 0, 0, 1.18, .03, PU.long), c: new THREE.Color(w).multiplyScalar(.8).getHex(), ombre: o});
+    [[.2, 5, 0], [.5, 5, .5]].forEach(([s, n, dec]) => {
+      for(let k = 0; k < n; k++){ const p = pos(s).addScaledVector(nor, .025 + s * .02), x = -.47 + (k + dec * (k < n - 1 ? 1 : 0)) * .235;
+        if(dec && k === n - 1) continue;
+        out.push({geo: PU_TUILE, m: M4(x + (dec ? .117 : 0), p.y, p.z, sz * PU.pente, 0, (al() - .5) * .05, .225, .04, .36), c: teinte === null ? w : new THREE.Color(w).multiplyScalar(.95 + al() * .1).getHex(), ombre: o}); }
+    });
+  }
+  out.push({geo: PU_CARRE, m: M4(0, PU.faite + .04, 0, 0, 0, 0, 1.26, .1, .12), c: w, ombre: o});      // la poutre de faîte, ses bouts
+  for(const s of [-1, 1]) out.push({geo: PU_CARRE, m: M4(s * .6, PU.faite + .05, 0, 0, 0, 0, .14, .15, .17), c: w, ombre: o});
+  return out;
+}
+/* le treuil, tourné autour de son axe (x) : l'arbre, la corde enroulée, la manivelle */
+function treuilMorceaux(c){
+  const o = ombreBois(-.15, .1), out = [];
+  out.push({geo: PU_TIGE, m: M4(0, 0, 0, 0, 0, Math.PI / 2, .04, .84, .04), c: PU.bois, ombre: o});
+  for(let k = 0; k < 5; k++) out.push({geo: PU_ANNEAU, m: M4(-.08 + k * .04, 0, 0, 0, Math.PI / 2, 0, .058, .058, .058), c: PU.corde, ombre: o});
+  out.push({geo: PU_TIGE, m: M4(.47, 0, 0, 0, 0, Math.PI / 2, .055, .02, .055), c: CUIVRE, ombre: o},   // la rondelle
+    {geo: PU_TIGE, m: M4(.5, -.06, 0, 0, 0, 0, .016, .14, .016), c: CUIVRE, ombre: o},                   // le bras de la manivelle
+    {geo: PU_TIGE, m: M4(.47, 0, 0, 0, 0, Math.PI / 2, .016, .07, .016), c: CUIVRE, ombre: o},
+    {geo: PU_TIGE, m: M4(.57, -.13, 0, 0, 0, Math.PI / 2, .028, .13, .028), c: PU.bois, ombre: o});     // la poignée de bois
+  return out;
+}
+function seauMorceaux(c){                                                           // le seau, le haut de son anse à l'origine
+  const o = ombreBois(-.22, 0), out = [], y0 = -.21;
+  out.push({geo: PU_SEAU, m: M4(0, y0, 0), c: PU.bois, ombre: o});
+  for(const [y, r] of [[.022, .08], [.1, .091]]) out.push({geo: PU_ANNEAU, m: M4(0, y0 + y, 0, Math.PI / 2, 0, 0, r, r, .03), c: CUIVRE, ombre: o});
+  out.push({geo: PU_ANSE, m: M4(0, y0 + .12, 0, 0, 0, 0, .092, .09, .092), c: CUIVRE, ombre: o});
+  for(const s of [-1, 1]) out.push({geo: PU_BOULE, m: M4(s * .092, y0 + .11, 0, 0, 0, 0, .014, .014, .014), c: CUIVRE, ombre: o});
+  return out;
+}
+const PU_CORDE = new THREE.CylinderGeometry(1, 1, 1, 6).translate(0, -.5, 0);    // la corde qui pend, son haut à l'origine
 /* Le portail (image de Yo, 11 novembre 2026 : « Voici le portail. Il faut qu'il puisse s'ouvrir et se fermer ») : deux piliers
    carrés, leur chapeau et leur boule ; deux battants de planches, le haut en arc, leur cadre, deux traverses ; des pentures de cuivre
    cloutées, le verrou de cuivre au milieu. Tout du même bois. Une case de large (les piliers au bord, à .5 du milieu). Les battants
@@ -1740,6 +1804,17 @@ const BUILD = {
   cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
     const v = (o && o.voisins) || "", bras = brasDe(o);
     g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
+  },
+  puitsEau(g, m, o){                                                                 // la margelle, le toit ; le treuil, la corde et le seau
+    g.add(modeleBois("puitsEau", m, puitsMorceaux));
+    const treuil = modeleBois("puitsTreuil", m, treuilMorceaux); treuil.position.y = PU.axe; g.add(treuil);
+    const seau = modeleBois("puitsSeau", m, seauMorceaux), corde = new THREE.Mesh(PU_CORDE, new THREE.MeshLambertMaterial({color: PU.corde}));
+    corde.position.y = PU.axe - .055; corde.scale.set(.016, 1, .016); g.add(seau, corde);
+    const depuis = (o && o.tire) || 0, haut = .8;                                     // le haut de l'anse, au repos
+    const place = () => { const t = Math.min(1, Math.max(0, (Date.now() - depuis) / PU.temps)), bas = .3 * Math.sin(Math.PI * t);
+      treuil.rotation.x = t * Math.PI * 4; seau.position.y = haut - bas; corde.scale.y = PU.axe - .055 - seau.position.y; treuil.updateMatrixWorld(true); seau.updateMatrixWorld(true); corde.updateMatrixWorld(true); };
+    place();
+    if(Date.now() - depuis < PU.temps) seau.onBeforeRender = place;                  // la manivelle tourne, le seau descend et remonte
   },
   portail(g, m, o){                                                                  // les piliers ; les deux battants sur leurs gonds
     g.add(modeleBois("portailPiliers", m, piliersMorceaux));

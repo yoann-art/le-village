@@ -687,6 +687,10 @@ function poserDehors(t){
 }
 function lumiereAction(t){
   const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c);
+  if(t.o === "puitsEau" && state.main && OUTILS[state.main] && OUTILS[state.main].eau){   // le puits remplit l'arrosoir (Grand Carnet)
+    const max = OUTILS[state.main].eau;
+    return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: () => { setEtat(t.i, {tire: Date.now()}); remplir(); }} : info(`💧 Arrosoir plein (${max}/${max})`);
+  }
   if(m.support && !garniPlein(t.o, c) && garniDispo(t.o))
     return {label: poserLabel(t.o), run: () => poserGarni(c, t.o, patch => setEtat(t.i, patch))};
   return {label: `✋ Reprendre ${leNom(m)}${avecGarni(g, garniRendu(t.o, c))}`, run: () => reprendreLumiere(t)};
