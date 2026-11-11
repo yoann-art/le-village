@@ -3391,6 +3391,28 @@ export async function verifier(){
     if(map.obj[i] || owned("feuCamp") !== 1) throw new Error(`le feu de camp n'est pas revenu dans le sac (« ${$("#toast").textContent} », ${owned("feuCamp")} dans le sac, case : ${map.obj[i]})`);
     if(owned("bois") !== b0 + 2) throw new Error(`repris, le feu de camp rend ${owned("bois") - b0} bûches (2 entières, celle qui brûle est perdue)`);
     sacTake("bois", 2);
+    /* la clôture en bois (Yo, 11 novembre 2026 : « Décoration seulement ») : posée devant soi, en travers ; on ne la traverse
+       pas ; deux morceaux voisins se joignent, et se séparent ; reprise */
+    {
+      const {voisinsCloture} = await import("../js/monde/ile.js"), {traversable} = await import("../js/donnees.js"), {makeMeuble} = await import("../js/monde/meubles.js");
+      place(2); sacAdd("cloture", 1); enMain("cloture");
+      if(!devant().includes("Poser la clôture")) throw new Error(`la clôture en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] !== "cloture" || state.ile[i].rot) throw new Error(`la clôture n'est pas posée en travers devant soi (${map.obj[i]}, ${state.ile[i] && state.ile[i].rot})`);
+      if(traversable("cloture")) throw new Error("on traverse la clôture");
+      const j2 = [i + 1, i - 1].find(c => !poseProblem(c));
+      if(j2 === undefined) throw new Error("pas de case libre à côté de la clôture");
+      setObj(j2, "cloture");
+      if(voisinsCloture(i) !== (j2 === i + 1 ? "e" : "o")) throw new Error(`deux clôtures voisines ne se joignent pas (${voisinsCloture(i)})`);
+      setObj(j2, null);
+      if(voisinsCloture(i) !== "") throw new Error("la clôture reste jointe à une voisine ôtée");
+      let tri = 0, des = 0; makeMeuble("cloture", undefined, {voisins: "enos"}).traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
+      if(des !== 1 || tri > 6000) throw new Error(`la clôture en croix : ${des} dessins, ${Math.round(tri)} triangles`);
+      if(!devant().includes("Reprendre la clôture")) throw new Error(`devant la clôture, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] || owned("cloture") !== 1) throw new Error("la clôture n'est pas revenue dans le sac");
+      sacTake("cloture", 1);
+    }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
     if(map.obj[i] !== "torchere") throw new Error(`la torchère n'est pas posée dehors (le bouton dit « ${$("#btn-act").dataset.action} », en main : ${state.main})`);
@@ -3443,7 +3465,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

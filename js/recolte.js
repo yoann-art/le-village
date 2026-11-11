@@ -674,6 +674,10 @@ function poserDehors(t){
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
   setObj(t.i, k); jouer("meuble");
+  if(k === "cloture"){                                               // seule, la clôture se pose en travers, devant soi
+    const dx = t.x - tileOf(player.position.x), dz = t.z - tileOf(player.position.z);
+    if(Math.abs(dx) > Math.abs(dz)) setEtat(t.i, {rot: 1});
+  }
   syncBarre(); save();
   toast(`${m.emoji} ${m.nom} posé${m.une ? "e" : ""}${m.support === "torche" ? " : approche-toi avec une torche pour l'allumer, elle ne s'éteindra plus jamais"
     : m.support === "bougie" ? " : approche-toi avec une chandelle pour l'y poser, elle ne s'y usera jamais"

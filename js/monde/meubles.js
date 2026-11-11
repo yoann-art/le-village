@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1139,6 +1139,34 @@ function bouquetMorceaux(){
   for(const p of out) p.m = C.clone().multiply(p.m);
   return out;
 }
+/* La clôture en bois (image de Yo, 11 novembre 2026 : « Voici la clôture en bois » ; « Décoration seulement ») : dehors, un
+   morceau par case ; des piquets à tête arrondie, deux traverses devant, une cheville ronde où la traverse croise un piquet ;
+   tout de la teinte du bois. Les morceaux voisins se joignent (ile.js : o.voisins, les côtés « e », « n », « o », « s » où il y a
+   une clôture) : une ligne droite, un angle, un T, une croix ; seul, il suit o.rot (0 : d'est en ouest, 1 : du nord au sud).
+   Le piquet partagé entre deux cases : dessiné par celle de l'ouest ou du nord seulement */
+const CL = {h: .62, larg: .16, ep: .07, rails: [.2, .44], bout: .4};
+const CL_PIQUET = (() => { const s = new THREE.Shape(), r = CL.larg / 2, h = CL.h - r;
+  s.moveTo(-r, 0); s.lineTo(r, 0); s.lineTo(r, h); s.absarc(0, h, r, 0, Math.PI, false); s.lineTo(-r, 0);
+  return new THREE.ExtrudeGeometry(s, {depth: CL.ep - .03, bevelEnabled: true, bevelThickness: .015, bevelSize: .015, bevelSegments: 2, curveSegments: 8}).translate(0, 0, -(CL.ep - .03) / 2); })();
+const CL_RAIL = boiteRonde(1, .1, .055, .025, 2), CL_CHEVILLE = new THREE.SphereGeometry(1, 10, 6);
+const DIRS = {e: [1, 0], o: [-1, 0], s: [0, 1], n: [0, -1]}, OPPOSE = {e: "o", o: "e", s: "n", n: "s"};
+function clotureMorceaux(bras, voisins){ return c => {
+  const o = ombreBois(0, CL.h), out = [], zr = CL.ep / 2 + .03;
+  const piquet = (x, z, tourne) => out.push({geo: CL_PIQUET, m: M4(x, 0, z, 0, tourne ? Math.PI / 2 : 0, 0), c, ombre: o});
+  const axeX = bras.includes("e") || bras.includes("o");
+  piquet(0, 0, !axeX);                                                // le piquet du milieu
+  for(const d of bras){
+    const [dx, dz] = DIRS[d], lie = voisins.includes(d), fin = lie ? .5 : CL.bout;
+    if(!lie || d === "o" || d === "n") piquet(dx * fin, dz * fin, !dx);   // le piquet du bout (le partagé : une seule fois)
+    const l = lie ? .5 : CL.bout + .1, cx = dx * l / 2, cz = dz * l / 2;   // la traverse dépasse un peu le dernier piquet
+    for(const y of CL.rails){
+      out.push({geo: CL_RAIL, m: M4(cx + (dz ? zr : 0), y, cz + (dx ? zr : 0), 0, dx ? 0 : Math.PI / 2, 0, l + .02, 1, 1), c, ombre: o});
+      for(const t of [0, fin]) if(t === 0 || !lie || d === "o" || d === "n")   // les chevilles : devant chaque piquet
+        out.push({geo: CL_CHEVILLE, m: M4(dx * t + (dz ? zr + .03 : 0), y, dz * t + (dx ? zr + .03 : 0), 0, 0, 0, .026, .026, .014 + (dx ? 0 : .012)), c, ombre: o});
+    }
+  }
+  return out;
+}; }
 /* Le trophée de gibier (image de Yo, 11 novembre 2026 : « Voici le trophée de gibier. Il faut qu'il fonctionne comme la petite
    statue » ; « Le gibier seulement ») : au mur, un écusson de bois en forme de bouclier (sa teinte), un cadre en relief, une
    plaque de cuivre à deux clous et ses feuilles gravées. Vide quand on l'accroche ; « Sculpter » (statues.js) y met le buste
@@ -1574,6 +1602,10 @@ const BUILD = {
       const [k, robe] = cle.split("|"), p = poissonAquarium(k, robe, .2);
       if(p){ p.userData.bac = {l: .62, y: GA.bas + .16 + (j % 3) * .08 + (j > 2 ? .04 : 0), z: (j - 2) * .07, vite: .28 + j * .05}; p.position.set((j - 2) * .25, p.userData.bac.y, (j - 2) * .07); g.add(p); }
     });
+  },
+  cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
+    const v = (o && o.voisins) || "", bras = v.length > 1 ? v : v.length === 1 ? v + OPPOSE[v] : (o && o.rot ? "ns" : "eo");
+    g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
   },
   trophee(g, m, o){                                                                  // l'écusson ; le buste du gibier sculpté (statues.js)
     g.add(modeleBois("trophee", m, tropheeMorceaux));
