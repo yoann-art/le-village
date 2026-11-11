@@ -232,6 +232,7 @@ function nomCible(t){
   if(t.pelle) return null;
   if(t.o === "coffre"){ const n = state.coffres.findIndex(c => c.id === (state.ile[t.i] || {}).id); return `🗃️ Coffre${n >= 0 ? ` ${n + 1}` : ""}`; }
   if(t.facade) return t.f ? `${MEUBLES[t.f.type].emoji} ${MEUBLES[t.f.type].nom}` : null;
+  if(t.o === "panneau" && (state.ile[t.i] || {}).texte) return `🪧 « ${state.ile[t.i].texte} »`;   // le mot du panneau, quand on s'approche
   if(MEUBLES[t.o]) return `${MEUBLES[t.o].emoji} ${MEUBLES[t.o].nom}`;
   if(t.eau) return t.w === FORET ? "💧 Ruisseau" : t.w === MARAIS ? "💧 Chenal" : t.i >= 0 && lieuEau(t.i) === "etang" && !enBarque() ? "💧 Étang" : "🌊 Mer";
   if(t.galerie) return "🪨 Roche fissurée";
@@ -674,9 +675,9 @@ function poserDehors(t){
   if(why){ toast(why); return; }
   if(!sacTake(k, 1)) return;
   setObj(t.i, k); jouer("meuble");
-  if(k === "cloture" || k === "muret" || k === "portail"){          // seul(e), la clôture (le muret) se pose en travers, devant soi
+  if(k === "cloture" || k === "muret" || k === "portail" || k === "panneau"){   // seul(e), la clôture (le muret) se pose en travers, devant soi
     const dx = t.x - tileOf(player.position.x), dz = t.z - tileOf(player.position.z);
-    if(k === "portail"){ const r = Math.abs(dx) > Math.abs(dz) ? (dx < 0 ? 1 : 3) : (dz < 0 ? 0 : 2); if(r) setEtat(t.i, {rot: r}); }   // il s'ouvre devant soi
+    if(k === "portail" || k === "panneau"){ const r = Math.abs(dx) > Math.abs(dz) ? (dx < 0 ? 1 : 3) : (dz < 0 ? 0 : 2); if(r) setEtat(t.i, {rot: r}); }   // il s'ouvre devant soi
     else if(Math.abs(dx) > Math.abs(dz)) setEtat(t.i, {rot: 1});
   }
   syncBarre(); save();

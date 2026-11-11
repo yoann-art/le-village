@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1238,6 +1238,35 @@ function seauMorceaux(c){                                                       
   return out;
 }
 const PU_CORDE = new THREE.CylinderGeometry(1, 1, 1, 6).translate(0, -.5, 0);    // la corde qui pend, son haut à l'origine
+/* Le panneau (image de Yo, 11 novembre 2026 : « Voici le panneau en bois » ; « On peut y écrire un mot ») : un poteau carré au
+   bout arrondi, deux planches assemblées aux bords arrondis, quatre clous de cuivre ; tout du même bois. Le mot (o.texte, panneaux.js)
+   peint en brun sur le devant (le poteau est derrière) ; le panneau regarde vers +z, tourné de o.rot quarts de tour */
+const PA = {haut: 1.06, cy: .78, l: .74, h: .34, ep: .07, poteau: .17};
+const PA_PLANCHE = boiteRonde(1, 1, 1, .11, 2), PA_POTEAU = boiteRonde(1, 1, 1, .12, 2);
+const PA_TEXTE = new THREE.PlaneGeometry(PA.l - .14, PA.h - .08);
+function panneauMorceaux(c){
+  const o = ombreBois(0, PA.haut), out = [];
+  out.push({geo: PA_POTEAU, m: M4(0, PA.haut / 2, -(PA.ep + PA.poteau) / 2 + .01, 0, 0, 0, PA.poteau, PA.haut, PA.poteau), c, ombre: o});
+  for(const [y, h] of [[PA.cy + PA.h / 4 + .004, PA.h / 2 + .01], [PA.cy - PA.h / 4 - .004, PA.h / 2 - .005]])   // les deux planches
+    out.push({geo: PA_PLANCHE, m: M4(0, y, 0, 0, 0, (y > PA.cy ? .006 : -.004), PA.l, h, PA.ep), c, ombre: o});
+  for(const [x, y] of [[-.3, PA.cy + .07], [.3, PA.cy + .1], [-.3, PA.cy - .1], [.3, PA.cy - .07]])
+    out.push({geo: PU_BOULE, m: M4(x, y, PA.ep / 2 + .002, 0, 0, 0, .022, .022, .012), c: CUIVRE, ombre: o});
+  return out;
+}
+const MOTS_PEINTS = new Map();
+/* le mot peint : une petite image faite une fois par mot (la police du jeu, si elle est déjà chargée) */
+function motPeint(texte){
+  const police = document.fonts && document.fonts.check("40px 'Pirata One'") ? "'Pirata One'" : "Georgia, serif", cle = texte + "|" + police;
+  if(!MOTS_PEINTS.has(cle)){
+    const c = document.createElement("canvas"); c.width = 512; c.height = 128;
+    const x = c.getContext("2d"); let t = 92;
+    x.font = `${t}px ${police}`; while(x.measureText(texte).width > 480 && t > 30){ t -= 4; x.font = `${t}px ${police}`; }
+    x.fillStyle = "#4A2A16"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(texte, 256, 68);
+    const tex = new THREE.CanvasTexture(c); tex.anisotropy = 2;
+    MOTS_PEINTS.set(cle, new THREE.MeshLambertMaterial({map: tex, transparent: true, depthWrite: false}));
+  }
+  return MOTS_PEINTS.get(cle);
+}
 /* La fontaine (image de Yo, 11 novembre 2026 : « Voici la fontaine » ; Grand Carnet : « Coule sans fin, on l'entend de loin ») :
    le grand bassin rond, deux rangs de pierres bombées ; la vasque du milieu et la petite vasque du haut sur leurs pieds de pierre,
    leurs rebords de pierres ; la boule au sommet. L'eau : les trois bassins qui ondulent, quatre filets qui tombent d'une vasque à
@@ -1312,10 +1341,10 @@ function mergeGeos(geos){                                                       
   const r = new THREE.BufferGeometry(); r.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); r.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   r.computeVertexNormals(); return r;
 }
-/* pour la préparation au chargement (main.js) : l'eau de la fontaine, déjà prête quand on en pose une */
+/* pour la préparation au chargement (main.js) : l'eau de la fontaine, le mot peint d'un panneau, déjà prêts quand on en pose un */
 export function echantillonsFontaine(){
   const g = new THREE.Group();
-  for(const [geo, mat] of [[FO_BASSINS, matBassin], [FO_FILETS, matFilet], [FO_ECUME, matEcume]]){ const m = new THREE.Mesh(geo, mat); m.visible = false; m.scale.setScalar(.001); g.add(m); }
+  for(const [geo, mat] of [[FO_BASSINS, matBassin], [FO_FILETS, matFilet], [FO_ECUME, matEcume], [PA_TEXTE, motPeint("Hearthwild")]]){ const m = new THREE.Mesh(geo, mat); m.visible = false; m.scale.setScalar(.001); g.add(m); }
   return g;
 }
 /* Le portail (image de Yo, 11 novembre 2026 : « Voici le portail. Il faut qu'il puisse s'ouvrir et se fermer ») : deux piliers
@@ -1883,6 +1912,12 @@ const BUILD = {
   cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
     const v = (o && o.voisins) || "", bras = brasDe(o);
     g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
+  },
+  panneau(g, m, o){                                                                  // le poteau, les planches ; le mot peint, devant
+    g.add(modeleBois("panneau", m, panneauMorceaux));
+    if(o && o.texte){ const mat = motPeint(o.texte);
+      const t = new THREE.Mesh(PA_TEXTE, mat); t.position.set(0, PA.cy, PA.ep / 2 + .004); t.castShadow = false; t.renderOrder = 1; g.add(t); }
+    g.rotation.y = ((o && o.rot) || 0) * Math.PI / 2;
   },
   fontaine(g, m, o){                                                                 // la pierre ; l'eau des bassins, les filets, l'écume
     g.add(modeleBois("fontaine", m, fontaineMorceaux));

@@ -83,6 +83,7 @@ export const MEUBLES = {
   aquariumMoyen: {nom:"Aquarium", emoji:"🐟", gabarit:"moyen", w:1.2, d:.55, support:"poisson", dans:"dans l'aquarium", nb:3},   // un bac sur un meuble ; trois poissons, un à la fois (Yo, 10 novembre 2026)
   grandAquarium: {nom:"Grand aquarium", emoji:"🐠", gabarit:"grand", w:1.85, d:.6, support:"poisson", dans:"dans le grand aquarium", nb:5},   // un long bac sur un meuble à trois portes ; cinq poissons (Yo, 11 novembre 2026)
   cloture:  {nom:"Clôture en bois", emoji:"🪵", gabarit:"moyen", une:true, w:1, d:.3, dehors:true, dehorsSeul:true},   // dehors, un morceau par case, bout à bout ; de la décoration (Yo, 11 novembre 2026)
+  panneau:  {nom:"Panneau", emoji:"🪧", gabarit:"moyen", w:1, d:.3, dehors:true, dehorsSeul:true},   // dehors ; on y peint un mot (Yo, 11 novembre 2026)
   fontaine: {nom:"Fontaine", emoji:"⛲", gabarit:"grand", une:true, w:1, d:1, dehors:true, dehorsSeul:true},   // dehors ; elle coule sans fin (Grand Carnet ; Yo, 11 novembre 2026)
   puitsEau: {nom:"Puits", emoji:"🪣", gabarit:"grand", w:1, d:1, dehors:true, dehorsSeul:true},   // dehors ; il remplit l'arrosoir (Grand Carnet ; Yo, 11 novembre 2026)
   portail:  {nom:"Portail", emoji:"🚪", gabarit:"moyen", w:1, d:.3, dehors:true, dehorsSeul:true},   // dehors, entre deux clôtures ; il s'ouvre et se ferme (Yo, 11 novembre 2026)
@@ -1001,7 +1002,8 @@ export const ATELIERS = {
     {out:"muret", in:{pierre:4}, t:20, lvl:1, cat:"Décoration"},
     {out:"portail", in:{planche:4, cuivre:2}, t:30, lvl:1, cat:"Décoration"},
     {out:"puitsEau", in:{pierre:10, planche:6, fibre:2, cuivre:1}, t:40, lvl:1, cat:"Décoration"},
-    {out:"fontaine", in:{pierre:16}, t:40, lvl:1, cat:"Décoration"},   // toute de pierre (Yo, 11 novembre 2026)   // la corde : 2 fibres ; la manivelle : 1 cuivre (Yo, 11 novembre 2026)   // ses pentures et son verrou de cuivre (Yo, 11 novembre 2026)   // un morceau de muret (Yo, 11 novembre 2026)   // un morceau de clôture (Yo, 11 novembre 2026)
+    {out:"fontaine", in:{pierre:16}, t:40, lvl:1, cat:"Décoration"},
+    {out:"panneau", in:{planche:2, cuivre:1}, t:20, lvl:1, cat:"Décoration"},   // ses clous de cuivre (Yo, 11 novembre 2026)   // toute de pierre (Yo, 11 novembre 2026)   // la corde : 2 fibres ; la manivelle : 1 cuivre (Yo, 11 novembre 2026)   // ses pentures et son verrou de cuivre (Yo, 11 novembre 2026)   // un morceau de muret (Yo, 11 novembre 2026)   // un morceau de clôture (Yo, 11 novembre 2026)
     {out:"tonneau", in:{planche:5, cuivre:1}, t:60, lvl:2},   // les cerclages de cuivre (Yo, 8 novembre 2026)
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"tableBanquet", in:{planche:10}, t:120, lvl:2},   // la grande table de banquet (Yo, 7 novembre 2026)
@@ -1142,7 +1144,7 @@ export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tab
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", bocalLucioles:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
   brasero:"metal", lampadaire:"metal", enclume:"metal",
-  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois", aquarium:"bois", aquariumMoyen:"bois", grandAquarium:"bois", trophee:"bois", cloture:"bois", muret:"pierre", portail:"bois", puitsEau:"pierre", fontaine:"pierre"};
+  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois", aquarium:"bois", aquariumMoyen:"bois", grandAquarium:"bois", trophee:"bois", cloture:"bois", muret:"pierre", portail:"bois", puitsEau:"pierre", fontaine:"pierre", panneau:"bois"};
 /* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */
 export const DEPART = {chandelier:"argent"};
 const nomBois = p => p.nom.replace(/^Bois d(e |')/, "").replace(/^./, c => c.toUpperCase());
@@ -1210,7 +1212,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier","aquarium","aquariumMoyen","grandAquarium","trophee","cloture","muret","portail","puitsEau","fontaine"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier","aquarium","aquariumMoyen","grandAquarium","trophee","cloture","muret","portail","puitsEau","fontaine","panneau"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

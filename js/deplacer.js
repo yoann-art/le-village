@@ -96,7 +96,7 @@ function lacher(){
   } else if(L.ok && L.dest !== L.i){
     const etat = state.ile[L.i] || {};
     setObj(L.i, null); setObj(L.dest, L.type);
-    if(etat.torche || etat.bougie || etat.lucioles || etat.feu || etat.reste || etat.eteint || etat.rot || etat.tour || etat.ouvert) setEtat(L.dest, {torche: etat.torche, bougie: etat.bougie, chandelles: etat.chandelles, lucioles: etat.lucioles, feu: etat.feu, reste: etat.reste, eteint: etat.eteint, rot: etat.rot, tour: etat.tour, ouvert: etat.ouvert});   // la clôture, le muret gardent leur sens   // ses bûches qui brûlent aussi   // sa torche, sa chandelle, ses lucioles la suivent
+    if(etat.torche || etat.bougie || etat.lucioles || etat.feu || etat.reste || etat.eteint || etat.rot || etat.tour || etat.ouvert || etat.texte) setEtat(L.dest, {texte: etat.texte, torche: etat.torche, bougie: etat.bougie, chandelles: etat.chandelles, lucioles: etat.lucioles, feu: etat.feu, reste: etat.reste, eteint: etat.eteint, rot: etat.rot, tour: etat.tour, ouvert: etat.ouvert});   // la clôture, le muret gardent leur sens   // ses bûches qui brûlent aussi   // sa torche, sa chandelle, ses lucioles la suivent
   } else L.mesh.position.set(centerOf(L.i % N), 0, centerOf(Math.floor(L.i / N)));   // elle revient à sa place
   jouer("meuble"); save();
 }
@@ -118,6 +118,7 @@ canvas.addEventListener("pointermove", e => {
    tout droit, puis d'un côté, puis de l'autre ; joint des deux côtés, il suit ses voisins */
 export function tourner(i){
   const t = map.obj[i], v = voisinsCloture(i, t), e = state.ile[i] || {};
+  if(t === "panneau"){ setEtat(i, {rot: ((e.rot || 0) + 1) % 4 || undefined}); jouer("meuble"); save(); return; }   // le panneau : un quart de tour
   if(t === "portail"){                                                 // le portail : un quart de tour ; entre ses voisins, il s'ouvre de l'autre côté
     setEtat(i, {rot: ((e.rot || 0) + (v ? 2 : 1)) % 4 || undefined}); jouer("meuble"); save(); return;
   }
@@ -130,7 +131,7 @@ function leve(e){
   if(press && e.pointerId === press.pid){
     clearTimeout(press.timer);
     const c = press.cible; press = null;
-    if(c.i !== undefined && ["cloture", "muret", "portail"].includes(map.obj[c.i])) tourner(c.i);
+    if(c.i !== undefined && ["cloture", "muret", "portail", "panneau"].includes(map.obj[c.i])) tourner(c.i);
   }
   if(lift && e.pointerId === lift.pid) lacher();
 }

@@ -3479,6 +3479,25 @@ export async function verifier(){
       $("#btn-act").click();
       if(map.obj[i] || owned("fontaine") !== 1) throw new Error("la fontaine n'est pas revenue dans le sac");
       sacTake("fontaine", 1);
+      /* le panneau (Yo, 11 novembre 2026 : « On peut y écrire un mot ») : posé, on y peint un mot (coupé à 18 lettres), il se voit,
+         on l'efface ; un appui le tourne ; léger ; repris avec son mot effacé */
+      const {ecrire, MOT_MAX} = await import("../js/panneaux.js");
+      place(2); sacAdd("panneau", 1); enMain("panneau");
+      if(!devant().includes("Poser le panneau")) throw new Error(`le panneau en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] !== "panneau" || islandWalkable(centerOf(i % NN), centerOf(Math.floor(i / NN)))) throw new Error(`le panneau n'est pas posé, ou on le traverse (${map.obj[i]})`);
+      ecrire(i, "  Le   jardin de Yo et ses fleurs ");
+      if(state.ile[i].texte !== "Le jardin de Yo et ses fleurs".slice(0, MOT_MAX)) throw new Error(`le mot du panneau : « ${state.ile[i].texte} »`);
+      des = 0; makeMeuble("panneau", undefined, {texte: "Le jardin"}).traverse(c => { if(c.isMesh) des++; });
+      if(des !== 2) throw new Error(`le panneau et son mot : ${des} dessins`);
+      ecrire(i, ""); if(state.ile[i].texte) throw new Error("le mot du panneau ne s'efface pas");
+      const r1 = state.ile[i].rot || 0; tourner(i); if((state.ile[i].rot || 0) === r1) throw new Error("un appui ne tourne pas le panneau");
+      tri = 0; makeMeuble("panneau").traverse(c => { if(c.isMesh) tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; });
+      if(tri > 4000) throw new Error(`le panneau : ${Math.round(tri)} triangles`);
+      if(!devant().includes("Reprendre le panneau")) throw new Error(`devant le panneau, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] || owned("panneau") !== 1) throw new Error("le panneau n'est pas revenu dans le sac");
+      sacTake("panneau", 1);
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3532,7 +3551,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
