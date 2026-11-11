@@ -1209,11 +1209,10 @@ function puitsMorceaux(c){
     const pos = s => new THREE.Vector3(0, PU.faite, 0).addScaledVector(dir, s);
     const p0 = pos(PU.long / 2).addScaledVector(nor, -.02);
     out.push({geo: PU_CARRE, m: M4(p0.x, p0.y, p0.z, sz * PU.pente, 0, 0, 1.18, .03, PU.long), c: new THREE.Color(w).multiplyScalar(.8).getHex(), ombre: o});
-    [[.2, 5, 0], [.5, 5, .5]].forEach(([s, n, dec]) => {
-      for(let k = 0; k < n; k++){ const p = pos(s).addScaledVector(nor, .025 + s * .02), x = -.47 + (k + dec * (k < n - 1 ? 1 : 0)) * .235;
-        if(dec && k === n - 1) continue;
-        out.push({geo: PU_TUILE, m: M4(x + (dec ? .117 : 0), p.y, p.z, sz * PU.pente, 0, (al() - .5) * .05, .225, .04, .36), c: teinte === null ? w : new THREE.Color(w).multiplyScalar(.95 + al() * .1).getHex(), ombre: o}); }
-    });
+    const RANGS = [[.2, [-2, -1, 0, 1, 2].map(k => [k * .235, .225])],                // le rang du haut : cinq bardeaux
+      [.5, [[-.53, .11], ...[-1.5, -.5, .5, 1.5].map(k => [k * .235, .225]), [.53, .11]]]];   // celui du bas, décalé : quatre, et un demi à chaque bout (Yo : « il manque 2 planches »)
+    for(const [s, tuiles] of RANGS) for(const [x, lg] of tuiles){ const p = pos(s).addScaledVector(nor, .025 + s * .02);
+      out.push({geo: PU_TUILE, m: M4(x, p.y, p.z, sz * PU.pente, 0, (al() - .5) * .05, lg, .04, .36), c: new THREE.Color(w).multiplyScalar(.95 + al() * .1).getHex(), ombre: o}); }
   }
   out.push({geo: PU_CARRE, m: M4(0, PU.faite + .04, 0, 0, 0, 0, 1.26, .1, .12), c: w, ombre: o});      // la poutre de faîte, ses bouts
   for(const s of [-1, 1]) out.push({geo: PU_CARRE, m: M4(s * .6, PU.faite + .05, 0, 0, 0, 0, .14, .15, .17), c: w, ombre: o});
