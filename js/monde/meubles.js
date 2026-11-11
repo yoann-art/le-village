@@ -1149,7 +1149,15 @@ const CL_PIQUET = (() => { const s = new THREE.Shape(), r = CL.larg / 2, h = CL.
   s.moveTo(-r, 0); s.lineTo(r, 0); s.lineTo(r, h); s.absarc(0, h, r, 0, Math.PI, false); s.lineTo(-r, 0);
   return new THREE.ExtrudeGeometry(s, {depth: CL.ep - .03, bevelEnabled: true, bevelThickness: .015, bevelSize: .015, bevelSegments: 2, curveSegments: 8}).translate(0, 0, -(CL.ep - .03) / 2); })();
 const CL_RAIL = boiteRonde(1, .1, .055, .025, 2), CL_CHEVILLE = new THREE.SphereGeometry(1, 10, 6);
-const DIRS = {e: [1, 0], o: [-1, 0], s: [0, 1], n: [0, -1]}, OPPOSE = {e: "o", o: "e", s: "n", n: "s"};
+const DIRS = {e: [1, 0], o: [-1, 0], s: [0, 1], n: [0, -1]}, OPPOSE = {e: "o", o: "e", s: "n", n: "s"}, PERP = {e: "ns", o: "ns", n: "eo", s: "eo"};
+/* Les bras d'un morceau de clôture ou de muret : vers ses voisins ; le bout d'une ligne continue tout droit, ou tourne d'un côté
+   ou de l'autre (o.tour : 0, 1, 2 ; un appui court, deplacer.js) ; seul, il suit o.rot (0 : d'est en ouest, 1 : du nord au sud) */
+export function brasDe(o){
+  const v = (o && o.voisins) || "";
+  if(v.length > 1) return v;
+  if(v.length === 1){ const t = (o && o.tour) || 0; return v + (t ? PERP[v][t - 1] : OPPOSE[v]); }
+  return o && o.rot ? "ns" : "eo";
+}
 function clotureMorceaux(bras, voisins){ return c => {
   const o = ombreBois(0, CL.h), out = [], zr = CL.ep / 2 + .03;
   const piquet = (x, z, tourne) => out.push({geo: CL_PIQUET, m: M4(x, 0, z, 0, tourne ? Math.PI / 2 : 0, 0), c, ombre: o});
@@ -1194,7 +1202,7 @@ function panMuret(out, c, o, u0, u1, graine, mousse){
       u += w;
     }
   }
-  const n = Math.max(1, Math.round(L / .5)), wc = L / n;             // les grandes pierres plates du dessus
+  const n = 1, wc = L / n;                                           // une seule grande pierre plate, en long (Yo, 11 novembre 2026)
   for(let k = 0; k < n; k++)
     out.push({geo: MU_CAP, m: M4(u0 + wc * (k + .5), MU.h - MU.cap / 2, 0, (al() - .5) * .04, (al() - .5) * .05, (al() - .5) * .04, wc - .014, MU.cap, MU.d), c: teinte(), ombre: o});
   if(mousse){                                                        // la mousse : un coin du dessus, un creux, un pied
@@ -1657,11 +1665,11 @@ const BUILD = {
     });
   },
   cloture(g, m, o){                                                                  // ses bras selon ses voisines (ile.js)
-    const v = (o && o.voisins) || "", bras = v.length > 1 ? v : v.length === 1 ? v + OPPOSE[v] : (o && o.rot ? "ns" : "eo");
+    const v = (o && o.voisins) || "", bras = brasDe(o);
     g.add(modeleBois("cloture:" + bras + ":" + v, m, clotureMorceaux(bras, v)));
   },
   muret(g, m, o){                                                                    // ses bras selon ses voisins (ile.js), comme la clôture
-    const v = (o && o.voisins) || "", bras = v.length > 1 ? v : v.length === 1 ? v + OPPOSE[v] : (o && o.rot ? "ns" : "eo");
+    const v = (o && o.voisins) || "", bras = brasDe(o);
     g.add(modeleBois("muret:" + bras + ":" + v, m, muretMorceaux(bras, v)));
   },
   trophee(g, m, o){                                                                  // l'écusson ; le buste du gibier sculpté (statues.js)

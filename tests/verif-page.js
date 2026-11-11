@@ -3420,7 +3420,12 @@ export async function verifier(){
       if(traversable("muret")) throw new Error("on traverse le muret");
       setObj(j2, "muret");
       if(voisinsCloture(i, "muret") !== (j2 === i + 1 ? "e" : "o")) throw new Error(`deux murets voisins ne se joignent pas (${voisinsCloture(i, "muret")})`);
+      const {tourner} = await import("../js/deplacer.js");   // un appui court le tourne (Yo, 11 novembre 2026)
+      tourner(i); if(state.ile[i].tour !== 1) throw new Error("le bout du muret ne tourne pas d'un côté");
+      tourner(i); tourner(i); if(state.ile[i].tour) throw new Error("le bout du muret ne revient pas tout droit");
       setObj(j2, null);
+      tourner(i); if(state.ile[i].rot !== 1) throw new Error("le muret seul ne tourne pas d'un quart de tour");
+      tourner(i); if(state.ile[i].rot) throw new Error("le muret seul ne revient pas");
       tri = 0; des = 0; makeMeuble("muret", undefined, {voisins: "enos"}).traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 1 || tri > 9000) throw new Error(`le muret en croix : ${des} dessins, ${Math.round(tri)} triangles`);
       if(!devant().includes("Reprendre le muret")) throw new Error(`devant le muret, le bouton dit « ${$("#btn-act").dataset.action} »`);

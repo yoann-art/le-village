@@ -9,11 +9,11 @@ import { MEUBLES } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf } from "./regles.js";
 import { renderer, ray, aim, groundAt, scene } from "./monde/scene.js";
-import { map, idx, inb, N, tileOf, centerOf, setObj, setEtat, objMesh } from "./monde/ile.js";
+import { map, idx, inb, N, tileOf, centerOf, setObj, setEtat, objMesh, voisinsCloture } from "./monde/ile.js";
 import { placeMesh, lumieresFacades, colPorte, placeFacade } from "./monde/batiments.js";
 import { poseProblem } from "./coffres.js";
 import { resetJoy } from "./commandes.js";
-import { wrap } from "./interface.js";
+import { wrap, toast } from "./interface.js";
 import { currentPlace, isBusy } from "./lieux.js";
 import { premiereActive } from "./vue.js";
 import { jouer } from "./sons.js";
@@ -96,7 +96,7 @@ function lacher(){
   } else if(L.ok && L.dest !== L.i){
     const etat = state.ile[L.i] || {};
     setObj(L.i, null); setObj(L.dest, L.type);
-    if(etat.torche || etat.bougie || etat.lucioles || etat.feu || etat.reste || etat.eteint) setEtat(L.dest, {torche: etat.torche, bougie: etat.bougie, chandelles: etat.chandelles, lucioles: etat.lucioles, feu: etat.feu, reste: etat.reste, eteint: etat.eteint});   // ses bûches qui brûlent aussi   // sa torche, sa chandelle, ses lucioles la suivent
+    if(etat.torche || etat.bougie || etat.lucioles || etat.feu || etat.reste || etat.eteint || etat.rot || etat.tour) setEtat(L.dest, {torche: etat.torche, bougie: etat.bougie, chandelles: etat.chandelles, lucioles: etat.lucioles, feu: etat.feu, reste: etat.reste, eteint: etat.eteint, rot: etat.rot, tour: etat.tour});   // la clôture, le muret gardent leur sens   // ses bûches qui brûlent aussi   // sa torche, sa chandelle, ses lucioles la suivent
   } else L.mesh.position.set(centerOf(L.i % N), 0, centerOf(Math.floor(L.i / N)));   // elle revient à sa place
   jouer("meuble"); save();
 }
@@ -114,8 +114,21 @@ canvas.addEventListener("pointermove", e => {
   }
   if(lift && e.pointerId === lift.pid){ lift.x = e.clientX; lift.y = e.clientY; suivre(); }
 });
+/* Un appui court sur une clôture ou un muret le tourne (Yo, 11 novembre 2026) : seul, d'un quart de tour ; au bout d'une ligne,
+   tout droit, puis d'un côté, puis de l'autre ; joint des deux côtés, il suit ses voisins */
+export function tourner(i){
+  const t = map.obj[i], v = voisinsCloture(i, t), e = state.ile[i] || {};
+  if(v.length > 1){ toast(`${nomDe(t)} : ce morceau suit ses voisins`); return; }
+  if(v.length === 1) setEtat(i, {tour: ((e.tour || 0) + 1) % 3 || undefined});
+  else setEtat(i, {rot: e.rot ? undefined : 1});
+  jouer("meuble"); save();
+}
 function leve(e){
-  if(press && e.pointerId === press.pid){ clearTimeout(press.timer); press = null; }
+  if(press && e.pointerId === press.pid){
+    clearTimeout(press.timer);
+    const c = press.cible; press = null;
+    if(c.i !== undefined && (map.obj[c.i] === "cloture" || map.obj[c.i] === "muret")) tourner(c.i);
+  }
   if(lift && e.pointerId === lift.pid) lacher();
 }
 canvas.addEventListener("pointerup", leve);
