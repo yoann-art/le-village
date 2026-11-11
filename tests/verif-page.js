@@ -848,6 +848,25 @@ export async function verifier(){
       items.splice(items.indexOf(st), 1); removeItemMesh(st.id);
       state.carnet.gibier = JSON.parse(avant);
     }
+    /* le trophée de gibier (Yo, 11 novembre 2026 : « Il faut qu'il fonctionne comme la petite statue » ; « Le gibier seulement ») :
+       au mur, vide ; « Sculpter » propose le gibier du carnet, rien d'autre ; il prend la forme de celui qu'on choisit */
+    {
+      const {betesSculptables, sculpter} = await import("../js/statues.js"), {makeMeuble} = await import("../js/monde/meubles.js");
+      const avant = JSON.stringify(state.carnet.gibier || {}), room = currentPlace().room;
+      const {GIBIER} = await import("../js/donnees.js"), cg = state.carnet.gibier || (state.carnet.gibier = {});
+      for(const k of Object.keys(GIBIER)) cg[k] = cg[k] || {n: 1};      // tout le gibier, pour essayer chaque buste
+      const l = betesSculptables("trophee");
+      if(!l.some(b => b.cle === "gibier:cerf") || l.some(b => !b.cle.startsWith("gibier:"))) throw new Error(`le trophée ne propose pas le gibier seul (${l.map(b => b.cle).join(", ")})`);
+      const tr = {id: 99045, type: "trophee", x: chandelle.x + 2, z: -room.d / 2 + .25, rot: 0};
+      items.push(tr); addItemMesh(tr); placePlayer(tr.x, tr.z + .9, 0, -1); updateGestes(true);
+      if(btnG.hidden || !btnG.textContent.includes("Sculpter")) throw new Error(`près du trophée, le bouton dit « ${btnG.textContent} »`);
+      const mesure = o => { let n = 0, d = 0; makeMeuble("trophee", undefined, o).traverse(c => { if(c.isMesh){ d++; n += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } }); return {n, d}; };
+      sculpter(tr, "gibier:cerf");
+      if(tr.bete !== "gibier:cerf" || mesure(tr).n <= mesure({}).n) throw new Error("le trophée ne prend pas la forme du cerf");
+      for(const b of l){ const v = mesure({bete: b.cle}); if(v.d !== 2) throw new Error(`${b.nom} : pas de trophée`); if(v.n > 20000) throw new Error(`le trophée ${b.nom} est trop lourd : ${Math.round(v.n)} triangles`); }
+      items.splice(items.indexOf(tr), 1); removeItemMesh(tr.id);
+      state.carnet.gibier = JSON.parse(avant);
+    }
     /* le miroir (Yo, 10 novembre 2026 : « Retire le reflet du miroir, il n'est pas beau ») : une glace peinte, sans second dessin */
     {
       const {makeMeuble} = await import("../js/monde/meubles.js"), g = makeMeuble("miroir");
@@ -3424,7 +3443,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1139,6 +1139,77 @@ function bouquetMorceaux(){
   for(const p of out) p.m = C.clone().multiply(p.m);
   return out;
 }
+/* Le trophée de gibier (image de Yo, 11 novembre 2026 : « Voici le trophée de gibier. Il faut qu'il fonctionne comme la petite
+   statue » ; « Le gibier seulement ») : au mur, un écusson de bois en forme de bouclier (sa teinte), un cadre en relief, une
+   plaque de cuivre à deux clous et ses feuilles gravées. Vide quand on l'accroche ; « Sculpter » (statues.js) y met le buste
+   d'un gibier du carnet (o.bete, « gibier:cerf ») : son vrai modèle, tourné vers la pièce, la tête et le cou devant l'écusson
+   (le corps derrière, caché par l'écusson et le mur), en bois clair sculpté, un dessin. Le mur est à z −.25 */
+const TR = {cy: 1.4, z: -.238, bois: 0xE8B878, tete: .26, h: .62, l: .62};
+const bouclier = k => { const s = new THREE.Shape(); s.moveTo(-.28 * k, .25 * k); s.lineTo(0, .32 * k); s.lineTo(.28 * k, .25 * k); s.lineTo(.28 * k, -.05 * k);
+  s.quadraticCurveTo(.27 * k, -.28 * k, 0, -.42 * k); s.quadraticCurveTo(-.27 * k, -.28 * k, -.28 * k, -.05 * k); s.closePath(); return s; };
+const TR_PLANCHE = new THREE.ExtrudeGeometry(bouclier(1), {depth: .035, bevelEnabled: true, bevelThickness: .012, bevelSize: .012, bevelSegments: 2, curveSegments: 8});
+const TR_CADRE = (() => { const s = bouclier(1), h = new THREE.Path(); h.setFromPoints(bouclier(.84).getPoints(8)); s.holes.push(h);
+  return new THREE.ExtrudeGeometry(s, {depth: .016, bevelEnabled: true, bevelThickness: .008, bevelSize: .008, bevelSegments: 2, curveSegments: 8}); })();
+const TR_PLAQUE = boiteRonde(.24, .07, .016, .007, 1), TR_FACE = TR.z + .059;            // la face de l'écusson
+function tropheeMorceaux(c){
+  const o = ombreBois(TR.cy - .45, TR.cy + .35), fond = new THREE.Color(c).multiplyScalar(.86).getHex();   // le fond un peu plus sombre : le cadre ressort
+  const out = [{geo: TR_PLANCHE, m: M4(0, TR.cy, TR.z), c: fond, ombre: o}, {geo: TR_CADRE, m: M4(0, TR.cy, TR_FACE - .004), c, ombre: o}];
+  const yp = TR.cy - .3;
+  out.push({geo: TR_PLAQUE, m: M4(0, yp, TR_FACE + .006), c: CUIVRE, ombre: o});        // la plaque de cuivre
+  for(const s of [-1, 1]) out.push({geo: AQ_GALET, m: M4(s * .095, yp, TR_FACE + .015, 0, 0, 0, .011, .011, .007), c: 0xA85E2C, ombre: o});   // ses clous
+  const G = (x, y, rz, sx, sy) => out.push({geo: AQ_GALET, m: M4(x, y, TR_FACE + .0145, 0, 0, rz, sx, sy, .002), c: 0x9A5226, ombre: o});   // les feuilles gravées
+  G(0, yp - .004, 0, .003, .022);
+  for(const s of [-1, 1]){ G(s * .012, yp + .01, -s * .7, .005, .012); for(let j = 0; j < 3; j++) G(s * (.03 + j * .018), yp - .006 + (j % 2) * .006, -s * (1.2 + j * .1), .005, .011); }
+  return out;
+}
+/* Le buste sculpté : la tête du gibier (son vrai modèle : userData.tete, ses bois, ses oreilles, son groin), tournée vers la
+   pièce et un peu de côté ; dessous, un poitrail de mèches de poil sculptées, comme l'image ; tout en bois clair, un seul dessin.
+   La taille : la tête (son plus gros morceau) large de TR.tete, sans dépasser TR.h de haut ni TR.l de large */
+const BUSTES = new Map();
+function busteEnBois(cle){
+  if(BUSTES.has(cle)) return BUSTES.get(cle);
+  let modele = null;
+  try{ modele = fabriqueBete && fabriqueBete(cle); }catch(e){ modele = null; }
+  const tete = modele && modele.userData && modele.userData.tete;
+  if(!tete){ BUSTES.set(cle, null); return null; }
+  const pivot = new THREE.Group(); pivot.add(modele); pivot.rotation.y = Math.PI; pivot.updateMatrixWorld(true);   // la tête (vers −z) vers la pièce
+  const base = new THREE.Color(TR.bois), lum = new THREE.Color(), morceaux = [], bb = new THREE.Box3(), t = new THREE.Vector3();
+  let gros = null, vMax = 0;
+  const parcourir = o => {
+    if(o.visible === false) return;
+    if(o.isMesh && o.geometry && o.geometry.attributes.position && !(o.material && o.material.visible === false)){
+      const mc = o.material && o.material.color ? o.material.color : null, l = mc ? (mc.r * .3 + mc.g * .59 + mc.b * .11) : .7;
+      lum.copy(base).multiplyScalar(.72 + .4 * Math.min(1, l));
+      let geo = o.geometry;
+      if(!geo.attributes.normal){ geo = geo.clone(); geo.computeVertexNormals(); }
+      const m = {geo, m: o.matrixWorld.clone(), c: lum.getHex()};
+      geo.computeBoundingBox(); bb.copy(geo.boundingBox).applyMatrix4(o.matrixWorld); bb.getSize(t);
+      if(t.x * t.y * t.z > vMax){ vMax = t.x * t.y * t.z; gros = bb.clone(); }
+      morceaux.push(m);
+    }
+    for(const e of o.children) parcourir(e);
+  };
+  parcourir(tete);
+  if(!morceaux.length){ BUSTES.set(cle, null); return null; }
+  const d = new THREE.Box3(), v = new THREE.Vector3();
+  for(const m of morceaux){ const P = m.geo.attributes.position; for(let i = 0; i < P.count; i++) d.expandByPoint(v.fromBufferAttribute(P, i).applyMatrix4(m.m)); }
+  const s = Math.min(TR.tete / (gros.max.x - gros.min.x || 1), TR.h / (d.max.y - d.min.y || 1), TR.l / (d.max.x - d.min.x || 1));
+  const cx = (gros.min.x + gros.max.x) / 2, cz = (gros.min.z + gros.max.z) / 2;
+  const T = new THREE.Matrix4().makeTranslation(0, TR.cy - .06, TR_FACE + .04 + TR.tete * .45)   // le bas de la tête, au-dessus du poitrail
+    .multiply(new THREE.Matrix4().makeRotationY(-.35)).multiply(new THREE.Matrix4().makeRotationX(-.12)).multiply(new THREE.Matrix4().makeScale(s, s, s))
+    .multiply(new THREE.Matrix4().makeTranslation(-cx, -gros.min.y, -cz));
+  for(const m of morceaux) m.m.premultiply(T);
+  /* le poitrail : des mèches en pointe, rangée après rangée, jusqu'à une pointe au-dessus de la plaque */
+  const poil = base.clone().multiplyScalar(.92).getHex();
+  [[3, .13, -.01], [3, .16, -.065], [2, .09, -.12], [1, 0, -.165]].forEach(([n, l, y], r) => {
+    for(let k = 0; k < n; k++){ const x = n > 1 ? -l / 2 + k * l / (n - 1) : 0;
+      morceaux.push({geo: AQ_GALET, m: M4(x, TR.cy + y, TR_FACE + .05 - r * .007, -.25, 0, -x * 1.8, .065, .085, .03), c: (k + r) % 2 ? poil : base.getHex()}); }
+  });
+  const g = fusionner(morceaux);
+  g.computeBoundingSphere();
+  BUSTES.set(cle, g);
+  return g;
+}
 /* L'herbier encadré (image de Yo, 10 novembre 2026 : « Voici l'herbier encadré » ; « Vide ») : au mur ; un cadre de bois épais
    aux coins arrondis, un fond de papier crème, une corde tressée à une cheville ronde. Vide quand on l'accroche ; on y pose
    jusqu'à six fleurs cueillies, une à une (o.fleurs), séchées en relief, chacune sa tige, deux feuilles et sa petite étiquette,
@@ -1503,6 +1574,11 @@ const BUILD = {
       const [k, robe] = cle.split("|"), p = poissonAquarium(k, robe, .2);
       if(p){ p.userData.bac = {l: .62, y: GA.bas + .16 + (j % 3) * .08 + (j > 2 ? .04 : 0), z: (j - 2) * .07, vite: .28 + j * .05}; p.position.set((j - 2) * .25, p.userData.bac.y, (j - 2) * .07); g.add(p); }
     });
+  },
+  trophee(g, m, o){                                                                  // l'écusson ; le buste du gibier sculpté (statues.js)
+    g.add(modeleBois("trophee", m, tropheeMorceaux));
+    const b = o && o.bete ? busteEnBois(o.bete) : null;
+    if(b){ const me = new THREE.Mesh(b, MAT_UNI); me.castShadow = me.receiveShadow = true; g.add(me); }
   },
   herbier(g, m, o){ const l = (o && o.fleurs) || []; g.add(modeleBois("herbier" + l.join(","), m, herbierMorceaux(l))); },   // ses fleurs séchées (une forme par herbier)
   bouquet(g){ g.add(modeleBois("bouquet", 0, bouquetMorceaux)); },   // couché, ses couleurs à lui

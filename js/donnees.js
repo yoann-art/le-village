@@ -82,6 +82,7 @@ export const MEUBLES = {
   aquarium: {nom:"Petit aquarium", emoji:"🐠", gabarit:"petit", w:.55, d:.55, dessus:true, support:"poisson", dans:"dans l'aquarium"},   // un bocal d'eau ; on y met un poisson pêché, qui y nage (Yo, 10 novembre 2026)
   aquariumMoyen: {nom:"Aquarium", emoji:"🐟", gabarit:"moyen", w:1.2, d:.55, support:"poisson", dans:"dans l'aquarium", nb:3},   // un bac sur un meuble ; trois poissons, un à la fois (Yo, 10 novembre 2026)
   grandAquarium: {nom:"Grand aquarium", emoji:"🐠", gabarit:"grand", w:1.85, d:.6, support:"poisson", dans:"dans le grand aquarium", nb:5},   // un long bac sur un meuble à trois portes ; cinq poissons (Yo, 11 novembre 2026)
+  trophee:  {nom:"Trophée de gibier", emoji:"🦌", gabarit:"petit", w:.65, d:.5, mur:true},   // au mur, un écusson vide ; on y sculpte un gibier du carnet (statues.js, Yo, 11 novembre 2026)
   herbier:  {nom:"Herbier encadré", emoji:"🖼️", gabarit:"petit", w:.7, d:.5, mur:true, support:"fleur", dans:"dans l'herbier", nb:6},   // au mur, vide ; six fleurs séchées, une à une (Yo, 10 novembre 2026)
   bouquet:  {nom:"Bouquet", emoji:"💐", gabarit:"petit", w:.6, d:.4, dessus:true},   // couché sur le côté, au sol ou sur une table (Yo, 10 novembre 2026)
   miroir:   {nom:"Miroir", emoji:"🪞", gabarit:"moyen", w:.9, d:.45},   // un miroir ovale sur pied, sa glace peinte (le vrai reflet retiré : Yo, 10 novembre 2026)
@@ -1022,6 +1023,7 @@ export const ATELIERS = {
     {out:"grandTapis", in:{fibre:10, or:1}, t:60, lvl:2, cat:"Décoration"},
     {out:"vase", in:{pierre:3}, t:30, lvl:1, cat:"Décoration"},
     {out:"aquarium", in:{verre:3, planche:1, pierre:2}, t:40, lvl:1, cat:"Décoration"},   // le bocal, le socle, les galets (Yo, 10 novembre 2026)
+    {out:"trophee", in:{planche:3, cuivre:1}, t:30, lvl:1, cat:"Décoration"},   // l'écusson, la plaque de cuivre (Yo, 11 novembre 2026)
     {out:"herbier", in:{planche:2, toile:1, fibre:1}, t:30, lvl:1, cat:"Décoration"},   // le cadre, le papier, la corde (Yo, 10 novembre 2026)
     {out:"bouquet", in:{coquelicot:2, bleuet:2, paquerette:2, pissenlit:2, fibre:1}, t:20, lvl:1, cat:"Décoration"},   // les fleurs de l'île, la corde (Yo, 10 novembre 2026)   // un vase de pierres (Yo, 10 novembre 2026)
     {out:"rideau", in:{toile:2, planche:1}, t:40, lvl:1, cat:"Décoration"},   // les deux pans de toile, la tringle (Yo, 10 novembre 2026)
@@ -1130,7 +1132,7 @@ export const MATIERE = {chaise:"bois", fauteuil:"bois", tableBanquet:"bois", tab
   pot:"pierre", statue:"pierre", cheminee:"pierre", feuCamp:"pierre", tableTaille:"pierre", fourneau:"pierre",
   chandelle:"metal", bocalLucioles:"metal", lanterne:"metal", lanterneMurale:"metal", torchereMurale:"metal", lustre:"metal", chandelier:"metal",
   brasero:"metal", lampadaire:"metal", enclume:"metal",
-  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois", aquarium:"bois", aquariumMoyen:"bois", grandAquarium:"bois"};
+  petitTapis:"tissu", grandTapis:"tissu", lit:"tissu", rideau:"tissu", vase:"pierre", miroir:"bois", herbier:"bois", aquarium:"bois", aquariumMoyen:"bois", grandAquarium:"bois", trophee:"bois"};
 /* Le départ qui n'est pas la première teinte de sa matière : le chandelier, fait d'argent */
 export const DEPART = {chandelier:"argent"};
 const nomBois = p => p.nom.replace(/^Bois d(e |')/, "").replace(/^./, c => c.toUpperCase());
@@ -1198,7 +1200,7 @@ for(const r of Object.values(REVETEMENTS)){
 }
 /* Le meuble « Coffre » (décoration seule) est retiré du jeu (demande de Yo, 13 octobre 2026) : MEUBLES.coffre reste le modèle
    des coffres de réserve posés dans les pièces, mais il n'est plus au catalogue ni à l'établi */
-export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier","aquarium","aquariumMoyen","grandAquarium"];
+export const MEUBLES_ORDER = ["chaise","fauteuil","tabouret","pot","chandelle","bocalLucioles","lanterne","lanterneMurale","torchere","torchereMurale","chandelier","brasero","lampadaire","tonneau","statue","banc","etagere","armoire","vitrine","cheminee","feuCamp","lustre","petitTapis","table","tableBanquet","lit","grandTapis","rideau","vase","miroir","bouquet","herbier","aquarium","aquariumMoyen","grandAquarium","trophee"];
 /* Le combat (étape 1.8, morceau 2 ; bible : « le danger compte, mais on ne repart jamais de zéro »), à régler en jouant :
    vie : les cœurs ; soin : ce que rend un poisson grillé ; portee : jusqu'où touche l'épée (en P) ; vise : la visée
    automatique se tourne vers le monstre le plus proche jusqu'à cette distance, et fait un pas (pas, en P) vers lui ;

@@ -25,9 +25,10 @@ const FAMILLES = {
 formeStatue(cle => { const [f, k] = cle.split(":"); return FAMILLES[f] ? FAMILLES[f].modele(k) : null; });
 
 /* Les bêtes qu'on peut sculpter : celles du carnet, qui ont un modèle */
-export function betesSculptables(){
+export function betesSculptables(type = "statue"){
   const out = [];
   for(const [f, F] of Object.entries(FAMILLES)){
+    if(type === "trophee" && f !== "gibier") continue;               // le trophée : le gibier seulement (Yo, 11 novembre 2026)
     const c = (state.carnet && state.carnet[F.carnet]) || {};
     for(const k of Object.keys(c)) if(c[k] && c[k].n > 0 && F.noms[k] && (f !== "insecte" || MODELES_INSECTES[k]) && (f !== "oiseau" || MODELES_OISEAUX[k]) && (f !== "poisson" || MODELES_POISSONS[k])) out.push({cle: `${f}:${k}`, f, nom: F.noms[k].nom});
   }
@@ -36,12 +37,13 @@ export function betesSculptables(){
 let statue = null, refaire = null;
 export function sculpterMenu(it, refaireFn){
   statue = it; refaire = refaireFn || (() => refreshItemMesh(it));
-  const l = betesSculptables();
+  const l = betesSculptables(it.type), tr = it.type === "trophee";
+  if(!l.length && tr){ toast("🦌 Chasse d'abord du gibier (à l'arc, en forêt ou au Marais) : il s'inscrit au carnet, et tu pourras le sculpter sur le trophée", 4200); return; }
   if(!l.length){ toast("🗿 Capture d'abord une bête (un insecte au filet, un poisson, un oiseau, du gibier) : elle s'inscrit au carnet, et tu pourras la sculpter", 4200); return; }
   const groupes = Object.entries(FAMILLES).map(([f, F]) => { const b = l.filter(v => v.f === f); return b.length ? `<h3 style="margin:10px 0 4px">${F.titre}</h3><div style="display:flex;flex-wrap:wrap;gap:6px">`
     + b.map(v => `<button class="btn${it.bete === v.cle ? " primary" : ""}" data-statue="${v.cle}">${v.nom}</button>`).join("") + `</div>` : ""; }).join("");
-  openSheet(`<div class="sh-head"><h2 class="display">🗿 Sculpter la statue</h2><button class="btn ghost" data-close>Fermer</button></div>
-    <p class="muted" style="margin:0 0 6px">Les bêtes de ton carnet : la statue prend la forme de celle que tu choisis.</p>${groupes}`);
+  openSheet(`<div class="sh-head"><h2 class="display">${tr ? "🦌 Sculpter le trophée" : "🗿 Sculpter la statue"}</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p class="muted" style="margin:0 0 6px">${tr ? "Le gibier de ton carnet : le trophée prend la forme de celui que tu choisis." : "Les bêtes de ton carnet : la statue prend la forme de celle que tu choisis."}</p>${groupes}`);
 }
 /* Sculpter la statue en cette bête (le menu ; la vérification) */
 export function sculpter(it, cle, refaireFn){
@@ -52,6 +54,6 @@ wrap.addEventListener("click", e => {
   if(!b || !statue) return;
   sculpter(statue, b.dataset.statue, refaire); closeSheet();
   const [f, k] = b.dataset.statue.split(":");
-  toast(`🗿 La statue prend la forme ${FAMILLES[f].noms[k].une ? "de la" : "du"} ${FAMILLES[f].noms[k].nom.toLowerCase()}`, 2600);
+  toast(statue.type === "trophee" ? `🦌 Le trophée prend la forme ${FAMILLES[f].noms[k].une ? "de la" : "du"} ${FAMILLES[f].noms[k].nom.toLowerCase()}` : `🗿 La statue prend la forme ${FAMILLES[f].noms[k].une ? "de la" : "du"} ${FAMILLES[f].noms[k].nom.toLowerCase()}`, 2600);
   statue = null;
 });
