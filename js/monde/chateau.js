@@ -13,6 +13,7 @@
    Coordonnées : le milieu du carré en (0, 0), une case = 1 ; la case (dx, dz) a son milieu en (dx - 3, dz - 3). */
 import { G, part, toon, VENT, formeUnie } from "./formes.js";
 import { lanterne } from "./ciel.js";
+import { jouer } from "../sons.js";
 
 export const FACADE = 3.35;
 const PIERRE = [0xDCC2A4, 0xD2B798, 0xE4CEB4, 0xC8AC8E], PIERRE_S = 0xB09878, JOINT = 0xA08668, BOIS = [0xB8642E, 0xC6713A, 0xA9582A], FONCE = 0x8A4422,
@@ -29,7 +30,12 @@ for(const m of [LUEUR, VITRE]) lanterne(null, 0, 0, m);
 const BATTANT = toon({vertexColors: true});
 let ouverture = 0;
 export const porteOuverte = () => ouverture;
-export function ouvrirPorte(dt, proche){ ouverture = Math.max(0, Math.min(1, ouverture + (proche ? 1 : -1) * dt / .45)); }
+let sensPorte = 0;                                                   // la grande porte : son son quand elle se met à s'ouvrir ou à se fermer (choix de Yo, 12 novembre 2026)
+export function ouvrirPorte(dt, proche){
+  const s = proche ? 1 : -1;
+  if(s !== sensPorte){ if(s > 0 && ouverture < 1) jouer("grandePorte"); else if(s < 0 && ouverture > 0) jouer("grandePorteFerme"); sensPorte = s; }
+  ouverture = Math.max(0, Math.min(1, ouverture + s * dt / .45));
+}
 const lisse = t => t * t * (3 - 2 * t);
 const DRAPEAU = toon({color: ROUGE, side: THREE.DoubleSide});
 

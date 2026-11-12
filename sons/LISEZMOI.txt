@@ -81,4 +81,17 @@ ambiance/ (étape 3 des sons, l'ambiance de l'île, v2.1.121) : Freesound (licen
     feu.webm        350757  « campfire.wav », aerror
     tonnerre.mp3    188767  « Thunder (Kraków, Poland, 20.05.2013) », vonz
 
+objets/ (étape 4 des sons, les objets de l'île, v2.1.227, choix de Yo le 12 novembre 2026) :
+  Freesound (licence CC0) :
+    manivelle.mp3   667383  « bucket pull / pencil sharpener », MasterSuite (la manivelle du puits)
+    seau.mp3        322391  « Bathtub Submerge.wav », Glitchedtones (le seau qui plonge)
+    allumer.mp3     370362  « Match Lighting Candle », devilqube (allumer une lumière)
+    eteindre.webm   499020  « 04_Extinguishing of candle.wav », 16FThumaF (éteindre une lumière ; le souffle seul, 2,2 s, en Opus)
+    sculpter.mp3    743233  « Cuting into Stone », qubodup (sculpter la statue, le trophée)
+  Kenney (licence CC0) :
+    portail.ogg     « RPG Audio », doorOpen_1 (ouvrir et fermer le portail)
+    grandePorte.ogg « RPG Audio », doorOpen_2 (la grande porte de la cour du château)
+    rideau.ogg      « RPG Audio », cloth3 (le rideau)
+  ambiance/fontaine.webm  676173  « Ambiance_Fountain_Small_Loop_Stereo.wav », Nox_Sound (Freesound, CC0 ; sa boucle de 10 s, le raccord fondu sur 1,5 s : 8,4 s)
+
 Merci à eux.

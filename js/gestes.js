@@ -73,7 +73,7 @@ function basculer(c, m){
     else setEtat(c.i, {eteint: eteint || undefined}); }   // setEtat refait la case
   else { const it = c.it; eteint = !it.eteint; if(MEUBLES[it.type].support === "buche") figerFeu(it, eteint);   // la cheminée : ses bûches s'arrêtent de brûler
     if(eteint) it.eteint = true; else delete it.eteint; c.refaire(); }
-  save(); jouer(eteint ? "meuble" : "peindre");
+  save(); jouer(eteint ? "eteindre" : "allumer");   // un souffle, une flamme qui prend (choix de Yo, 12 novembre 2026)
   toast(eteint ? `🌙 ${m.nom} éteint${m.une ? "e" : ""}` : `🔥 ${m.nom} allumé${m.une ? "e" : ""}`, 1600);
 }
 
@@ -81,7 +81,7 @@ function basculer(c, m){
 export function ouvrirPortail(i){
   const o = state.ile[i] || {}, ouvert = !o.ouvert;
   if(!ouvert && idx(tileOf(player.position.x), tileOf(player.position.z)) === i){ toast("🚪 Sors du portail pour le fermer", 1800); return; }
-  setEtat(i, {ouvert: ouvert || undefined, bouge: Date.now()}); save(); jouer("meuble");
+  setEtat(i, {ouvert: ouvert || undefined, bouge: Date.now()}); save(); jouer(ouvert ? "portail" : "portailFerme");
 }
 /* L'objet le plus proche, à portée de main : {it, refaire} (dans la pièce) ou {it: l'état de la case, i, refaire} (dehors) */
 function prochain(place){
@@ -153,7 +153,7 @@ export function faireGeste(){
   else if(g === "statue") import("./statues.js").then(s => s.sculpterMenu(it, c.refaire));   // la liste des bêtes du carnet
   else if(g === "portail") ouvrirPortail(c.i);
   else if(g === "panneau") import("./panneaux.js").then(p => p.ecrireMenu(c.i));   // la fenêtre pour écrire le mot
-  else if(g === "rideau"){ if(it.ferme) delete it.ferme; else it.ferme = true; c.refaire(); save(); jouer("meuble"); }   // fermé, il assombrit la pièce (interieurs.js)
+  else if(g === "rideau"){ if(it.ferme) delete it.ferme; else it.ferme = true; c.refaire(); save(); jouer("rideau"); }   // fermé, il assombrit la pièce (interieurs.js)
   return true;
 }
 btn.addEventListener("click", faireGeste);

@@ -91,7 +91,21 @@ export const SONS = {
   ambNuit:    {f: "ambiance/nuit.webm",       v: .1, boucle: 10, voie: "ambiance"},
   ambRoue:    {f: "ambiance/roue.webm",       v: .16,  boucle: 10, voie: "ambiance"},
   ambFeu:     {f: "ambiance/feu.webm",        v: .16,  boucle: 10, voie: "ambiance"},
-  ambTonnerre:{f: "ambiance/tonnerre.mp3",    v: .28,  voie: "ambiance"}
+  ambTonnerre:{f: "ambiance/tonnerre.mp3",    v: .28,  voie: "ambiance"},
+  /* Étape 4, les objets de l'île (choix de Yo, 12 novembre 2026, page d'écoute, onglet « 4 · Les objets ») : le portail et la
+     grande porte du château se ferment avec le son qui les ouvre (Yo : « Comme ouvrir le portail ») ; l'eau de la fontaine, une
+     boucle de 8,4 s (sa boucle de 10 s, raccord fondu sur 1,5 s), plus forte quand on s'approche (ambiance.js) */
+  portail:    {f: "objets/portail.ogg",       v: .6},
+  portailFerme:{f: "objets/portail.ogg",      v: .55},
+  grandePorte:{f: "objets/grandePorte.ogg",   v: .75},
+  grandePorteFerme:{f: "objets/grandePorte.ogg", v: .7},
+  manivelle:  {f: "objets/manivelle.mp3",     v: .55},
+  seau:       {f: "objets/seau.mp3",          v: .55},
+  allumer:    {f: "objets/allumer.mp3",       v: .55},
+  eteindre:   {f: "objets/eteindre.webm",      v: .55},
+  rideau:     {f: "objets/rideau.ogg",        v: .55},
+  sculpter:   {f: "objets/sculpter.mp3",      v: .6},
+  ambFontaine:{f: "ambiance/fontaine.webm",   v: .16, boucle: 8.4, voie: "ambiance"}
 };
 
 /* ----- Le réglage, gardé sur le téléphone ----- */

@@ -47,7 +47,7 @@ export function sculpterMenu(it, refaireFn){
 }
 /* Sculpter la statue en cette bête (le menu ; la vérification) */
 export function sculpter(it, cle, refaireFn){
-  it.bete = cle; (refaireFn || (() => refreshItemMesh(it)))(); save(); jouer("meuble");
+  it.bete = cle; (refaireFn || (() => refreshItemMesh(it)))(); save(); jouer("sculpter"); setTimeout(() => jouer("sculpter", {hauteur: .94}), 180); setTimeout(() => jouer("sculpter", {hauteur: 1.05}), 380);   // trois coups de ciseau
 }
 wrap.addEventListener("click", e => {
   const b = e.target.closest("[data-statue]");

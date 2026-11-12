@@ -533,9 +533,9 @@ function arroserPlante(t){
   toast(`💧 ${cases.length > 1 ? `${cases.length} plantes arrosées` : "Arrosé"} : demain, ${cases.length > 1 ? "chacune" : "elle"} aura ${Math.round(SEMIS.arrose * 10)} chances sur 10 de semer une voisine. Eau : ${state.eau}/${OUTILS[k].eau}`, 3200);
   user(k);
 }
-function remplir(){
+function remplir(son = "remplir"){                                  // au puits : la manivelle, puis le seau qui plonge
   const max = OUTILS[state.main].eau;
-  state.eau = max; renderBarre(); save(); jouer("remplir");
+  state.eau = max; renderBarre(); save(); jouer(son);
   toast(`💧 Arrosoir rempli : ${max} arrosages`, 2000);
 }
 
@@ -691,7 +691,7 @@ function lumiereAction(t){
   const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c);
   if(t.o === "puitsEau" && state.main && OUTILS[state.main] && OUTILS[state.main].eau){   // le puits remplit l'arrosoir (Grand Carnet)
     const max = OUTILS[state.main].eau;
-    return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: () => { setEtat(t.i, {tire: Date.now()}); remplir(); }} : info(`💧 Arrosoir plein (${max}/${max})`);
+    return state.eau < max ? {label: `💧 Remplir l'arrosoir (${state.eau}/${max})`, run: () => { setEtat(t.i, {tire: Date.now()}); remplir("manivelle"); setTimeout(() => jouer("seau"), 520); }} : info(`💧 Arrosoir plein (${max}/${max})`);
   }
   if(m.support && !garniPlein(t.o, c) && garniDispo(t.o))
     return {label: poserLabel(t.o), run: () => poserGarni(c, t.o, patch => setEtat(t.i, patch))};

@@ -21,7 +21,7 @@ import { currentPlace } from "./lieux.js";
 import { regler, jouer } from "./sons.js";
 
 const BOUCLES = ["ambVent", "ambFeuilles", "ambHiver", "ambMer", "ambEtang", "ambPonton", "ambPluie", "ambPluieToit",
-  "ambMatin", "ambGrillons", "ambNuit", "ambRoue", "ambFeu"];
+  "ambMatin", "ambGrillons", "ambNuit", "ambRoue", "ambFeu", "ambFontaine"];
 const clamp = v => Math.max(0, Math.min(1, v));
 const rampe = (h, a, b) => clamp((h - a) / (b - a));                 // 0 avant a, 1 après b
 
@@ -93,6 +93,8 @@ export function updateAmbiance(dt){
     if(sc){ const c = 5 / 2, d = Math.hypot(p.x - (sc.x - H + c), p.z - (sc.z - H + c)); cible.ambRoue = clamp(1 - (d - 2) / 9); }
     const f = autour(x, z, 6, feuDehors);
     if(f.n) cible.ambFeu = clamp(1 - f.d / 6);
+    const fo = autour(x, z, 9, o => o === "fontaine");                    // la fontaine : on l'entend de loin (Grand Carnet), plus fort tout près
+    if(fo.n) cible.ambFontaine = clamp(1 - (fo.d - 1) / 9);
   } else {
     const t = place.b.type;
     if(t === "foret" || t === "marais"){                                // la forêt et le Marais : leurs sons à l'étape 5

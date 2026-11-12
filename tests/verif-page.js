@@ -3516,6 +3516,19 @@ export async function verifier(){
       $("#btn-act").click();
       if(map.obj[i] || owned("brasero") !== 1 || owned("charbon") !== ch0 + 2) throw new Error(`le brasero repris : ${owned("brasero")} brasero, ${owned("charbon") - ch0} charbon rendu (2 entiers)`);
       sacTake("brasero", 1); sacTake("charbon", 2);
+      /* les sons des objets (choix de Yo, 12 novembre 2026) : le portail, et la fontaine qu'on entend de loin */
+      {
+        const S = await import("../js/sons.js"), {ciblesAmbiance, updateAmbiance} = await import("../js/ambiance.js"), {ouvrirPortail} = await import("../js/gestes.js");
+        for(const k of ["portail", "portailFerme", "grandePorte", "grandePorteFerme", "manivelle", "seau", "allumer", "eteindre", "rideau", "sculpter", "ambFontaine"]) if(!S.SONS[k]) throw new Error(`le son ${k} manque`);
+        place(2); setObj(i, "portail"); S.etat.joues.length = 0; ouvrirPortail(i);
+        if(!S.etat.joues.includes("portail")) throw new Error(`ouvrir le portail : entendu ${S.etat.joues.join(", ") || "rien"}`);
+        S.etat.joues.length = 0; ouvrirPortail(i);
+        if(!S.etat.joues.includes("portailFerme")) throw new Error(`fermer le portail : entendu ${S.etat.joues.join(", ") || "rien"}`);
+        setObj(i, "fontaine"); updateAmbiance(1);
+        const pres = ciblesAmbiance().ambFontaine || 0;
+        setObj(i, null); updateAmbiance(1);
+        if(!(pres > .5) || ciblesAmbiance().ambFontaine) throw new Error(`l'eau de la fontaine : ${pres} tout près, ${ciblesAmbiance().ambFontaine} sans fontaine`);
+      }
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
