@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1238,6 +1238,34 @@ function seauMorceaux(c){                                                       
   return out;
 }
 const PU_CORDE = new THREE.CylinderGeometry(1, 1, 1, 6).translate(0, -.5, 0);    // la corde qui pend, son haut à l'origine
+/* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
+   cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
+   le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
+   les flammes au-dessus (fireMat) */
+const BR = {fond: .2, bord: .5, r: .33, bande: .42, pied: .72};
+const BR_VASQUE = lathe([[0, BR.fond], [.06, BR.fond], [.14, BR.fond + .03], [.22, BR.fond + .08], [.28, BR.fond + .15], [BR.r, BR.bord - .05], [BR.r + .005, BR.bord],
+  [BR.r - .03, BR.bord + .005], [BR.r - .035, BR.bord - .02], [.25, BR.fond + .14], [.17, BR.fond + .08], [0, BR.fond + .06]], 24);
+const BR_LEVRE = new THREE.TorusGeometry(BR.r - .012, .028, 8, 28).rotateX(Math.PI / 2), BR_BANDE = new THREE.CylinderGeometry(BR.r - .02, BR.r - .045, .06, 28, 1, true);
+const BR_PIED = (() => { const P = [[.19, .44], [.26, .42], [.28, .36], [.25, .27], [.21, .17], [.21, .08], [.25, .035], [.31, .03], [.335, .065], [.315, .1], [.28, .085], [.285, .06]]
+  .map(([r, y]) => new THREE.Vector3(0, y * BR.pied, r * 1.05));   // trapus, comme l'image
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 40, .04, 8, false); })();
+const BR_CHARBON = new THREE.DodecahedronGeometry(1, 0);
+const BR_BRAISES = new THREE.CylinderGeometry(.23, .17, .05, 16);
+/* les blocs de charbon : [x, z, taille], par morceau mis (un, deux, trois) */
+const BR_BLOCS = [[[0, 0, .085], [.1, .06, .07], [-.09, .05, .07], [.02, -.1, .065]], [[.15, -.07, .065], [-.15, -.06, .07], [-.04, .14, .06]], [[.06, .02, .07], [-.05, -.04, .065], [.12, .15, .055]]];
+function braseroMorceaux(n){ return c => {
+  const o = ombreBois(0, BR.bord), out = [];
+  out.push({geo: BR_VASQUE, m: M4(0, 0, 0), c, ombre: o}, {geo: BR_LEVRE, m: M4(0, BR.bord, 0), c, ombre: o},
+    {geo: BR_BANDE, m: M4(0, BR.bande, 0, 0, 0, 0, 1.035, 1, 1.035), c: new THREE.Color(c).multiplyScalar(1.06).getHex(), ombre: o});
+  for(let k = 0; k < 9; k++){ const a = (k + .5) / 9 * Math.PI * 2;                     // les rivets de la bande
+    out.push({geo: PU_BOULE, m: M4(Math.sin(a) * (BR.r - .005), BR.bande, Math.cos(a) * (BR.r - .005), 0, 0, 0, .022, .022, .022), c, ombre: o}); }
+  for(let k = 0; k < 3; k++){ const a = k / 3 * Math.PI * 2 + Math.PI / 3;              // les pieds en volute, et leur bouton
+    out.push({geo: BR_PIED, m: M4(0, 0, 0, 0, a, 0), c, ombre: o},
+      {geo: PU_BOULE, m: M4(Math.sin(a) * .29, .395 * BR.pied, Math.cos(a) * .29, 0, 0, 0, .04, .04, .04), c, ombre: o}); }
+  if(n){ out.push({geo: BR_BRAISES, m: M4(0, BR.bord - .1, 0), c: 0xC8461C, ombre: () => 1.25});   // le lit de braises
+    for(const [x, z, s] of BR_BLOCS.slice(0, n).flat()) out.push({geo: BR_CHARBON, m: M4(x, BR.bord - .07 + s * .45, z, s * 9, s * 13, s * 7, s, s * .8, s), c: 0x4A3A36, ombre: (px, py) => py < BR.bord - .06 ? 1.5 : .9}); }
+  return out;
+}; }
 /* Le panneau (image de Yo, 11 novembre 2026 : « Voici le panneau en bois » ; « On peut y écrire un mot ») : un poteau carré au
    bout arrondi, deux planches assemblées aux bords arrondis, quatre clous de cuivre ; tout du même bois. Le mot (o.texte, panneaux.js)
    peint en brun sur le devant (le poteau est derrière) ; le panneau regarde vers +z, tourné de o.rot quarts de tour */
@@ -1828,13 +1856,10 @@ const BUILD = {
     if(pleines){ const l = new THREE.Mesh(BJ_LUEURS, lucioleMat); l.castShadow = false; g.add(l); }
   },
   /* Le brasero (dehors) : une vasque de cuivre sur trois pieds, ses braises et ses flammes */
-  brasero(g, m){
-    for(let k = 0; k < 3; k++){ const a = k * Math.PI * 2 / 3; g.add(part(G.cyl, m, .06, .7, .06, Math.sin(a) * .22, .35, Math.cos(a) * .22)); }
-    g.add(part(G.cyl, m, .62, .18, .62, 0, .76, 0));                                   // la vasque
-    g.add(part(G.cyl, 0x2A1E18, .54, .04, .54, 0, .86, 0));                            // les braises
-    g.add(part(G.cone, fireMat, .3, .42, .3, 0, 1.06, 0));                             // les flammes
-    g.add(part(G.cone, fireMat, .18, .3, .18, .1, 1.0, .05));
-    g.add(part(G.cone, fireMat, .16, .26, .16, -.09, .98, -.06));
+  brasero(g, m, o){                                                                  // la vasque, ses pieds ; vide, ou son charbon qui brûle (un à trois)
+    const n = garniPose("brasero", o);
+    g.add(modeleBois("brasero" + n, m, braseroMorceaux(n)));
+    if(n){ const f = new THREE.Mesh(FC_FLAMMES, fireMat); f.position.y = BR.bord - .06; f.scale.setScalar([0, .6, .7, .8][n]); f.castShadow = false; g.add(f); }
   },
   /* Le lampadaire (dehors, le long des chemins : cuivre, verre, planches) : il s'allume seul à la nuit tombée */
   lampadaire(g, m){
@@ -2053,7 +2078,7 @@ const BUILD = {
    invisible autour d'elles agrandit ce qu'on peut toucher (demande de Yo, 12 octobre 2026) : [largeur, hauteur,
    profondeur, hauteur de son milieu] */
 const PRISE = {chandelle:[.6, .7, .6, .3], bocalLucioles:[.6, .7, .6, .3], lanterne:[.8, 1.8, .6, .88], torchere:[.6, 1.9, .6, .9],
-  torchereMurale:[.7, 1, .6, 1.35], lanterneMurale:[.7, 1, .6, 1.3], brasero:[.8, 1.3, .8, .6], lampadaire:[.6, 2.5, .6, 1.2], feuCamp:[1, .7, 1, .3]};
+  torchereMurale:[.7, 1, .6, 1.35], lanterneMurale:[.7, 1, .6, 1.3], brasero:[.8, .9, .8, .45], lampadaire:[.6, 2.5, .6, 1.2], feuCamp:[1, .7, 1, .3]};
 const INVISIBLE = new THREE.MeshBasicMaterial({visible: false}), BOITE = new THREE.BoxGeometry(1, 1, 1);
 /* Une torche posée (sur une torchère) : le bâton, sa tête de fibres, sa flamme (y + .5) */
 function torcheSur(g, x, y, z){

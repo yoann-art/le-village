@@ -140,18 +140,19 @@ export async function verifier(){
     if(bois !== 24) throw new Error(`${bois} morceaux de bois au sol au lieu de 24`);
     return `${Object.keys(state.sol).length} objets au sol (dont 24 morceaux de bois), la mine est posée`;
   });
-  await etape("Les objets gardés pour plus tard : le brasero et le lampadaire ne se fabriquent plus, mais restent connus", async () => {
+  await etape("Les objets gardés pour plus tard : le lampadaire ne se fabrique plus, mais reste connu (le brasero est revenu, d'après l'image de Yo)", async () => {
     const { PLUS_TARD, FABRIQUE_A, MEUBLES } = await import("../js/donnees.js");
-    for(const k of ["brasero", "lampadaire"]){
+    if(PLUS_TARD.has("brasero") || !FABRIQUE_A.brasero) throw new Error("le brasero ne se fabrique pas");
+    for(const k of ["lampadaire"]){
       if(!PLUS_TARD.has(k)) throw new Error(`${k} n'est pas gardé pour plus tard`);
       if(!MEUBLES[k] || FABRIQUE_A[k] !== "forge") throw new Error(`${k} n'est plus reconnu (une partie en cours le perdrait)`);
     }
     const forge = state.buildings.find(b => b.type === "forge") || {type: "forge", lvl: 1};
     const { recettesPour } = await import("../js/ateliers.js");
     const offertes = recettesPour(forge).map(r => r.out);
-    if(offertes.includes("brasero") || offertes.includes("lampadaire")) throw new Error("l'enclume propose encore le brasero ou le lampadaire");
+    if(offertes.includes("lampadaire")) throw new Error("l'enclume propose encore le lampadaire");
     if(!offertes.includes("lustre")) throw new Error("l'enclume ne propose plus le lustre");
-    return `${offertes.length} recettes à l'enclume, sans le brasero ni le lampadaire ; tous deux restent dans le jeu pour les parties en cours`;
+    return `${offertes.length} recettes à l'enclume, sans le lampadaire, qui reste dans le jeu pour les parties en cours ; le brasero se fabrique (${FABRIQUE_A.brasero})`;
   });
   await etape("Le petit caillou (image de Yo) : une pierre à facettes, l'herbe et ses pousses autour ; sur le sable, sans herbe", async () => {
     const cailloux = Object.keys(state.sol).filter(i => state.sol[i] === "caillou").map(Number);
@@ -3498,6 +3499,23 @@ export async function verifier(){
       $("#btn-act").click();
       if(map.obj[i] || owned("panneau") !== 1) throw new Error("le panneau n'est pas revenu dans le sac");
       sacTake("panneau", 1);
+      /* le brasero (Yo, 12 novembre 2026 : « Voici le brasero ») : posé vide, on y met le charbon un morceau à la fois (trois), il
+         brûle ; plein, on le reprend : les morceaux entiers reviennent (celui qui brûle est perdu) */
+      place(2); sacAdd("brasero", 1); enMain("brasero");
+      if(!devant().includes("Poser le brasero")) throw new Error(`le brasero en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] !== "brasero" || garniPose("brasero", state.ile[i])) throw new Error(`le brasero n'est pas posé vide (${map.obj[i]})`);
+      const ch0 = owned("charbon"); sacAdd("charbon", 3);
+      for(let k = 1; k <= 3; k++){
+        if(!devant().includes("Mettre du charbon")) throw new Error(`devant le brasero (${k - 1} charbon), le bouton dit « ${$("#btn-act").dataset.action} »`);
+        $("#btn-act").click();
+        if(garniPose("brasero", state.ile[i]) !== k) throw new Error(`${garniPose("brasero", state.ile[i])} charbon dans le brasero au lieu de ${k}`);
+      }
+      des = 0; makeMeuble("brasero", undefined, state.ile[i]).traverse(c => { if(c.isMesh && c.visible && c.material.visible !== false) des++; });
+      if(!devant().includes("Reprendre le brasero et son charbon")) throw new Error(`devant le brasero plein, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      $("#btn-act").click();
+      if(map.obj[i] || owned("brasero") !== 1 || owned("charbon") !== ch0 + 2) throw new Error(`le brasero repris : ${owned("brasero")} brasero, ${owned("charbon") - ch0} charbon rendu (2 entiers)`);
+      sacTake("brasero", 1); sacTake("charbon", 2);
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3551,7 +3569,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

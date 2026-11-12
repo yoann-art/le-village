@@ -58,7 +58,7 @@ export const MEUBLES = {
   /* Les autres lumières, sans usure (morceau 4, d'après le Grand Carnet ; en cuivre et en bronze en attendant le fer) */
   lanterneMurale:{nom:"Lanterne murale", emoji:"🏮", gabarit:"petit", w:.5, d:.5, mur:true, facade:true, une:true, support:"bougie", dans:"dans la lanterne"},   // vide, une chandelle s'y pose (Yo, 9 novembre 2026)
   bocalLucioles:{nom:"Bocal à lucioles", emoji:"🫙", gabarit:"petit", w:.5, d:.5, dehors:true, dessus:true, support:"lucioles", dans:"dans le bocal"},   // vide, on y met trois lucioles (Yo, 9 novembre 2026)
-  brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true},
+  brasero:  {nom:"Brasero", emoji:"🔥", gabarit:"petit", w:.7, d:.7, dehors:true, dehorsSeul:true, support:"buche", combustible:"charbon", dans:"dans le brasero", nb:3},   // vide ; trois morceaux de charbon, un à la fois, qui brûlent (Yo, 12 novembre 2026)
   lampadaire:{nom:"Lampadaire", emoji:"🏮", gabarit:"petit", w:.5, d:.5, dehors:true, dehorsSeul:true},
   chandelier:{nom:"Chandelier d'argent", emoji:"🕯️", gabarit:"petit", w:.5, d:.5, dessus:true, support:"bougie", dans:"dans le chandelier", nb:3},   // étape 1.11 : l'argent de la mine ; vide, trois chandelles s'y posent, une à la fois (Yo, 9 novembre 2026)
   tonneau:  {nom:"Tonneau", emoji:"🛢️", gabarit:"petit", w:.7, d:.7},
@@ -126,7 +126,7 @@ export const LUMIERE = {
   torchere:      source(5, "bois", {y: 1.42, flamme: true, torche: true}),
   torchereMurale:source(5, "bois", {y: 1.57, flamme: true, torche: true, avance: .12}),
   lampadaire:    source(6, "huile", {y: 2.05, nuit: true}),
-  brasero:       source(6, "bois", {y: .95, flamme: true}),
+  brasero:       source(6, "bois", {y: .8, flamme: true, buche: true}),               // tant que son charbon brûle
   cheminee:      source(7, "bois", {y: .45, flamme: true, avance: .55, buche: true}),   // son feu éclaire la pièce, devant le foyer, tant que ses bûches brûlent
   feuCamp:       source(8, "bois", {y: .4, flamme: true, buche: true}),               // tant que ses bûches brûlent
   lustre:        source(8, "bougie", {y: 1.68, flamme: true, bougie: true})             // « éclaire toute la pièce » : avec ses cinq chandelles
@@ -135,10 +135,10 @@ export const LUMIERE = {
 export const LUMIERE_MAIN = {torche: source(5, "bois", {y: 1.3, flamme: true}), lanterne: source(7, "huile", {y: 1.3})};
 /* Ce qui se pose sur un support (MEUBLES[...].support) : la torche sur la torchère (o.torche), la chandelle dans le bougeoir
    (o.bougie : sa clé ; plus tard la bougie de cire d'abeille) ; garniDe : ce qui y est posé, ou null */
-export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"], buche: ["bois"], fleur: [], poisson: []};   // fleur, poisson : remplis après FLEURS et POISSONS
+export const GARNIS = {torche: ["torche"], bougie: ["chandelleSuif"], lucioles: ["luciole"], buche: ["bois"], charbon: ["charbon"], fleur: [], poisson: []};   // fleur, poisson : remplis après FLEURS et POISSONS
 /* Combien on en pose : trois lucioles dans le bocal (o.lucioles : leur nombre), cinq chandelles dans le lustre (nb), sinon une */
 export const garniNb = type => !MEUBLES[type] ? 1 : MEUBLES[type].nb || (MEUBLES[type].support === "lucioles" ? 3 : 1);
-export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? "bois" : null) : s === "fleur" ? (o.fleur || (o.fleurs && o.fleurs[0]) || null) : s === "poisson" ? (o.poisson || (o.poissons && o.poissons[0] && o.poissons[0].split("|")[0]) || null) : o.bougie || null; };
+export const garniDe = (type, o) => { const s = MEUBLES[type] && MEUBLES[type].support; return !s || !o ? null : s === "torche" ? (o.torche ? "torche" : null) : s === "lucioles" ? (o.lucioles ? "luciole" : null) : s === "buche" ? (resteFeu(o) > 0 ? (MEUBLES[type].combustible || "bois") : null) : s === "fleur" ? (o.fleur || (o.fleurs && o.fleurs[0]) || null) : s === "poisson" ? (o.poisson || (o.poissons && o.poissons[0] && o.poissons[0].split("|")[0]) || null) : o.bougie || null; };
 /* Les bûches de la cheminée (Yo, 10 novembre 2026 : « Une bûche = 1 bois de mon sac », « Les bûches s'usent et le feu
    s'éteint ») : chaque bûche brûle BUCHE secondes, en vrai temps (même le jeu fermé), l'une après l'autre ; o.feu : l'heure
    où la dernière finit (Date.now) ; éteinte au geste, le feu s'arrête : o.reste, les secondes qui restent */
@@ -1003,7 +1003,8 @@ export const ATELIERS = {
     {out:"portail", in:{planche:4, cuivre:2}, t:30, lvl:1, cat:"Décoration"},
     {out:"puitsEau", in:{pierre:10, planche:6, fibre:2, cuivre:1}, t:40, lvl:1, cat:"Décoration"},
     {out:"fontaine", in:{pierre:16}, t:40, lvl:1, cat:"Décoration"},
-    {out:"panneau", in:{planche:2, cuivre:1}, t:20, lvl:1, cat:"Décoration"},   // ses clous de cuivre (Yo, 11 novembre 2026)   // toute de pierre (Yo, 11 novembre 2026)   // la corde : 2 fibres ; la manivelle : 1 cuivre (Yo, 11 novembre 2026)   // ses pentures et son verrou de cuivre (Yo, 11 novembre 2026)   // un morceau de muret (Yo, 11 novembre 2026)   // un morceau de clôture (Yo, 11 novembre 2026)
+    {out:"panneau", in:{planche:2, cuivre:1}, t:20, lvl:1, cat:"Décoration"},
+    {out:"brasero", in:{cuivre:3}, t:30, lvl:1, cat:"Décoration"},   // de retour, d'après l'image de Yo (12 novembre 2026) ; son charbon se met à part   // ses clous de cuivre (Yo, 11 novembre 2026)   // toute de pierre (Yo, 11 novembre 2026)   // la corde : 2 fibres ; la manivelle : 1 cuivre (Yo, 11 novembre 2026)   // ses pentures et son verrou de cuivre (Yo, 11 novembre 2026)   // un morceau de muret (Yo, 11 novembre 2026)   // un morceau de clôture (Yo, 11 novembre 2026)
     {out:"tonneau", in:{planche:5, cuivre:1}, t:60, lvl:2},   // les cerclages de cuivre (Yo, 8 novembre 2026)
     {out:"table", in:{planche:6}, t:90, lvl:2},
     {out:"tableBanquet", in:{planche:10}, t:120, lvl:2},   // la grande table de banquet (Yo, 7 novembre 2026)
@@ -1104,7 +1105,6 @@ export const ATELIERS = {
        proposés à l'enclume ni au catalogue ; ceux déjà fabriqués ou posés dans une partie en cours restent (la recette
        reste ici, pour que le jeu les reconnaisse comme fabriqués : FABRIQUE_A, rangés dans le sac) */
     {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1, plusTard:true},
-    {out:"brasero", in:{bloc:2, cuivre:3, charbon:2}, t:60, lvl:1, plusTard:true},
     {out:"lustre", in:{cuivre:3}, t:90, lvl:1},                              // vide : cinq chandelles s'y posent ensuite (Yo, 9 novembre 2026)
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1}
   ]},

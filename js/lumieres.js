@@ -133,11 +133,11 @@ export const lumieresActives = () => actives;
 /* Ce qu'on a de quoi poser sur ce support (une torche ; une chandelle de suif, plus tard une bougie de cire) : sa clé, ou null */
 export const garniDispo = type => MEUBLES[type].support === "fleur" && FLEURS[state.main] && owned(state.main) > 0 ? state.main   // le pot : la fleur tenue en main d'abord
   : MEUBLES[type].support === "poisson" && POISSONS[state.main] && owned(state.main) > 0 ? state.main   // l'aquarium : le poisson tenu en main d'abord
-  : (GARNIS[MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois
+  : (GARNIS[MEUBLES[type].combustible || MEUBLES[type].support] || []).find(k => owned(k) >= (unAUn(type) ? 1 : garniNb(type))) || null;   // le chandelier, le lustre : une à la fois ; le brasero : son charbon
 /* Le bouton : « 🔥 Poser une torche sur la torchère », « 🕯️ Poser une chandelle dans le bougeoir » (ou dans la lanterne) */
 export const poserLabel = type => MEUBLES[type].support === "poisson" ? (k => `🐟 Mettre ${k ? `${POISSONS[k].une ? "une" : "un"} ${POISSONS[k].nom.toLowerCase()}` : "un poisson"} ${MEUBLES[type].dans}`)(garniDispo(type))
   : MEUBLES[type].support === "fleur" ? (k => `🌸 ${MEUBLES[type].nb > 1 ? "Mettre" : "Planter"} ${k ? `${FLEURS[k].une ? "une" : "un"} ${FLEURS[k].nom.toLowerCase()}` : "une fleur"} ${MEUBLES[type].dans}`)(garniDispo(type))
-  : MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
+  : MEUBLES[type].combustible === "charbon" ? `⚫ Mettre du charbon ${MEUBLES[type].dans}` : MEUBLES[type].support === "buche" ? `🪵 Mettre une bûche ${MEUBLES[type].dans}` : MEUBLES[type].support === "lucioles" ? "✨ Mettre 3 lucioles dans le bocal" : MEUBLES[type].support === "bougie" ? `🕯️ Poser une chandelle ${MEUBLES[type].dans}` : "🔥 Poser une torche sur la torchère";
 /* o : le support (le meuble de la pièce, ou la case de l'île) ; type : sa sorte ; refaire : refait son modèle (patch : ce qui change) */
 export function poserGarni(o, type, refaire){
   const s = MEUBLES[type].support, bougie = s === "bougie", un = unAUn(type), nb = garniNb(type), n = un ? 1 : nb;
@@ -163,14 +163,16 @@ export function poserGarni(o, type, refaire){
 export const poserTorche = (o, refaire) => poserGarni(o, "torchere", refaire);
 /* Une bûche dans la cheminée (1 bois du sac) : elle s'ajoute au feu (allumé s'il était éteint), et brûle BUCHE secondes */
 function poserBuche(o, type, k, deja, nb, refaire){
-  if(!k){ toast("🪵 Il te faut du bois : ramasse les branches au sol, ou coupe un arbre avec ta hache", 3600); return false; }
+  const charbon = MEUBLES[type].combustible === "charbon";              // le brasero : du charbon (Yo, 12 novembre 2026)
+  if(!k){ toast(charbon ? "⚫ Il te faut du charbon : il se mine dans les veines noires de la mine, avec une pioche" : "🪵 Il te faut du bois : ramasse les branches au sol, ou coupe un arbre avec ta hache", 3600); return false; }
   addOwned(k, -1);
   const patch = {feu: Date.now() + (resteFeu(o) + BUCHE) * 1000, reste: undefined, eteint: undefined};
   for(const [c, v] of Object.entries(patch)) if(v === undefined) delete o[c]; else o[c] = v;
   refaire(patch); vus.set(o, garniPose(type, o));
   syncBarre(); save(); renderHUD();
   const min = Math.round(BUCHE / 60);
-  toast(deja + 1 >= nb ? `🪵 Les ${nb} bûches sont ${MEUBLES[type].dans} : de quoi brûler ${nb * min} minutes` : `🪵 Bûche posée ${MEUBLES[type].dans} (${deja + 1} sur ${nb}) : elle brûle ${min} minutes`, 3400);
+  toast(charbon ? (deja + 1 >= nb ? `⚫ Les ${nb} morceaux de charbon sont ${MEUBLES[type].dans} : de quoi brûler ${nb * min} minutes` : `⚫ Charbon mis ${MEUBLES[type].dans} (${deja + 1} sur ${nb}) : il brûle ${min} minutes`)
+    : deja + 1 >= nb ? `🪵 Les ${nb} bûches sont ${MEUBLES[type].dans} : de quoi brûler ${nb * min} minutes` : `🪵 Bûche posée ${MEUBLES[type].dans} (${deja + 1} sur ${nb}) : elle brûle ${min} minutes`, 3400);
   return true;
 }
 /* Une fleur sauvage plantée dans le pot (Yo, 10 novembre 2026) : la fleur cueillie y reprend racine ; elle fleurit en sa
