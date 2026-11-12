@@ -337,7 +337,7 @@ function nager(o, dt){
         if(d < .1){ o.cible = null; o.pause = .6 + Math.random() * 2.2; }
         else if(ecart < 1){
           v = .3; const nx = o.x + dx / d * v * dt, nz = o.z + dz / d * v * dt;
-          if(enEau(nx, nz)){ o.x = nx; o.z = nz; } else { o.cible = null; o.pause = .5; }
+          if(enEau(nx, nz) && (o.libre || nageable(nx, nz, o))){ o.x = nx; o.z = nz; } else { o.cible = null; o.pause = .5; }   // à chaque pas, pas seulement au but : en ligne droite, il coupait un coin de la côte et passait dans l'écume
         }
       }
     }
