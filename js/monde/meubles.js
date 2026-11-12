@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1238,6 +1238,67 @@ function seauMorceaux(c){                                                       
   return out;
 }
 const PU_CORDE = new THREE.CylinderGeometry(1, 1, 1, 6).translate(0, -.5, 0);    // la corde qui pend, son haut à l'origine
+/* L'établi de la Scierie (image de Yo, 12 novembre 2026 : « Maintenant on fait les plans de travail des différents bâtiments.
+   Voici l'établi de la scierie ») : un plateau épais de quatre grosses planches (le long), leurs rainures ; quatre pieds trapus un
+   peu écartés, une traverse en arc à chaque bout, des chevilles rondes de bois sombre ; l'étagère du bas, sa pile de planches et
+   ses tasseaux ; l'étau de bois sombre à droite, sa vis et sa poignée à boules ; sur le plateau, la scie à poignée de bois, une
+   planche en cours, des copeaux enroulés. Le bois prend sa teinte ; l'étau, la poignée de la scie et les chevilles restent sombres.
+   Le devant regarde vers +z ; le dessus du plateau à .75 */
+const EB = {haut: .75, ep: .14, l: 1.6, p: .8, pied: .15, sombre: 0x7A3E24, lame: 0xB9BEC2};
+const EB_PLANCHE = boiteRonde(1.6, .14, .188, .028, 2), EB_BOIS = boiteRonde(1, 1, 1, .14, 1), EB_TIGE = new THREE.CylinderGeometry(1, 1, 1, 12);
+const EB_BOULE = new THREE.SphereGeometry(1, 10, 7), EB_COPEAU = new THREE.TorusGeometry(1, .32, 6, 14, Math.PI * 1.6);
+const EB_ARC = (() => { const s = new THREE.Shape(), l = .3, h = .2, r = .15;    // la traverse en arc, sous le plateau
+  s.moveTo(-l, -h / 2); s.lineTo(-r, -h / 2); s.absarc(0, -h / 2, r, Math.PI, 0, true); s.lineTo(l, -h / 2); s.lineTo(l, h / 2); s.lineTo(-l, h / 2); s.lineTo(-l, -h / 2);
+  return new THREE.ExtrudeGeometry(s, {depth: .08, bevelEnabled: true, bevelThickness: .012, bevelSize: .012, bevelSegments: 1, curveSegments: 10}).translate(0, 0, -.04); })();
+const EB_LAME = (() => { const s = new THREE.Shape(), n = 9;                      // la lame de la scie, ses dents
+  s.moveTo(0, .07); s.lineTo(.5, .045); s.lineTo(.5, -.04);
+  for(let k = n - 1; k >= 0; k--){ const x = k / n * .5; s.lineTo(x + .5 / n / 2, -.065); s.lineTo(x, -.04); }
+  s.lineTo(0, .07); return new THREE.ExtrudeGeometry(s, {depth: .008, bevelEnabled: false}); })();
+const EB_POIGNEE = (() => { const s = new THREE.Shape(), t = new THREE.Path();    // la poignée de la scie, en D
+  s.moveTo(0, -.07); s.lineTo(.16, -.07); s.quadraticCurveTo(.22, -.07, .22, 0); s.lineTo(.22, .08); s.quadraticCurveTo(.22, .13, .16, .13); s.lineTo(.02, .13); s.quadraticCurveTo(-.02, .13, -.02, .09); s.lineTo(0, -.07);
+  t.moveTo(.05, -.03); t.lineTo(.13, -.03); t.quadraticCurveTo(.17, -.03, .17, .02); t.lineTo(.17, .05); t.quadraticCurveTo(.17, .09, .13, .09); t.lineTo(.07, .09); t.quadraticCurveTo(.04, .09, .045, .05); t.lineTo(.05, -.03);
+  s.holes.push(t);
+  return new THREE.ExtrudeGeometry(s, {depth: .03, bevelEnabled: true, bevelThickness: .008, bevelSize: .008, bevelSegments: 1, curveSegments: 6}); })();
+function etabliMorceaux(c){
+  const o = ombreBois(0, EB.haut), out = [], al = aleaMuret(5150), clair = new THREE.Color(c).multiplyScalar(1.12).getHex(), so = EB.sombre;
+  const teinte = () => new THREE.Color(c).multiplyScalar(.93 + al() * .12).getHex();
+  for(let k = 0; k < 4; k++)                                                       // le plateau : quatre grosses planches, leurs rainures
+    out.push({geo: EB_PLANCHE, m: M4(0, EB.haut - EB.ep / 2 + (al() - .5) * .008, -EB.p / 2 + EB.p / 8 + k * EB.p / 4), c: teinte(), ombre: o});
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]){                               // les pieds trapus, un peu écartés vers le bas
+    const xh = sx * .6, xb = sx * .68, h = EB.haut - EB.ep + .02, a = Math.atan2(xb - xh, h);
+    out.push({geo: EB_BOIS, m: M4((xh + xb) / 2, h / 2, sz * .27, 0, 0, a, EB.pied, h / Math.cos(a), .13), c, ombre: o});
+    for(const y of [.12, h - .1]) out.push({geo: EB_BOULE, m: M4(xh + (xb - xh) * (1 - y / h) + sx * 0, y, sz * (.27 + .066), 0, 0, 0, .026, .026, .012), c: so, ombre: o});   // les chevilles
+  }
+  for(const sx of [-1, 1]){
+    out.push({geo: EB_ARC, m: M4(sx * .6, EB.haut - EB.ep - .1, 0, 0, Math.PI / 2, 0), c, ombre: o});            // la traverse en arc
+    out.push({geo: EB_BOIS, m: M4(sx * .64, .14, 0, 0, 0, 0, .1, .07, .5), c, ombre: o});                      // la traverse du bas
+  }
+  out.push({geo: EB_BOIS, m: M4(0, .15, 0, 0, 0, 0, 1.2, .05, .56), c: new THREE.Color(c).multiplyScalar(.88).getHex(), ombre: o});   // l'étagère
+  for(const sz of [-1, 1]) out.push({geo: EB_BOIS, m: M4(0, .14, sz * .27, 0, 0, 0, 1.24, .08, .08), c, ombre: o});
+  for(const sx of [-1, 1]) out.push({geo: EB_BOULE, m: M4(sx * .52, EB.haut - EB.ep / 2, EB.p / 2 + .002, 0, 0, 0, .026, .026, .012), c: so, ombre: o});   // les chevilles du plateau
+  for(let k = 0; k < 3; k++)                                                       // la pile de planches, à gauche
+    out.push({geo: EB_BOIS, m: M4(-.3 + (al() - .5) * .04, .2 + k * .06, .02 + (al() - .5) * .04, 0, (al() - .5) * .08, 0, .5, .055, .34 - k * .04), c: teinte(), ombre: o});
+  for(const [x, y, z] of [[.18, .21, -.05], [.3, .21, .08], [.24, .29, .02], [.38, .21, -.08]])   // les tasseaux, à droite
+    out.push({geo: EB_BOIS, m: M4(x, y, z, 0, .1 + (al() - .5) * .2, 0, .08, .08, .42), c: teinte(), ombre: o});
+  /* l'étau, à droite, sur le devant : ses deux mâchoires au-dessus du plateau, sa vis, sa poignée à boules */
+  const xe = .55, ze = EB.p / 2;
+  out.push({geo: EB_BOIS, m: M4(xe, EB.haut - .09, ze + .055, 0, 0, 0, .3, .26, .1), c: so, ombre: o},
+    {geo: EB_BOIS, m: M4(xe - .08, EB.haut + .04, ze - .06, 0, 0, 0, .13, .08, .12), c: so, ombre: o},
+    {geo: EB_BOIS, m: M4(xe + .08, EB.haut + .04, ze - .06, 0, 0, 0, .13, .08, .12), c: so, ombre: o},
+    {geo: EB_TIGE, m: M4(xe, EB.haut - .12, ze + .17, Math.PI / 2, 0, 0, .055, .14, .055), c: new THREE.Color(so).multiplyScalar(.85).getHex(), ombre: o},
+    {geo: EB_TIGE, m: M4(xe, EB.haut - .12, ze + .23, 0, 0, Math.PI / 2, .018, .34, .018), c: clair, ombre: o});
+  for(const s of [-1, 1]) out.push({geo: EB_BOULE, m: M4(xe + s * .17, EB.haut - .12, ze + .23, 0, 0, 0, .035, .035, .035), c: clair, ombre: o});
+  for(const [x, y] of [[-.1, .03], [.1, .03]]) out.push({geo: EB_BOULE, m: M4(xe + x, EB.haut - .09 + y, ze + .108, 0, 0, 0, .02, .02, .01), c: new THREE.Color(c).multiplyScalar(1.1).getHex(), ombre: o});
+  /* sur le plateau : la scie (sa lame, sa poignée), une planche en cours, des copeaux */
+  const yt = EB.haut + .002;
+  out.push({geo: EB_LAME, m: M4(-.36, yt + .004, -.2, -Math.PI / 2, -.12, 0), c: EB.lame, ombre: () => 1.05},
+    {geo: EB_POIGNEE, m: M4(-.6, yt, -.25, -Math.PI / 2, -.12, 0), c: so, ombre: o});
+  for(const [x, z] of [[-.49, -.21], [-.45, -.16]]) out.push({geo: EB_BOULE, m: M4(x, yt + .036, z, 0, 0, 0, .014, .006, .014), c: 0xD9A441, ombre: o});
+  out.push({geo: EB_BOIS, m: M4(.12, yt + .035, .12, 0, .1, 0, .5, .07, .2), c: clair, ombre: o});
+  for(const [x, z, r] of [[.33, -.25, .5], [-.32, .2, 1.8], [-.2, .28, 3.1]])
+    out.push({geo: EB_COPEAU, m: M4(x, yt + .02, z, 0, r, 0, .035, .035, .03), c: new THREE.Color(c).multiplyScalar(1.2).getHex(), ombre: o});
+  return out;
+}
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -1988,15 +2049,8 @@ const BUILD = {
   miroir(g, m){ g.add(modeleBois("miroir", m, miroirMorceaux), glaceMiroir()); },   // le cadre et le pied (un dessin), la glace peinte
   rideau(g, m, o){ const f = !!(o && o.ferme); g.add(modeleBois(f ? "rideauFerme" : "rideau", m, rideauMorceaux(f))); },   // ouvert ou fermé (gestes.js)
   grandTapis(g, m){ g.add(modeleBois("grandTapis", m, grandTapisMorceaux)); },   // en nœuds, sa bande à losanges (image de Yo, 10 novembre 2026)
-  etabli(g, m){
-    g.add(part(G.box, m, 1.6, .12, .75, 0, .55, 0));                                  // plateau
-    for(const [x,z] of [[-.7,-.28],[.7,-.28],[-.7,.28],[.7,.28]]) g.add(part(G.box, m, .1, .5, .1, x, .25, z));
-    g.add(part(G.box, C.dark, 1.4, .05, .6, 0, .15, 0));                               // étagère du bas
-    for(const y of [.2, .25, .3]) g.add(part(G.box, C.cream, 1.2, .05, .16, 0, y, -.05 + (y - .25)));   // planches rangées
-    g.add(part(G.box, C.dark, .2, .16, .22, -.6, .69, .25));                           // étau
-    g.add(part(G.box, C.metal, .5, .02, .14, .2, .62, .12));                           // lame de scie
-    g.add(part(G.box, C.light, .14, .06, .1, .52, .64, .12));                          // poignée
-    g.add(part(G.box, C.light, .45, .08, .2, -.15, .65, -.18));                        // pièce de bois en cours
+  etabli(g, m){                                                                      // l'établi d'après l'image de Yo, un dessin
+    g.add(modeleBois("etabli", m, etabliMorceaux));
   },
   statue(g, m, o){                                                                   // le socle ; le bloc brut, ou la bête sculptée (statues.js)
     const bete = o && o.bete ? beteEnPierre(o.bete, m) : null;
