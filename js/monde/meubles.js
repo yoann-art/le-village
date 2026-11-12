@@ -5,6 +5,7 @@
 import { G, part, toon, fusionner, MAT_UNI, VENT } from "./formes.js";
 import { MEUBLES, COULEURS, ATELIERS, couleurMeuble, garniPose, FLEURS, enFleur, saison } from "../donnees.js";
 import { pierreMesh } from "./rochers.js";
+import { state } from "../sauvegarde.js";
 import { fleurModele, fleurCoupee } from "./fleurs.js";
 import { MODELES_POISSONS } from "./poissons3d.js";
 import { paqueretteModele } from "./paquerette.js";
@@ -39,7 +40,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1499,6 +1500,79 @@ function comptoirMorceaux(c){
   }
   return out;
 }
+/* Le fourneau de la Taverne (image de Yo, 12 novembre 2026 : « Voici le fourneau de la taverne ») : un massif de pierres
+   claires appareillées, la voûte du foyer, la plaque de fonte et ses deux feux (la marmite sur l'un, un couvercle à bouton sur
+   l'autre), la petite cheminée de pierre au fond (son ouverture en arc, son chapeau de tuiles), la marmite de fonte sur trois pieds
+   (ses anneaux, son anse à poignée de bois, la soupe aux légumes), la barre de fer et ses deux cuillères de bois. Le feu (les braises
+   et les flammes du foyer, la lueur sous la marmite) ne brûle que quand un plat cuit (Yo : « Seulement en cuisinant ») : une
+   recette en cours à l'atelier de la Taverne (b.atelier.queue). La pierre prend sa teinte ; la fonte, la soupe, le bois, les tuiles
+   gardent leurs couleurs. Le dessus de la plaque à .76 */
+const FN = {haut: .72, l: 1.36, p: .76, fonte: 0x4A3028, marmite: 0x3E2A26, soupe: 0xE07A2A, bois: 0xD99A4A, tuile: 0xC0583A, noir: 0x2A1A12, fer: 0x5A4A44};
+const FN_PIERRE = boiteRonde(1, 1, 1, .2, 1);
+const FN_MARMITE = lathe([[0, .02], [.1, .02], [.17, .06], [.2, .13], [.19, .2], [.16, .25], [.165, .27], [.15, .275], [.14, .25], [.16, .2], [.17, .13], [.14, .07], [.08, .05], [0, .05]], 18);
+const FN_ANNEAU = new THREE.TorusGeometry(1, .22, 6, 14), FN_ANSE = new THREE.TorusGeometry(1, .06, 6, 16, Math.PI);
+const FN_LOUCHE = new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+const FN_TOIT = new THREE.CylinderGeometry(.06, .2, .13, 8);
+const FN_BOUCHE = (() => { const s = new THREE.Shape(), r = .22, h = .2;            // l'ouverture du foyer, en arc
+  s.moveTo(-r, 0); s.lineTo(r, 0); s.lineTo(r, h); s.absarc(0, h, r, 0, Math.PI, false); s.lineTo(-r, 0);
+  return new THREE.ShapeGeometry(s, 12); })();
+const cuisineEnCours = () => { const t = state.buildings && state.buildings.find(b => b.type === "taverne"), q = t && t.atelier && t.atelier.queue;
+  return !!(q && q.some(j => j.end > Date.now())); };
+export const fourneauAllume = cuisineEnCours;                                     // pour la vérification
+function fourneauMorceaux(c){
+  const o = ombreBois(0, FN.haut + .5), out = [], al = aleaMuret(4404), T = FN.haut;
+  const teinte = () => new THREE.Color(c).multiplyScalar(.92 + al() * .14).getHex();
+  out.push({geo: EB_BOIS, m: M4(0, T / 2, 0, 0, 0, 0, FN.l - .04, T, FN.p - .04), c: new THREE.Color(c).multiplyScalar(.95).getHex(), ombre: o});   // le cœur, de la couleur des pierres (Yo : pas de trous entre les pierres)
+  const zf = FN.p / 2, cx = 0, cy = .26, R = .3;
+  for(let r = 0; r < 4; r++){ const y = .09 + r * .17, dec = r % 2 ? .135 : 0;      // les pierres du devant, hors de la voûte
+    for(let x = -FN.l / 2 + .135 + dec; x < FN.l / 2 - .05; x += .27){
+      if(Math.abs(x) < R + .08 && y < cy + R + .02) continue;
+      out.push({geo: FN_PIERRE, m: M4(x, y, zf - .02, 0, 0, 0, .3 - (x + .135 > FN.l / 2 ? .1 : 0), .19, .1), c: teinte(), ombre: o}); } }
+  for(let k = 0; k <= 8; k++){ const a = k / 8 * Math.PI;                         // la voûte du foyer
+    out.push({geo: FN_PIERRE, m: M4(cx + Math.cos(a) * R, cy + Math.sin(a) * R, zf - .01, 0, 0, a - Math.PI / 2, .13, .16, .12), c: teinte(), ombre: o}); }
+  out.push({geo: FN_PIERRE, m: M4(0, .06, zf - .01, 0, 0, 0, .5, .1, .12), c: teinte(), ombre: o});
+  for(const sx of [-1, 1]) for(let r = 0; r < 4; r++) for(const z of r % 2 ? [-.25, .12] : [-.12, .25])   // les pierres des côtés, jointives
+    out.push({geo: FN_PIERRE, m: M4(sx * (FN.l / 2 - .02), .09 + r * .17, z, 0, Math.PI / 2, 0, r % 2 ? (z < 0 ? .28 : .46) : (z < 0 ? .46 : .28), .19, .1), c: teinte(), ombre: o});
+  for(const [x, z, w, d] of [[0, zf - .06, FN.l, .12], [0, -zf + .06, FN.l, .12], [-FN.l / 2 + .07, 0, .14, FN.p], [FN.l / 2 - .07, 0, .14, FN.p]])   // le rebord de pierre
+    out.push({geo: FN_PIERRE, m: M4(x, T + .015, z, 0, 0, 0, w, .07, d), c: teinte(), ombre: o});
+  out.push({geo: FN_BOUCHE, m: M4(cx, .1, zf - .012), c: FN.noir, ombre: () => 1},   // le fond sombre du foyer, en retrait
+    {geo: EB_BOIS, m: M4(cx, .1, zf + .02, 0, 0, 0, .46, .02, .06), c: 0x5A4038, ombre: o});   // le fond sombre du foyer
+  for(const [x, z] of [[-.08, 0], [0, .02], [.08, -.01], [-.04, -.04], [.05, -.04]]) out.push({geo: EB_BOULE, m: M4(x, .13, zf + .02 + z * .4, 0, 0, 0, .05, .03, .03), c: 0x3A3030, ombre: o});   // les bûches de charbon
+  /* la plaque de fonte et ses deux feux */
+  out.push({geo: EB_BOIS, m: M4(-.08, T + .025, .0, 0, 0, 0, 1.0, .04, .5), c: FN.fonte, ombre: o});
+  for(const x of [-.32, .16]) out.push({geo: FN_ANNEAU, m: M4(x, T + .047, 0, Math.PI / 2, 0, 0, .15, .15, .05), c: new THREE.Color(FN.fonte).multiplyScalar(.8).getHex(), ombre: o});
+  out.push({geo: EB_TIGE, m: M4(.16, T + .06, 0, 0, 0, 0, .13, .025, .13), c: FN.fonte, ombre: o},
+    {geo: EB_BOULE, m: M4(.16, T + .09, 0, 0, 0, 0, .035, .03, .035), c: new THREE.Color(FN.fonte).multiplyScalar(1.2).getHex(), ombre: o});
+  /* la petite cheminée, au fond à droite */
+  const xc = .48, zc = -.2, hc = .32;
+  out.push({geo: FN_PIERRE, m: M4(xc, T + .1, zc, 0, 0, 0, .36, .2, .34), c: teinte(), ombre: o},
+    {geo: FN_PIERRE, m: M4(xc, T + .2 + hc / 2, zc, 0, 0, 0, .26, hc, .26), c: teinte(), ombre: o},
+    {geo: FN_BOUCHE, m: M4(xc, T + .32, zc + .132, 0, 0, 0, .22, .4, 1), c: FN.noir, ombre: () => 1},
+    {geo: FN_TOIT, m: M4(xc, T + .2 + hc + .07, zc, 0, Math.PI / 8, 0), c: FN.tuile, ombre: o},
+    {geo: EB_TIGE, m: M4(xc, T + .2 + hc + .16, zc, 0, 0, 0, .07, .04, .07), c: new THREE.Color(FN.tuile).multiplyScalar(.9).getHex(), ombre: o});
+  /* la marmite, sur le feu de gauche */
+  const xm = -.32, ym = T + .05;
+  out.push({geo: FN_MARMITE, m: M4(xm, ym, 0), c: FN.marmite, ombre: o},
+    {geo: EB_TIGE, m: M4(xm, ym + .245, 0, 0, 0, 0, .145, .01, .145), c: FN.soupe, ombre: () => 1.1});
+  for(const [x, z, cl] of [[-.05, .03, 0xF0A030], [.04, -.02, 0xF5C04A], [0, .06, 0xE06020], [.06, .05, 0xF5C04A], [-.07, -.05, 0xE06020]])
+    out.push({geo: EB_BOIS, m: M4(xm + x, ym + .255, z, 0, al() * 3, 0, .035, .025, .035), c: cl, ombre: () => 1.05});
+  for(const [x, z, a] of [[.0, .0, .3], [.03, -.04, 2], [-.03, .02, 4]]) out.push({geo: EB_BOULE, m: M4(xm + x, ym + .262, z, 0, a, 0, .03, .006, .014), c: 0x5E9F3A, ombre: () => 1.05});
+  for(let k = 0; k < 3; k++){ const a = k / 3 * Math.PI * 2 + .5; out.push({geo: EB_TIGE, m: M4(xm + Math.sin(a) * .12, ym + .02, Math.cos(a) * .12, 0, 0, 0, .025, .05, .025), c: FN.marmite, ombre: o}); }
+  for(const s of [-1, 1]) out.push({geo: FN_ANNEAU, m: M4(xm + s * .2, ym + .2, 0, 0, Math.PI / 2, 0, .04, .04, .04), c: FN.marmite, ombre: o});
+  out.push({geo: FN_ANSE, m: M4(xm, ym + .2, 0, 0, 0, 0, .2, .2, .2), c: FN.marmite, ombre: o},
+    {geo: EB_TIGE, m: M4(xm, ym + .4, 0, 0, 0, Math.PI / 2, .025, .14, .025), c: FN.bois, ombre: o});
+  /* la barre de fer et ses deux cuillères de bois, sur le côté gauche */
+  const xs = -FN.l / 2 - .05;
+  out.push({geo: EB_TIGE, m: M4(xs, T - .1, 0, Math.PI / 2, 0, 0, .018, .5, .018), c: FN.fer, ombre: o});
+  for(const z of [-.24, .24]) out.push({geo: EB_BOIS, m: M4(xs + .03, T - .1, z, 0, 0, 0, .06, .04, .03), c: FN.fer, ombre: o});
+  for(const [z, l, r] of [[-.08, .3, .045], [.1, .34, .06]]){
+    out.push({geo: EB_TIGE, m: M4(xs, T - .1 - l / 2, z, 0, 0, 0, .012, l, .012), c: FN.bois, ombre: o},
+      {geo: FN_LOUCHE, m: M4(xs, T - .1 - l, z, -Math.PI / 2 * 0, 0, Math.PI / 2, r, r * .6, r), c: FN.bois, ombre: o}); }
+  return out;
+}
+/* le feu (fireMat) : les flammes et les braises du foyer, la lueur sous la marmite */
+const FN_FEU = (() => { const g = FC_FLAMMES.clone().scale(.8, .7, .25).translate(0, .12, FN.p / 2 + .01);
+  return mergeGeos([g, new THREE.TorusGeometry(.15, .03, 5, 18).rotateX(Math.PI / 2).translate(-.32, FN.haut + .05, 0)]); })();
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -2267,15 +2341,11 @@ const BUILD = {
   comptoir(g, m){                                                                    // le comptoir d'après l'image de Yo, un dessin
     g.add(modeleBois("comptoir", m, comptoirMorceaux));
   },
-  fourneau(g, m){
-    g.add(part(G.box, m, 1.4, .5, .78, 0, .25, 0));                                   // socle de pierre
-    g.add(part(G.head, m, 2.2, 2.2, 2.2, -.3, .55, -.02));                             // four en dôme
-    g.add(part(G.box, C.soot, .4, .32, .06, -.3, .48, .52));                           // bouche du four, devant le dôme
-    g.add(part(G.box, fireMat, .28, .12, .03, -.3, .4, .555));                         // braises
-    g.add(part(G.cyl, C.stone2, .22, .5, .22, -.3, 1.25, -.1));                         // petite cheminée
-    g.add(part(G.box, C.soot, .55, .06, .62, .38, .53, 0));                             // plaque de cuisson
-    g.add(part(G.cyl, C.soot, .38, .3, .38, .38, .71, 0));                              // marmite
-    g.add(part(G.cyl, C.metal, .42, .04, .42, .38, .86, 0));
+  fourneau(g, m){                                                                    // le fourneau d'après l'image de Yo ; son feu, quand un plat cuit
+    const corps = modeleBois("fourneau", m, fourneauMorceaux), feu = new THREE.Mesh(FN_FEU, fireMat);
+    feu.castShadow = false; feu.visible = cuisineEnCours(); g.add(corps, feu);
+    let attente = 0;
+    corps.onBeforeRender = () => { if(--attente > 0) return; attente = 30; feu.visible = cuisineEnCours(); };   // une fois toutes les 30 images
   },
   enclume(g, m){
     g.add(part(G.cyl, C.light, .56, .44, .56, 0, .22, 0));                             // billot

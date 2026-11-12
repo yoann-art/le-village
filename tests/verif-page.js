@@ -3538,6 +3538,20 @@ export async function verifier(){
       if(des !== 1 || tri > 10000) throw new Error(`la table de taille : ${des} dessins, ${Math.round(tri)} triangles`);
       tri = 0; des = 0; makeMeuble("comptoir").traverse(c => { if(c.isMesh && c.material.visible !== false){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 1 || tri > 15000) throw new Error(`le comptoir : ${des} dessins, ${Math.round(tri)} triangles`);
+      /* le fourneau : son feu ne brûle que quand un plat cuit (Yo, 12 novembre 2026 : « Seulement en cuisinant ») */
+      {
+        const {fourneauAllume} = await import("../js/monde/meubles.js");
+        tri = 0; des = 0; makeMeuble("fourneau").traverse(c => { if(c.isMesh && c.material.visible !== false){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
+        if(des !== 2 || tri > 16000) throw new Error(`le fourneau : ${des} dessins, ${Math.round(tri)} triangles`);
+        const tav = state.buildings.find(b => b.type === "taverne") || (state.buildings.push({id: 99555, type: "taverne", x: 0, z: 0, lvl: 1, essai: true}), state.buildings.at(-1));
+        const avantQ = tav.atelier;
+        try {
+          tav.atelier = {queue: []};
+          if(fourneauAllume()) throw new Error("le fourneau brûle sans rien cuire");
+          tav.atelier = {queue: [{out: "poissonGrille", n: 1, in: {}, t: 60, start: Date.now(), end: Date.now() + 60000}]};
+          if(!fourneauAllume()) throw new Error("le fourneau ne s'allume pas quand un plat cuit");
+        } finally { if(tav.essai) state.buildings.splice(state.buildings.indexOf(tav), 1); else tav.atelier = avantQ; }
+      }
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3591,7 +3605,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
