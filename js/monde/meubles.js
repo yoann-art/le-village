@@ -40,7 +40,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau", "enclume"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1573,6 +1573,37 @@ function fourneauMorceaux(c){
 /* le feu (fireMat) : les flammes et les braises du foyer, la lueur sous la marmite */
 const FN_FEU = (() => { const g = FC_FLAMMES.clone().scale(.8, .7, .25).translate(0, .12, FN.p / 2 + .01);
   return mergeGeos([g, new THREE.TorusGeometry(.15, .03, 5, 18).rotateX(Math.PI / 2).translate(-.32, FN.haut + .05, 0)]); })();
+/* L'enclume de la Forge (image de Yo, 12 novembre 2026 : « Voici l'enclume de la forge ») : l'enclume gris fer (comme une vraie :
+   la table de frappe, la bigorne en pointe à gauche, la taille cintrée, le pied et son échancrure), sur un gros billot de bois
+   fendu en lattes, ses cernes, sa bande de cuir et ses rivets ; le marteau appuyé contre le billot (tête de fer et son rivet, manche
+   à poignée de cuir). La teinte des métaux (cuivre au départ) va aux rivets ; le fer, le bois du billot et le cuir restent */
+const EN = {billot: .41, r: .31, fer: 0x6E6466, bois: 0xC8955A, cuir: 0x7A4A3A};
+const EN_CORPS = (() => { const s = new THREE.Shape();                            // le profil de l'enclume (de côté), extrudé
+  s.moveTo(-.24, 0); s.lineTo(-.07, 0); s.absarc(0, 0, .07, Math.PI, 0, true); s.lineTo(.26, 0); s.lineTo(.26, .05); s.lineTo(.2, .07);
+  s.quadraticCurveTo(.12, .13, .15, .27); s.lineTo(.33, .3); s.lineTo(.33, .43); s.lineTo(-.18, .43);
+  s.quadraticCurveTo(-.33, .43, -.45, .39); s.quadraticCurveTo(-.34, .3, -.19, .3); s.quadraticCurveTo(-.11, .22, -.18, .07); s.lineTo(-.24, .05); s.lineTo(-.24, 0);
+  return new THREE.ExtrudeGeometry(s, {depth: .2, bevelEnabled: true, bevelThickness: .02, bevelSize: .018, bevelSegments: 2, curveSegments: 10}).translate(0, 0, -.1); })();
+const EN_BILLOT = new THREE.CylinderGeometry(EN.r, EN.r * 1.08, EN.billot, 12), EN_BANDE = new THREE.CylinderGeometry(EN.r * 1.06, EN.r * 1.06, .1, 24, 1, true);
+const EN_CERNE = new THREE.TorusGeometry(1, .04, 4, 24);
+function enclumeMorceaux(c){
+  const o = ombreBois(0, .9), out = [], al = aleaMuret(3131), B = EN.billot;
+  out.push({geo: EN_BILLOT, m: M4(0, B / 2, 0), c: EN.bois, ombre: o});                                                 // le billot
+  for(let k = 0; k < 12; k++){ const a = (k + .5) / 12 * Math.PI * 2, r = EN.r * 1.035;                                 // ses fentes
+    out.push({geo: EB_BOIS, m: M4(Math.sin(a) * r, B / 2 - .02, Math.cos(a) * r, 0, a, 0, .008, B - .08, .008), c: new THREE.Color(EN.bois).multiplyScalar(.78).getHex(), ombre: o}); }
+  for(const rr of [.22, .14, .07]) out.push({geo: EN_CERNE, m: M4(0, B + .002, 0, Math.PI / 2, 0, 0, rr, rr, .2), c: new THREE.Color(EN.bois).multiplyScalar(.86).getHex(), ombre: o});   // ses cernes
+  out.push({geo: EN_BANDE, m: M4(0, B * .55, 0), c: EN.cuir, ombre: o});                                                 // la bande de cuir
+  for(let k = 0; k < 8; k++){ const a = k / 8 * Math.PI * 2 + .2;                                                     // ses rivets
+    out.push({geo: EB_BOULE, m: M4(Math.sin(a) * EN.r * 1.075, B * .55, Math.cos(a) * EN.r * 1.075, 0, 0, 0, .024, .024, .024), c, ombre: o}); }
+  out.push({geo: EN_CORPS, m: M4(.02, B, -.02, 0, .12, 0, .82, .85, 1.1), c: EN.fer, ombre: (px, py) => .8 + .3 * Math.min(1, (py - B) / .37)});   // l'enclume
+  /* le marteau, appuyé contre le billot */
+  const hx = .38, hz = .17, a = .32;
+  out.push({geo: EB_TIGE, m: M4(hx - Math.sin(a) * .2, .3, hz, 0, 0, a, .028, .48, .028), c: EN.bois, ombre: o},
+    {geo: EB_BOULE, m: M4(hx - Math.sin(a) * .44, .53, hz, 0, 0, 0, .04, .04, .04), c: EN.bois, ombre: o});
+  for(let k = 0; k < 4; k++) out.push({geo: EB_TIGE, m: M4(hx - Math.sin(a) * (.33 + k * .025), .42 + k * .023, hz, 0, 0, a, .034, .02, .034), c: EN.cuir, ombre: o});
+  out.push({geo: EB_BOIS, m: M4(hx + .02, .07, hz, 0, 0, a, .22, .12, .12), c: EN.fer, ombre: o},
+    {geo: EB_BOULE, m: M4(hx + .02, .07, hz + .065, 0, 0, 0, .022, .022, .01), c, ombre: o});
+  return out;
+}
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -2347,16 +2378,8 @@ const BUILD = {
     let attente = 0;
     corps.onBeforeRender = () => { if(--attente > 0) return; attente = 30; feu.visible = cuisineEnCours(); };   // une fois toutes les 30 images
   },
-  enclume(g, m){
-    g.add(part(G.cyl, C.light, .56, .44, .56, 0, .22, 0));                             // billot
-    g.add(part(G.box, m, .36, .06, .24, 0, .47, 0));                                  // pied de l'enclume
-    g.add(part(G.box, m, .2, .12, .16, 0, .56, 0));
-    g.add(part(G.box, m, .5, .14, .26, -.04, .69, 0));                                // table de frappe
-    const horn = part(G.cone, m, .2, .26, .2, .33, .69, 0);                           // bigorne
-    horn.rotation.z = -Math.PI/2; g.add(horn);
-    const handle = part(G.box, C.light, .05, .42, .05, -.34, .27, .24);               // marteau posé contre le billot
-    handle.rotation.z = .35; g.add(handle);
-    g.add(part(G.box, C.metal, .1, .16, .1, -.41, .47, .24));
+  enclume(g, m){                                                                     // l'enclume d'après l'image de Yo, un dessin
+    g.add(modeleBois("enclume", m, enclumeMorceaux));
   },
   trone(g, m){
     g.add(part(G.box, C.stone, 1.2, .16, 1, 0, .08, 0));                               // estrade
