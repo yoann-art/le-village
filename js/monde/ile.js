@@ -632,7 +632,9 @@ export function entamer(i, entame){ if(entame) entamees.add(i); else entamees.de
    percée de petites bulles, qui monte et redescend avec les vagues, et de fines lignes d'écume qui arrivent du large ;
    l'étang et les mares restent calmes, sans écume. Elle lit la profondeur dans FOND_TEX (le sol, refait quand on creuse ou
    comble) ; son temps est celui du vent (VENT.temps). */
-const EAU_MAT = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, shininess: 70, specular: 0x6FB8C8});
+/* le reflet du soleil, adouci (Yo, 12 novembre 2026 : « cette lumière qui se déplace avec le joueur sur la mer » ; « L'adoucir ») :
+   plus petit (shininess 70 → 220) et moins vif (specular 0x6FB8C8 → 0x3E6870) ; il suit toujours le regard, comme le vrai */
+const EAU_MAT = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, shininess: 220, specular: 0x3E6870});
 EAU_MAT.onBeforeCompile = sh => {
   sh.uniforms.fondEau = {value: FOND_TEX}; sh.uniforms.tEau = VENT.temps;
   sh.vertexShader = "varying vec2 vEauXZ;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n  vEauXZ = (modelMatrix * vec4(transformed, 1.0)).xz;");
