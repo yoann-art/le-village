@@ -833,6 +833,23 @@ export async function verifier(){
       if(surLaTable(t, items).length !== 4) throw new Error(`${surLaTable(t, items).length} objets sur la table au lieu de 4`);
       for(const o of [...autres, t]){ items.splice(items.indexOf(o), 1); removeItemMesh(o.id); }
     }
+    /* sur un tapis (Yo, 12 novembre 2026 : « centrer des objets comme le trône sur les tapis ») : posé près du milieu d'un tapis,
+       un meuble se centre sur lui ; un petit objet aussi */
+    {
+      const {placerDans} = await import("../js/decorer.js");
+      const garde = items.splice(0);                                    // la pièce vidée le temps de l'essai : rien ne gêne le trône
+      const tp = {id: 99030, type: "grandTapis", x: 0, z: 0, rot: 0};
+      if(!placerDans(currentPlace(), tp, 0, 0)) throw new Error("le grand tapis d'essai ne se pose pas");
+      items.push(tp); addItemMesh(tp);
+      placePlayer(tp.x + 2.5, tp.z + 2.5, 0, -1);
+      for(const [j, type] of ["trone", "vase"].entries()){
+        const o = {id: 99031 + j, type, x: 0, z: 0, rot: 0};
+        if(!placerDans(currentPlace(), o, tp.x + .2, tp.z - .15)) throw new Error(`${objet(type).nom} ne se pose pas sur le tapis`);
+        if(o.x !== tp.x || o.z !== tp.z){ items.splice(0, items.length, ...garde); removeItemMesh(tp.id);
+          throw new Error(`${objet(type).nom} n'est pas au milieu du tapis (${o.x}, ${o.z} ; le tapis : ${tp.x}, ${tp.z})`); }
+      }
+      items.splice(0, items.length, ...garde); removeItemMesh(tp.id);
+    }
     /* la petite statue (Yo, 10 novembre 2026 : « elle doit prendre la forme de l'animal ou insecte capturé ») : un bloc brut ;
        « Sculpter » propose les bêtes du carnet ; elle prend la forme de celle qu'on choisit */
     {

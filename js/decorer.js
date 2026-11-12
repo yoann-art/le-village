@@ -82,6 +82,19 @@ function snap(v, half, lim){
   if(lo + 2*half > lim - .3) lo = lim - 2*half;
   return lo + half;
 }
+/* Sur un tapis (Yo, 12 novembre 2026 : « centrer des objets comme le trône sur les tapis ») : posé près du milieu d'un tapis
+   (à moins de .35 P, sur chaque axe à part), le meuble ou le petit objet se centre sur lui ; ailleurs, la grille habituelle */
+const CENTRE_TAPIS = .35;
+function centrerSurTapis(it, x, z){
+  if(MEUBLES[it.type].flat || MEUBLES[it.type].mur || MEUBLES[it.type].plafond || MEUBLES[it.type].fenetre) return;
+  const [w, d] = footOf(it), hw = cur().room.w/2, hd = cur().room.d/2;
+  for(const o of items()){
+    if(o === it || !MEUBLES[o.type].flat || !recouvre(it, o)) continue;
+    if(Math.abs(x - o.x) < CENTRE_TAPIS && Math.abs(o.x) <= hw - w/2 + .001) it.x = o.x;
+    if(Math.abs(z - o.z) < CENTRE_TAPIS && Math.abs(o.z) <= hd - d/2 + .001) it.z = o.z;
+    return;
+  }
+}
 /* Pose le meuble au plus près de (x, z), aligné, toujours entre les murs ; ce qui s'accroche au mur va contre le mur le
    plus proche (le fond ou un côté ; devant, il n'y a pas de mur) et se tourne vers la pièce */
 function settle(it, x, z){
@@ -91,12 +104,14 @@ function settle(it, x, z){
   if(MEUBLES[it.type].dessus){                                      // un petit objet : au quart de P près ; sur une table, à sa hauteur
     it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, Math.round(x * 4) / 4)));
     it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, Math.round(z * 4) / 4)));
-    const t = tableSous(it);
+    let t = tableSous(it);
+    if(!t){ centrerSurTapis(it, x, z); t = tableSous(it); }
     if(t) it.y = MEUBLES[t.type].plateau; else delete it.y;
     return;
   }
   it.x = cm(Math.max(-hw + w/2, Math.min(hw - w/2, snap(x, w/2, hw))));
   it.z = cm(Math.max(-hd + d/2, Math.min(hd - d/2, snap(z, d/2, hd))));
+  centrerSurTapis(it, x, z);
   if(MEUBLES[it.type].fenetre){ const f = fenetrePres(x, z); if(f) surFenetre(it, f); return; }   // le rideau : la fenêtre la plus proche
   if(!MEUBLES[it.type].mur) return;
   const fond = z + hd, gauche = x + hw, droite = hw - x, m = Math.min(fond, gauche, droite);

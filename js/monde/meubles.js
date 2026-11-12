@@ -961,14 +961,16 @@ const PO_REBORD = lathe([[PO.dedans, .27], [PO.rebord - .02, .27], [PO.rebord - 
 const PO_TERRE = new THREE.CylinderGeometry(PO.dedans + .002, PO.dedans + .002, .02, 20);
 const PO_MOTTE = new THREE.SphereGeometry(1, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2);
 const PO_PIERRE = boiteRonde(.15, .13, .07, .035, 1);
-const PO_PIERRE2 = boiteRonde(.12, .12, .07, .035, 1);
 function potMorceaux(c){
-  const o = ombreBois(0, PO.terre + .06), sombre = new THREE.Color(c).multiplyScalar(.7).getHex(), out = [];
-  out.push({geo: PO_COEUR, m: M4(0, 0, 0), c: sombre, ombre: o}, {geo: PO_REBORD, m: M4(0, 0, 0), c, ombre: o});
+  const o = ombreBois(0, PO.terre + .06), out = [], al = aleaMuret(4747);
+  const teinte = () => new THREE.Color(c).multiplyScalar(.93 + al() * .12).getHex();
+  /* le cœur de la couleur des pierres, les pierres jointives (Yo, 12 novembre 2026 : pas de trous entre les pierres) */
+  out.push({geo: PO_COEUR, m: M4(0, 0, 0), c: new THREE.Color(c).multiplyScalar(.95).getHex(), ombre: o}, {geo: PO_REBORD, m: M4(0, 0, 0), c, ombre: o});
   const pente = Math.atan2(PO.haut - PO.bas, PO.h);
-  for(let r = 0; r < 2; r++) for(let k = 0; k < PO.n; k++){                           // deux rangs de pierres, décalés
-    const a = (k + (r ? .5 : 0)) / PO.n * Math.PI * 2, y = r ? .2 : .075, rr = PO.bas + (PO.haut - PO.bas) * y / PO.h + .012;
-    out.push({geo: (k + r) % 3 ? PO_PIERRE : PO_PIERRE2, m: M4(Math.sin(a) * rr, y, Math.cos(a) * rr, -pente, a, 0, 1, r ? .9 : 1.05, 1), c, ombre: o});
+  for(let r = 0; r < 2; r++) for(let k = 0; k < PO.n; k++){                           // deux rangs de pierres, décalés, qui se touchent
+    const a = (k + (r ? .5 : 0)) / PO.n * Math.PI * 2, y = r ? .205 : .075, rr = PO.bas + (PO.haut - PO.bas) * y / PO.h + .012;
+    const large = Math.PI * 2 * rr / PO.n * 1.06 / .15;
+    out.push({geo: PO_PIERRE, m: M4(Math.sin(a) * rr, y, Math.cos(a) * rr, -pente, a, 0, large, r ? 1.02 : 1.06, 1), c: teinte(), ombre: o});
   }
   out.push({geo: PO_TERRE, m: M4(0, PO.terre, 0), c: 0x7A3A22, ombre: o});         // la terre, à plat
   for(const [x, z, s] of [[.06, .04, .022], [-.08, .02, .018], [.01, -.09, .02], [-.03, .09, .016], [.1, -.05, .014], [-.1, -.07, .017]])
@@ -988,14 +990,17 @@ const VS = {col: .3, h: .36};
 const VS_PROFIL = [[0, 0], [.085, 0], [.12, .03], [.145, .08], [.152, .14], [.14, .2], [.11, .25], [.075, .285], [.06, .3]];
 const VS_COEUR = lathe([...VS_PROFIL, [0, .3]], 20);
 const VS_COL = lathe([[.05, .26], [.06, .3], [.062, .318], [.074, .322], [.082, .336], [.08, .352], [.068, .36], [.052, .356], [.046, .34], [.045, .3]], 20);
-const VS_PIERRE = boiteRonde(.105, .088, .04, .026, 1), VS_PIERRE2 = boiteRonde(.085, .08, .04, .026, 1);
+const VS_PIERRE = boiteRonde(.105, .088, .04, .026, 1);
 const VS_RANGS = [[.04, .108, 6], [.11, .148, 8], [.185, .145, 8], [.248, .108, 6]];   // [hauteur, rayon, nombre de pierres]
 function vaseMorceaux(c){
-  const o = ombreBois(0, VS.h), sombre = new THREE.Color(c).multiplyScalar(.7).getHex(), out = [{geo: VS_COEUR, m: M4(0, 0, 0), c: sombre, ombre: o}, {geo: VS_COL, m: M4(0, 0, 0), c, ombre: o}];
+  /* le cœur de la couleur des pierres, les pierres jointives (Yo, 12 novembre 2026 : pas de trous entre les pierres) */
+  const o = ombreBois(0, VS.h), al = aleaMuret(5151), out = [{geo: VS_COEUR, m: M4(0, 0, 0), c: new THREE.Color(c).multiplyScalar(.95).getHex(), ombre: o}, {geo: VS_COL, m: M4(0, 0, 0), c, ombre: o}];
+  const teinte = () => new THREE.Color(c).multiplyScalar(.93 + al() * .12).getHex();
   VS_RANGS.forEach(([y, r, n], k) => {
     const pente = k === 0 ? .5 : k === 3 ? -.55 : k === 1 ? .1 : -.15;            // les pierres suivent le ventre du vase
+    const large = Math.PI * 2 * r / n * 1.08 / .105;                               // assez larges pour se toucher
     for(let j = 0; j < n; j++){ const a = (j + (k % 2 ? .5 : 0)) / n * Math.PI * 2;
-      out.push({geo: (j + k) % 3 ? VS_PIERRE : VS_PIERRE2, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a, 0, 1, 1, 1), c, ombre: o}); }
+      out.push({geo: VS_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a, 0, large, 1.05, 1), c: teinte(), ombre: o}); }
   });
   return out;
 }
@@ -1409,8 +1414,8 @@ const TT_RINCEAU = (() => { const pts = [];                                     
 function tableTailleMorceaux(c){
   const o = ombreBois(0, TT.haut + .4), out = [], al = aleaMuret(9090), T = TT.haut;
   const teinte = k => new THREE.Color(c).multiplyScalar(k * (.94 + al() * .1)).getHex();
+  out.push({geo: TT_BLOC, m: M4(0, T - TT.ep / 2, 0, 0, 0, 0, 1.6, TT.ep, .9), c: teinte(1), ombre: o});   // la dalle, d'un seul bloc (Yo, 12 novembre 2026)
   for(const sx of [-1, 1]){
-    out.push({geo: TT_BLOC, m: M4(sx * .4, T - TT.ep / 2, 0, (al() - .5) * .02, 0, (al() - .5) * .015, .8, TT.ep, .9), c: teinte(1), ombre: o});   // la dalle : deux blocs
     const x = sx * .45;
     out.push({geo: TT_BLOC, m: M4(x, T - TT.ep - .045, 0, 0, 0, 0, .44, .09, .62), c: teinte(.95), ombre: o},            // le chapiteau
       {geo: TT_PILIER, m: M4(x, .38, 0, 0, 0, 0, .34, .4, .5), c: teinte(.95), ombre: o},                                  // le pilier évasé
@@ -1581,8 +1586,12 @@ const EN = {billot: .41, r: .31, fer: 0x6E6466, bois: 0xC8955A, cuir: 0x7A4A3A};
 const EN_CORPS = (() => { const s = new THREE.Shape();                            // le profil de l'enclume (de côté), extrudé
   s.moveTo(-.24, 0); s.lineTo(-.07, 0); s.absarc(0, 0, .07, Math.PI, 0, true); s.lineTo(.26, 0); s.lineTo(.26, .05); s.lineTo(.2, .07);
   s.quadraticCurveTo(.12, .13, .15, .27); s.lineTo(.33, .3); s.lineTo(.33, .43); s.lineTo(-.18, .43);
-  s.quadraticCurveTo(-.33, .43, -.45, .39); s.quadraticCurveTo(-.34, .3, -.19, .3); s.quadraticCurveTo(-.11, .22, -.18, .07); s.lineTo(-.24, .05); s.lineTo(-.24, 0);
+  s.lineTo(-.19, .3); s.quadraticCurveTo(-.11, .22, -.18, .07); s.lineTo(-.24, .05); s.lineTo(-.24, 0);
   return new THREE.ExtrudeGeometry(s, {depth: .2, bevelEnabled: true, bevelThickness: .02, bevelSize: .018, bevelSegments: 2, curveSegments: 10}).translate(0, 0, -.1); })();
+/* la corne : ronde, elle s'affine jusqu'à une pointe, en largeur comme en hauteur (Yo, 12 novembre 2026 : « plus pointu au bout
+   comme l'image ») ; dans le repère du profil, pour se poser avec lui */
+const EN_CORNE = lathe([[0, 0], [1, 0], [.97, .22], [.85, .45], [.62, .68], [.34, .87], [.1, .97], [0, 1]], 16)
+  .rotateZ(Math.PI / 2).scale(.3, .068, .118).translate(-.17, .362, 0);
 const EN_BILLOT = new THREE.CylinderGeometry(EN.r, EN.r * 1.08, EN.billot, 12), EN_BANDE = new THREE.CylinderGeometry(EN.r * 1.06, EN.r * 1.06, .1, 24, 1, true);
 const EN_CERNE = new THREE.TorusGeometry(1, .04, 4, 24);
 function enclumeMorceaux(c){
@@ -1594,7 +1603,7 @@ function enclumeMorceaux(c){
   out.push({geo: EN_BANDE, m: M4(0, B * .55, 0), c: EN.cuir, ombre: o});                                                 // la bande de cuir
   for(let k = 0; k < 8; k++){ const a = k / 8 * Math.PI * 2 + .2;                                                     // ses rivets
     out.push({geo: EB_BOULE, m: M4(Math.sin(a) * EN.r * 1.075, B * .55, Math.cos(a) * EN.r * 1.075, 0, 0, 0, .024, .024, .024), c, ombre: o}); }
-  out.push({geo: EN_CORPS, m: M4(.02, B, -.02, 0, .12, 0, .82, .85, 1.1), c: EN.fer, ombre: (px, py) => .8 + .3 * Math.min(1, (py - B) / .37)});   // l'enclume
+  for(const geo of [EN_CORPS, EN_CORNE]) out.push({geo, m: M4(.02, B, -.02, 0, .12, 0, .82, .85, 1.1), c: EN.fer, ombre: (px, py) => .8 + .3 * Math.min(1, (py - B) / .37)});   // l'enclume, sa corne
   /* le marteau, appuyé contre le billot */
   const hx = .38, hz = .17, a = .32;
   out.push({geo: EB_TIGE, m: M4(hx - Math.sin(a) * .2, .3, hz, 0, 0, a, .028, .48, .028), c: EN.bois, ombre: o},
