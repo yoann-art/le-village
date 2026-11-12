@@ -1015,6 +1015,15 @@ export async function verifier(){
     updateGestes(true); faireGeste();
     if(posture()) throw new Error("il ne se lève pas du banc");
     items.splice(items.indexOf(banc), 1); removeItemMesh(banc.id);
+    /* s'asseoir sur le trône (Yo, 12 novembre 2026 : « Je veux bien que le personnage puisse s'asseoir »), puis se lever */
+    { const trone = {id: 99888, type: "trone", x: 0, z: 0, rot: 0}; items.push(trone); addItemMesh(trone);
+      placePlayer(trone.x, trone.z + 1, 0, -1); updateGestes(true);
+      if(btnG.hidden || !btnG.textContent.includes("S'asseoir")) throw new Error(`près du trône, le bouton dit « ${btnG.textContent} »`);
+      faireGeste();
+      if(posture() !== "assis" || player.position.y < .2) throw new Error(`le personnage ne s'assoit pas sur le trône (y ${player.position.y.toFixed(2)})`);
+      updateGestes(true); faireGeste();
+      if(posture()) throw new Error("il ne se lève pas du trône");
+      items.splice(items.indexOf(trone), 1); removeItemMesh(trone.id); }
     /* la grande table de banquet (objet nouveau) : elle se pose dans la pièce, puis elle est ôtée */
     $("#btn-deco").click(); await wait(200); addMeuble("tableBanquet"); $("#deco-done").click(); await wait(200);
     const banquet = items.find(it => it.type === "tableBanquet");
@@ -3554,6 +3563,8 @@ export async function verifier(){
       }
       tri = 0; des = 0; makeMeuble("enclume").traverse(c => { if(c.isMesh && c.material.visible !== false){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 1 || tri > 9000) throw new Error(`l'enclume : ${des} dessins, ${Math.round(tri)} triangles`);
+      tri = 0; des = 0; makeMeuble("trone").traverse(c => { if(c.isMesh && c.material.visible !== false){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
+      if(des !== 1 || tri > 20000) throw new Error(`le trône : ${des} dessins, ${Math.round(tri)} triangles`);
     }
     place(3); sacAdd("torchere", 1); enMain("torchere"); if(!owned("torche")) sacAdd("torche", 1);
     devant(); $("#btn-act").click();
@@ -3607,7 +3618,7 @@ export async function verifier(){
     const ks = iconesPhoto();
     if(!await attendre(() => ks.every(k => (objet(k).icone || "").includes("ico-photo")), 30000))
       throw new Error(`sans photo : ${ks.filter(k => !(objet(k).icone || "").includes("ico-photo")).join(", ")}`);
-    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau", "enclume"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
+    for(const t of ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "coffreReserve", "coffreCuivre", "chandelle", "chandelleSuif", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau", "enclume", "trone"]) if(!ks.includes(t)) throw new Error(`${objet(t).nom} (refait) n'a pas de photo pour icône`);   // les meubles refaits (chantier de la décoration)
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");

@@ -40,7 +40,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau", "enclume"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir", "fourneau", "enclume", "trone"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1604,6 +1604,63 @@ function enclumeMorceaux(c){
     {geo: EB_BOULE, m: M4(hx + .02, .07, hz + .065, 0, 0, 0, .022, .022, .01), c, ombre: o});
   return out;
 }
+/* Le trône du Château (image de Yo, 12 novembre 2026 : « Voici le trône » ; « Je veux bien que le personnage puisse s'asseoir ») :
+   l'estrade de deux marches de pierres claires jointives et le tapis rouge à bandes dorées qui en descend ; le trône de bois : le
+   haut dossier arrondi (la fleur de lys dorée et ses volutes au sommet), deux montants coiffés d'une bague et d'une boule dorées, le
+   dossier rouge capitonné (quatre boutons dorés) dans son cadre doré, le coussin rouge, les accoudoirs enroulés en volute et leur
+   bande dorée, une fleur dorée et des sabots dorés aux pieds. Le bois prend sa teinte ; le rouge, l'or, la pierre restent. On s'y
+   assoit (gestes.js, SIEGES : l'assise à .62) */
+const TR2 = {marche: .1, assise: .62, rouge: 0xC8301E, or: 0xE3A92C, pierre: 0xE3D2BE};
+const TR2_MONTANT = boiteRonde(.13, 1.02, .13, .025, 2);
+const TR2_DOS = (() => { const s = new THREE.Shape(), l = .4;                      // le haut dossier, son sommet arrondi
+  s.moveTo(-l, 0); s.lineTo(l, 0); s.lineTo(l, .82); s.quadraticCurveTo(l * .55, .86, 0, 1.02); s.quadraticCurveTo(-l * .55, .86, -l, .82); s.lineTo(-l, 0);
+  return new THREE.ExtrudeGeometry(s, {depth: .1, bevelEnabled: true, bevelThickness: .02, bevelSize: .02, bevelSegments: 2, curveSegments: 10}).translate(0, 0, -.05); })();
+const TR2_CADRE = (() => { const s = new THREE.Shape(), l = .3, h = .66;          // le cadre doré du capitonnage
+  s.moveTo(-l, 0); s.lineTo(l, 0); s.lineTo(l, h); s.quadraticCurveTo(0, h + .1, -l, h); s.lineTo(-l, 0);
+  return new THREE.ExtrudeGeometry(s, {depth: .03, bevelEnabled: true, bevelThickness: .012, bevelSize: .012, bevelSegments: 1, curveSegments: 8}); })();
+function troneMorceaux(c){
+  const o = ombreBois(0, 1.7), out = [], al = aleaMuret(1793), OR = TR2.or, RG = TR2.rouge, M = TR2.marche;
+  const pierre = () => new THREE.Color(TR2.pierre).multiplyScalar(.92 + al() * .1).getHex();
+  /* l'estrade : deux marches de pierres jointives */
+  for(const [y, w, d, z0] of [[M / 2, 1.2, 1, 0], [M * 1.5, 1.0, .8, -.08]]){
+    out.push({geo: EB_BOIS, m: M4(0, y, z0, 0, 0, 0, w - .04, M, d - .04), c: TR2.pierre, ombre: o});
+    const n = Math.round(w / .3); for(let k = 0; k < n; k++) for(const sz of [-1, 1])
+      out.push({geo: FN_PIERRE, m: M4(-w / 2 + w / n * (k + .5), y, z0 + sz * (d / 2 - .06), 0, 0, 0, w / n + .01, M + .005, .13), c: pierre(), ombre: o});
+    const m2 = Math.round(d / .3); for(let k = 0; k < m2; k++) for(const sx of [-1, 1])
+      out.push({geo: FN_PIERRE, m: M4(sx * (w / 2 - .06), y, z0 - d / 2 + d / m2 * (k + .5), 0, 0, 0, .13, M + .005, d / m2 + .01), c: pierre(), ombre: o});
+  }
+  /* le tapis rouge qui descend, ses bandes dorées */
+  for(const [y, z, d, vert] of [[2 * M + .006, .2, .26, false], [M + M / 2, .32 + .006, .1, true], [M + .006, .41, .18, false], [M / 2, .5 + .006, .1, true]]){
+    out.push({geo: EB_BOIS, m: vert ? M4(0, y, z, 0, 0, 0, .36, M + .01, .012) : M4(0, y, z, 0, 0, 0, .36, .012, d), c: RG, ombre: () => 1});
+    for(const sx of [-1, 1]) out.push({geo: EB_BOIS, m: vert ? M4(sx * .12, y, z + .004, 0, 0, 0, .03, M + .01, .01) : M4(sx * .12, y + .004, z, 0, 0, 0, .03, .01, d), c: OR, ombre: () => 1});
+  }
+  /* le trône */
+  const y0 = 2 * M, zt = -.12;
+  out.push({geo: EB_BOIS, m: M4(0, y0 + .18, zt, 0, 0, 0, .66, .36, .54), c, ombre: o});                       // le coffre de l'assise
+  for(const sx of [-1, 1]){
+    const x = sx * .37;
+    out.push({geo: EB_BOIS, m: M4(x, y0 + .27, zt + .02, 0, 0, 0, .13, .54, .6), c, ombre: o});                    // les flancs
+    for(const z of [zt + .26, zt - .22]) out.push({geo: EB_BOIS, m: M4(x, y0 + .035, z, 0, 0, 0, .17, .07, .14), c: OR, ombre: o});   // les sabots
+    out.push({geo: TT_LYS, m: M4(x, y0 + .25, zt + .325, 0, 0, 0, .55, .55, .6), c: OR, ombre: () => 1.02});       // la fleur dorée
+    out.push({geo: EB_BOIS, m: M4(x, y0 + .58, zt - .02, 0, 0, 0, .15, .1, .62), c, ombre: o},                    // l'accoudoir
+      {geo: EB_TIGE, m: M4(x, y0 + .55, zt + .29, 0, 0, Math.PI / 2, .09, .15, .09), c, ombre: o},                // sa volute
+      {geo: EB_TIGE, m: M4(x, y0 + .55, zt + .29, 0, 0, Math.PI / 2, .055, .158, .055), c: new THREE.Color(c).multiplyScalar(.85).getHex(), ombre: o},
+      {geo: EB_BOIS, m: M4(x, y0 + .6, zt + .17, 0, 0, 0, .16, .11, .035), c: OR, ombre: o});                      // sa bande dorée
+    out.push({geo: TR2_MONTANT, m: M4(sx * .43, y0 + .81, zt - .28), c, ombre: o},              // les montants
+      {geo: EB_BOIS, m: M4(sx * .43, y0 + 1.34, zt - .28, 0, 0, 0, .17, .06, .17), c: OR, ombre: o},
+      {geo: EB_BOULE, m: M4(sx * .43, y0 + 1.44, zt - .28, 0, 0, 0, .075, .075, .075), c: OR, ombre: o});
+    out.push({geo: TT_RINCEAU, m: M4(sx * .13, y0 + 1.4, zt - .21, 0, sx < 0 ? Math.PI : 0, 0, 1.1, 1.1, 1), c: OR, ombre: () => 1.02});   // les volutes
+  }
+  out.push({geo: TR2_DOS, m: M4(0, y0 + .36, zt - .29), c, ombre: o},                                            // le haut dossier
+    {geo: TR2_CADRE, m: M4(0, y0 + .58, zt - .25, 0, 0, 0, 1, 1, 1), c: OR, ombre: o},                           // son cadre doré
+    {geo: TR2_CADRE, m: M4(0, y0 + .61, zt - .225, 0, 0, 0, .86, .9, 1.4), c: RG, ombre: o},                       // le capitonnage
+    {geo: TT_LYS, m: M4(0, y0 + 1.36, zt - .225, 0, 0, 0, 1.15, 1.15, 1), c: OR, ombre: () => 1.02});           // la fleur de lys du sommet
+  for(const [x, y] of [[0, .82], [-.12, .97], [.12, .97], [0, 1.1]]) out.push({geo: EB_BOULE, m: M4(x, y0 + y, zt - .17, 0, 0, 0, .026, .026, .02), c: OR, ombre: o});   // les boutons
+  for(const [x, y, a] of [[-.06, .9, .8], [.06, .9, -.8], [-.06, 1.04, -.8], [.06, 1.04, .8]]) out.push({geo: EB_BOIS, m: M4(x, y0 + y, zt - .178, 0, 0, a, .006, .2, .006), c: new THREE.Color(RG).multiplyScalar(.8).getHex(), ombre: o});   // les plis du capiton
+  out.push({geo: boiteRonde(.6, .12, .52, .05, 2), m: M4(0, TR2.assise - .06, zt + .04), c: RG, ombre: o},          // le coussin
+    {geo: EB_BOIS, m: M4(0, TR2.assise - .13, zt + .3, 0, 0, 0, .62, .035, .03), c: OR, ombre: o});
+  return out;
+}
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -2381,18 +2438,8 @@ const BUILD = {
   enclume(g, m){                                                                     // l'enclume d'après l'image de Yo, un dessin
     g.add(modeleBois("enclume", m, enclumeMorceaux));
   },
-  trone(g, m){
-    g.add(part(G.box, C.stone, 1.2, .16, 1, 0, .08, 0));                               // estrade
-    g.add(part(G.box, m, .8, .36, .6, 0, .34, .05));                                  // base
-    g.add(part(G.box, m, .8, 1.05, .14, 0, 1.0, -.26));                               // haut dossier
-    g.add(part(G.head, m, 1.7, .9, .6, 0, 1.52, -.26));                               // dossier arrondi
-    g.add(part(G.box, C.red, .66, .1, .5, 0, .57, .08));                               // coussin
-    g.add(part(G.box, C.red, .6, .72, .04, 0, 1.0, -.18));                             // dossier rembourré
-    for(const x of [-.38, .38]){
-      g.add(part(G.box, m, .1, .26, .52, x, .7, .05));                                // accoudoirs
-      g.add(part(G.head, C.gold, .45, .45, .45, x, .85, .3));                          // pommeaux dorés
-    }
-    g.add(part(G.head, C.gold, .6, .6, .6, 0, 1.75, -.26));                            // ornement doré
+  trone(g, m){                                                                       // le trône d'après l'image de Yo, un dessin ; on s'y assoit
+    g.add(modeleBois("trone", m, troneMorceaux));
   }
 };
 /* Les petites lumières se touchent mal du doigt (la torchère murale est petite et haut sur le mur) : une boîte
