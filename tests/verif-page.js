@@ -151,7 +151,7 @@ export async function verifier(){
     const { recettesPour } = await import("../js/ateliers.js");
     const offertes = recettesPour(forge).map(r => r.out);
     if(offertes.includes("lampadaire")) throw new Error("l'enclume propose encore le lampadaire");
-    if(!offertes.includes("lustre")) throw new Error("l'enclume ne propose plus le lustre");
+    if(offertes.includes("lustre") || !PLUS_TARD.has("lustre")) throw new Error("l'enclume propose encore le lustre (gardé pour plus tard, Yo, 12 novembre 2026)");
     return `${offertes.length} recettes à l'enclume, sans le lampadaire, qui reste dans le jeu pour les parties en cours ; le brasero se fabrique (${FABRIQUE_A.brasero})`;
   });
   await etape("Le petit caillou (image de Yo) : une pierre à facettes, l'herbe et ses pousses autour ; sur le sable, sans herbe", async () => {
@@ -3684,8 +3684,9 @@ export async function verifier(){
   });
   /* « 🎁 Tous les objets » (Yo, 10 novembre 2026 : pour les essayer sans les fabriquer) : un de chaque objet qui se fabrique */
   await etape("Tous les objets d'un coup, pour les essayer", async () => {
-    const {donnerTout} = await import("../js/performance.js"), {MEUBLES, FABRIQUE_A} = await import("../js/donnees.js");
-    const {recus, manque} = donnerTout(), types = Object.keys(MEUBLES).filter(k => FABRIQUE_A[k] && !MEUBLES[k].plan);
+    const {donnerTout} = await import("../js/performance.js"), {MEUBLES, FABRIQUE_A, PLUS_TARD} = await import("../js/donnees.js");
+    const {recus, manque} = donnerTout(), types = Object.keys(MEUBLES).filter(k => FABRIQUE_A[k] && !MEUBLES[k].plan && !PLUS_TARD.has(k));   // pas ceux gardés pour plus tard
+    if(recus.some(k => PLUS_TARD.has(k))) throw new Error(`🎁 donne un objet gardé pour plus tard : ${recus.filter(k => PLUS_TARD.has(k)).join(", ")}`);
     const sans = types.filter(k => owned(k) < 1 && !manque.includes(k));
     if(sans.length) throw new Error(`pas donnés : ${sans.join(", ")}`);
     if(donnerTout().recus.length) throw new Error("touché deux fois, il redonne des objets qu'on a déjà");
@@ -3694,6 +3695,21 @@ export async function verifier(){
   });
   /* la remise à neuf (Yo, 10 novembre 2026 : « garde uniquement les plans de travail et les coffres vides ») : sur la partie
      d'essai, à la fin (elle vide la décoration) */
+  await etape("Le lustre et le lampadaire retirés de la partie (Yo, 12 novembre 2026), sans rendre leur prix ; les chandelles du lustre reviennent", async () => {
+    const {retirerLustreLampadaire} = await import("../js/remise.js"), {sacAdd: ajouter} = await import("../js/regles.js");
+    const b = state.buildings.find(v => v.deco && v.deco.items) || state.buildings[0];
+    if(!b.deco) b.deco = {items: [], next: 1};
+    b.deco.items.push({id: 99777, type: "lustre", x: 0, z: 0, rot: 0, bougie: "chandelleSuif", chandelles: 2});
+    const j = map.obj.findIndex((o, k) => !o && k > 4000);
+    setObj(j, "lampadaire"); ajouter("lustre", 1); ajouter("lampadaire", 1);
+    const place = state.sac.findIndex(it => it && !OUTILS[it.k] && it.k !== "chandelleSuif" && it.k !== "cuivre"); if(place >= 0) state.sac.splice(place, 1);   // de la place pour les chandelles
+    const c0 = owned("chandelleSuif"), cu0 = owned("cuivre");
+    const r = retirerLustreLampadaire();
+    if(owned("lustre") || owned("lampadaire") || map.obj[j] || state.buildings.some(v => v.deco && v.deco.items.some(it => it.type === "lustre"))) throw new Error("il reste un lustre ou un lampadaire");
+    if(owned("chandelleSuif") !== c0 + 2) throw new Error(`les chandelles du lustre ne reviennent pas (${owned("chandelleSuif") - c0})`);
+    if(owned("cuivre") !== cu0) throw new Error("le prix du lustre a été rendu");
+    return `${r.n} retirés, ${r.chandelles} chandelles revenues, rien d'autre rendu`;
+  });
   await etape("La remise à neuf de la décoration : seuls les plans de travail et les coffres, vides", async () => {
     const {remiseANeuf} = await import("../js/remise.js"), {MEUBLES} = await import("../js/donnees.js");
     const r = remiseANeuf();

@@ -5,9 +5,10 @@
    les façades sont retirés, avec ce qui était posé dedans (chandelles, bûches, fleurs, poissons…) ; ceux du sac et des cases
    rapides aussi ; les plans de travail et les coffres restent, les coffres vidés de tout leur contenu ; les sols et les murs
    posés restent. Le bouton 🎁 (performance.js) repart de zéro : il redonne un exemplaire de chaque objet, une seule fois. */
-import { MEUBLES } from "./donnees.js";
+import { MEUBLES, garniDe, garniRendu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { map, setObj } from "./monde/ile.js";
+import { addOwned } from "./regles.js";
 
 const garder = it => MEUBLES[it.type] && (MEUBLES[it.type].plan || it.type === "coffre" || it.reserve);
 const decoration = k => !!MEUBLES[k] && !MEUBLES[k].plan && k !== "coffre";
@@ -32,4 +33,30 @@ export function remiseANeuf(){
 if(!state.remiseNeuve){
   if(state.buildings.length) remiseANeuf();
   state.remiseNeuve = 1; save();
+}
+
+/* Le lustre et le lampadaire retirés de la partie (Yo, 12 novembre 2026 : « Retire le lustre du jeu car le rendu visuel dans le
+   jeu n'est pas beau comme on ne voit pas le plafond dans les pièces » ; « Retire également le lampadaire de la partie en cours » ;
+   « Retire sans rien me rendre ») : gardés pour une mise à jour ou un événement (plusTard, donnees.js). Une fois : ceux des
+   pièces, de l'île, du sac, des cases rapides et des coffres sont retirés, sans rendre leur prix ; les chandelles posées dans un
+   lustre reviennent (dans le sac, sinon un coffre). Rend ce qui a été retiré (pour la vérification) */
+export const RETIRES = ["lustre", "lampadaire"];
+export function retirerLustreLampadaire(){
+  let n = 0, chandelles = 0;
+  const part = k => RETIRES.includes(k);
+  for(const b of state.buildings) if(b.deco && b.deco.items){
+    for(const it of b.deco.items) if(part(it.type)){ n++; const g = garniDe(it.type, it); if(g){ const c = garniRendu(it.type, it); addOwned(g, c); chandelles += c; } }
+    b.deco.items = b.deco.items.filter(it => !part(it.type));
+  }
+  for(let i = 0; i < map.obj.length; i++) if(part(map.obj[i])){ setObj(i, null); n++; }
+  const vider = l => l.forEach((it, j) => { if(it && part(it.k)){ n += it.n || 1; l[j] = null; } });
+  vider(state.barre);
+  for(const co of state.coffres) co.items = co.items.filter(it => { if(it && part(it.k)){ n += it.n || 1; return false; } return true; });
+  state.sac = state.sac.filter(it => { if(it && part(it.k)){ n += it.n || 1; return false; } return true; });
+  if(part(state.main)) state.main = null;
+  return {n, chandelles};
+}
+if(!state.sansLustre){
+  if(state.buildings.length) retirerLustreLampadaire();
+  state.sansLustre = 1; save();
 }

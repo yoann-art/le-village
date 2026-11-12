@@ -1104,8 +1104,8 @@ export const ATELIERS = {
     /* Gardés pour une mise à jour ou un événement (choix de Yo, 7 novembre 2026, page « Les objets de l'île ») : plus
        proposés à l'enclume ni au catalogue ; ceux déjà fabriqués ou posés dans une partie en cours restent (la recette
        reste ici, pour que le jeu les reconnaisse comme fabriqués : FABRIQUE_A, rangés dans le sac) */
-    {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1, plusTard:true},
-    {out:"lustre", in:{cuivre:3}, t:90, lvl:1},                              // vide : cinq chandelles s'y posent ensuite (Yo, 9 novembre 2026)
+    {out:"lampadaire", in:{cuivre:2, verre:1, planche:2}, t:60, lvl:1, plusTard:true},   // gardé pour une mise à jour ou un événement (Yo, 12 novembre 2026)
+    {out:"lustre", in:{cuivre:3}, t:90, lvl:1, plusTard:true},               // vide : cinq chandelles s'y posent ensuite (Yo, 9 novembre 2026) ; gardé pour une mise à jour ou un événement (Yo, 12 novembre 2026 : on ne voit pas le plafond des pièces)
     {out:"chandelier", in:{argent:3, charbon:1}, t:60, lvl:1}
   ]},
   chateau:{nom:"Trône", le:"le trône", emoji:"👑", meuble:"trone", cost:{planche:20, or:10}, titre:"Grands chantiers",

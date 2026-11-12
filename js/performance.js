@@ -23,7 +23,7 @@ import { toast, openSheet, closeSheet, wrap } from "./interface.js";
 import { player } from "./monde/personnage.js";
 import { isInside, currentPlace } from "./lieux.js";
 import { vuePremiere } from "./vue.js";
-import { saison, MEUBLES, FABRIQUE_A } from "./donnees.js";
+import { saison, MEUBLES, FABRIQUE_A, PLUS_TARD } from "./donnees.js";
 import { addOwned, owned } from "./regles.js";
 import { state, save } from "./sauvegarde.js";
 import { syncBarre } from "./barre.js";
@@ -314,7 +314,7 @@ const GARNITURE = {chandelleSuif: 10, luciole: 3, torche: 2, bois: 6};
 export function donnerTout(){
   const recus = [], manque = [], deja = state.cadeaux || (state.cadeaux = {});
   for(const k of Object.keys(MEUBLES)){
-    if(!FABRIQUE_A[k] || MEUBLES[k].plan || deja[k]) continue;
+    if(!FABRIQUE_A[k] || MEUBLES[k].plan || PLUS_TARD.has(k) || deja[k]) continue;   // pas ceux gardés pour plus tard (le lustre, le lampadaire)
     if(addOwned(k, 1).reste) manque.push(k); else { recus.push(k); deja[k] = 1; }
   }
   if(!deja.garniture){ let ok = true; for(const [k, n] of Object.entries(GARNITURE)){ const v = n - owned(k); if(v > 0 && addOwned(k, v).reste){ manque.push(k); ok = false; } } if(ok) deja.garniture = 1; }
