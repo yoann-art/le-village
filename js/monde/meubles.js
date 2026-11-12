@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille", "comptoir"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1435,6 +1435,70 @@ function tableTailleMorceaux(c){
     out.push({geo: TT_ECLAT, m: M4(x, T + s * .6, z, al() * 3, al() * 3, al() * 3, s, s * .7, s), c: TT.clair, ombre: o});
   return out;
 }
+/* Le comptoir du Marché (image de Yo, 12 novembre 2026 : « Voici le comptoir du marché ») : un coffre rouge sur son socle
+   mouluré, une colonne ronde à chaque coin et ses bagues dorées, trois panneaux crème aux coins coupés sur le devant (la fleur de
+   lys dorée en relief au milieu), un épais plateau de deux grosses planches ; dessus, la balance dorée (socle rouge sombre, fléau
+   en volutes, chaînes, deux plateaux), deux piles de pièces d'or et une pièce debout, la caisse cloutée de pommes (celles du
+   pommier de l'île). Le plateau prend la teinte du bois ; le rouge, le crème et l'or restent. Le dessus du plateau à .92 */
+const CP = {haut: .92, corps: .82, rouge: 0xC0392B, rougeSombre: 0x8E2A20, creme: 0xF3DDB5, or: 0xE3A92C, caisse: 0xC98A4A, pomme: 0xC8281E, feuille: 0x6E9A3A, queue: 0x7A4A24};
+const CP_PANNEAU = (() => { const s = new THREE.Shape(), w = .22, h = .2, k = .05;   // un panneau aux coins coupés
+  s.moveTo(-w + k, -h); s.lineTo(w - k, -h); s.lineTo(w, -h + k); s.lineTo(w, h - k); s.lineTo(w - k, h); s.lineTo(-w + k, h); s.lineTo(-w, h - k); s.lineTo(-w, -h + k); s.lineTo(-w + k, -h);
+  return new THREE.ExtrudeGeometry(s, {depth: .02, bevelEnabled: true, bevelThickness: .008, bevelSize: .008, bevelSegments: 1}); })();
+const CP_COUPE = lathe([[0, 0], [.03, 0], [.085, .025], [.1, .045], [.092, .048], [.075, .03], [0, .022]], 16);
+const CP_FLEAU = (() => { const P = [[-.22, .02], [-.24, .06], [-.2, .07], [-.12, .03], [0, .045], [.12, .03], [.2, .07], [.24, .06], [.22, .02]].map(([x, y]) => new THREE.Vector3(x, y, 0));
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 40, .014, 6, false); })();
+const CP_PIECE = new THREE.CylinderGeometry(1, 1, 1, 16), CP_PLATEAU = boiteRonde(2.22, .1, .45, .03, 2);
+function comptoirMorceaux(c){
+  const o = ombreBois(0, CP.haut), out = [], al = aleaMuret(2026), T = CP.haut, C0 = CP.corps, R = CP.rouge, OR = CP.or;
+  out.push({geo: EB_BOIS, m: M4(0, .06, 0, 0, 0, 0, 2.06, .12, .82), c: R, ombre: o},                                 // le socle mouluré
+    {geo: EB_BOIS, m: M4(0, .14, 0, 0, 0, 0, 1.94, .05, .74), c: new THREE.Color(R).multiplyScalar(1.06).getHex(), ombre: o},
+    {geo: EB_BOIS, m: M4(0, (.16 + C0) / 2, 0, 0, 0, 0, 1.86, C0 - .16, .64), c: R, ombre: o});                        // le coffre
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]){                                                                   // les colonnes et leurs bagues
+    const x = sx * .95, z = sz * .34;
+    out.push({geo: EB_BOIS, m: M4(x, .17, z, 0, 0, 0, .19, .07, .19), c: R, ombre: o},
+      {geo: EB_TIGE, m: M4(x, (.2 + C0) / 2, z, 0, 0, 0, .07, C0 - .2, .07), c: new THREE.Color(R).multiplyScalar(1.05).getHex(), ombre: o});
+    for(const y of [.23, .5, C0 - .04]) out.push({geo: EB_TIGE, m: M4(x, y, z, 0, 0, 0, .085, .045, .085), c: OR, ombre: o});
+  }
+  [-.6, 0, .6].forEach((x, k) => {                                                                                     // les trois panneaux crème
+    out.push({geo: CP_PANNEAU, m: M4(x, .5, .32, 0, 0, 0, .98, .95, 1), c: CP.creme, ombre: o},
+      {geo: CP_PANNEAU, m: M4(x, .5, .345, 0, 0, 0, .76, .73, .6), c: new THREE.Color(CP.creme).multiplyScalar(1.04).getHex(), ombre: o});
+    if(k < 2) out.push({geo: EB_BOIS, m: M4(x + .3, .5, .33, 0, 0, 0, .05, .56, .03), c: new THREE.Color(R).multiplyScalar(.9).getHex(), ombre: o});
+  });
+  out.push({geo: TT_LYS, m: M4(0, .5, .36, 0, 0, 0, 1.25, 1.25, 1), c: 0xE0A040, ombre: () => 1.02});                     // la fleur de lys dorée
+  for(const sz of [-1, 1]) out.push({geo: CP_PLATEAU, m: M4((al() - .5) * .01, T - .05, sz * .225), c: new THREE.Color(c).multiplyScalar(.95 + al() * .1).getHex(), ombre: o});   // le plateau
+  /* la balance dorée, à gauche */
+  const xb = -.62, zb = -.06;
+  out.push({geo: EB_BOIS, m: M4(xb, T + .02, zb, 0, 0, 0, .3, .04, .24), c: CP.rougeSombre, ombre: o},
+    {geo: lathe([[0, 0], [.09, 0], [.085, .025], [.04, .045], [.025, .07], [0, .07]], 16), m: M4(xb, T + .04, zb), c: OR, ombre: o},
+    {geo: EB_TIGE, m: M4(xb, T + .26, zb, 0, 0, 0, .022, .4, .022), c: OR, ombre: o},
+    {geo: EB_TIGE, m: M4(xb, T + .2, zb, 0, 0, 0, .032, .03, .032), c: OR, ombre: o},
+    {geo: EB_BOULE, m: M4(xb, T + .5, zb, 0, 0, 0, .035, .035, .035), c: OR, ombre: o},
+    {geo: EB_BOIS, m: M4(xb, T + .43, zb, 0, 0, 0, .07, .07, .06), c: OR, ombre: o},
+    {geo: CP_FLEAU, m: M4(xb, T + .41, zb), c: OR, ombre: o});
+  for(const s of [-1, 1]){ const xp = xb + s * .22;                                                                  // les chaînes, les plateaux
+    for(const d of [-1, 1]) out.push({geo: EB_TIGE, m: M4(xp + d * .035, T + .32, zb, 0, 0, -d * .2, .005, .18, .005), c: OR, ombre: o});
+    out.push({geo: CP_COUPE, m: M4(xp, T + .2, zb), c: OR, ombre: o}); }
+  /* les pièces d'or : deux piles, une pièce debout */
+  for(let k = 0; k < 5; k++) out.push({geo: CP_PIECE, m: M4(.0 + (al() - .5) * .006, T + .01 + k * .02, -.08, 0, al(), 0, .055, .018, .055), c: OR, ombre: o});
+  for(let k = 0; k < 3; k++) out.push({geo: CP_PIECE, m: M4(-.07 + (al() - .5) * .006, T + .01 + k * .02, .04, 0, al(), 0, .055, .018, .055), c: OR, ombre: o});
+  out.push({geo: CP_PIECE, m: M4(.09, T + .056, .06, Math.PI / 2, 0, .3, .055, .018, .055), c: new THREE.Color(OR).multiplyScalar(1.05).getHex(), ombre: o},
+    {geo: TT_LYS, m: M4(.09 + .0, T + .056, .06 + .011, 0, -.3 * 0, 0, .45, .45, .5), c: new THREE.Color(OR).multiplyScalar(.85).getHex(), ombre: o});
+  /* la caisse de pommes, à droite */
+  const xc = .62, zc = -.1, cw = .5, cd = .34, ch = .2;
+  for(const s of [-1, 1]){
+    for(const y of [.05, .14]) out.push({geo: EB_BOIS, m: M4(xc, T + y, zc + s * cd / 2, 0, 0, 0, cw, .07, .025), c: CP.caisse, ombre: o});    // les lattes
+    for(const t of [-1, 1]) out.push({geo: EB_BOIS, m: M4(xc + s * (cw / 2 - .02), T + ch / 2, zc + t * (cd / 2 - .005), 0, 0, 0, .05, ch, .05), c: new THREE.Color(CP.caisse).multiplyScalar(.92).getHex(), ombre: o});
+    out.push({geo: EB_BOIS, m: M4(xc + s * (cw / 2 - .02), T + ch / 2, zc, 0, 0, 0, .025, ch - .02, cd), c: CP.caisse, ombre: o});
+    for(const [x, y] of [[-.21, .05], [-.21, .15], [.21, .05], [.21, .15]]) out.push({geo: EB_BOULE, m: M4(xc + x, T + y, zc + s * (cd / 2 + .014), 0, 0, 0, .014, .014, .008), c: OR, ombre: o});
+  }
+  out.push({geo: EB_BOIS, m: M4(xc, T + .02, zc, 0, 0, 0, cw - .04, .02, cd - .02), c: new THREE.Color(CP.caisse).multiplyScalar(.85).getHex(), ombre: o});
+  for(const [x, y, z] of [[-.13, .2, -.06], [0, .21, -.07], [.13, .2, -.05], [-.07, .21, .07], [.07, .22, .06], [.0, .29, .0], [-.12, .28, .02], [.12, .28, -.01]]){   // les pommes
+    out.push({geo: EB_BOULE, m: M4(xc + x, T + y, zc + z, 0, 0, 0, .068, .062, .068), c: new THREE.Color(CP.pomme).multiplyScalar(.92 + al() * .14).getHex(), ombre: o},
+      {geo: EB_TIGE, m: M4(xc + x, T + y + .065, zc + z, (al() - .5) * .5, 0, (al() - .5) * .5, .006, .04, .006), c: CP.queue, ombre: o});
+    if(al() < .4) out.push({geo: EB_BOULE, m: M4(xc + x + .03, T + y + .06, zc + z, 0, al() * 3, .5, .035, .008, .018), c: CP.feuille, ombre: o});
+  }
+  return out;
+}
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -2200,19 +2264,8 @@ const BUILD = {
   tableTaille(g, m){                                                                 // la table de taille d'après l'image de Yo, un dessin
     g.add(modeleBois("tableTaille", m, tableTailleMorceaux));
   },
-  comptoir(g, m){
-    g.add(part(G.box, m, 2.1, .84, .72, 0, .42, 0));                                  // caisse du comptoir
-    g.add(part(G.box, C.wood, 2.2, .08, .85, 0, .88, 0));                               // plateau
-    for(const x of [-.7, 0, .7]) g.add(part(G.box, C.cream, .5, .5, .02, x, .45, .37)); // panneaux de façade
-    g.add(part(G.cyl, C.metal, .05, .5, .05, -.55, 1.17, -.1));                         // balance : pied, fléau, plateaux
-    g.add(part(G.box, C.metal, .7, .03, .03, -.55, 1.42, -.1));
-    for(const x of [-.85, -.25]){
-      g.add(part(G.cyl, C.metal, .01, .22, .01, x, 1.31, -.1));
-      g.add(part(G.cyl, C.gold, .26, .03, .26, x, 1.2, -.1));
-    }
-    g.add(part(G.box, C.wood, .5, .25, .4, .55, 1.045, -.05));                          // cagette de pommes
-    for(const [x,z] of [[.45,-.12],[.62,-.1],[.5,.04],[.66,.05]]) g.add(part(G.head, C.red, .45, .45, .45, x, 1.2, z));
-    for(let k = 0; k < 3; k++) g.add(part(G.cyl, C.gold, .14, .03, .14, .05, .935 + k * .03, .2));   // pièces empilées
+  comptoir(g, m){                                                                    // le comptoir d'après l'image de Yo, un dessin
+    g.add(modeleBois("comptoir", m, comptoirMorceaux));
   },
   fourneau(g, m){
     g.add(part(G.box, m, 1.4, .5, .78, 0, .25, 0));                                   // socle de pierre
