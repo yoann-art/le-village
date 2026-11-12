@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco", "tableTaille"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1386,6 +1386,55 @@ const AD_DESSINS = mergeGeos([
   motif(false, .3, .2, M4(.2, EB.haut + .014, .27, -Math.PI / 2, 0, 0)),                                                // ceux de l'étoffe déroulée
   motif(true, .07, .07, M4(.62, EB.haut + .08, -.12 + .098, 0, 0, 0))                                                   // la fleur de lys du pot
 ]);
+/* La table de taille de la Carrière (image de Yo, 12 novembre 2026 : « Voici la table de taille ») : toute de pierre, une épaisse
+   dalle de deux blocs aux bords taillés, deux piliers évasés vers le bas sur leur socle, leur chapiteau, une fleur de lys en relief
+   sur le devant de chacun ; dessus, le bloc de pierre claire en cours de taille, un rinceau sculpté en relief sur sa face, le maillet
+   de bois cerclé, le ciseau (lame, virole dorée, manche), des éclats clairs. La pierre de la table prend sa teinte ; le bloc clair,
+   le bois et le métal gardent leurs couleurs. Le dessus de la dalle à .78 */
+const TT = {haut: .78, ep: .18, clair: 0xE8D4BC, relief: 0xE2CDB2, bois: 0xC0622A, cercle: 0x8A3A1C, fer: 0x9CA0A6, or: 0xD9A441};
+const TT_BLOC = boiteRonde(1, 1, 1, .12, 1), TT_PILIER = new THREE.CylinderGeometry(Math.SQRT1_2, Math.SQRT1_2 * 1.3, 1, 4).rotateY(Math.PI / 4);
+const TT_ECLAT = new THREE.TetrahedronGeometry(1, 0);
+const TT_LYS = (() => { const k = .0011, P = (x, y) => [(x - 64) * k, (64 - y) * k], s = new THREE.Shape();   // la fleur de lys, en relief
+  const m = (x, y) => s.moveTo(...P(x, y)), b = (a, c, d, e, f, g) => s.bezierCurveTo(...P(a, c), ...P(d, e), ...P(f, g));
+  m(64, 8); b(86, 34, 82, 62, 70, 74); s.lineTo(...P(72, 72));
+  b(90, 40, 122, 52, 106, 80); b(98, 70, 86, 72, 78, 84); s.lineTo(...P(86, 86)); s.lineTo(...P(86, 94)); s.lineTo(...P(72, 94));
+  s.lineTo(...P(66, 122)); s.lineTo(...P(62, 122)); s.lineTo(...P(56, 94)); s.lineTo(...P(42, 94)); s.lineTo(...P(42, 86)); s.lineTo(...P(50, 84));
+  b(42, 72, 30, 70, 22, 80); b(6, 52, 38, 40, 56, 72); s.lineTo(...P(58, 74)); b(46, 62, 42, 34, 64, 8);
+  return new THREE.ExtrudeGeometry(s, {depth: .018, bevelEnabled: true, bevelThickness: .008, bevelSize: .006, bevelSegments: 2, curveSegments: 6}); })();
+const TT_RINCEAU = (() => { const pts = [];                                       // le rinceau : une tige qui s'enroule en volute
+  for(let k = 0; k <= 30; k++){ const t = k / 30, a = t * Math.PI * 2.6, r = .11 * (1 - t * .78);
+    pts.push(new THREE.Vector3(-.1 + t * .16 + Math.cos(a + Math.PI) * r * t, -.06 + Math.sin(a) * r * t + t * .06, 0)); }
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, .016, 6, false); })();
+function tableTailleMorceaux(c){
+  const o = ombreBois(0, TT.haut + .4), out = [], al = aleaMuret(9090), T = TT.haut;
+  const teinte = k => new THREE.Color(c).multiplyScalar(k * (.94 + al() * .1)).getHex();
+  for(const sx of [-1, 1]){
+    out.push({geo: TT_BLOC, m: M4(sx * .4, T - TT.ep / 2, 0, (al() - .5) * .02, 0, (al() - .5) * .015, .8, TT.ep, .9), c: teinte(1), ombre: o});   // la dalle : deux blocs
+    const x = sx * .45;
+    out.push({geo: TT_BLOC, m: M4(x, T - TT.ep - .045, 0, 0, 0, 0, .44, .09, .62), c: teinte(.95), ombre: o},            // le chapiteau
+      {geo: TT_PILIER, m: M4(x, .38, 0, 0, 0, 0, .34, .4, .5), c: teinte(.95), ombre: o},                                  // le pilier évasé
+      {geo: TT_BLOC, m: M4(x, .13, 0, 0, 0, 0, .5, .1, .68), c: teinte(.92), ombre: o},                                    // le socle, deux marches
+      {geo: TT_BLOC, m: M4(x, .045, 0, 0, 0, 0, .58, .09, .76), c: teinte(.88), ombre: o},
+      {geo: TT_LYS, m: M4(x, .38, .287, -.19, 0, 0, .9, .9, 1), c: TT.relief, ombre: () => 1.08});   // la fleur de lys
+  }
+  /* le bloc clair en cours de taille, ses facettes, le rinceau sur sa face */
+  const yb = T + .19;
+  out.push({geo: TT_BLOC, m: M4(-.02, yb, -.12, 0, .05, 0, .56, .38, .42), c: TT.clair, ombre: o},
+    {geo: TT_BLOC, m: M4(-.16, yb + .12, -.14, .12, .05, .25, .26, .16, .4), c: new THREE.Color(TT.clair).multiplyScalar(.96).getHex(), ombre: o},   // ses facettes brutes
+    {geo: TT_RINCEAU, m: M4(.05, yb - .01, -.12 + .21, 0, .05, 0, 1.7, 1.7, 1.4), c: TT.relief, ombre: (px, py) => .92 + (py - yb) * .8});
+  for(const [x, y, a] of [[-.06, -.06, .5], [.0, .0, .9], [-.11, .02, .2], [.05, -.1, 1.2]])   // ses feuilles
+    out.push({geo: EB_BOULE, m: M4(.05 + x * 1.6, yb - .01 + y * 1.6, -.12 + .215, 0, .05, a, .07, .024, .016), c: TT.relief, ombre: () => .98});
+  /* le maillet, à gauche ; le ciseau, à droite */
+  out.push({geo: EB_TIGE, m: M4(-.55, T + .1, -.12, Math.PI / 2, .5, 0, .1, .22, .1), c: TT.bois, ombre: o});
+  for(const s of [-1, 1]) out.push({geo: EB_TIGE, m: M4(-.55 + s * Math.sin(.5) * .07, T + .1, -.12 + s * Math.cos(.5) * .07, Math.PI / 2, .5, 0, .104, .025, .104), c: TT.cercle, ombre: o});
+  out.push({geo: EB_TIGE, m: M4(-.42, T + .04, .05, Math.PI / 2, -1, 0, .032, .34, .032), c: 0xD98A3A, ombre: o});
+  out.push({geo: EB_BOIS, m: M4(.3, T + .015, .18, 0, .5, 0, .14, .025, .045), c: TT.fer, ombre: () => 1},
+    {geo: EB_TIGE, m: M4(.39, T + .03, .13, Math.PI / 2, -1.07, 0, .028, .04, .028), c: TT.or, ombre: o},
+    {geo: EB_TIGE, m: M4(.5, T + .032, .07, Math.PI / 2, -1.07, 0, .032, .2, .032), c: TT.bois, ombre: o});
+  for(const [x, z, s] of [[-.32, .22, .03], [-.25, .3, .02], [.05, .18, .03], [.12, .26, .02], [.0, .3, .015], [.3, -.15, .025], [.4, -.22, .018], [.22, -.3, .02]])   // les éclats clairs
+    out.push({geo: TT_ECLAT, m: M4(x, T + s * .6, z, al() * 3, al() * 3, al() * 3, s, s * .7, s), c: TT.clair, ombre: o});
+  return out;
+}
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -2148,15 +2197,8 @@ const BUILD = {
     g.add(modeleBois("atelierDeco", m, atelierMorceaux));
     const d = new THREE.Mesh(AD_DESSINS, AD_MOTIFS); d.castShadow = false; g.add(d);
   },
-  tableTaille(g, m){
-    g.add(part(G.box, m, 1.6, .16, .85, 0, .6, 0));                                   // dalle
-    for(const x of [-.55, .55]) g.add(part(G.box, m, .32, .52, .7, x, .26, 0));        // pieds en pierre
-    g.add(part(G.box, C.stone, .42, .38, .42, -.3, .87, 0));                            // bloc en cours de taille
-    g.add(part(G.box, C.metal, .04, .04, .3, .2, .7, .15));                             // ciseau
-    const head = part(G.cyl, C.wood, .16, .26, .16, .45, .76, -.05);                   // maillet
-    head.rotation.z = Math.PI/2; g.add(head);
-    g.add(part(G.box, C.light, .05, .05, .32, .45, .72, .12));
-    for(const [x,z] of [[.1,-.25],[-.05,.3],[.62,.28]]) g.add(part(G.dode, C.stone2, .1, .1, .1, x, .72, z));   // éclats
+  tableTaille(g, m){                                                                 // la table de taille d'après l'image de Yo, un dessin
+    g.add(modeleBois("tableTaille", m, tableTailleMorceaux));
   },
   comptoir(g, m){
     g.add(part(G.box, m, 2.1, .84, .72, 0, .42, 0));                                  // caisse du comptoir
