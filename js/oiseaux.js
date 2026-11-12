@@ -17,7 +17,7 @@
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { foret, foretObj, arbreEn, W as WF } from "./monde/foret.js";
-import { G, part } from "./monde/formes.js";
+import { G, part, partagerFormes } from "./monde/formes.js";
 import { OISEAUX, OU_OISEAU, HEURES, PECHE, OUTILS, B } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, sizeOf, porte } from "./regles.js";
@@ -59,9 +59,10 @@ export function oiseauxPresents(zone = "ile", d = new Date()){
 const leNom = k => { const p = OISEAUX[k]; return `${p.une ? "une" : "un"} ${p.rarete === "rare" ? p.nom : p.nom.toLowerCase()}`; };
 
 /* ----- Le modèle : formes simples, la tête vers -z ----- */
+export const modeleOiseau = (...a) => modele(...a);                      // pour la vérification (les formes partagées)
 function modele(k, opt = {}){
   const fait = MODELES_OISEAUX[k];                    // refait d'après l'image de Yo (oiseaux3d.js) ; la saison (le bec du moineau mâle)
-  if(fait){ const g = fait.fabrique(Object.assign({saison: saisonDe(new Date())}, opt)); g.scale.setScalar((OISEAUX[k].taille || 1) * fait.echelle); return g; }
+  if(fait){ const g = fait.fabrique(Object.assign({saison: saisonDe(new Date())}, opt)); g.scale.setScalar((OISEAUX[k].taille || 1) * fait.echelle); return partagerFormes(g); }
   const p = OISEAUX[k], g = new THREE.Group(), ailes = [], c = p.couleur, ailesC = p.ailes !== undefined ? p.ailes : c;
   const aile = (x, y, z, w, h) => { const pivot = new THREE.Group(); pivot.position.set(x, y, z);
     pivot.add(part(G.head, ailesC, w, .12, h, Math.sign(x) * w * .2, 0, 0)); g.add(pivot); ailes.push({pivot, cote: Math.sign(x)}); };

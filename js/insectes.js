@@ -17,7 +17,7 @@
 import { scene } from "./monde/scene.js";
 import { interior } from "./monde/interieurs.js";
 import { foret, foretObj, arbreEn, fcx, fcz, W as WF } from "./monde/foret.js";
-import { G, part, toon } from "./monde/formes.js";
+import { G, part, toon, partagerFormes } from "./monde/formes.js";
 import { INSECTES, HEURES, PECHE, OUTILS } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sacAdd, sacPlace, porte } from "./regles.js";
@@ -68,9 +68,10 @@ const leNom = (k, maj) => { const p = INSECTES[k], s = `${p.une ? "une" : "un"} 
 
 /* ----- Les modèles, en formes simples, à la taille d'un jouet ----- */
 const mat = (c, o) => toon(Object.assign({color: c}, o || {}));
+export const modeleInsecte = (...a) => modele(...a);                      // pour la vérification (les formes partagées)
 function modele(k, pl){
   const fait = MODELES_INSECTES[k];                    // refait d'après l'image de Yo (insectes3d.js) ; la saison (la punaise brunit), un tronc (la phalène femelle)
-  if(fait){ const g = fait.fabrique({saison: saisonDe(new Date()), tronc: !!(pl && pl.tronc)}); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return g; }   // la saison : la punaise brunit
+  if(fait){ const g = fait.fabrique({saison: saisonDe(new Date()), tronc: !!(pl && pl.tronc)}); g.scale.setScalar((INSECTES[k].taille || 1) * fait.echelle); return partagerFormes(g); }   // la saison : la punaise brunit
   const p = INSECTES[k], g = new THREE.Group(), c = p.couleur, d = p.c2 !== undefined ? p.c2 : 0x2A2A2A, ailes = [];
   /* une aile, sur un pivot qui la fait battre ; tache : une tache de couleur au milieu (les papillons) */
   const aile = (w, h, x, z, col, op, tache) => { const pivot = new THREE.Group();

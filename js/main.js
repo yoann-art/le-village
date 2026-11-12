@@ -20,7 +20,7 @@ import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser, yeuxPose } from "./monde/personnage.js";
 import "./coffres.js";
 import { view, setLacet } from "./commandes.js";
-import { prendreIcones } from "./icones.js";                 // les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026)
+import { prendreIcones, prendreIconesMaintenant } from "./icones.js";                 // les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026)
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
@@ -252,6 +252,7 @@ function camera_(now, dt, marche){
 /* ================= Démarrage ================= */
 $("#version").textContent = "v" + VERSION;
 renderHUD();
+garde("icônes", () => prendreIconesMaintenant());                                           // les photos des objets nouveaux, au chargement plutôt qu'en jouant
 { const t0 = performance.now(), betes = new THREE.Group();                                  // la carte graphique prête avant la première marche (scene.js),
   garde("préparation", () => { betes.add(echantillonsInsectes(), echantillonsOiseaux(), echantillonsFontaine()); scene.add(betes); preparer(); preparerMains(); });   // les insectes et les oiseaux compris
   scene.remove(betes); noterPreparation(performance.now() - t0); }

@@ -145,5 +145,18 @@ export function prendreIcones(delai = 4000, entre = 250){
   };
   setTimeout(suivante, delai);
 }
+/* Les photos qui manquent après une mise à jour (quelques objets nouveaux), prises tout de suite, pendant le chargement (main.js)
+   au lieu de pendant le jeu : chaque photo prépare la forme de l'objet, parfois un programme de dessin, et faisait une saccade en
+   jouant (mesuré par Yo, v2.1.234 : 8 programmes, 42 formes ; demande de Yo, 12 novembre 2026). Au plus `max` : une partie toute
+   neuve (plus de cent photos) garde le reste pour après, une à la fois (prendreIcones). Rend combien ont été prises */
+export function prendreIconesMaintenant(max = 30){
+  const reste = Object.keys(PHOTOS).filter(k => !gardees[cle(k)]);
+  if(!reste.length || reste.length > max) return 0;
+  for(const k of reste){
+    try{ const url = photographier(k); if(url){ gardees[cle(k)] = url; poser(k, url); prises++; } }catch(e){ console.warn("icône", k, e); }
+  }
+  garder();
+  return reste.length;
+}
 /* Pour la vérification : oublier les photos gardées (elles seront reprises) */
 export function oublierIcones(){ gardees = {}; try{ localStorage.removeItem(CLE); }catch(_){} }

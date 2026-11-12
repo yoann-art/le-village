@@ -3622,6 +3622,14 @@ export async function verifier(){
     const url = photographier("mesange");
     if(!url || !url.startsWith("data:image/") || url.length < 800) throw new Error("la photo de la mésange est vide");
     if((objet("hachePierre").icone || objet("hachePierre").emoji || "").includes("ico-photo")) throw new Error("la hache a une photo, alors qu'elle n'est pas refaite");
+    /* rien ne se prépare en jouant (demande de Yo, 12 novembre 2026) : les photos qui manquent se prennent au chargement ; un
+       insecte ou un oiseau qui apparaît reprend les formes déjà faites (rien de neuf pour la carte graphique) */
+    const {prendreIconesMaintenant} = await import("../js/icones.js"), {renderer} = await import("../js/monde/scene.js");
+    if(typeof prendreIconesMaintenant !== "function" || prendreIconesMaintenant() !== 0) throw new Error("les photos qui manquent ne se prennent pas au chargement");
+    const ins = await import("../js/insectes.js"), ois = await import("../js/oiseaux.js");
+    const formes = m => { const l = []; m.traverse(o => { if(o.isMesh) l.push(o.geometry); }); return l; };
+    const a1 = formes(ins.modeleInsecte("coccinelle")), a2 = formes(ins.modeleInsecte("coccinelle")), b1 = formes(ois.modeleOiseau("rougeGorge")), b2 = formes(ois.modeleOiseau("rougeGorge"));
+    if(!a1.every((g, i) => g === a2[i]) || !b1.every((g, i) => g === b2[i])) throw new Error("deux coccinelles (ou deux rouges-gorges) n'ont pas les mêmes formes partagées");
     return `${ks.length} icônes en photo (insectes, oiseaux, fleurs sauvages, ce qu'on ramasse, les meubles refaits) ; les outils gardent leur dessin`;
   });
   /* la caméra tourne tout autour du personnage (demande de Yo, 29 octobre 2026) ; le joystick suit ; la boussole la remet au nord */

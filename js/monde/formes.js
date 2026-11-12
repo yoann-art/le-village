@@ -173,3 +173,30 @@ export function feuillageMat(o = {}, seuil = .9, gain = 1){
   m.customProgramCacheKey = () => `feuillage-vent-${seuil}-${gain}`;
   return m;
 }
+
+/* Les formes partagées (demande de Yo, 12 novembre 2026 : ce qui se prépare en jouant) : chaque insecte, chaque oiseau qui
+   apparaît était fabriqué à neuf, et ses formes envoyées à la carte graphique (environ 60 en une promenade, et autant de
+   mémoire jamais rendue). Une forme identique à une déjà faite (mêmes sommets, mêmes couleurs) reprend celle-là : rien de neuf
+   à envoyer. Les modèles du chargement (echantillonsInsectes, echantillonsOiseaux) remplissent la réserve. Les formes de ces
+   bêtes ne changent jamais après leur fabrication (elles bougent par leurs pivots) : on peut les partager */
+const FORMES_PARTAGEES = new Map();
+const u32 = new Uint32Array(1), f32 = new Float32Array(u32.buffer);
+function empreinte(geo){
+  let h = 2166136261;
+  const mel = v => { h ^= v; h = Math.imul(h, 16777619) >>> 0; };
+  for(const nom of Object.keys(geo.attributes).sort()){
+    const a = geo.attributes[nom].array; mel(a.length); for(let i = 0; i < nom.length; i++) mel(nom.charCodeAt(i));
+    for(let i = 0; i < a.length; i++){ f32[0] = a[i]; mel(u32[0]); }
+  }
+  if(geo.index){ const a = geo.index.array; mel(a.length); for(let i = 0; i < a.length; i++) mel(a[i]); }
+  return h + ":" + (geo.attributes.position ? geo.attributes.position.count : 0);
+}
+export function partagerFormes(objet){
+  objet.traverse(o => {
+    if(!o.isMesh || !o.geometry || o.geometry.morphAttributes && Object.keys(o.geometry.morphAttributes).length) return;
+    const e = empreinte(o.geometry), deja = FORMES_PARTAGEES.get(e);
+    if(deja){ if(deja !== o.geometry) o.geometry = deja; } else FORMES_PARTAGEES.set(e, o.geometry);
+  });
+  return objet;
+}
+export const formesPartagees = () => FORMES_PARTAGEES.size;           // pour la vérification
