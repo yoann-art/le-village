@@ -39,7 +39,7 @@ const ORIGIN = {bouquet:0, vase:C.stone, rideau:0xE8DCC0, chaise:C.wood, fauteui
    Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI) ; tout le meuble de la couleur de sa
    matière (sa teinte), l'ombre douce peinte (le dessus plus clair, le dessous plus sombre). La forme est faite une fois par
    couleur, puis partagée. */
-export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli"];
+export const MEUBLES_REFAITS = ["tabouret", "chaise", "fauteuil", "banc", "table", "tableBanquet", "lit", "etagere", "armoire", "tonneau", "vitrine", "chandelle", "lanterne", "torchere", "bocalLucioles", "feuCamp", "torchereMurale", "lanterneMurale", "lustre", "chandelier", "cheminee", "petitTapis", "grandTapis", "rideau", "pot", "vase", "statue", "miroir", "bouquet", "herbier", "aquarium", "aquariumMoyen", "grandAquarium", "trophee", "cloture", "muret", "portail", "puitsEau", "fontaine", "panneau", "brasero", "etabli", "atelierDeco"];
 const formes = new Map();
 const ombreBois = (y0, y1) => (x, y) => .82 + .26 * Math.max(0, Math.min(1, (y - y0) / (y1 - y0)));
 function modeleBois(type, hex, morceaux){
@@ -1299,6 +1299,93 @@ function etabliMorceaux(c){
     out.push({geo: EB_COPEAU, m: M4(x, yt + .02, z, 0, r, 0, .035, .035, .03), c: new THREE.Color(c).multiplyScalar(1.2).getHex(), ombre: o});
   return out;
 }
+/* L'atelier de décoration de la Chaumière (image de Yo, 12 novembre 2026 : « Voici l'atelier de décoration de la chaumière ») :
+   le bâti de l'établi (plateau de grosses planches, pieds trapus, étagère), des clous ronds de laiton ; dessus, le petit métier à
+   tisser (montants, rouleau de fils de couleur, chaîne, ouvrage rouge à la fleur de lys et sa frise dorée), la pile d'étoffes
+   pliées (crème à rinceaux, bleue, jaune), le rouleau d'étoffe rouge déroulé qui pend sur le devant, le pot de teinture rouge et
+   son pinceau ; dessous, le panier de pelotes, trois pots de teinture, le coffret à tiroir. Le bois prend sa teinte ; les étoffes
+   gardent leurs couleurs (teintures de plantes : coquelicot, bleuet, pissenlit). Les motifs dorés : une petite image (AD_MOTIFS),
+   un second dessin, préparé au chargement */
+const AD = {rouge: 0xC0392B, jaune: 0xE8B23A, bleu: 0x4466AA, creme: 0xF0DDB0, fil: 0xF2E6C8, laiton: 0xB08850, coffret: 0x8A5A3A, panier: 0xB07A3A};
+const AD_POT = lathe([[0, 0], [.06, 0], [.085, .03], [.095, .08], [.09, .13], [.07, .16], [.074, .175], [.05, .18], [0, .17]], 16);
+const AD_COL = lathe([[.068, .14], [.08, .15], [.074, .178], [.05, .182], [.048, .16]], 16);
+function atelierMorceaux(c){
+  const o = ombreBois(0, EB.haut), out = [], al = aleaMuret(7310), T = EB.haut, la = AD.laiton;
+  const teinte = () => new THREE.Color(c).multiplyScalar(.93 + al() * .12).getHex();
+  for(let k = 0; k < 4; k++) out.push({geo: EB_PLANCHE, m: M4(0, T - EB.ep / 2 + (al() - .5) * .008, -EB.p / 2 + EB.p / 8 + k * EB.p / 4), c: teinte(), ombre: o});
+  for(const sx of [-1, 1]) for(const sz of [-1, 1]){                               // les pieds trapus
+    const xh = sx * .6, xb = sx * .68, h = T - EB.ep + .02, a = Math.atan2(xb - xh, h);
+    out.push({geo: EB_BOIS, m: M4((xh + xb) / 2, h / 2, sz * .27, 0, 0, a, EB.pied, h / Math.cos(a), .13), c, ombre: o});
+    out.push({geo: EB_BOULE, m: M4(xh + (xb - xh) * .85, .12, sz * .336, 0, 0, 0, .028, .028, .012), c: la, ombre: o});
+  }
+  for(const sx of [-1, 1]){
+    out.push({geo: EB_BOIS, m: M4(sx * .64, .3, 0, 0, 0, 0, .1, .08, .5), c, ombre: o});                       // les traverses des côtés
+    out.push({geo: EB_BOULE, m: M4(sx * .5, T - EB.ep / 2, EB.p / 2 + .002, 0, 0, 0, .028, .028, .012), c: la, ombre: o});
+  }
+  out.push({geo: EB_BOIS, m: M4(0, .15, 0, 0, 0, 0, 1.2, .05, .56), c: new THREE.Color(c).multiplyScalar(.88).getHex(), ombre: o});
+  for(const sz of [-1, 1]) out.push({geo: EB_BOIS, m: M4(0, .14, sz * .27, 0, 0, 0, 1.24, .08, .08), c, ombre: o});
+  /* le métier à tisser, à gauche */
+  const xl = -.4, zl = -.15;
+  for(const sx of [-1, 1]){ const x = xl + sx * .27;
+    out.push({geo: EB_BOIS, m: M4(x, T + .16, zl, -.2, 0, 0, .06, .32, .34), c, ombre: o});
+    out.push({geo: EB_TIGE, m: M4(x + sx * .04, T + .28, zl - .14, 0, 0, Math.PI / 2, .038, .1, .038), c, ombre: o},
+      {geo: EB_TIGE, m: M4(x + sx * .04, T + .07, zl + .16, 0, 0, Math.PI / 2, .038, .1, .038), c, ombre: o}); }
+  out.push({geo: EB_TIGE, m: M4(xl, T + .28, zl - .14, 0, 0, Math.PI / 2, .032, .52, .032), c, ombre: o},           // le rouleau du haut
+    {geo: EB_TIGE, m: M4(xl, T + .07, zl + .16, 0, 0, Math.PI / 2, .025, .52, .025), c, ombre: o});                 // la barre de devant
+  [AD.rouge, AD.jaune, AD.jaune, AD.rouge, AD.bleu, AD.bleu, AD.jaune, AD.bleu].forEach((cl, k) =>                  // les fils de couleur enroulés
+    out.push({geo: EB_TIGE, m: M4(xl - .19 + k * .055, T + .28, zl - .14, 0, 0, Math.PI / 2, .046, .05, .046), c: cl, ombre: o}));
+  const haut = new THREE.Vector3(0, T + .28, zl - .14), bas = new THREE.Vector3(0, T + .07, zl + .16), dir = bas.clone().sub(haut), L = dir.length(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+  for(let k = 0; k < 11; k++){ const x = xl - .2 + k * .04, mil = haut.clone().add(bas).multiplyScalar(.5).setX(x);   // la chaîne
+    out.push({geo: EB_TIGE, m: new THREE.Matrix4().compose(mil, q, new THREE.Vector3(.006, L, .006)), c: AD.fil, ombre: o}); }
+  const pente = Math.atan2(.21, .3);
+  out.push({geo: EB_BOIS, m: M4(xl, T + .135, zl + .07, pente, 0, 0, .44, .014, .17), c: AD.rouge, ombre: o},          // l'ouvrage rouge
+    {geo: EB_BOIS, m: M4(xl, T + .095, zl + .125, pente, 0, 0, .44, .016, .04), c: AD.jaune, ombre: o});               // sa frise dorée
+  /* la pile d'étoffes pliées, au fond à droite */
+  [[AD.jaune, .035], [AD.bleu, .105], [AD.creme, .175]].forEach(([cl, y], k) =>
+    out.push({geo: EB_PLANCHE_ETOFFE, m: M4(.3 + (al() - .5) * .02, T + y, -.2, 0, (al() - .5) * .08, 0), c: cl, ombre: o}));
+  /* le rouleau rouge, déroulé sur le devant, qui pend */
+  out.push({geo: EB_TIGE, m: M4(.24, T + .065, .06, 0, -.15, Math.PI / 2, .065, .4, .065), c: AD.rouge, ombre: o},
+    {geo: EB_TIGE, m: M4(.24 + .2 * Math.cos(.15) + .012, T + .065, .06 - .2 * Math.sin(.15), 0, -.15, Math.PI / 2, .024, .03, .024), c: new THREE.Color(c).multiplyScalar(1.1).getHex(), ombre: o},
+    {geo: EB_BOIS, m: M4(.2, T + .006, .25, 0, 0, 0, .38, .012, .32), c: AD.rouge, ombre: o},
+    {geo: EB_BOIS, m: M4(.2, T - .1, EB.p / 2 + .012, 0, 0, 0, .38, .2, .012), c: AD.rouge, ombre: o});
+  /* le pot de teinture rouge, son pinceau */
+  out.push({geo: AD_POT, m: M4(.62, T, -.12), c: AD.creme, ombre: o}, {geo: AD_COL, m: M4(.62, T, -.12), c: AD.rouge, ombre: o});
+  for(const a of [0, 1.3, 2.4, 3.8, 5]) out.push({geo: EB_BOULE, m: M4(.62 + Math.sin(a) * .088, T + .13, -.12 + Math.cos(a) * .088, 0, 0, 0, .018, .035, .018), c: AD.rouge, ombre: o});   // ses coulures
+  out.push({geo: EB_TIGE, m: M4(.66, T + .23, -.13, 0, 0, -.35, .014, .2, .014), c: new THREE.Color(c).multiplyScalar(1.05).getHex(), ombre: o},
+    {geo: EB_TIGE, m: M4(.632, T + .155, -.13, 0, 0, -.35, .018, .03, .018), c: 0xC9C9C2, ombre: o});
+  /* l'étagère : le panier de pelotes, trois pots de teinture, le coffret à tiroir */
+  const ye = .175;
+  out.push({geo: EB_BOIS, m: M4(-.34, ye + .06, .03, 0, 0, 0, .3, .12, .24), c: AD.panier, ombre: o});
+  for(const y of [.03, .07, .11]) out.push({geo: EB_BOIS, m: M4(-.34, ye + y, .155, 0, 0, 0, .31, .012, .012), c: new THREE.Color(AD.panier).multiplyScalar(.8).getHex(), ombre: o});
+  for(const [x, z, cl] of [[-.42, .06, AD.jaune], [-.33, -.02, AD.rouge], [-.26, .07, AD.bleu]]) out.push({geo: EB_BOULE, m: M4(x, ye + .13, z), c: cl, ombre: o, s: 1});
+  [[-.05, AD.bleu], [.07, AD.jaune], [.18, AD.rouge]].forEach(([x, cl]) => out.push({geo: AD_POT, m: M4(x, ye, .05, 0, 0, 0, .55, .6, .55), c: AD.creme, ombre: o}, {geo: AD_COL, m: M4(x, ye, .05, 0, 0, 0, .55, .6, .55), c: cl, ombre: o}));
+  out.push({geo: EB_BOIS, m: M4(.42, ye + .08, .02, 0, 0, 0, .26, .16, .2), c: AD.coffret, ombre: o},
+    {geo: EB_BOIS, m: M4(.42, ye + .05, .122, 0, 0, 0, .22, .006, .006), c: new THREE.Color(AD.coffret).multiplyScalar(.7).getHex(), ombre: o},
+    {geo: EB_BOULE, m: M4(.42, ye + .035, .125, 0, 0, 0, .02, .02, .015), c: new THREE.Color(AD.coffret).multiplyScalar(1.2).getHex(), ombre: o});
+  return out.map(p => p.s ? {...p, m: p.m.multiply(new THREE.Matrix4().makeScale(.06, .06, .06))} : p);
+}
+const EB_PLANCHE_ETOFFE = boiteRonde(.44, .07, .3, .03, 2);
+/* Les motifs dorés : la fleur de lys (à gauche de l'image) et les rinceaux (à droite), peints une fois */
+const AD_MOTIFS = (() => {
+  const cv = document.createElement("canvas"); cv.width = 256; cv.height = 128;
+  const x = cv.getContext("2d"); x.fillStyle = x.strokeStyle = "#E8B23A";
+  x.beginPath(); x.moveTo(64, 8); x.bezierCurveTo(86, 34, 82, 62, 64, 76); x.bezierCurveTo(46, 62, 42, 34, 64, 8); x.fill();      // la fleur de lys
+  for(const s of [1, -1]){ x.beginPath(); x.moveTo(64 + s * 8, 74); x.bezierCurveTo(64 + s * 26, 36, 64 + s * 62, 44, 64 + s * 50, 74); x.bezierCurveTo(64 + s * 44, 62, 64 + s * 30, 64, 64 + s * 20, 86); x.closePath(); x.fill(); }
+  x.fillRect(42, 76, 44, 10);
+  x.beginPath(); x.moveTo(64, 86); x.lineTo(72, 108); x.lineTo(64, 122); x.lineTo(56, 108); x.closePath(); x.fill();
+  x.lineWidth = 11; x.lineCap = "round"; x.beginPath(); x.moveTo(136, 112); x.bezierCurveTo(160, 40, 220, 120, 244, 24); x.stroke();   // les rinceaux
+  for(const [cx, cy, a] of [[156, 80, -.8], [182, 74, .9], [206, 82, -.5], [226, 50, .8], [170, 104, -.2]]){ x.save(); x.translate(cx, cy); x.rotate(a); x.beginPath(); x.ellipse(0, 0, 19, 10, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 2;
+  return new THREE.MeshLambertMaterial({map: t, alphaTest: .4, polygonOffset: true, polygonOffsetFactor: -2});
+})();
+const motif = (lys, w, h, m) => { const g = new THREE.PlaneGeometry(w, h), U = g.attributes.uv; for(let i = 0; i < U.count; i++) U.setX(i, U.getX(i) * .5 + (lys ? 0 : .5)); return g.applyMatrix4(m); };
+const AD_DESSINS = mergeGeos([
+  motif(true, .13, .13, M4(-.4, EB.haut + .147, -.075, -Math.PI / 2 + Math.atan2(.21, .3), 0, 0)),               // la fleur de lys de l'ouvrage
+  motif(false, .34, .22, M4(.3, EB.haut + .212, -.2, -Math.PI / 2, 0, 0)),                                              // les rinceaux de l'étoffe crème
+  motif(false, .3, .16, M4(.2, EB.haut - .1, EB.p / 2 + .02, 0, 0, 0)),                                                 // ceux de l'étoffe qui pend
+  motif(false, .3, .2, M4(.2, EB.haut + .014, .27, -Math.PI / 2, 0, 0)),                                                // ceux de l'étoffe déroulée
+  motif(true, .07, .07, M4(.62, EB.haut + .08, -.12 + .098, 0, 0, 0))                                                   // la fleur de lys du pot
+]);
 /* Le brasero (image de Yo, 12 novembre 2026 : « Voici le brasero ») : une vasque ronde de cuivre, son rebord épais, une bande
    cloutée de rivets ronds ; trois pieds en volute, enroulés en bas, un bouton en haut ; tout en cuivre (sa teinte de métal). Vide ;
    le charbon qu'on y met, un morceau à la fois (o.feu, comme les bûches du feu de camp) : des blocs sombres sur un lit de braises,
@@ -1433,7 +1520,7 @@ function mergeGeos(geos){                                                       
 /* pour la préparation au chargement (main.js) : l'eau de la fontaine, le mot peint d'un panneau, déjà prêts quand on en pose un */
 export function echantillonsFontaine(){
   const g = new THREE.Group();
-  for(const [geo, mat] of [[FO_BASSINS, matBassin], [FO_FILETS, matFilet], [FO_ECUME, matEcume], [PA_TEXTE, motPeint("Hearthwild")]]){ const m = new THREE.Mesh(geo, mat); m.visible = false; m.scale.setScalar(.001); g.add(m); }
+  for(const [geo, mat] of [[FO_BASSINS, matBassin], [FO_FILETS, matFilet], [FO_ECUME, matEcume], [PA_TEXTE, motPeint("Hearthwild")], [AD_DESSINS, AD_MOTIFS]]){ const m = new THREE.Mesh(geo, mat); m.visible = false; m.scale.setScalar(.001); g.add(m); }
   return g;
 }
 /* Le portail (image de Yo, 11 novembre 2026 : « Voici le portail. Il faut qu'il puisse s'ouvrir et se fermer ») : deux piliers
@@ -2057,17 +2144,9 @@ const BUILD = {
     g.add(modeleBois(bete ? "statueSocle" : "statue", m, c => [{geo: ST_SOCLE, m: M4(0, 0, 0), c, ombre: ombreBois(0, .5)}, ...(bete ? [] : [{geo: ST_BLOC, m: M4(0, ST.socle + .15, 0, 0, .3, 0), c, ombre: ombreBois(0, .5)}])]));
     if(bete){ const b = new THREE.Mesh(bete, MAT_UNI); b.rotation.y = (o.bete.startsWith("gibier:") ? Math.PI : 0) + Math.PI / 5; b.castShadow = b.receiveShadow = true; g.add(b); }   // de trois quarts, comme l'image (le gibier a la tête vers −z)
   },
-  atelierDeco(g, m){
-    g.add(part(G.box, m, 1.6, .1, .75, 0, .55, 0));                                   // plateau
-    for(const [x,z] of [[-.7,-.28],[.7,-.28],[-.7,.28],[.7,.28]]) g.add(part(G.cyl, C.dark, .09, .5, .09, x, .25, z));
-    for(const x of [-.6, .6]) g.add(part(G.box, C.dark, .08, .75, .08, x, .975, -.3));   // petit métier à tisser : montants
-    g.add(part(G.box, C.dark, 1.3, .08, .08, 0, 1.33, -.3));                           // traverse
-    [C.red, C.yellow, C.blue, C.leaf, C.cream].forEach((c, i) => g.add(part(G.box, c, .06, .6, .03, -.4 + i * .2, 1, -.3)));   // fils tendus
-    const roll = part(G.cyl, C.red, .26, .7, .26, -.3, .74, .12);                      // rouleau de tissu
-    roll.rotation.z = Math.PI/2; g.add(roll);
-    g.add(part(G.box, C.blue, .36, .06, .28, .4, .63, .1));                            // tissus pliés
-    g.add(part(G.box, C.cream, .34, .06, .26, .4, .69, .1));
-    g.add(part(G.cyl, C.clay, .14, .14, .14, .15, .67, -.12));                          // pot de peinture
+  atelierDeco(g, m){                                                                 // l'atelier de décoration d'après l'image de Yo ; ses motifs dorés
+    g.add(modeleBois("atelierDeco", m, atelierMorceaux));
+    const d = new THREE.Mesh(AD_DESSINS, AD_MOTIFS); d.castShadow = false; g.add(d);
   },
   tableTaille(g, m){
     g.add(part(G.box, m, 1.6, .16, .85, 0, .6, 0));                                   // dalle
