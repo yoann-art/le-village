@@ -21,7 +21,9 @@ const BOIS = [0xB8642E, 0xC6713A, 0xA9582A], CLAIR = 0xD58A4E, FONCE = 0x8A4422,
 const LUEUR = toon({color: 0xFFE3A3, emissive: 0xFFB347, emissiveIntensity: .8});
 const VITRE = toon({color: 0xFFC060, emissive: 0xFF9A30, emissiveIntensity: .7});
 const BRAISE = toon({color: 0xFF8A2A, emissive: 0xFF5A10, emissiveIntensity: .9});
-for(const m of [LUEUR, VITRE, BRAISE]) lanterne(null, 0, 0, m);
+const FLAMME = toon({color: 0xFFD04A, emissive: 0xFFA020, emissiveIntensity: .9});   // les petites flammes au-dessus des braises (Yo, 13 novembre 2026)
+for(const m of [LUEUR, VITRE, BRAISE, FLAMME]) lanterne(null, 0, 0, m);
+const LANGUE = new THREE.ConeGeometry(.5, 1, 7);
 const FUMEE = toon({color: 0xF2F0EC, transparent: true, opacity: .42, depthWrite: false});
 
 const ajoute = (g, m) => { g.add(m); return m; };
@@ -159,8 +161,9 @@ function lanterneForge(g){
    vers la gauche ; dessous, le foyer et ses braises, sa hotte de fer, les pinces au mur */
 const A0 = -2.4, AZ0 = -.05, AZ1 = 1.25;
 function appentis(g){
-  for(let r = 0; r < 6; r++){ const y = (r + .5) * .3; rang(g, A0 + .12, X0 - .1, [], y, .3, AZ0, "x", 1, BLOC_L); }   // le mur du fond
-  boite(g, PIERRE_S, X0 - A0 - .2, 1.9, .14, (A0 + X0) / 2, .95, AZ0 - .05);
+  /* le mur du fond, jusque sous le toit seulement (avant, il le traversait) */
+  for(let r = 0; r < 4; r++){ const y = (r + .5) * .3; rang(g, A0 + .12, X0 - .1, [], y, .3, AZ0, "x", 1, BLOC_L); }
+  boite(g, PIERRE_S, X0 - A0 - .2, 1.3, .14, (A0 + X0) / 2, .65, AZ0 - .05);
   const hHaut = 1.85, hBas = 1.4, a = Math.atan2(hHaut - hBas, X0 - A0), L = (X0 - A0 + .04) / Math.cos(a);
   for(const z of [AZ0 + .1, AZ1 - .12]){ boite(g, FONCE, .16, hBas, .16, A0 + .08, hBas / 2, z);   // les poteaux
     planche(g, FONCE, .08, .55, .08, A0 + .3, hBas - .25, z, 0, 0, -.8); }                       // leurs jambes de force
@@ -177,14 +180,24 @@ function appentis(g){
   boite(g, 0x3A3430, .36, .26, .05, fx, .15, fz + fd / 2 - .04);                                 // le cendrier, dans l'ombre
   for(const dx of [-fw / 2 + .1, fw / 2 - .1]) bloc(g, pierre(), .2, .5, fd, fx + dx, .9, fz, 0, BLOC_L);   // les joues
   bloc(g, PIERRE[1], fw, .44, .2, fx, .86, AZ0 + .12, 0, BLOC_L);                                 // le fond
-  ajoute(g, part(G.box, BRAISE, fw - .45, .28, .04, fx, .92, AZ0 + .24));                           // le fond qui rougeoie
-  ajoute(g, part(G.head, BRAISE, 2.0, .6, 1.4, fx, .64, fz - .05));                             // le tas de braises, qui rougeoie
-  for(let k = 0; k < 6; k++){ const s = .08 + hasard() * .06;                                    // quelques charbons dessus
-    const c = ajoute(g, part(CAILLOU, 0x2E2A28, s * 1.3, s, s * 1.2, fx - .28 + hasard() * .56, .78 + s * .2, fz - .2 + hasard() * .3)); c.rotation.set(hasard() * 3, hasard() * 3, 0); }
+  /* le feu, comme l'image : un lit de cendres, des braises qui rougeoient en petits morceaux, des charbons noirs, et de petites
+     flammes qui dansent au-dessus (au temps du vent) */
+  boite(g, 0x3A3430, fw - .36, .06, fd - .16, fx, .78, fz - .02);                                 // le lit de cendres, dans la cuve
+  boite(g, 0x4A3A32, fw - .45, .28, .04, fx, .92, AZ0 + .24);                                     // le fond, noirci par le feu
+  for(let k = 0; k < 16; k++){ const s = .06 + hasard() * .05, noir = k % 4 === 3;              // les braises et les charbons
+    const c = ajoute(g, part(CAILLOU, noir ? 0x2E2A28 : BRAISE, s * 1.3, s, s * 1.2, fx - .3 + hasard() * .6, .82 + s * .3, fz - .24 + hasard() * .38)); c.rotation.set(hasard() * 3, hasard() * 3, 0); }
+  { const L = [[-.14, -.05, .32], [.05, .02, .42], [.2, -.1, .28], [-.02, -.16, .24]], fl = new THREE.InstancedMesh(LANGUE, FLAMME, L.length);   // à part : elles bougent
+    const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    fl.castShadow = false; fl.receiveShadow = false;
+    const danse = () => { const t = VENT.temps.value;
+      L.forEach(([dx, dz, h], k) => { const hk = h * (1 + Math.sin(t * 7 + k * 1.7) * .18); fl.setMatrixAt(k, m.compose(p.set(fx + dx, .86 + hk / 2, fz + dz), q, sc.set(.1, hk, .1))); });
+      fl.instanceMatrix.needsUpdate = true; };
+    danse(); fl.onBeforeRender = danse; g.add(fl); }
   /* la hotte de fer, et son conduit qui monte sous le toit */
   const hotte = ajoute(g, part(G.cone4, FER, fw * 1.25, .42, fd * 1.35, fx, 1.48, fz - .05)); hotte.rotation.y = Math.PI / 4;
   boite(g, 0x5A5A62, fw * .9, .08, fd * .95, fx, 1.27, fz - .05);
-  boite(g, FER, .24, .3, .24, fx, 1.74, fz - .12);
+  boite(g, FER, .2, .72, .2, fx, 1.92, fz - .12);                                                // le conduit, qui sort du toit
+  boite(g, FER, .28, .06, .28, fx, 2.28, fz - .12);
   /* les pinces, accrochées au mur du fond, à droite du foyer */
   boite(g, FER, .36, .04, .04, -.68, 1.42, AZ0 + .12);
   for(const dx of [-.08, .08]){ const x = -.68 + dx;

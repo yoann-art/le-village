@@ -75,7 +75,7 @@ function halle(g){
   boite(g, FONCE, X1 - XW - .1, HMW - .1, FACADE - Z0 - .1, CXW, HMW / 2, ZR);
   boite(g, FONCE, XW - X0, HM - .1, ZE - Z0, (X0 + XW) / 2, HM / 2, (Z0 + ZE) / 2);
   ajoute(g, part(G.gable, FONCE, X1 - X0 - .1, HR - HM, FACADE - Z0 - .1, CX, HM - .02, ZR));
-  ajoute(g, part(G.gable, FONCE, FACADE + .38, HRW - HMW, X1 - XW - .1, CXW, HMW - .02, (FACADE - .42) / 2)).rotation.y = Math.PI / 2;
+  ajoute(g, part(G.gable, FONCE, FACADE - .02 - ZR, HRW - HMW, X1 - XW - .1, CXW, HMW - .02, (FACADE - .02 + ZR) / 2)).rotation.y = Math.PI / 2;   // jusqu'au grand faîte, pas au-delà
   /* le socle de pierres claires, sous la pièce et sous le fond de l'étal ; deux grosses pierres de part et d'autre de la porte */
   socle(g, XW, X1, FACADE, "x", 1); socle(g, Z0, FACADE, X1, "z", 1); socle(g, Z0, FACADE, X0, "z", -1);
   for(const [x, w] of [[XW + .2, .5], [X1 - .05, .46]]) bloc(g, pierre(), w, .62, .46, x, .31, FACADE + .08);
@@ -101,21 +101,27 @@ function halle(g){
   for(let y = SOCLE + .1; y < HM - .05; y += .21) boite(g, ton(Math.round(y * 10)), XW - X0, .19, .07, (X0 + XW) / 2, y, ZE + .04);
 }
 /* les toits de larges planches qui descendent du faîte, quelques clous ronds ; les faîtes et leurs gros blocs cloués */
-function versant(g, x, y, z, rot, a, u0, u1, L, larg){
+function versant(g, x, y, z, rot, a, u0, u1, L, larg, longueur = null){
   const o = new THREE.Group(), i = new THREE.Group();
   o.position.set(x, y, z); o.rotation.y = rot; i.rotation.x = a; o.add(i); g.add(o);
   const n = Math.max(2, Math.round((u1 - u0) / larg)), l = (u1 - u0) / n;
   for(let k = 0; k < n; k++){
-    const u = u0 + (k + .5) * l, dl = (k % 2) * .06;
+    const u = u0 + (k + .5) * l, dl = (k % 2) * .06, L0 = L;
+    if(longueur) L = Math.min(L0, longueur(u));                                  // une planche plus courte : elle s'arrête contre un autre toit
     bloc(i, ton(k), l - .03, .14, L + dl, u, .07 + (k % 2) * .02, L / 2 + dl / 2, (hasard() - .5) * .02, BLOC_L);
+    if(longueur){ if(k % 2 === 0) ajoute(i, part(G.cyl, CLOU, .1, .03, .1, u, .16, L * .4)); L = L0; continue; }
     if(k % 2 === 0) ajoute(i, part(G.cyl, CLOU, .1, .03, .1, u, .16, L * (.3 + hasard() * .4)));
   }
 }
 function toits(g){
   const a = Math.atan(PENTE), L = RUN / Math.cos(a) + .05;
   versant(g, 0, HR, ZR, 0, a, X0 - .22, XW + .3, L, .48);                       // devant, au-dessus de l'étal
+  /* et derrière le pignon : chaque planche s'arrête où elle rencontre le toit du pignon (la noue) ; avant, on voyait le dessous
+     sombre des combles (Yo, 13 novembre 2026) */
+  versant(g, 0, HR, ZR, 0, a, XW + .3, X1 + .3, L, .48, u => (HR - HRW + Math.abs(u - CXW) + .12) / PENTE / Math.cos(a));
   versant(g, 0, HR, ZR, Math.PI, a, -(X1 + .3), -(X0 - .22), L, .55);         // derrière, sur toute la largeur
-  const LW = RUNW * Math.SQRT2 + .05, zA = -.95, zB = FACADE + .2;
+  /* le toit du pignon s'arrête au grand faîte (Yo, 13 novembre 2026 : avant, il passait derrière et ressortait à travers le toit) */
+  const LW = RUNW * Math.SQRT2 + .05, zA = ZR - .05, zB = FACADE + .2;
   versant(g, CXW, HRW, 0, Math.PI / 2, Math.PI / 4, -zB, -zA, LW, .42);        // le pignon, à droite
   versant(g, CXW, HRW, 0, -Math.PI / 2, Math.PI / 4, zA, zB, LW, .42);         // et à gauche
   /* la poutre du faîte et ses blocs, le faîte du pignon et son bloc de devant */

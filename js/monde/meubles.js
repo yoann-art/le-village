@@ -629,6 +629,7 @@ const FC_PIQUET = baton(.045, .5, false, true, 8);
 const FC_BRANCHE = baton(.04, .2, false, true, 8);
 const FC_CORDE = new THREE.TorusGeometry(.055, .016, 5, 12).rotateX(Math.PI / 2);
 const FC_BROCHE = baton(.022, 1.02, true, true, 8);
+const FC_CENDRE = new THREE.CylinderGeometry(.27, .3, .024, 14);
 /* les pierres : [angle, rayon, hauteur, taille] ; devant, un rang bas ; derrière, un rang plus haut, comme l'image */
 const FC_PIERRES = [];
 for(let k = 0; k < 13; k++){ const a = k / 13 * Math.PI * 2 + .1; FC_PIERRES.push([a, .4, .07, 1.05 + (k % 3) * .12]); }
@@ -640,6 +641,12 @@ const FC_FLAMMES = (() => { const L = lathe([[0, 0], [.06, .012], [.1, .05], [.1
 function feuMorceaux(n){ return c => {                                                                         // n : les bûches qui restent
   const o = ombreBois(0, .7), out = [];
   for(const [a, r, y, s] of FC_PIERRES) out.push({geo: FC_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, 0, a * 3, 0, s * 1.05, s * .78, s * .92), c, ombre: o});
+  /* le fond du foyer, comme un vrai : un lit de cendres grises, quelques charbons et un tison noircis (Yo, 13 novembre 2026 : le
+     cercle vide ne faisait pas vrai) */
+  out.push({geo: FC_CENDRE, m: M4(0, .012, 0), c: 0x6E6862, ombre: o}, {geo: FC_CENDRE, m: M4(.04, .02, -.03, 0, 0, 0, .55, 1, .5), c: 0x8A847C, ombre: o});
+  for(const [x, z, k] of [[-.08, .05, .045], [.06, .08, .04], [.1, -.06, .05], [-.04, -.1, .038], [.0, .0, .042]])
+    out.push({geo: FC_PIERRE, m: M4(x, .03, z, 0, x * 20, 0, k * 10, k * 5, k * 8), c: 0x2E2A28, ombre: o});
+  if(!n) out.push({geo: FC_BUCHE, m: M4(-.12, .05, .02, 0, .6, Math.PI / 2).multiply(M4(0, -.13, 0, 0, 0, 0, .8, .52, .8)), c: 0x3A2E26, ombre: o});   // un bout de bûche brûlée
   for(const [x, z, ry, rz] of [[0, .04, .5, .22], [.02, -.06, -.7, -.2], [-.04, 0, 2.2, .18]].slice(0, n)){     // les bûches croisées, celles qu'on y a mises
     const B = M4(x, .12, z, 0, ry, Math.PI / 2 + rz);
     out.push({geo: FC_BUCHE, m: B.clone().multiply(M4(0, -.25, 0)), c: FC.buche, ombre: o});
@@ -992,17 +999,21 @@ const VS = {col: .3, h: .36};
 const VS_PROFIL = [[0, 0], [.085, 0], [.12, .03], [.145, .08], [.152, .14], [.14, .2], [.11, .25], [.075, .285], [.06, .3]];
 const VS_COEUR = lathe([...VS_PROFIL, [0, .3]], 20);
 const VS_COL = lathe([[.05, .26], [.06, .3], [.062, .318], [.074, .322], [.082, .336], [.08, .352], [.068, .36], [.052, .356], [.046, .34], [.045, .3]], 20);
-const VS_PIERRE = boiteRonde(.105, .088, .04, .026, 1);
-const VS_RANGS = [[.04, .108, 6], [.11, .148, 8], [.185, .145, 8], [.248, .108, 6]];   // [hauteur, rayon, nombre de pierres]
+const VS_PIERRE = boiteRonde(1, 1, 1, .3, 1);
+/* le rayon du ventre à la hauteur y, et sa pente (le profil VS_PROFIL) : les pierres sont serties dans le vase, au ras de sa
+   peau, comme l'image (Yo, 13 novembre 2026 : avant, elles dépassaient comme un tas) */
+const vsRayon = y => { for(let k = 1; k < VS_PROFIL.length; k++){ const [r0, y0] = VS_PROFIL[k - 1], [r1, y1] = VS_PROFIL[k];
+  if(y <= y1) return r0 + (r1 - r0) * (y - y0) / (y1 - y0 || 1); } return VS_PROFIL[VS_PROFIL.length - 1][0]; };
+const VS_RANGS = [.03, .085, .14, .195, .248].map(y => [y, vsRayon(y), Math.max(5, Math.round(2 * Math.PI * vsRayon(y) / .095))]);
 function vaseMorceaux(c){
   /* le cœur de la couleur des pierres, les pierres jointives (Yo, 12 novembre 2026 : pas de trous entre les pierres) */
   const o = ombreBois(0, VS.h), al = aleaMuret(5151), out = [{geo: VS_COEUR, m: M4(0, 0, 0), c: new THREE.Color(c).multiplyScalar(.95).getHex(), ombre: o}, {geo: VS_COL, m: M4(0, 0, 0), c, ombre: o}];
   const teinte = () => new THREE.Color(c).multiplyScalar(.93 + al() * .12).getHex();
   VS_RANGS.forEach(([y, r, n], k) => {
-    const pente = k === 0 ? .5 : k === 3 ? -.55 : k === 1 ? .1 : -.15;            // les pierres suivent le ventre du vase
-    const large = Math.PI * 2 * r / n * 1.08 / .105;                               // assez larges pour se toucher
-    for(let j = 0; j < n; j++){ const a = (j + (k % 2 ? .5 : 0)) / n * Math.PI * 2;
-      out.push({geo: VS_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a, 0, large, 1.05, 1), c: teinte(), ombre: o}); }
+    const pente = Math.atan2(vsRayon(y + .01) - vsRayon(y - .01), .02);           // les pierres suivent le ventre du vase
+    const large = Math.PI * 2 * r / n * 1.04;                                      // elles se touchent, sur le tour
+    for(let j = 0; j < n; j++){ const a = (j + (k % 2 ? .5 : 0)) / n * Math.PI * 2, rr = r + .004;
+      out.push({geo: VS_PIERRE, m: M4(Math.sin(a) * rr, y, Math.cos(a) * rr, pente, a, 0, large, .06, .022), c: teinte(), ombre: o}); }
   });
   return out;
 }
@@ -1117,18 +1128,21 @@ function bouquetMorceaux(){
     out.push({geo: BQT_TIGE, m: tigeEntre(bas, lien), c: VERT, ombre: o}, {geo: BQT_TIGE, m: tigeEntre(lien, tete), c: VERT, ombre: o});
     const q = face(x, y, z), qr = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), Math.PI / 2), M = new THREE.Matrix4().compose(tete, q, V(1, 1, 1));
     const ici = (dx, dy, dz) => V(dx, dy, dz).applyMatrix4(M);
-    if(k === "coquelicot"){                                                              // une coupe rouge ouverte, son cœur noir
-      P(BQT_COUPE, tete, q.clone().multiply(qr), V(.82, .82, .82), 0xD8382A);
-      P(BQT_COEUR, ici(0, 0, .024), q, V(.02, .02, .012), 0x3A2420);
+    if(k === "coquelicot"){                                                              // quatre grands pétales en coupe, le cœur noir (Yo, 13 novembre 2026 : avant, une plaque rouge)
+      for(let a = 0; a < 4; a++){ const t = a / 4 * Math.PI * 2 + .4, qp = q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), -.75));
+        P(BQT_PETALE, ici(Math.cos(t) * .04, Math.sin(t) * .04, .022), qp, V(.05, .046, .009), a % 2 ? 0xD8382A : 0xE24432); }
+      P(BQT_COEUR, ici(0, 0, .014), q, V(.017, .017, .014), 0x2E1E1A);
+      for(let a = 0; a < 8; a++){ const t = a / 8 * Math.PI * 2; P(BQT_COEUR, ici(Math.cos(t) * .02, Math.sin(t) * .02, .016), q, V(.005, .005, .005), 0x1E1612); }   // les étamines
     } else if(k === "bleuet"){                                                           // des pétales en étoile, un cœur bleu nuit
       for(let a = 0; a < 10; a++){ const t = a / 10 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .035, Math.sin(t) * .035, 0), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.034, .011, .009), 0x3E64D8); }
       P(BQT_COEUR, ici(0, 0, .006), q, V(.018, .018, .012), 0x2A3480);
     } else if(k === "paquerette"){                                                       // des pétales blancs, un cœur jaune
       for(let a = 0; a < 12; a++){ const t = a / 12 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .03, Math.sin(t) * .03, 0), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.026, .011, .005), 0xF6F2E6); }
       P(BQT_COEUR, ici(0, 0, .006), q, V(.014, .014, .008), 0xF2C22E);
-    } else if(k === "pissenlit"){                                                        // un pompon jaune
-      P(BQT_COEUR, tete, q, V(.042, .042, .03), 0xF2C42A);
-      for(let a = 0; a < 10; a++){ const t = a / 10 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .036, Math.sin(t) * .036, -.004), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.02, .009, .008), 0xF2B820); }
+    } else if(k === "pissenlit"){                                                        // une fleur pleine de fines languettes jaunes, en deux rangs (pas une boule)
+      P(BQT_COEUR, ici(0, 0, .004), q, V(.022, .022, .01), 0xE8AE1A);
+      for(let a = 0; a < 16; a++){ const t = a / 16 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .036, Math.sin(t) * .036, -.002), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.022, .006, .004), 0xF2C42A); }
+      for(let a = 0; a < 12; a++){ const t = (a + .5) / 12 * Math.PI * 2; P(BQT_PETALE, ici(Math.cos(t) * .022, Math.sin(t) * .022, .006), q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), t)), V(.016, .005, .004), 0xF5D040); }
     } else {                                                                             // un bouton penché : rouge dans ses sépales
       P(BQT_COEUR, tete, q, V(.016, .024, .016), 0xC83228);
       P(BQT_COEUR, ici(0, .008, -.004), q, V(.018, .016, .018), VERT);
@@ -1620,7 +1634,8 @@ function enclumeMorceaux(c){
   out.push({geo: EN_BANDE, m: M4(0, B * .55, 0), c: EN.cuir, ombre: o});                                                 // la bande de cuir
   for(let k = 0; k < 8; k++){ const a = k / 8 * Math.PI * 2 + .2;                                                     // ses rivets
     out.push({geo: EB_BOULE, m: M4(Math.sin(a) * EN.r * 1.075, B * .55, Math.cos(a) * EN.r * 1.075, 0, 0, 0, .024, .024, .024), c, ombre: o}); }
-  for(const geo of [EN_CORPS, EN_CORNE]) out.push({geo, m: M4(.02, B, -.02, 0, .12, 0, .82, .85, 1.1), c: EN.fer, ombre: (px, py) => .8 + .3 * Math.min(1, (py - B) / .37)});   // l'enclume, sa corne
+  /* l'enclume, à la taille de son billot comme l'image (Yo, 13 novembre 2026 : elle débordait derrière) : sa table tient dans le cercle */
+  for(const geo of [EN_CORPS, EN_CORNE]) out.push({geo, m: M4(.02, B, 0, 0, .12, 0, .72, .8, .82), c: EN.fer, ombre: (px, py) => .8 + .3 * Math.min(1, (py - B) / .34)});   // l'enclume, sa corne
   /* le marteau, appuyé contre le billot */
   const hx = .38, hz = .17, a = .32;
   out.push({geo: EB_TIGE, m: M4(hx - Math.sin(a) * .2, .3, hz, 0, 0, a, .028, .48, .028), c: EN.bois, ombre: o},
@@ -2091,10 +2106,12 @@ const AQ_DECOR = (() => {                                            // les gale
   for(let k = 0; k < 30; k++){ const a = k * 2.4, y = AQ.socle + .05 + (k % 4) * .008, rmax = AQ.r * .98 * Math.cos(Math.asin(Math.max(-1, (y - AQ.cy) / (AQ.r * .92)))) - .02,
       r = (.15 + (k % 7) / 7 * .85) * rmax, s = k % 9 === 0 ? .026 : .013 + (k % 3) * .004;   // dans le fond rond du bocal
     out.push({geo: AQ_GALET, m: M4(Math.cos(a) * r, y, Math.sin(a) * r, 0, a, 0, s, s * .75, s), c: k % 4 === 0 ? 0x8A8680 : [0xE8D2A8, 0xD8B888, 0xF0E0C0][k % 3]}); }
-  /* la plante d'eau : une tige et des feuilles longues */
-  const T = (x, y, z, rx, rz, l) => out.push({geo: AQ_GALET, m: M4(x, y, z, rx, 0, rz, .012, l, .006), c: 0x6EAA3A});
-  for(const [x, z] of [[-.05, .02], [-.03, -.02]]){ T(x, AQ.socle + .12, z, 0, 0, .08);
-    for(let k = 0; k < 4; k++){ const y = AQ.socle + .07 + k * .035, s = k % 2 ? 1 : -1; T(x + s * .025, y, z, 0, s * .9, .03); } }
+  /* la plante d'eau, comme l'image (Yo, 13 novembre 2026 : avant, une seule forme vert sombre) : une touffe de longues
+     feuilles pointues, larges et claires, qui partent du sable en éventail, de deux verts */
+  const pied = [-.035, AQ.socle + .06, -.01];
+  for(let k = 0; k < 9; k++){ const t = (k / 8 - .5) * 2.2, h = .07 + (k % 3) * .022, ry = k * 1.9, d = [Math.sin(t) * .5, 1, 0];
+    const x = pied[0] + Math.cos(ry) * d[0] * h * .55, z = pied[2] + Math.sin(ry) * d[0] * h * .55;
+    out.push({geo: AQ_GALET, m: M4(x, pied[1] + h * .45, z, 0, ry, -t * .55, .016, h, .005), c: k % 3 ? 0x6EBE40 : 0x4E9A2E}); }
   return fusionner(out);
 })();
 /* Un poisson allégé pour les aquariums : les sommets proches fondus en un (une grille de CASES cases sur sa longueur), ses
