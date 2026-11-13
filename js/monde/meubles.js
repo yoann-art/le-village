@@ -264,7 +264,7 @@ function litMorceaux(c){
   }
   out.push({geo: LT_TETE, m: M4(0, .68, LT.zT), c: b, ombre: o}, {geo: LT_TRAVERSE, m: M4(0, .3, LT.zP), c: b, ombre: o}, {geo: LT_TRAVERSE, m: M4(0, .3, LT.zT), c: b, ombre: o});
   out.push({geo: LT_MATELAS, m: M4(0, .37, 0), c: LT.blanc, ombre: ol});                              // le matelas et son drap
-  out.push({geo: LT_OREILLER, m: M4(0, .62, -.8, -.75), c: LT.blanc, ombre: ol});                      // l'oreiller, penché contre la tête
+  out.push({geo: LT_OREILLER, m: M4(0, .5, -.66, -.1, 0, 0, 1, .6, 1), c: LT.blanc, ombre: ol});      // l'oreiller, couché sur le matelas : la tête s'y pose (Yo, 13 novembre 2026)
   out.push({geo: LT_COUVERTURE, m: M4(0, .4, .3), c, ombre: ol});                                      // la couverture : la couleur du lit
   out.push({geo: LT_DRAP, m: M4(0, .425, -.43), c: LT.blanc, ombre: ol});                                // le drap replié par-dessus
   return out;

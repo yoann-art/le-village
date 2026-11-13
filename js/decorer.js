@@ -384,7 +384,7 @@ function swatches(target, current){
    à chaque changement ; celle qu'il a déjà ne coûte rien. Une ancienne couleur de la palette gratuite reste affichée,
    sans pouvoir la reprendre. */
 const teinteActuelle = it => it.color || (departDe(it.type) || {}).k;
-function teintesHTML(it){
+export function teintesHTML(it){
   const l = teintesDe(it.type), cur = teinteActuelle(it), ancienne = COULEURS[it.color];
   if(!l.length) return `<p class="muted">Ce meuble garde sa couleur.</p>`;
   return (ancienne ? `<p class="muted" style="margin:0 0 6px">Sa couleur d'avant : ${ancienne.nom.toLowerCase()}. Choisis-en une nouvelle avec une ressource.</p>` : "") +

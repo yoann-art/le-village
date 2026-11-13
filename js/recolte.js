@@ -695,7 +695,7 @@ function lumiereAction(t){
   }
   if(m.support && !garniPlein(t.o, c) && garniDispo(t.o))
     return {label: poserLabel(t.o), run: () => poserGarni(c, t.o, patch => setEtat(t.i, patch))};
-  return {label: `✋ Reprendre ${leNom(m)}${avecGarni(g, garniRendu(t.o, c))}`, run: () => reprendreLumiere(t)};
+  return info(`👆 Appui long sur ${leNom(m)} pour ${m.une ? "la" : "le"} modifier`);   // comme dans les pièces (Yo, 13 novembre 2026) : tourner, couleur, ranger (deplacer.js)
 }
 /* La façade de devant d'un bâtiment (batiments.js) : on s'y tient juste devant, face à elle, une colonne à la fois ;
    une torchère ou une lanterne murale en main s'y accroche ; accrochée, on y pose une torche, ou on la décroche */
@@ -712,7 +712,7 @@ function facadeAction(t){
     const m = MEUBLES[f.type];
     if(m.support && !garniPlein(f.type, f) && garniDispo(f.type))
       return {label: poserLabel(f.type), run: () => poserGarni(f, f.type, () => placeMesh(b))};
-    return {label: `✋ Décrocher ${leNom(m)}${avecGarni(garniDe(f.type, f), garniPose(f.type, f))}`, run: () => decrocher(t)};
+    return info(`👆 Appui long sur ${leNom(m)} pour ${m.une ? "la" : "le"} modifier`);   // la décrocher : « Ranger » (deplacer.js)
   }
   return {label: `🪝 Accrocher ${leNom(MEUBLES[state.main])} au mur`, run: () => accrocher(t)};
 }
@@ -723,7 +723,7 @@ function accrocher(t){
   placeMesh(t.b); syncBarre(); save(); jouer("meuble");
   toast(`${m.emoji} ${m.nom} accrochée à la façade${m.support === "bougie" ? " : approche-toi avec une chandelle pour l'y poser" : m.support ? " : approche-toi avec une torche pour l'allumer" : " : elle s'allumera seule à la nuit tombée"}`, 3400);
 }
-function decrocher(t){
+export function decrocher(t){
   const f = t.f, m = MEUBLES[f.type], g = garniDe(f.type, f), gains = {[f.type]: 1, ...(g ? {[g]: garniPose(f.type, f)} : {})};
   if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la décrocher", 3000); return; }
   for(const [k, n] of Object.entries(gains)) sacAdd(k, n);
@@ -731,7 +731,7 @@ function decrocher(t){
   placeMesh(t.b); syncBarre(); save();
   toast(`${m.emoji} ${m.nom} dans ton sac${g && gains[g] ? `, ${avecGarni(g, gains[g]).trim()}` : ""}`, 2400);
 }
-function reprendreLumiere(t){
+export function reprendreLumiere(t){
   const m = MEUBLES[t.o], c = state.ile[t.i] || {}, g = garniDe(t.o, c), n = g ? garniRendu(t.o, c) : 0, gains = {[t.o]: 1, ...(n ? {[g]: n} : {})};   // les chandelles posées, les bûches entières
   if(!tientSurSoi(gains)){ toast("🎒 Ton sac est plein : fais de la place pour la reprendre", 3000); return; }
   for(const [k, n] of Object.entries(gains)) sacAdd(k, n);

@@ -5,7 +5,11 @@
    lève le doigt (mauvaise place : elle revient). Une lumière accrochée à une façade (torchère ou lanterne murale)
    glisse le long de la façade de devant de son bâtiment, jamais devant la porte. Le personnage attend pendant ce temps. */
 import { $ } from "./outils.js";
-import { MEUBLES } from "./donnees.js";
+import { MEUBLES, teintesDe, departDe, objet } from "./donnees.js";
+import { owned, addOwned } from "./regles.js";
+import { openSheet, closeSheet } from "./interface.js";
+import { teintesHTML } from "./decorer.js";
+import { reprendreLumiere, decrocher } from "./recolte.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf } from "./regles.js";
 import { renderer, ray, aim, groundAt, scene } from "./monde/scene.js";
@@ -21,7 +25,9 @@ import { jouer } from "./sons.js";
 const canvas = renderer.domElement;
 let press = null;          // appui en cours sur une lumière : {cible, pid, x, y, sx, sy, timer}
 let lift = null;           // la lumière soulevée : {i, type, dest} sur une case, ou {b, f, col} sur une façade ; et mesh, pid, x, y, ok
-export const deplaceEnCours = () => !!lift;
+let modif = null;          // l'objet choisi, comme dans les pièces (Yo, 13 novembre 2026) : {i} sur une case, ou {b, f} sur une façade
+export const deplaceEnCours = () => !!lift || !!modif;
+export const modifDehors = () => modif;
 const lumiereEn = i => { const o = map.obj[i]; return o && MEUBLES[o] && MEUBLES[o].dehors ? o : null; };
 /* Ce que touche le doigt : une lumière posée ({i}) ou accrochée à une façade ({b, f, mesh}), ou null */
 export function lumiereSousDoigt(r){
@@ -56,11 +62,78 @@ function soulever(){
   try{ if(navigator.vibrate) navigator.vibrate(30); }catch(_){}
   const c = p.cible;
   lift = c.b ? {b: c.b, f: c.f, mesh: c.mesh, type: c.f.type, col: c.f.col} : {i: c.i, type: map.obj[c.i], dest: c.i, mesh: objMesh(c.i)};
-  Object.assign(lift, {pid: p.pid, x: p.x, y: p.y, ok: true}); jouer("meuble");
-  resetJoy();
-  $("#actions").hidden = true; $("#joy").hidden = true;
+  Object.assign(lift, {pid: p.pid, x: p.x, y: p.y, ok: true});
+  choisir(c.b ? {b: c.b, f: c.f} : {i: c.i});
   suivre();
 }
+/* ----- Un objet choisi dehors, comme dans les pièces (Yo, 13 novembre 2026 : « On clique dessus et on peut faire une rotation
+   ou changer de couleur ») : un appui long le choisit, la barre Tourner, Couleur, Ranger, ✅ Poser apparaît ; le doigt peut le
+   faire glisser de case en case (ou le long de sa façade) ; « Ranger » le remet dans le sac, avec ce qui est posé dessus ----- */
+export function choisir(c){
+  modif = c; jouer("meuble");
+  resetJoy();
+  $("#actions").hidden = true; $("#joy").hidden = true; $("#dehors-bar").hidden = false;
+  montrerChoix();
+}
+const typeChoisi = () => modif && (modif.b ? modif.f.type : map.obj[modif.i]);
+function montrerChoix(){
+  if(!modif || lift) return;
+  const t = typeChoisi();
+  if(!t){ finir(); return; }
+  $("#dehors-rot").hidden = !!modif.b;                                 // une lumière de façade ne se tourne pas
+  $("#dehors-color").hidden = !teintesDe(t).length;
+  if(modif.b){ const s = sizeOf(modif.b.type); marque.position.set(centerOf(modif.b.x + modif.f.col), .03, centerOf(modif.b.z + s)); }
+  else marque.position.set(centerOf(modif.i % N), .03, centerOf(Math.floor(modif.i / N)));
+  fond.color.setHex(0xFFE27A); marque.visible = true;
+  hint(`${nomDe(t)} : glisse-${laLe(t)} du doigt, ou choisis ci-dessous`);
+}
+export function finir(){
+  modif = null; marque.visible = false;
+  $("#dehors-bar").hidden = true; $("#place-hint").hidden = true; $("#place-hint").classList.remove("bad");
+  $("#actions").hidden = false; $("#joy").hidden = false;
+  if(document.getElementById("dehors-teintes")) closeSheet();
+}
+export function tournerChoix(){
+  if(!modif || modif.b) return;
+  const i = modif.i, t = map.obj[i], e = state.ile[i] || {};
+  if(["cloture", "muret", "portail", "panneau"].includes(t)) tourner(i);
+  else { setEtat(i, {rot: ((e.rot || 0) + 1) % 4 || undefined}); jouer("meuble"); save(); }
+}
+export function rangerChoix(){
+  if(!modif) return;
+  const c = modif;
+  if(c.b) decrocher({b: c.b, f: c.f}); else reprendreLumiere({i: c.i, o: map.obj[c.i]});
+  if(c.b ? !(c.b.facade || []).includes(c.f) : !map.obj[c.i]) finir();   // le sac plein : il reste là (recolte.js le dit)
+}
+/* Teindre l'objet choisi : comme les meubles, une de la ressource de la teinte (rien si c'est déjà la sienne) */
+export function teindreChoix(k){
+  if(!modif) return "";
+  const t = typeChoisi(), e = modif.b ? modif.f : (state.ile[modif.i] || {}), te = teintesDe(t).find(x => x.k === k);
+  if(!te) return "Cette couleur ne va pas à cet objet";
+  if(k === (e.color || (departDe(t) || {}).k)) return "";
+  if(owned(k) < 1){ const o = objet(k); return `Il te faut 1 ${(o.nom || k).toLowerCase()} pour cette couleur${o.aide ? ". " + o.aide : ""}`; }
+  addOwned(k, -1);
+  if(modif.b){ modif.f.color = k; placeMesh(modif.b); } else setEtat(modif.i, {color: k});
+  jouer("peindre"); save();
+  return "";
+}
+const choixHTML = () => { const e = modif.b ? modif.f : (state.ile[modif.i] || {}); return teintesHTML({type: typeChoisi(), color: e.color}); };
+$("#dehors-rot").addEventListener("click", tournerChoix);
+$("#dehors-store").addEventListener("click", rangerChoix);
+$("#dehors-ok").addEventListener("click", finir);
+$("#dehors-color").addEventListener("click", () => {
+  if(!modif) return;
+  const m = MEUBLES[typeChoisi()];
+  openSheet(`<div class="sh-head"><h2 class="display">🎨 ${m.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
+    <p class="muted" style="margin:0 0 6px">Chaque couleur vient d'une ressource : en changer en coûte une.</p><div id="dehors-teintes">${choixHTML()}</div>`);
+});
+wrap.addEventListener("click", e => {
+  const te = e.target.closest("[data-teinte]"), box = document.getElementById("dehors-teintes");
+  if(!te || !modif || !box) return;
+  const msg = teindreChoix(te.dataset.teinte);
+  if(msg) toast(`🎨 ${msg}`, 3200);
+  box.innerHTML = choixHTML();
+});
 /* La lumière suit le doigt : sur une case libre de l'île, ou le long de la façade de son bâtiment */
 function suivre(){
   if(!lift || !groundAt(lift.x, lift.y, hit)) return;
@@ -87,22 +160,29 @@ function suivre(){
 /* Le doigt se lève : la lumière se pose là (sa torche la suit), ou revient à sa place */
 function lacher(){
   const L = lift; lift = null;
-  marque.visible = false;
-  $("#place-hint").hidden = true; $("#place-hint").classList.remove("bad");
-  $("#actions").hidden = false; $("#joy").hidden = false;
   if(L.b){
     if(L.ok) L.f.col = L.col;
     placeMesh(L.b);                                   // refait le bâtiment et sa façade (à la nouvelle place, ou à l'ancienne)
   } else if(L.ok && L.dest !== L.i){
     const etat = state.ile[L.i] || {};
     setObj(L.i, null); setObj(L.dest, L.type);
-    if(etat.torche || etat.bougie || etat.lucioles || etat.feu || etat.reste || etat.eteint || etat.rot || etat.tour || etat.ouvert || etat.texte) setEtat(L.dest, {texte: etat.texte, torche: etat.torche, bougie: etat.bougie, chandelles: etat.chandelles, lucioles: etat.lucioles, feu: etat.feu, reste: etat.reste, eteint: etat.eteint, rot: etat.rot, tour: etat.tour, ouvert: etat.ouvert});   // la clôture, le muret gardent leur sens   // ses bûches qui brûlent aussi   // sa torche, sa chandelle, ses lucioles la suivent
+    if(etat.torche || etat.bougie || etat.lucioles || etat.feu || etat.reste || etat.eteint || etat.rot || etat.tour || etat.ouvert || etat.texte || etat.color) setEtat(L.dest, {texte: etat.texte, torche: etat.torche, bougie: etat.bougie, chandelles: etat.chandelles, lucioles: etat.lucioles, feu: etat.feu, reste: etat.reste, eteint: etat.eteint, rot: etat.rot, tour: etat.tour, ouvert: etat.ouvert, color: etat.color});   // sa couleur aussi
+    if(modif && !modif.b) modif.i = L.dest;   // la clôture, le muret gardent leur sens   // ses bûches qui brûlent aussi   // sa torche, sa chandelle, ses lucioles la suivent
   } else L.mesh.position.set(centerOf(L.i % N), 0, centerOf(Math.floor(L.i / N)));   // elle revient à sa place
   jouer("meuble"); save();
+  if(modif) montrerChoix(); else { marque.visible = false; $("#place-hint").hidden = true; $("#actions").hidden = false; $("#joy").hidden = false; }
 }
 
 canvas.addEventListener("pointerdown", e => {
   if(press){ clearTimeout(press.timer); press = null; return; }   // un deuxième doigt : c'est un zoom
+  if(modif && !lift){                                                 // l'objet choisi : le doigt posé dessus le fait glisser tout de suite
+    const c = lumiereSousDoigt(aim(e.clientX, e.clientY));
+    if(c && (modif.b ? c.f === modif.f : c.i === modif.i)){
+      lift = modif.b ? {b: modif.b, f: modif.f, mesh: c.mesh, type: modif.f.type, col: modif.f.col} : {i: modif.i, type: map.obj[modif.i], dest: modif.i, mesh: objMesh(modif.i)};
+      Object.assign(lift, {pid: e.pointerId, x: e.clientX, y: e.clientY, ok: true}); suivre();
+    }
+    return;
+  }
   if(lift || currentPlace() || isBusy() || !wrap.hidden || $("#joy").hidden || premiereActive()) return;   // première personne : le doigt fait regarder (vue.js)
   const cible = lumiereSousDoigt(aim(e.clientX, e.clientY));
   if(cible) press = {cible, pid: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, timer: setTimeout(soulever, 500)};

@@ -526,7 +526,7 @@ export function placeMesh(b){
   g.rotation.y = (b.rot || 0) * Math.PI / 2;          // tourné (étape 1.9) : la porte regarde vers b.rot
   const lf = [];
   if(!b.rot) for(const f of b.facade || []){
-    const m = makeMeuble(f.type, undefined, f), p = placeFacade(b.type, f.col, b.lvl);
+    const m = makeMeuble(f.type, f.color, f), p = placeFacade(b.type, f.col, b.lvl);
     m.position.set(p.x, 0, p.z); g.add(m);
     lf.push({x: g.position.x + p.x, z: g.position.z + p.z, f, b, mesh: m});
   }

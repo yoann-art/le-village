@@ -63,7 +63,8 @@ try{ const g = JSON.parse(localStorage.getItem(CLE) || "{}"); if(g.v === VERSION
 const garder = () => { try{ localStorage.setItem(CLE, JSON.stringify({v: VERSION_ICONES, icones: gardees})); }catch(_){} };
 /* Une photo reprise (son modèle a changé de sens ou d'allure) : on la garde sous un autre nom, elle seule est reprise,
    sans reprendre toutes les autres (le téléphone reste fluide) ; l'ancienne est oubliée */
-const REPRISES = {chaise: 2, fauteuil: 2, lit: 2, chandelle: 2, chandelleSuif: 2};
+const REPRISES = {chaise: 2, fauteuil: 2, lit: 3, chandelle: 2, chandelleSuif: 2,
+  tableTaille: 2, enclume: 2, vase: 2, pot: 2, cheminee: 2, puitsEau: 2, fontaine: 2, muret: 2};   // refaits les 12 et 13 novembre 2026 (sans trous, la corne, la dalle, l'oreiller)
 const cle = k => REPRISES[k] ? k + "#" + REPRISES[k] : k;
 { const valides = new Set(Object.keys(PHOTOS).map(cle)); for(const n of Object.keys(gardees)) if(!valides.has(n)) delete gardees[n]; }
 const html = url => `<img class="ico-photo" src="${url}" alt="" draggable="false">`;

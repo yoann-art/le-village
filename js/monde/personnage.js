@@ -219,9 +219,10 @@ export function poser(p){
   elanEnCours = null; allureNow = 0;
   montrerPose();
 }
+const TETE_LEVEE = .2;                                         // la tête posée sur l'oreiller (Yo, 13 novembre 2026)
 function montrerPose(){
   const allonge = pose && pose.type === "allonge", assis = pose && pose.type === "assis";
-  body.rotation.x = allonge ? -Math.PI / 2 : 0;                 // allongé sur le dos : la tête vers l'arrière, le visage vers le haut
+  body.rotation.x = allonge ? -Math.PI / 2 + TETE_LEVEE : 0;    // allongé sur le dos : la tête vers l'arrière, le visage vers le haut, la tête un peu levée sur l'oreiller
   body.position.set(0, allonge ? .11 : 0, 0);
   legL.rotation.x = legR.rotation.x = assis ? -1.15 : 0;       // assis : les jambes devant, qui pendent un peu au bord du siège
   placerMains(0);

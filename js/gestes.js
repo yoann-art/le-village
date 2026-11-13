@@ -60,9 +60,10 @@ function asseoir(it){
   }
   const r = regard(); poser({type: "assis", it, x: it.x, y: h, z: it.z, fx: r.x, fz: r.z});
 }
-/* S'allonger dans le lit : la tête sur l'oreiller (au fond du lit), les pieds vers le pied du lit */
+/* S'allonger dans le lit : la tête sur l'oreiller (au fond du lit), les pieds vers le pied du lit ; assez avancé pour que la tête
+   se pose devant l'oreiller, pas dessous (Yo, 13 novembre 2026 : « sa tête est sous l'oreiller ») */
 function allonger(it){
-  const q = versPiece(it, 0, .15), f = versPiece(it, 0, 1);
+  const q = versPiece(it, 0, .36), f = versPiece(it, 0, 1);
   poser({type: "allonge", it, x: q.x, y: LIT[it.type], z: q.z, fx: f.x - it.x, fz: f.z - it.z});
 }
 /* Allumer ou éteindre : le meuble de la pièce (it), ou la case de l'île (i) */

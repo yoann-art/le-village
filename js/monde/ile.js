@@ -799,9 +799,11 @@ function buildObj(i){
     const etat = st < 2 ? (st === 0 ? 0 : 1) : fleurie(i) ? 2 : 1;
     g.add(o === "paquerette" ? paqueretteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "pissenlit" ? pissenlitModele(saison(), etat, r, neigeBranches()) : o === "coquelicot" ? coquelicotModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "bleuet" ? bleuetModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "perceNeige" ? perceNeigeModele(saison(), etat, r, neigeBranches()) : o === "violette" ? violetteModele(saison(), etat, couleurDe(i), r, neigeBranches()) : o === "muguet" ? muguetModele(saison(), etat, r) : fleurModele(o, couleurDe(i), etat));   // les fleurs d'après les images de Yo (les fleurs, morceau 3)
   } else if(o === "cloture" || o === "muret" || o === "portail"){   // la clôture, le muret, le portail (Yo, 11 novembre 2026) : joints à leurs voisins
-    g.add(makeMeuble(o, undefined, {...(state.ile[i] || {}), voisins: voisinsCloture(i, o)}));
+    g.add(makeMeuble(o, (state.ile[i] || {}).color, {...(state.ile[i] || {}), voisins: voisinsCloture(i, o)}));   // sa couleur (Yo, 13 novembre 2026)
   } else if(MEUBLES[o] && MEUBLES[o].dehors){       // une lumière posée dehors (demande de Yo, 11 octobre 2026) : torchère, chandelle, feu de camp…
-    g.add(makeMeuble(o, undefined, state.ile[i]));
+    const e = state.ile[i] || {}, m = makeMeuble(o, e.color, e);   // sa couleur, son quart de tour (Yo, 13 novembre 2026 : « comme en intérieur »)
+    if(o !== "panneau") m.rotation.y = (e.rot || 0) * Math.PI / 2;   // le panneau se tourne lui-même
+    g.add(m);
   } else if(o === "coffre"){                        // un coffre de réserve, posé face à la caméra
     const c = makeMeuble("coffre", undefined, state.ile[i]);   // son allure : simple, ou cerclé de cuivre (state.ile[i].style)
     g.add(c);                                       // à la même taille que dans les pièces (Yo, 8 novembre 2026)

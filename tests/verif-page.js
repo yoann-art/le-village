@@ -3381,6 +3381,9 @@ export async function verifier(){
     }
     if(i < 0) throw new Error("pas de case libre pour le feu de camp");
     const devant = () => { placePlayer(centerOf(x), centerOf(z + 1) + .1, 0, -1); frames(3); return $("#btn-act").dataset.action; };
+    /* « Ranger » dans la barre de l'objet choisi (Yo, 13 novembre 2026 : comme dans les pièces ; plus de « Reprendre » au bouton) */
+    const rangerDehors = async c => { const D = await import("../js/deplacer.js"); D.choisir({i: c}); $("#dehors-store").click();
+      if(D.modifDehors()) throw new Error("rangé, l'objet garde sa barre ouverte"); };
     place(3); sacAdd("feuCamp", 1); enMain("feuCamp");   // une place de plus : les bûches rendues
     if(!devant().includes("Poser le feu de camp")) throw new Error(`le feu de camp en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
     $("#btn-act").click();
@@ -3413,8 +3416,23 @@ export async function verifier(){
     await cameraImmobile();
     await glisser(() => haut(j), () => sol(i));
     if(map.obj[i] !== "feuCamp") throw new Error("le feu de camp ne revient pas à sa place");
-    if(!devant().includes("Reprendre le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").dataset.action} »`);
-    $("#btn-act").click();
+    /* choisi d'un appui long, comme dans les pièces (Yo, 13 novembre 2026) : la barre Tourner, Couleur, Ranger, ✅ Poser */
+    {
+      const D = await import("../js/deplacer.js"), {teintesDe, departDe} = await import("../js/donnees.js");
+      if(!D.modifDehors() || D.modifDehors().i !== i || $("#dehors-bar").hidden) throw new Error("après l'appui long, le feu de camp n'est pas choisi (pas de barre)");
+      $("#dehors-rot").click();
+      if((state.ile[i] || {}).rot !== 1) throw new Error(`« Tourner » ne tourne pas le feu de camp (rot ${(state.ile[i] || {}).rot})`);
+      const te = teintesDe("feuCamp").find(t => t.k !== (state.ile[i].color || (departDe("feuCamp") || {}).k));   // une autre que la sienne
+      if(te){ const n0 = owned(te.k); sacAdd(te.k, 1);
+        const msg = D.teindreChoix(te.k);
+        if(msg || state.ile[i].color !== te.k || owned(te.k) !== n0) throw new Error(`la couleur du feu de camp ne change pas (« ${msg} », ${state.ile[i].color})`); }
+      $("#dehors-rot").click(); $("#dehors-rot").click(); $("#dehors-rot").click();
+      if((state.ile[i] || {}).rot) throw new Error("quatre quarts de tour ne ramènent pas le feu de camp");
+      $("#dehors-ok").click();
+      if(D.modifDehors() || !$("#dehors-bar").hidden || $("#actions").hidden) throw new Error("« ✅ Poser » ne referme pas la barre");
+    }
+    if(!devant().includes("Appui long sur le feu de camp")) throw new Error(`devant le feu de camp, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    await rangerDehors(i);
     if(map.obj[i] || owned("feuCamp") !== 1) throw new Error(`le feu de camp n'est pas revenu dans le sac (« ${$("#toast").textContent} », ${owned("feuCamp")} dans le sac, case : ${map.obj[i]})`);
     if(owned("bois") !== b0 + 2) throw new Error(`repris, le feu de camp rend ${owned("bois") - b0} bûches (2 entières, celle qui brûle est perdue)`);
     sacTake("bois", 2);
@@ -3435,8 +3453,8 @@ export async function verifier(){
       if(voisinsCloture(i) !== "") throw new Error("la clôture reste jointe à une voisine ôtée");
       let tri = 0, des = 0; makeMeuble("cloture", undefined, {voisins: "enos"}).traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 1 || tri > 6000) throw new Error(`la clôture en croix : ${des} dessins, ${Math.round(tri)} triangles`);
-      if(!devant().includes("Reprendre la clôture")) throw new Error(`devant la clôture, le bouton dit « ${$("#btn-act").dataset.action} »`);
-      $("#btn-act").click();
+      if(!devant().includes("Appui long sur la clôture")) throw new Error(`devant la clôture, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      await rangerDehors(i);
       if(map.obj[i] || owned("cloture") !== 1) throw new Error("la clôture n'est pas revenue dans le sac");
       sacTake("cloture", 1);
       /* le muret de pierre (Yo, 11 novembre 2026) : posé, en travers, joint à son voisin, pas traversable, repris */
@@ -3455,8 +3473,8 @@ export async function verifier(){
       tourner(i); if(state.ile[i].rot) throw new Error("le muret seul ne revient pas");
       tri = 0; des = 0; makeMeuble("muret", undefined, {voisins: "enos"}).traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 1 || tri > 9000) throw new Error(`le muret en croix : ${des} dessins, ${Math.round(tri)} triangles`);
-      if(!devant().includes("Reprendre le muret")) throw new Error(`devant le muret, le bouton dit « ${$("#btn-act").dataset.action} »`);
-      $("#btn-act").click();
+      if(!devant().includes("Appui long sur le muret")) throw new Error(`devant le muret, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      await rangerDehors(i);
       if(map.obj[i] || owned("muret") !== 1) throw new Error("le muret n'est pas revenu dans le sac");
       sacTake("muret", 1);
       /* le portail (Yo, 11 novembre 2026 : « Il faut qu'il puisse s'ouvrir et se fermer ») : posé, fermé on ne passe pas, ouvert on
@@ -3475,8 +3493,8 @@ export async function verifier(){
       const r0 = state.ile[i].rot || 0; tourner(i); if((state.ile[i].rot || 0) === r0) throw new Error("un appui ne tourne pas le portail");
       tri = 0; des = 0; makeMeuble("portail", undefined, {ouvert: true}).traverse(c => { if(c.isMesh){ des++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 3 || tri > 12000) throw new Error(`le portail : ${des} dessins, ${Math.round(tri)} triangles`);
-      if(!devant().includes("Reprendre le portail")) throw new Error(`devant le portail, le bouton dit « ${$("#btn-act").dataset.action} »`);
-      $("#btn-act").click();
+      if(!devant().includes("Appui long sur le portail")) throw new Error(`devant le portail, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      await rangerDehors(i);
       if(map.obj[i] || owned("portail") !== 1) throw new Error("le portail n'est pas revenu dans le sac");
       sacTake("portail", 1);
       /* le puits (Yo, 11 novembre 2026 ; Grand Carnet : « Remplit l'arrosoir ») : posé, pas traversable, il remplit l'arrosoir
@@ -3485,7 +3503,7 @@ export async function verifier(){
       if(!devant().includes("Poser le puits")) throw new Error(`le puits en main, le bouton dit « ${$("#btn-act").dataset.action} »`);
       $("#btn-act").click();
       if(map.obj[i] !== "puitsEau" || islandWalkable(centerOf(i % NN), centerOf(Math.floor(i / NN)))) throw new Error(`le puits n'est pas posé, ou on le traverse (${map.obj[i]})`);
-      if(!devant().includes("Reprendre le puits")) throw new Error(`devant le puits, les mains vides, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      if(!devant().includes("Appui long sur le puits")) throw new Error(`devant le puits, les mains vides, le bouton dit « ${$("#btn-act").dataset.action} »`);
       if(!owned("arrosoir")) sacAdd("arrosoir", 1);
       enMain("arrosoir"); state.eau = 0;
       if(!devant().includes("Remplir l'arrosoir")) throw new Error(`l'arrosoir en main devant le puits, le bouton dit « ${$("#btn-act").dataset.action} »`);
@@ -3502,8 +3520,8 @@ export async function verifier(){
       if(map.obj[i] !== "fontaine" || islandWalkable(centerOf(i % NN), centerOf(Math.floor(i / NN)))) throw new Error(`la fontaine n'est pas posée, ou on la traverse (${map.obj[i]})`);
       tri = 0; des = 0; let eau = 0; makeMeuble("fontaine").traverse(c => { if(c.isMesh){ des++; if(c.material.uniforms && c.material.uniforms.temps) eau++; tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; } });
       if(des !== 4 || eau !== 2 || tri > 20000) throw new Error(`la fontaine : ${des} dessins, ${eau} eaux qui coulent, ${Math.round(tri)} triangles`);
-      if(!devant().includes("Reprendre la fontaine")) throw new Error(`devant la fontaine, le bouton dit « ${$("#btn-act").dataset.action} »`);
-      $("#btn-act").click();
+      if(!devant().includes("Appui long sur la fontaine")) throw new Error(`devant la fontaine, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      await rangerDehors(i);
       if(map.obj[i] || owned("fontaine") !== 1) throw new Error("la fontaine n'est pas revenue dans le sac");
       sacTake("fontaine", 1);
       /* le panneau (Yo, 11 novembre 2026 : « On peut y écrire un mot ») : posé, on y peint un mot (coupé à 18 lettres), il se voit,
@@ -3521,8 +3539,8 @@ export async function verifier(){
       const r1 = state.ile[i].rot || 0; tourner(i); if((state.ile[i].rot || 0) === r1) throw new Error("un appui ne tourne pas le panneau");
       tri = 0; makeMeuble("panneau").traverse(c => { if(c.isMesh) tri += (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; });
       if(tri > 4000) throw new Error(`le panneau : ${Math.round(tri)} triangles`);
-      if(!devant().includes("Reprendre le panneau")) throw new Error(`devant le panneau, le bouton dit « ${$("#btn-act").dataset.action} »`);
-      $("#btn-act").click();
+      if(!devant().includes("Appui long sur le panneau")) throw new Error(`devant le panneau, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      await rangerDehors(i);
       if(map.obj[i] || owned("panneau") !== 1) throw new Error("le panneau n'est pas revenu dans le sac");
       sacTake("panneau", 1);
       /* le brasero (Yo, 12 novembre 2026 : « Voici le brasero ») : posé vide, on y met le charbon un morceau à la fois (trois), il
@@ -3538,8 +3556,8 @@ export async function verifier(){
         if(garniPose("brasero", state.ile[i]) !== k) throw new Error(`${garniPose("brasero", state.ile[i])} charbon dans le brasero au lieu de ${k}`);
       }
       des = 0; makeMeuble("brasero", undefined, state.ile[i]).traverse(c => { if(c.isMesh && c.visible && c.material.visible !== false) des++; });
-      if(!devant().includes("Reprendre le brasero et son charbon")) throw new Error(`devant le brasero plein, le bouton dit « ${$("#btn-act").dataset.action} »`);
-      $("#btn-act").click();
+      if(!devant().includes("Appui long sur le brasero")) throw new Error(`devant le brasero plein, le bouton dit « ${$("#btn-act").dataset.action} »`);
+      await rangerDehors(i);
       if(map.obj[i] || owned("brasero") !== 1 || owned("charbon") !== ch0 + 2) throw new Error(`le brasero repris : ${owned("brasero")} brasero, ${owned("charbon") - ch0} charbon rendu (2 entiers)`);
       sacTake("brasero", 1); sacTake("charbon", 2);
       /* les sons des objets (choix de Yo, 12 novembre 2026) : le portail, et la fontaine qu'on entend de loin */
@@ -3590,8 +3608,8 @@ export async function verifier(){
     $("#btn-act").click();
     if(!state.ile[i].torche) throw new Error("la torche n'est pas sur la torchère dehors");
     const torches = owned("torche");
-    if(!devant().includes("et sa torche")) throw new Error(`devant la torchère allumée, le bouton dit « ${$("#btn-act").dataset.action} »`);
-    $("#btn-act").click();
+    if(!devant().includes("Appui long sur la torchère")) throw new Error(`devant la torchère allumée, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    await rangerDehors(i);                                                 // « Ranger » la rend avec sa torche (Yo, 13 novembre 2026)
     if(map.obj[i] || owned("torche") !== torches + 1) throw new Error("la torchère et sa torche ne sont pas revenues dans le sac");
     return `2 suif, 2 chandelles ; ${dedans}un feu de camp posé, qui éclaire la nuit, déplacé d'un appui long, puis repris ; une torchère dehors, allumée, puis reprise avec sa torche`;
   });
@@ -3623,8 +3641,10 @@ export async function verifier(){
       updateGestes(true); faireGeste();
       if(f.eteint) throw new Error("la lanterne murale ne se rallume pas");
     } finally { forcerHeure(null); updateCiel(0, 0); }
-    if(!devant().includes("Décrocher la lanterne murale")) throw new Error(`devant la lanterne accrochée, le bouton dit « ${$("#btn-act").dataset.action} »`);
-    $("#btn-act").click();
+    if(!devant().includes("Appui long sur la lanterne murale")) throw new Error(`devant la lanterne accrochée, le bouton dit « ${$("#btn-act").dataset.action} »`);
+    { const D = await import("../js/deplacer.js"); D.choisir({b: scierie, f});   // la décrocher : « Ranger », dans sa barre (Yo, 13 novembre 2026)
+      if(!$("#dehors-rot").hidden) throw new Error("une lumière de façade propose « Tourner »");
+      $("#dehors-store").click(); if(D.modifDehors()) throw new Error("décrochée, la lanterne garde sa barre ouverte"); }
     if((scierie.facade || []).length || owned("lanterneMurale") !== 1 || owned("chandelleSuif") !== c0 + 1) throw new Error("la lanterne et sa chandelle ne sont pas revenues dans le sac");
     sacTake("lanterneMurale", 1); sacTake("chandelleSuif", 1);               // le sac comme avant (les essais suivants y mettent leurs outils)
     return "accrochée vide, sa chandelle posée, elle éclaire le jour, éteinte et rallumée au geste, puis décrochée avec sa chandelle";
