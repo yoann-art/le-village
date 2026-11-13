@@ -1517,7 +1517,7 @@ function comptoirMorceaux(c){
    recette en cours à l'atelier de la Taverne (b.atelier.queue). La pierre prend sa teinte ; la fonte, la soupe, le bois, les tuiles
    gardent leurs couleurs. Le dessus de la plaque à .76 */
 const FN = {haut: .72, l: 1.36, p: .76, fonte: 0x4A3028, marmite: 0x3E2A26, soupe: 0xE07A2A, bois: 0xD99A4A, tuile: 0xC0583A, noir: 0x2A1A12, fer: 0x5A4A44};
-const FN_PIERRE = boiteRonde(1, 1, 1, .2, 1);
+const FN_PIERRE = boiteRonde(1, 1, 1, .09, 1);   // peu arrondies : les pierres se touchent sans creux (Yo, 13 novembre 2026)
 const FN_MARMITE = lathe([[0, .02], [.1, .02], [.17, .06], [.2, .13], [.19, .2], [.16, .25], [.165, .27], [.15, .275], [.14, .25], [.16, .2], [.17, .13], [.14, .07], [.08, .05], [0, .05]], 18);
 const FN_ANNEAU = new THREE.TorusGeometry(1, .22, 6, 14), FN_ANSE = new THREE.TorusGeometry(1, .06, 6, 16, Math.PI);
 const FN_LOUCHE = new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
@@ -1536,12 +1536,12 @@ function fourneauMorceaux(c){
   for(let r = 0; r < 4; r++){ const y = .09 + r * .17, dec = r % 2 ? .135 : 0;      // les pierres du devant, hors de la voûte
     for(let x = -FN.l / 2 + .135 + dec; x < FN.l / 2 - .05; x += .27){
       if(Math.abs(x) < R + .08 && y < cy + R + .02) continue;
-      out.push({geo: FN_PIERRE, m: M4(x, y, zf - .02, 0, 0, 0, .3 - (x + .135 > FN.l / 2 ? .1 : 0), .19, .1), c: teinte(), ombre: o}); } }
+      out.push({geo: FN_PIERRE, m: M4(x, y, zf - .02, 0, 0, 0, .285 - (x + .135 > FN.l / 2 ? .1 : 0), .18, .1), c: teinte(), ombre: o}); } }
   for(let k = 0; k <= 8; k++){ const a = k / 8 * Math.PI;                         // la voûte du foyer
-    out.push({geo: FN_PIERRE, m: M4(cx + Math.cos(a) * R, cy + Math.sin(a) * R, zf - .01, 0, 0, a - Math.PI / 2, .13, .16, .12), c: teinte(), ombre: o}); }
+    out.push({geo: FN_PIERRE, m: M4(cx + Math.cos(a) * R, cy + Math.sin(a) * R, zf - .01, 0, 0, a - Math.PI / 2, .135, .16, .12), c: teinte(), ombre: o}); }
   out.push({geo: FN_PIERRE, m: M4(0, .06, zf - .01, 0, 0, 0, .5, .1, .12), c: teinte(), ombre: o});
   for(const sx of [-1, 1]) for(let r = 0; r < 4; r++) for(const z of r % 2 ? [-.25, .12] : [-.12, .25])   // les pierres des côtés, jointives
-    out.push({geo: FN_PIERRE, m: M4(sx * (FN.l / 2 - .02), .09 + r * .17, z, 0, Math.PI / 2, 0, r % 2 ? (z < 0 ? .28 : .46) : (z < 0 ? .46 : .28), .19, .1), c: teinte(), ombre: o});
+    out.push({geo: FN_PIERRE, m: M4(sx * (FN.l / 2 - .02), .09 + r * .17, z, 0, Math.PI / 2, 0, r % 2 ? (z < 0 ? .27 : .45) : (z < 0 ? .45 : .27), .18, .1), c: teinte(), ombre: o});
   for(const [x, z, w, d] of [[0, zf - .06, FN.l, .12], [0, -zf + .06, FN.l, .12], [-FN.l / 2 + .07, 0, .14, FN.p], [FN.l / 2 - .07, 0, .14, FN.p]])   // le rebord de pierre
     out.push({geo: FN_PIERRE, m: M4(x, T + .015, z, 0, 0, 0, w, .07, d), c: teinte(), ombre: o});
   out.push({geo: FN_BOUCHE, m: M4(cx, .1, zf - .012), c: FN.noir, ombre: () => 1},   // le fond sombre du foyer, en retrait
