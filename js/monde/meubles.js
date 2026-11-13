@@ -779,7 +779,7 @@ const CM_BRIQUE = new THREE.BoxGeometry(.165, .1, .05);
 const CM_TYMPAN = (() => { const f = new THREE.Shape(); f.moveTo(-.37, .55); f.lineTo(-.36, .55); f.absarc(0, .55, .36, Math.PI, 0, true);
   f.lineTo(.37, .55); f.lineTo(.37, .92); f.lineTo(-.37, .92); f.lineTo(-.37, .55);
   return new THREE.ExtrudeGeometry(f, {depth: .46, bevelEnabled: false, curveSegments: 12}).translate(0, 0, -.38); })();
-const cmPierre = (w, h, d) => boiteRonde(w, h, d, Math.min(.065, w / 2.6, h / 2.6), 2);   // bien arrondies, comme l'image
+const cmPierre = (w, h, d) => boiteRonde(w, h, d, Math.min(.035, w / 3, h / 3), 2);   // arrondies, mais assez pleines pour se toucher (Yo : pas de trous)
 /* les pierres du mur : [x0, x1, y0, y1] ; le pilier de droite (celui de gauche en miroir), au-dessus du manteau tout le rang */
 const CM_PILIER = [[.37, .67, 0, .19], [.37, .54, .2, .37], [.55, .68, .2, .37], [.37, .67, .38, .55], [.54, .68, .56, .8], [.47, .68, .81, 1.06]];
 const CM_HAUT = [[-.68, -.42, 1.19, 1.34], [-.41, -.12, 1.19, 1.34], [-.11, .18, 1.19, 1.34], [.19, .45, 1.19, 1.34], [.46, .68, 1.19, 1.34],
@@ -789,7 +789,9 @@ const cmGeo = (w, h, d) => { const k = `${w.toFixed(3)},${h.toFixed(3)},${d}`; i
 /* les trois bûches, dans l'ordre où on les pose : [x, y, z, tour, pente, longueur] ; la 3e en travers sur les deux autres */
 const CM_BUCHES = [[.02, .125, -.13, .08, 0, 1], [-.06, .125, .02, -.12, 0, .85], [.02, .255, -.05, .55, .1, .9]];
 function chemineeMorceaux(n){ return c => {
-  const o = ombreBois(0, CM.haut), sombre = new THREE.Color(c).multiplyScalar(.68).getHex(), out = [];
+  /* le cœur de la couleur des pierres, les pierres jointives (Yo, 13 novembre 2026 : pas de trous entre les pierres) */
+  const o = ombreBois(0, CM.haut), sombre = new THREE.Color(c).multiplyScalar(.93).getHex(), out = [], al = aleaMuret(7070);
+  const teinte = () => new THREE.Color(c).multiplyScalar(.93 + al() * .12).getHex();
   const bloc = (w, h, d, x, y, z, cc) => out.push({geo: new THREE.BoxGeometry(w, h, d), m: M4(x, y, z), c: cc, ombre: o});
   const D = CM.face - CM.fond, zc = (CM.face + CM.fond) / 2;
   /* le cœur du mur (le mortier), un peu en retrait des pierres */
@@ -806,13 +808,13 @@ function chemineeMorceaux(n){ return c => {
   bloc(.72, .03, .5, 0, .015, -.05, CM.cendre);
   /* les pierres du mur : les deux piliers, le haut au-dessus du manteau */
   for(const s of [-1, 1]) for(const [x0, x1, y0, y1] of CM_PILIER)
-    out.push({geo: cmGeo(x1 - x0 - .012, y1 - y0 - .012, D), m: M4(s * (x0 + x1) / 2, (y0 + y1) / 2, zc), c, ombre: o});
-  for(const [x0, x1, y0, y1] of CM_HAUT) out.push({geo: cmGeo(x1 - x0 - .012, y1 - y0 - .012, D), m: M4((x0 + x1) / 2, (y0 + y1) / 2, zc), c, ombre: o});
+    out.push({geo: cmGeo(x1 - x0 + .006, y1 - y0 + .006, D), m: M4(s * (x0 + x1) / 2, (y0 + y1) / 2, zc), c: teinte(), ombre: o});
+  for(const [x0, x1, y0, y1] of CM_HAUT) out.push({geo: cmGeo(x1 - x0 + .006, y1 - y0 + .006, D), m: M4((x0 + x1) / 2, (y0 + y1) / 2, zc), c: teinte(), ombre: o});
   /* l'arche : neuf pierres taillées en rayons, la clé un peu plus grande */
   for(let k = 0; k < 9; k++){ const a = k * Math.PI / 8, cle = k === 4 ? 1.12 : 1, r = (CM.rA + CM.rB) / 2;
-    out.push({geo: cmGeo(.15 * cle, (CM.rB - CM.rA) * cle, D + .02), m: M4(Math.cos(a) * r, CM.oy + Math.sin(a) * r, zc + .01, 0, 0, a - Math.PI / 2), c, ombre: o}); }
+    out.push({geo: cmGeo(.2 * cle, (CM.rB - CM.rA) * cle, D + .02), m: M4(Math.cos(a) * r, CM.oy + Math.sin(a) * r, zc + .01, 0, 0, a - Math.PI / 2), c: teinte(), ombre: o}); }
   /* la marche de dalles devant */
-  for(let k = 0; k < 5; k++) out.push({geo: cmGeo(.28, .13, .3), m: M4((k - 2) * .295, .065, .25), c, ombre: o});
+  for(let k = 0; k < 5; k++) out.push({geo: cmGeo(.302, .13, .3), m: M4((k - 2) * .295, .065, .25), c: teinte(), ombre: o});
   /* le manteau de chêne et ses deux consoles */
   out.push({geo: boiteRonde(1.6, .16, .4, .05, 3), m: M4(0, CM.man + .07, .04), c: C.wood, ombre: o});
   for(const s of [-1, 1]){
@@ -1188,15 +1190,17 @@ function clotureMorceaux(bras, voisins){ return c => {
    moment où l'on tire de l'eau : la manivelle tourne, le seau descend et remonte (PU.temps) */
 const PU = {r: .395, ep: .14, rang: .15, n: 11, haut: .62, axe: .98, poteau: .4, faite: 1.52, egout: 1.2, bord: .55, bois: 0xC8955A, corde: 0xE3CC96, temps: 1300};
 PU.pente = Math.atan2(PU.faite - PU.egout, PU.bord); PU.long = Math.hypot(PU.faite - PU.egout, PU.bord);
-const PU_PIERRE = boiteRonde(1, 1, 1, .36, 1), PU_CARRE = boiteRonde(1, 1, 1, .12, 1), PU_TUILE = boiteRonde(1, 1, 1, .3, 1);
+const PU_PIERRE = boiteRonde(1, 1, 1, .26, 1), PU_COEUR = new THREE.CylinderGeometry(1, 1, 1, 22, 1, true), PU_CARRE = boiteRonde(1, 1, 1, .12, 1), PU_TUILE = boiteRonde(1, 1, 1, .3, 1);
 const PU_EAU = new THREE.CylinderGeometry(1, 1, 1, 20), PU_TIGE = new THREE.CylinderGeometry(1, 1, 1, 10), PU_BOULE = new THREE.SphereGeometry(1, 8, 6);
 const PU_ANNEAU = new THREE.TorusGeometry(1, .38, 6, 14), PU_ANSE = new THREE.TorusGeometry(1, .09, 5, 12, Math.PI);
 const PU_SEAU = lathe([[0, 0], [.072, 0], [.078, .004], [.094, .12], [.086, .12], [.07, .012], [0, .012]], 14);
 function puitsMorceaux(c){
   const o = ombreBois(0, PU.faite), out = [], w = PU.bois, al = aleaMuret(4242), teinte = () => new THREE.Color(c).multiplyScalar(.88 + al() * .16).getHex();
+  /* le cœur de la couleur des pierres, les pierres jointives (Yo, 13 novembre 2026 : pas de trous entre les pierres) */
+  out.push({geo: PU_COEUR, m: M4(0, (PU.haut - .05) / 2, 0, 0, 0, 0, PU.r + .02, PU.haut - .05, PU.r + .02), c: new THREE.Color(c).multiplyScalar(.93).getHex(), ombre: o});
   for(let r = 0; r < 4; r++) for(let k = 0; k < PU.n; k++){                         // la margelle : quatre rangs de pierres bombées, décalés
-    const a = (k + (r % 2) * .5) / PU.n * Math.PI * 2, lg = 2 * Math.PI * PU.r / PU.n + .02;
-    out.push({geo: PU_PIERRE, m: M4(Math.sin(a) * PU.r, r * PU.rang + PU.rang / 2, Math.cos(a) * PU.r, 0, a + (al() - .5) * .06, 0, lg * (.92 + al() * .12), PU.rang * (.95 + al() * .1), PU.ep), c: teinte(), ombre: o});
+    const a = (k + (r % 2) * .5) / PU.n * Math.PI * 2, lg = 2 * Math.PI * PU.r / PU.n + .05;
+    out.push({geo: PU_PIERRE, m: M4(Math.sin(a) * PU.r, r * PU.rang + PU.rang / 2, Math.cos(a) * PU.r, 0, a + (al() - .5) * .04, 0, lg * (.98 + al() * .06), PU.rang * (1.04 + al() * .06), PU.ep), c: teinte(), ombre: o});
   }
   for(let k = 0; k < 10; k++){ const a = (k + .25) / 10 * Math.PI * 2;                // les pierres plates du dessus
     out.push({geo: PU_PIERRE, m: M4(Math.sin(a) * PU.r, PU.haut - .045, Math.cos(a) * PU.r, 0, a, 0, 2 * Math.PI * PU.r / 10 + .015, .09, PU.ep + .04), c: teinte(), ombre: o}); }
@@ -1733,7 +1737,7 @@ function motPeint(texte){
    l'autre (le mouvement descend), l'écume qui bouillonne où ils tombent ; tout suit VENT.temps (main.js), rien à recalculer en
    jouant. Une case, un peu plus haute que le personnage */
 const FO = {bas: {r: .44, h: .38, eau: .3, n: 13}, mil: {y: .44, r: .3, haut: .62, eau: .585, n: 11}, sup: {y: .72, r: .19, haut: .84, eau: .815, n: 8}};
-const FO_PIERRE = boiteRonde(1, 1, 1, .36, 1);
+const FO_PIERRE = boiteRonde(1, 1, 1, .26, 1);   // assez pleines pour se toucher (Yo, 13 novembre 2026 : pas de trous entre les pierres)
 const FO_EAU_VS = `uniform float temps; varying vec2 vUv; varying vec3 vP;
 void main(){ vUv = uv; vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const matBassin = new THREE.ShaderMaterial({uniforms: {temps: VENT.temps}, vertexShader: FO_EAU_VS, transparent: true, depthWrite: false, fragmentShader: `uniform float temps; varying vec3 vP;
@@ -1751,12 +1755,14 @@ void main(){
 const matEcume = new THREE.MeshBasicMaterial({color: 0xF4FBFC});
 /* un rang de pierres en anneau : n pierres, au rayon r, à la hauteur y ; pente : penchées vers l'extérieur */
 function anneauPierres(out, al, c, o, n, r, y, h, d, pente = 0, dec = 0){
-  const lg = 2 * Math.PI * r / n + .015;
+  const lg = 2 * Math.PI * r / n + .04;
   for(let k = 0; k < n; k++){ const a = (k + dec) / n * Math.PI * 2;
-    out.push({geo: FO_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a + (al() - .5) * .05, 0, lg * (.93 + al() * .1), h * (.94 + al() * .1), d), c: new THREE.Color(c).multiplyScalar(.88 + al() * .16).getHex(), ombre: o}); }
+    out.push({geo: FO_PIERRE, m: M4(Math.sin(a) * r, y, Math.cos(a) * r, -pente, a + (al() - .5) * .04, 0, lg * (.98 + al() * .06), h * (1.04 + al() * .06), d), c: new THREE.Color(c).multiplyScalar(.88 + al() * .16).getHex(), ombre: o}); }
 }
 function fontaineMorceaux(c){
-  const o = ombreBois(0, 1), out = [], al = aleaMuret(777), sombre = new THREE.Color(c).multiplyScalar(.78).getHex(), {bas, mil, sup} = FO;
+  /* le cœur et les vasques presque de la couleur des pierres : rien de sombre entre elles (Yo, 13 novembre 2026) */
+  const o = ombreBois(0, 1), out = [], al = aleaMuret(777), sombre = new THREE.Color(c).multiplyScalar(.92).getHex(), {bas, mil, sup} = FO;
+  out.push({geo: PU_COEUR, m: M4(0, .19, 0, 0, 0, 0, bas.r + .01, .37, bas.r + .01), c: sombre, ombre: o});   // le cœur du grand bassin
   anneauPierres(out, al, c, o, bas.n, bas.r, .095, .19, .1);                      // le grand bassin : deux rangs
   anneauPierres(out, al, c, o, bas.n, bas.r, .285, .19, .11, 0, .5);
   out.push({geo: lathe([[0, .02], [bas.r - .04, .02], [bas.r - .04, .06], [0, .06]], 20), m: M4(0, 0, 0), c: sombre, ombre: o});   // son fond
@@ -1885,7 +1891,7 @@ export function sensPortail(o){
    les coins et dans les creux (la vraie mousse des vieux murets). Mi-cuisse (.55), on voit par-dessus. Dehors, un morceau par case,
    joint à ses voisins comme la clôture (o.voisins, mêmes bras) ; le fond plus sombre entre les pierres. La pierre des champs */
 const MU = {h: .55, d: .46, cap: .15, rangs: [[0, .23, .44], [.2, .22, .42]]};   // [bas, hauteur, profondeur] des deux rangs
-const MU_CAP = boiteRonde(1, 1, 1, .3, 2), MU_PIERRE = boiteRonde(1, 1, 1, .4, 2), MU_FOND = new THREE.BoxGeometry(1, 1, 1);
+const MU_CAP = boiteRonde(1, 1, 1, .3, 2), MU_PIERRE = boiteRonde(1, 1, 1, .36, 2), MU_FOND = new THREE.BoxGeometry(1, 1, 1);
 const MU_MOUSSE = new THREE.SphereGeometry(1, 8, 5), MOUSSE_M = [0xB4C832, 0x98B22A, 0xC4D444];
 const aleaMuret = s => () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
 /* la mousse : une touffe de petites boules aplaties, autour de (x, y, z) */
@@ -1897,7 +1903,8 @@ function touffe(out, x, y, z, t, al, o){
 /* un pan droit de u0 à u1 le long de l'axe x (avant/arrière en z), graine : son tirage */
 function panMuret(out, c, o, u0, u1, graine, mousse){
   const al = aleaMuret(graine * 7919 + 13), L = u1 - u0, teinte = () => new THREE.Color(c).multiplyScalar(.9 + al() * .14).getHex();
-  out.push({geo: MU_FOND, m: M4((u0 + u1) / 2, (MU.h - MU.cap) / 2, 0, 0, 0, 0, L - .06, MU.h - MU.cap, MU.d - .24), c: new THREE.Color(c).multiplyScalar(.5).getHex(), ombre: o});
+  /* le cœur de la couleur des pierres, presque aussi épais qu'elles (Yo, 13 novembre 2026 : pas de trous entre les pierres) */
+  out.push({geo: MU_FOND, m: M4((u0 + u1) / 2, (MU.h - MU.cap) / 2, 0, 0, 0, 0, L - .03, MU.h - MU.cap, MU.d - .17), c: new THREE.Color(c).multiplyScalar(.93).getHex(), ombre: o});
   for(const [bas, h, d] of MU.rangs){                                // deux rangs de pierres rondes, de largeurs variées
     let u = u0;
     while(u1 - u > .06){
