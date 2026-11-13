@@ -7,7 +7,7 @@
 import { $ } from "./outils.js";
 import { RES, B, ORDER, ATELIERS, FABRIQUE_A, COFFRE, traversable, RECOLTE, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
-import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace } from "./regles.js";
+import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace, agrandirPiece } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, N, idx, inb, map, tileOf, setObj, setEtat } from "./monde/ile.js";
 import { makeBuilding, occ, footprint, placeMesh, removeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
@@ -360,6 +360,6 @@ export function upgradeDetail(){
   if(!b || b.lvl >= maxLvl(b.type)) return;
   const c = upCost(b.type, b.lvl);
   if(!canAfford(c)) return;
-  pay(c); b.lvl++; placeMesh(b); save(); renderHUD(); closeSheet();
+  pay(c); agrandirPiece(b, roomSide(b.type, b.lvl), roomSide(b.type, b.lvl + 1)); b.lvl++; placeMesh(b); save(); renderHUD(); closeSheet();
   toast(`${B[b.type].nom} amélioré au niveau ${b.lvl}`);
 }

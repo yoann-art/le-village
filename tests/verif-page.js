@@ -3650,6 +3650,29 @@ export async function verifier(){
     return "accrochée vide, sa chandelle posée, elle éclaire le jour, éteinte et rallumée au geste, puis décrochée avec sa chandelle";
   });
   /* les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026) : une photo du modèle, le reste dessiné */
+  /* les pièces plus grandes (Yo, 13 novembre 2026) : deux cases de plus par niveau ; ce qui est accroché aux murs suit son mur ;
+     les bâtiments refaits au niveau 2 y passent une fois, sans rien payer */
+  if(scierie) await etape("Les pièces plus grandes à chaque niveau, et le passage au niveau 2 des bâtiments refaits", async () => {
+    const {roomSide, agrandirPiece} = await import("../js/regles.js"), {monterAuNiveau2} = await import("../js/remise.js"), {MEUBLES} = await import("../js/donnees.js");
+    const tailles = [1, 2, 3].map(l => roomSide("scierie", l)).join(", "), grandes = [1, 2, 3].map(l => roomSide("taverne", l)).join(", ");
+    if(tailles !== "6, 8, 10" || grandes !== "8, 10, 12") throw new Error(`les pièces : moyenne ${tailles}, grande ${grandes}`);
+    const sol = {}; for(let z = 0; z < 6; z++) for(let x = 0; x < 6; x++) sol[`${x},${z}`] = "parquet";
+    const b = {type: "scierie", lvl: 1, deco: {items: [{type: "torchereMurale", x: 1, z: -2.8, rot: 0}, {type: "torchereMurale", x: -2.8, z: 0, rot: 3},
+      {type: "rideau", x: -1.5, z: -3 + MEUBLES.rideau.d / 2, rot: 0}, {type: "chaise", x: .5, z: .5, rot: 0}], sol}};
+    agrandirPiece(b, 6, 8);
+    const [m1, m2, ri, ch] = b.deco.items;
+    if(m1.z !== -3.8 || m2.x !== -3.8 || ri.x !== -2 || ri.z !== Math.round((-4 + MEUBLES.rideau.d / 2) * 100) / 100 || ch.x !== .5 || ch.z !== .5)
+      throw new Error(`agrandie, la pièce : ${JSON.stringify(b.deco.items.map(i => [i.type, i.x, i.z]))}`);
+    if(Object.keys(b.deco.sol).length !== 64) throw new Error(`le sol posé partout ne couvre que ${Object.keys(b.deco.sol).length} cases sur 64`);
+    const l0 = scierie.lvl, n0 = {...(state.niveau2 || {})};
+    scierie.lvl = 1; delete state.niveau2.scierie;
+    try {
+      const montes = monterAuNiveau2();
+      if(scierie.lvl !== 2 || !montes.includes(scierie)) throw new Error(`la Scierie n'est pas passée au niveau 2 (niveau ${scierie.lvl})`);
+      if(monterAuNiveau2().length) throw new Error("le passage au niveau 2 se refait une deuxième fois");
+    } finally { scierie.lvl = l0; state.niveau2 = n0; const {placeMesh} = await import("../js/monde/batiments.js"); placeMesh(scierie); }
+    return `pièces moyennes ${tailles}, grandes ${grandes} ; les lumières murales et le rideau suivent leur mur, le sol couvre les nouvelles cases ; la Scierie passée une fois au niveau 2`;
+  });
   await etape("Les icônes : la photo des modèles refaits d'après les images de Yo", async () => {
     const {iconesPhoto, photographier} = await import("../js/icones.js");
     const ks = iconesPhoto();

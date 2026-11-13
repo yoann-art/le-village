@@ -8,7 +8,9 @@
 import { MEUBLES, garniDe, garniRendu } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { map, setObj } from "./monde/ile.js";
-import { addOwned } from "./regles.js";
+import { addOwned, roomSide, ancienRoomSide, agrandirPiece, maxLvl } from "./regles.js";
+import { B } from "./donnees.js";
+import { placeMesh } from "./monde/batiments.js";
 
 const garder = it => MEUBLES[it.type] && (MEUBLES[it.type].plan || it.type === "coffre" || it.reserve);
 const decoration = k => !!MEUBLES[k] && !MEUBLES[k].plan && k !== "coffre";
@@ -60,3 +62,26 @@ if(!state.sansLustre){
   if(state.buildings.length) retirerLustreLampadaire();
   state.sansLustre = 1; save();
 }
+/* Les pièces plus grandes (v2.1.243, Yo, 13 novembre 2026) : une fois, les bâtiments déjà améliorés passent de l'ancienne taille
+   (une case par niveau) à la nouvelle (deux cases), ce qui est accroché aux murs suit son mur */
+if(!state.piecesAgrandies){
+  for(const b of state.buildings) if(!B[b.type].fixe && b.lvl > 1) agrandirPiece(b, ancienRoomSide(b.type, b.lvl), roomSide(b.type, b.lvl));
+  state.piecesAgrandies = 1; save();
+}
+/* Les bâtiments de niveau 2 refaits d'après les images de Yo (13 novembre 2026 : « je veux que tu me les mettes directement au
+   niveau 2 dans le jeu sans que j'aie à récupérer les ressources ») : une fois par bâtiment, celui de la partie passe au niveau 2,
+   sans rien payer, comme une amélioration (ses meubles, son plan de travail, ce qu'il fabrique restent) */
+export const NIVEAU2_FAITS = ["scierie", "carriere"];
+export function monterAuNiveau2(){
+  const faits = state.niveau2 || (state.niveau2 = {}), montes = [];
+  for(const t of NIVEAU2_FAITS){
+    if(faits[t]) continue;
+    for(const b of state.buildings) if(b.type === t && (b.lvl || 1) < 2 && maxLvl(t) >= 2){
+      agrandirPiece(b, roomSide(t, b.lvl || 1), roomSide(t, 2)); b.lvl = 2; placeMesh(b); montes.push(b);
+    }
+    faits[t] = 1;
+  }
+  save();
+  return montes;
+}
+monterAuNiveau2();

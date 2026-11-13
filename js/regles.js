@@ -1,6 +1,6 @@
 /* ================= Règles =================
    Coûts, niveaux, bonus et étoiles. */
-import { RES, B, OUTILS, POSABLES, SAC, SACS, COFFRE, GROUPES, membres, objet, NIVEAU3, PIERRES } from "./donnees.js";
+import { RES, B, OUTILS, POSABLES, SAC, SACS, COFFRE, GROUPES, membres, objet, NIVEAU3, PIERRES, MEUBLES } from "./donnees.js";
 import { state } from "./sauvegarde.js";
 
 export const sizeOf = t => B[t].size || 1;
@@ -30,7 +30,31 @@ export const dansCour = (b, x, z) => avecCour(b) && x >= b.x && x < b.x + 7 && z
 export const porteDe = b => avecCour(b) ? [b.x + 1, b.z + 3] : doorTile(b.type, b.x, b.z, b.rot);
 /* Côté de la pièce intérieure, en P : elle grandit de 1 P à chaque niveau */
 const ROOM = {petite:4, moyenne:6, grande:8};
-export const roomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);
+/* La pièce grandit de deux cases de côté à chaque niveau (Yo, 13 novembre 2026 : « L'intérieur des bâtiments doit être plus grand
+   au niveau 2 et le sera encore plus au niveau 3 ») : moyenne 6, 8, 10 ; grande 8, 10, 12 (avant : une case par niveau) */
+export const roomSide = (t, lvl) => ROOM[B[t].taille] + 2 * (lvl - 1);
+export const ancienRoomSide = (t, lvl) => ROOM[B[t].taille] + (lvl - 1);   // pour passer les pièces des parties en cours (remise.js)
+/* La pièce passe d'un côté s0 à s1 (elle grandit autour de son milieu) : ce qui est accroché aux murs suit son mur, le rideau
+   sa fenêtre (au quart du fond, au sixième des côtés : interieurs.js) ; le sol posé case par case garde sa place, un sol
+   posé partout couvre aussi les nouvelles cases. Le reste ne bouge pas */
+export function agrandirPiece(b, s0, s1){
+  const o = (s1 - s0) / 2, d = b.deco, r = v => Math.round(v * 100) / 100;
+  if(!(o > 0) || !d) return;
+  for(const it of d.items || []){
+    const m = MEUBLES[it.type]; if(!m) continue;
+    if(m.fenetre){ const e = m.d / 2;
+      if(!it.rot){ it.x = r(it.x * s1 / s0); it.z = r(-s1 / 2 + e); }
+      else { const c = it.rot === 3 ? -1 : 1; it.x = r(c * (s1 / 2 - e)); it.z = r(-s1 / 6); } }
+    else if(m.mur){ if(!it.rot) it.z = r(it.z - o); else if(it.rot === 3) it.x = r(it.x - o); else if(it.rot === 1) it.x = r(it.x + o); }
+  }
+  const sol = d.sol, cles = sol ? Object.keys(sol) : [];
+  if(cles.length){
+    const v0 = sol[cles[0]], plein = cles.length >= s0 * s0 && cles.every(k => sol[k] === v0), k = Math.floor(o), neuf = {};
+    if(plein){ for(let z = 0; z < s1; z++) for(let x = 0; x < s1; x++) neuf[`${x},${z}`] = v0; }
+    else for(const c of cles){ const [x, z] = c.split(",").map(Number); neuf[`${x + k},${z + k}`] = sol[c]; }
+    d.sol = neuf;
+  }
+}
 
 /* Ce qu'on possède (demande de Yo) : l'or dans la bourse (state.res.or) ; tout le reste sur soi et dans les
    coffres de réserve posés au village (state.coffres[].items). Sur soi : le sac (state.sac) et les trois cases
