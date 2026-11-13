@@ -71,7 +71,7 @@ if(!state.piecesAgrandies){
 /* Les bâtiments de niveau 2 refaits d'après les images de Yo (13 novembre 2026 : « je veux que tu me les mettes directement au
    niveau 2 dans le jeu sans que j'aie à récupérer les ressources ») : une fois par bâtiment, celui de la partie passe au niveau 2,
    sans rien payer, comme une amélioration (ses meubles, son plan de travail, ce qu'il fabrique restent) */
-export const NIVEAU2_FAITS = ["scierie", "carriere"];
+export const NIVEAU2_FAITS = ["scierie", "carriere", "forge"];
 export function monterAuNiveau2(){
   const faits = state.niveau2 || (state.niveau2 = {}), montes = [];
   for(const t of NIVEAU2_FAITS){
