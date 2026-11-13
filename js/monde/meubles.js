@@ -1435,9 +1435,15 @@ function tableTailleMorceaux(c){
   for(const [x, y, a] of [[-.06, -.06, .5], [.0, .0, .9], [-.11, .02, .2], [.05, -.1, 1.2]])   // ses feuilles
     out.push({geo: EB_BOULE, m: M4(.05 + x * 1.6, yb - .01 + y * 1.6, -.12 + .215, 0, .05, a, .07, .024, .016), c: TT.relief, ombre: () => .98});
   /* le maillet, à gauche ; le ciseau, à droite */
-  out.push({geo: EB_TIGE, m: M4(-.55, T + .1, -.12, Math.PI / 2, .5, 0, .1, .22, .1), c: TT.bois, ombre: o});
-  for(const s of [-1, 1]) out.push({geo: EB_TIGE, m: M4(-.55 + s * Math.sin(.5) * .07, T + .1, -.12 + s * Math.cos(.5) * .07, Math.PI / 2, .5, 0, .104, .025, .104), c: TT.cercle, ombre: o});
-  out.push({geo: EB_TIGE, m: M4(-.42, T + .04, .05, Math.PI / 2, -1, 0, .032, .34, .032), c: 0xD98A3A, ombre: o});
+  /* le maillet, comme l'image (Yo, 13 novembre 2026 : « le marteau est en 2 parties » ; « le manche ne fait pas naturel ») : la
+     tête couchée, sa face ronde tournée vers l'avant à gauche ; un manche épais au bout arrondi qui sort du milieu de la tête,
+     d'équerre, vers l'avant à droite, et descend jusqu'à reposer sur la dalle */
+  const mh = [-.6, -.18], mu = Math.PI / 4, ma = mu - Math.PI / 2, rm = .045, lm = .3;   // la tête ; l'angle du manche, celui de la tête
+  const pente = Math.asin((.1 - rm) / lm), dm = [Math.sin(mu) * Math.cos(pente), -Math.sin(pente), Math.cos(mu) * Math.cos(pente)];
+  out.push({geo: EB_TIGE, m: M4(mh[0], T + .1, mh[1], Math.PI / 2, ma, 0, .1, .22, .1), c: TT.bois, ombre: o});
+  for(const s of [-1, 1]) out.push({geo: EB_TIGE, m: M4(mh[0] + s * Math.sin(ma) * .07, T + .1, mh[1] + s * Math.cos(ma) * .07, Math.PI / 2, ma, 0, .104, .025, .104), c: TT.cercle, ombre: o});
+  out.push({geo: EB_TIGE, m: M4(mh[0] + dm[0] * lm / 2, T + .1 + dm[1] * lm / 2, mh[1] + dm[2] * lm / 2, Math.PI / 2 + pente, mu, 0, rm, lm, rm), c: 0xD98A3A, ombre: o},
+    {geo: EB_BOULE, m: M4(mh[0] + dm[0] * lm, T + .1 + dm[1] * lm, mh[1] + dm[2] * lm, 0, 0, 0, rm, rm, rm), c: 0xD98A3A, ombre: o});   // le bout arrondi
   out.push({geo: EB_BOIS, m: M4(.3, T + .015, .18, 0, .5, 0, .14, .025, .045), c: TT.fer, ombre: () => 1},
     {geo: EB_TIGE, m: M4(.39, T + .03, .13, Math.PI / 2, -1.07, 0, .028, .04, .028), c: TT.or, ombre: o},
     {geo: EB_TIGE, m: M4(.5, T + .032, .07, Math.PI / 2, -1.07, 0, .032, .2, .032), c: TT.bois, ombre: o});
@@ -1531,33 +1537,40 @@ export const fourneauAllume = cuisineEnCours;                                   
 function fourneauMorceaux(c){
   const o = ombreBois(0, FN.haut + .5), out = [], al = aleaMuret(4404), T = FN.haut;
   const teinte = () => new THREE.Color(c).multiplyScalar(.92 + al() * .14).getHex();
-  out.push({geo: EB_BOIS, m: M4(0, T / 2, 0, 0, 0, 0, FN.l - .04, T, FN.p - .04), c: new THREE.Color(c).multiplyScalar(.95).getHex(), ombre: o});   // le cœur, de la couleur des pierres (Yo : pas de trous entre les pierres)
+  /* le cœur, de la couleur des pierres, presque au ras de leur face (Yo, 13 novembre 2026 : « le fourneau a toujours des trous ») :
+     entre deux pierres, plus de creux dans l'ombre */
+  out.push({geo: EB_BOIS, m: M4(0, T / 2, 0, 0, 0, 0, FN.l + .01, T, FN.p + .01), c: new THREE.Color(c).multiplyScalar(.95).getHex(), ombre: o});
   const zf = FN.p / 2, cx = 0, cy = .26, R = .3;
-  for(let r = 0; r < 4; r++){ const y = .09 + r * .17, dec = r % 2 ? .135 : 0;      // les pierres du devant, hors de la voûte
-    for(let x = -FN.l / 2 + .135 + dec; x < FN.l / 2 - .05; x += .27){
-      if(Math.abs(x) < R + .08 && y < cy + R + .02) continue;
-      out.push({geo: FN_PIERRE, m: M4(x, y, zf - .02, 0, 0, 0, .285 - (x + .135 > FN.l / 2 ? .1 : 0), .18, .1), c: teinte(), ombre: o}); } }
+  /* les pierres du devant : chaque rang couvre toute la largeur, du bord au bord (une demi-pierre au bout des rangs décalés) ;
+     autour de la voûte, la pierre est coupée au ras de l'arc au lieu de manquer */
+  const AUTOUR = [.25, .38, .37, .29];                                            // la demi-largeur prise par la voûte (ou l'âtre), rang par rang
+  for(let r = 0; r < 4; r++){ const y = .09 + r * .17, f = AUTOUR[r];
+    for(let x0 = -FN.l / 2 - (r % 2 ? .135 : 0); x0 < FN.l / 2 - .001; x0 += .27){
+      let a = Math.max(x0, -FN.l / 2), b = Math.min(x0 + .27, FN.l / 2);
+      if(b > -f && a < f){ if(a + b >= 0) a = f; else b = -f; }                     // coupée au ras de la voûte
+      if(b - a < .05) continue;
+      out.push({geo: FN_PIERRE, m: M4((a + b) / 2, y, zf - .02, 0, 0, 0, b - a + .012, .18, .1), c: teinte(), ombre: o}); } }
   for(let k = 0; k <= 8; k++){ const a = k / 8 * Math.PI;                         // la voûte du foyer
     out.push({geo: FN_PIERRE, m: M4(cx + Math.cos(a) * R, cy + Math.sin(a) * R, zf - .01, 0, 0, a - Math.PI / 2, .135, .16, .12), c: teinte(), ombre: o}); }
   out.push({geo: FN_PIERRE, m: M4(0, .06, zf - .01, 0, 0, 0, .5, .1, .12), c: teinte(), ombre: o});
-  for(const sx of [-1, 1]) for(let r = 0; r < 4; r++) for(const z of r % 2 ? [-.25, .12] : [-.12, .25])   // les pierres des côtés, jointives
-    out.push({geo: FN_PIERRE, m: M4(sx * (FN.l / 2 - .02), .09 + r * .17, z, 0, Math.PI / 2, 0, r % 2 ? (z < 0 ? .27 : .45) : (z < 0 ? .45 : .27), .18, .1), c: teinte(), ombre: o});
+  for(const sx of [-1, 1]) for(let r = 0; r < 4; r++) for(const [a, b] of r % 2 ? [[-FN.p / 2, -.12], [-.12, FN.p / 2]] : [[-FN.p / 2, .12], [.12, FN.p / 2]])   // les pierres des côtés, jointives, du bord au bord
+    out.push({geo: FN_PIERRE, m: M4(sx * (FN.l / 2 - .02), .09 + r * .17, (a + b) / 2, 0, Math.PI / 2, 0, b - a + .012, .18, .1), c: teinte(), ombre: o});
   for(const [x, z, w, d] of [[0, zf - .06, FN.l, .12], [0, -zf + .06, FN.l, .12], [-FN.l / 2 + .07, 0, .14, FN.p], [FN.l / 2 - .07, 0, .14, FN.p]])   // le rebord de pierre
     out.push({geo: FN_PIERRE, m: M4(x, T + .015, z, 0, 0, 0, w, .07, d), c: teinte(), ombre: o});
-  out.push({geo: FN_BOUCHE, m: M4(cx, .1, zf - .012), c: FN.noir, ombre: () => 1},   // le fond sombre du foyer, en retrait
+  out.push({geo: FN_BOUCHE, m: M4(cx, .1, zf + .012), c: FN.noir, ombre: () => 1},   // le fond sombre du foyer, devant le cœur
     {geo: EB_BOIS, m: M4(cx, .1, zf + .02, 0, 0, 0, .46, .02, .06), c: 0x5A4038, ombre: o});   // le fond sombre du foyer
   for(const [x, z] of [[-.08, 0], [0, .02], [.08, -.01], [-.04, -.04], [.05, -.04]]) out.push({geo: EB_BOULE, m: M4(x, .13, zf + .02 + z * .4, 0, 0, 0, .05, .03, .03), c: 0x3A3030, ombre: o});   // les bûches de charbon
   /* la plaque de fonte et ses deux feux */
-  out.push({geo: EB_BOIS, m: M4(-.08, T + .025, .0, 0, 0, 0, 1.0, .04, .5), c: FN.fonte, ombre: o});
+  out.push({geo: EB_BOIS, m: M4(-.11, T + .025, .0, 0, 0, 0, .94, .04, .5), c: FN.fonte, ombre: o});   // jusqu'à x .36 : la cheminée ne la touche pas (Yo, 13 novembre 2026)
   for(const x of [-.32, .16]) out.push({geo: FN_ANNEAU, m: M4(x, T + .047, 0, Math.PI / 2, 0, 0, .15, .15, .05), c: new THREE.Color(FN.fonte).multiplyScalar(.8).getHex(), ombre: o});
   out.push({geo: EB_TIGE, m: M4(.16, T + .06, 0, 0, 0, 0, .13, .025, .13), c: FN.fonte, ombre: o},
     {geo: EB_BOULE, m: M4(.16, T + .09, 0, 0, 0, 0, .035, .03, .035), c: new THREE.Color(FN.fonte).multiplyScalar(1.2).getHex(), ombre: o});
   /* la petite cheminée, au fond à droite */
-  const xc = .48, zc = -.2, hc = .32;
-  out.push({geo: FN_PIERRE, m: M4(xc, T + .1, zc, 0, 0, 0, .36, .2, .34), c: teinte(), ombre: o},
-    {geo: FN_PIERRE, m: M4(xc, T + .2 + hc / 2, zc, 0, 0, 0, .26, hc, .26), c: teinte(), ombre: o},
-    {geo: FN_BOUCHE, m: M4(xc, T + .32, zc + .132, 0, 0, 0, .22, .4, 1), c: FN.noir, ombre: () => 1},
-    {geo: FN_TOIT, m: M4(xc, T + .2 + hc + .07, zc, 0, Math.PI / 8, 0), c: FN.tuile, ombre: o},
+  const xc = .53, zc = -.2, hc = .32;                                              // à l'écart de la plaque de fonte (Yo : qu'elle ne la touche pas)
+  out.push({geo: FN_PIERRE, m: M4(xc, T + .1, zc, 0, 0, 0, .28, .2, .32), c: teinte(), ombre: o},
+    {geo: FN_PIERRE, m: M4(xc, T + .2 + hc / 2, zc, 0, 0, 0, .22, hc, .24), c: teinte(), ombre: o},
+    {geo: FN_BOUCHE, m: M4(xc, T + .32, zc + .122, 0, 0, 0, .19, .4, 1), c: FN.noir, ombre: () => 1},
+    {geo: FN_TOIT, m: M4(xc, T + .2 + hc + .07, zc, 0, Math.PI / 8, 0, .85, 1, .85), c: FN.tuile, ombre: o},
     {geo: EB_TIGE, m: M4(xc, T + .2 + hc + .16, zc, 0, 0, 0, .07, .04, .07), c: new THREE.Color(FN.tuile).multiplyScalar(.9).getHex(), ombre: o});
   /* la marmite, sur le feu de gauche */
   const xm = -.32, ym = T + .05;
