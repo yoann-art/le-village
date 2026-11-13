@@ -200,7 +200,7 @@ export function scierieNiveau1(g0){
 
 const N2 = {X0: -1.2, X1: 1.2, Z0: -1.5, HM: 2.2, HR: 1.45, DEB: .22, DEB_AV: .3};
 const MUR2 = [0xD98A3E, 0xE39A4A, 0xCC7E36], POTEAU2 = 0xC07A36, JOINT2 = 0x9C5E28,
-  TUILES = [0xEC7A30, 0xF08436, 0xE5722C, 0xEE7E33], SOUS_TUILE = 0xA9471C, PIERRES = [0xB8B2A6, 0xA8A196, 0xC6C0B3, 0x9C968B];
+  TUILES = [0xEC7A30, 0xF08436, 0xE5722C, 0xEE7E33], SOUS_TUILE = 0xD9692A,   /* le fond des tuiles presque de leur couleur : entre deux tuiles, plus de trou sombre (Yo, 13 novembre 2026) */ PIERRES = [0xB8B2A6, 0xA8A196, 0xC6C0B3, 0x9C968B];
 const ton2 = k => MUR2[((k * 7) % 3 + 3) % 3];
 
 /* une forme faite de plusieurs : fusionner rend une forme simple (positions, normales), que part() pose comme une autre */
@@ -266,7 +266,7 @@ function toit2(g){
       const t = (r + .62) * L / rangs, quinc = r % 2 ? wz / 2 : 0;
       for(let k = 0; k < nz + (r % 2 ? -1 : 0); k++){
         const p = V(CX2, sommet, z0 + (k + .5) * wz + quinc).addScaledVector(d, t).addScaledVector(n, .07 + r * .004);
-        tuile(g, TUILES[(r * 31 + k * 17 + (s > 0 ? 7 : 0)) % 4], p, dt, n, L / rangs * 1.25, .1, wz - .03);
+        tuile(g, TUILES[(r * 31 + k * 17 + (s > 0 ? 7 : 0)) % 4], p, dt, n, L / rangs * 1.3, .1, wz + .02);
       }
     }
     for(const z of [z1 + .03, z0 - .03]) planche(g, POTEAU2, L + .06, .14, .1, CX2 + s * Math.cos(a) * L / 2, sommet - Math.sin(a) * L / 2 + .07, z, 0, 0, -s * a);
@@ -326,34 +326,36 @@ function lanterne2(g){
    piles de planches (le bout des planches vers l'avant) */
 const XL = -1.95;
 function appentis2(g){
-  const {X0, Z0} = N2, za = Z0 + .15, zb = -.45, hautA = 1.82, basA = 1.42;
-  boite(g, POTEAU2, .16, basA, .16, XL + .15, basA / 2, zb - .04);
-  boite(g, POTEAU2, X0 - XL + .1, .16, .16, (XL + X0) / 2, basA - .02, zb - .04);
-  planche(g, POTEAU2, .1, .5, .1, X0 - .26, basA - .26, zb - .04, 0, 0, .78);
-  planche(g, POTEAU2, .1, .5, .1, XL + .35, basA - .26, zb - .04, 0, 0, -.78);
-  boite(g, POTEAU2, .16, hautA, .16, XL + .1, hautA / 2, za);
-  boite(g, POTEAU2, .14, .14, zb - za, XL + .1, basA + .02, (za + zb) / 2);
-  /* le toit : un fond sombre et des rangs de tuiles, en travers, du haut (derrière) vers le bas (devant) */
-  const pente = Math.atan2(hautA - basA, zb - za), Lp = Math.hypot(hautA - basA, zb - za) + .3;
-  const d = V(0, -Math.sin(pente), Math.cos(pente)), n = V(0, Math.cos(pente), Math.sin(pente)), dt = d.clone().addScaledVector(n, -.09).normalize();
-  const xa = XL - .08, xb = X0 - .1, cx = (xa + xb) / 2, haut0 = V(0, hautA + .2, za - .15);
+  /* droit, comme le grand toit (Yo, 13 novembre 2026 : « la petite toiture qui abrite le bois n'est pas droite ») : il s'appuie
+     sur le mur de gauche et descend vers l'extérieur, d'aplomb sur deux poteaux droits et leur sablière */
+  const {X0, Z0} = N2, za = Z0 + .1, zb = -.45, hautA = 1.82, basA = 1.42;
+  for(const z of [za, zb - .04]){
+    boite(g, POTEAU2, .16, basA, .16, XL + .12, basA / 2, z);                                   // les poteaux, d'aplomb
+    boite(g, POTEAU2, X0 - XL, .14, .14, (XL + X0) / 2, basA + .02, z);                        // la traverse jusqu'au mur
+    planche(g, POTEAU2, .1, .46, .1, XL + .34, basA - .22, z, 0, 0, -.78);                     // la jambe de force
+  }
+  boite(g, POTEAU2, .16, .16, zb - za + .2, XL + .12, basA + .1, (za + zb) / 2);              // la sablière, le long du bord
+  /* le toit : le fond et des rangs de tuiles le long du mur, du haut (contre le mur) vers le bas (dehors) */
+  const pente = Math.atan2(hautA - basA, X0 - XL), Lp = Math.hypot(hautA - basA, X0 - XL) + .22;
+  const d = V(-Math.cos(pente), -Math.sin(pente), 0), n = V(-Math.sin(pente), Math.cos(pente), 0), dt = d.clone().addScaledVector(n, -.09).normalize();
+  const z0 = za - .15, z1 = zb + .12, haut0 = V(X0, hautA + .2, 0);
   const centre = haut0.clone().addScaledVector(d, Lp / 2).addScaledVector(n, -.03);
-  planche(g, SOUS_TUILE, xb - xa, .06, Lp, cx, centre.y, centre.z, pente, 0, 0);
-  const rangs = Math.round(Lp / .25), nx = 3, wx = (xb - xa) / nx;
+  planche(g, SOUS_TUILE, Lp, .06, z1 - z0, centre.x, centre.y, (z0 + z1) / 2, 0, 0, pente);
+  const rangs = Math.round(Lp / .25), nz = Math.max(2, Math.round((z1 - z0) / .29)), wz = (z1 - z0) / nz;
   for(let r = 0; r < rangs; r++){
-    const t = (r + .62) * Lp / rangs, quinc = r % 2 ? wx / 2 : 0;
-    for(let k = 0; k < nx + (r % 2 ? -1 : 0); k++){
-      const p = haut0.clone().setX(xa + (k + .5) * wx + quinc).addScaledVector(d, t).addScaledVector(n, .02 + r * .004);
-      tuile(g, TUILES[(r * 13 + k * 5) % 4], p, dt, n, Lp / rangs * 1.25, .1, wx - .03);
+    const t = (r + .62) * Lp / rangs, quinc = r % 2 ? wz / 2 : 0;
+    for(let k = 0; k < nz + (r % 2 ? -1 : 0); k++){
+      const p = haut0.clone().setZ(z0 + (k + .5) * wz + quinc).addScaledVector(d, t).addScaledVector(n, .02 + r * .004);
+      tuile(g, TUILES[(r * 13 + k * 5) % 4], p, dt, n, Lp / rangs * 1.3, .1, wz + .02);
     }
   }
-  planche(g, POTEAU2, .1, .14, Lp, xa - .02, centre.y + .06, centre.z, pente, 0, 0);          // la planche de rive du côté
+  for(const z of [z0 - .03, z1 + .03]) planche(g, POTEAU2, Lp, .14, .1, centre.x, centre.y + .06, z, 0, 0, pente);   // les planches de rive
   /* les piles de planches à l'abri */
   [[-1.45, -.95, 5]].forEach(([x, z, n], p) => {
     for(let k = 0; k < n; k++) for(let j = 0; j < 2; j++)
       boite(g, (k + j + p) % 2 ? CLAIR : ton2(k + p), .17, .08, .62 - (k % 2) * .05, x + (j - .5) * .19, .05 + k * .09, z + (k % 3) * .02);
   });
-  [[-1.88, -1.15, 1.1], [-1.86, -.85, .95]].forEach(([x, z, h], k) => planche(g, k ? CLAIR : ton2(k), .07, h, .2, x, h / 2, z, .12, 0, -.18));
+  [[-1.4, -1.32, 1.1], [-1.5, -1.3, .95]].forEach(([x, z, h], k) => planche(g, k ? CLAIR : ton2(k), .2, h, .07, x, h / 2, z, -.1, 0, 0));   // debout contre le fond, à l'abri
 }
 /* la table à scie circulaire : son plateau, ses pieds écartés, sa lame ronde et ses dents ; devant la roue, bien alignée avec
    la façade (Yo, 29 octobre 2026 : « mieux agencé, plus droit ») */

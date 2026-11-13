@@ -129,6 +129,7 @@ function porte(g){
   boite(g, FONCE, w + .3, .12, .14, PORTE_X, h + .12, FACADE + .07);
   bloc(g, ROCHE[2], 1.05, .14, .42, PORTE_X, .07, FACADE + .33); bloc(g, ROCHE[0], .9, .12, .3, PORTE_X + .05, .17, FACADE + .2);
 }
+const ANSE = new THREE.TorusGeometry(.2, .014, 5, 14, Math.PI);
 /* contre le mur, près du coin gauche (loin de la porte, à la demande de Yo le 3 novembre 2026) : la pioche appuyée et le
    seau de bois cerclé de fer */
 function outils(g){
@@ -141,8 +142,9 @@ function outils(g){
   for(let k = 0; k < 10; k++){ const an = k / 10 * Math.PI * 2;                               // les douelles
     planche(g, ton(k), .13, hs, .04, xs + Math.sin(an) * r, hs / 2 + .03, zs + Math.cos(an) * r, 0, an, 0); }
   ajoute(g, part(G.cyl, 0x9A5A26, r * 2, .04, r * 2, xs, .06, zs));
+  ajoute(g, part(G.cyl, 0x4FA6C8, r * 2 - .03, .03, r * 2 - .03, xs, hs - .04, zs)).castShadow = false;   // plein d'eau (Yo, 13 novembre 2026 : on voyait le mur à travers)
   for(const y of [.1, .3]){ const c = ajoute(g, part(G.tore, FER, r * 2.1, r * 2.1, .5, xs, y, zs)); c.rotation.x = Math.PI / 2; }
-  const anse = ajoute(g, part(G.tore, FER, .4, .4, .3, xs, hs, zs)); anse.rotation.y = Math.PI / 2; anse.scale.set(.4, .4, .3);
+  ajoute(g, part(ANSE, FER, 1, 1, 1, xs, hs + .02, zs));                                    // l'anse : un demi-cercle de fer au-dessus du seau (Yo : « l'anse est bizarre »)
 }
 /* à droite de la porte : la potence de bois et la lanterne de fer qui pend, qui brille la nuit */
 function lanterneCabane(g){
@@ -176,20 +178,22 @@ export function carriereNiveau1(g){
    de pierre, des murs de planches couchées, le toit d'ardoises clouées qui descend vers l'avant et l'arrière, ses pignons
    sur les côtés, la poutre de faîte et ses deux blocs ; la porte, ses marches et la lanterne comme au niveau 1. */
 const ARDOISE = [0x6B6678, 0x5F5B6E, 0x77728A], VEINE = [0xD9822B, 0xE8973A], ROUE = 0x7A4A26, GROS = [0xA89C8A, 0x9E9282, 0xB0A492];
-/* un rocher rond, un peu bosselé, et sa veine orange qui le traverse en biais sur sa face de devant */
+/* un rocher brut, à grandes facettes comme l'image (Yo, 13 novembre 2026 : « des pierres rondes bizarres »), un peu tassé ;
+   sa veine orange qui le fend en biais sur sa face de devant */
 const BOSSE = (() => {
-  const g = new THREE.SphereGeometry(.5, 12, 9), p = g.attributes.position;
-  for(let i = 0; i < p.count; i++){ const x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = 1 + .05 * Math.sin(x * 9 + z * 7) * Math.cos(y * 8);
-    p.setXYZ(i, x * k, y * Math.min(k, 1) * (y < 0 ? .85 : 1), z * k); }
+  const g = new THREE.IcosahedronGeometry(.5, 1), p = g.attributes.position;
+  const h = (x, y, z) => { const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453; return s - Math.floor(s); };
+  for(let i = 0; i < p.count; i++){ const x = +p.getX(i).toFixed(3), y = +p.getY(i).toFixed(3), z = +p.getZ(i).toFixed(3), k = .86 + .26 * h(x, y, z);
+    p.setXYZ(i, x * k, y * k * (y < 0 ? .8 : .95), z * k); }
   g.computeVertexNormals(); return g;
 })();
 function rocher(g, x, y, z, sx, sy, sz, pente = .6){
   ajoute(g, part(BOSSE, GROS[Math.floor(hasard() * 3)], sx, sy, sz, x, y, z));
-  const n = 15;
+  const n = 12;
   for(let k = 0; k < n; k++){
-    const t = (k + .5) / n * 2 - 1, th = t * 1.05, ph = t * pente + Math.sin(t * 5) * .08;      // la veine, de biais et un peu ondulée
-    const px = x + sx / 2 * Math.cos(ph) * Math.sin(th), py = y + sy / 2 * Math.sin(ph) * .96, pz = z + sz / 2 * Math.cos(ph) * Math.cos(th);
-    const m = boite(g, VEINE[k % 2], sx * .11, .045, .035, px, py, pz);
+    const t = (k + .5) / n * 2 - 1, th = t * .95, ph = t * pente + Math.sin(t * 7) * .12;      // la veine : une fente de biais, en zigzag, sur le devant
+    const px = x + sx / 2 * .96 * Math.cos(ph) * Math.sin(th), py = y + sy / 2 * .93 * Math.sin(ph), pz = z + sz / 2 * .96 * Math.cos(ph) * Math.cos(th);
+    const m = boite(g, VEINE[k % 2], sx * .11, .04, .08, px, py, pz);
     m.rotation.set(0, th, Math.atan2(pente * sy, sx * Math.cos(th) + .001));
   }
 }
