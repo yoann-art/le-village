@@ -3671,7 +3671,11 @@ export async function verifier(){
       if(scierie.lvl !== 2 || !montes.includes(scierie)) throw new Error(`la Scierie n'est pas passée au niveau 2 (niveau ${scierie.lvl})`);
       if(monterAuNiveau2().length) throw new Error("le passage au niveau 2 se refait une deuxième fois");
     } finally { scierie.lvl = l0; state.niveau2 = n0; const {placeMesh} = await import("../js/monde/batiments.js"); placeMesh(scierie); }
-    return `pièces moyennes ${tailles}, grandes ${grandes} ; les lumières murales et le rideau suivent leur mur, le sol couvre les nouvelles cases ; la Scierie passée une fois au niveau 2`;
+    /* la porte du Marché passe au milieu au niveau 2 (Yo, 14 novembre 2026 : « Au milieu comme l'image ») */
+    const {doorTile, porteX} = await import("../js/regles.js");
+    if(porteX("marche", 1) !== .9 || porteX("marche", 2) !== 0 || doorTile("marche", 10, 10, 0, 2)[0] !== 12 || doorTile("marche", 10, 10, 0, 1)[0] !== 13)
+      throw new Error(`la porte du Marché : ${porteX("marche", 1)} puis ${porteX("marche", 2)}, case ${doorTile("marche", 10, 10, 0, 2)}`);
+    return `pièces moyennes ${tailles}, grandes ${grandes} ; les lumières murales et le rideau suivent leur mur, le sol couvre les nouvelles cases ; la Scierie passée une fois au niveau 2 ; la porte du Marché au milieu au niveau 2`;
   });
   await etape("Les icônes : la photo des modèles refaits d'après les images de Yo", async () => {
     const {iconesPhoto, photographier} = await import("../js/icones.js");

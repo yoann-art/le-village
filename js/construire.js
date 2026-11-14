@@ -10,7 +10,7 @@ import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace, agrandirPiece } from "./regles.js";
 import { renderer, scene, ray, aim, groundAt } from "./monde/scene.js";
 import { H, N, idx, inb, map, tileOf, setObj, setEtat } from "./monde/ile.js";
-import { makeBuilding, occ, footprint, placeMesh, removeMesh, setMeshVisible, pickBuilding } from "./monde/batiments.js";
+import { makeBuilding, occ, footprint, placeMesh, removeMesh, setMeshVisible, pickBuilding, porteLibre } from "./monde/batiments.js";
 import { lumiereSousDoigt } from "./deplacer.js";
 import { premiereActive } from "./vue.js";
 import { entrees } from "./monde/ponton.js";
@@ -49,7 +49,7 @@ function placeProblem(type, ax, az){
   if([[-R,-R],[R,-R],[-R,R],[R,R]].some(([dx,dz]) => mine.has(idx(tileOf(p.x + dx), tileOf(p.z + dz))))) return "perso";
   const [dx, dz] = doorTile(type, ax, az);
   if(!freeTile(dx, dz)) return "porte";
-  if(state.buildings.some(b => { if(b === moving) return false; const [x,z] = doorTile(b.type, b.x, b.z, b.rot); return inb(x,z) && mine.has(idx(x,z)); })) return "porte";
+  if(state.buildings.some(b => { if(b === moving) return false; const [x,z] = doorTile(b.type, b.x, b.z, b.rot, b.lvl); return inb(x,z) && mine.has(idx(x,z)); })) return "porte";
   return null;
 }
 export function startPlacing(type, b = null){
@@ -216,7 +216,7 @@ $("#btn-place").addEventListener("click", () => {
    (sinon, la prochaine fois qu'on les déplace) */
 if(state.buildings.some(b => b.rot)){
   for(const b of state.buildings) if(b.rot){
-    const [x, z] = doorTile(b.type, b.x, b.z);
+    const [x, z] = doorTile(b.type, b.x, b.z, 0, b.lvl);
     if(freeTile(x, z)){ delete b.rot; clearHerbes(b.type, b.x, b.z); placeMesh(b); }
   }
   save();
@@ -241,7 +241,7 @@ const MASC = new Set(["marche", "chateau"]);      // pour accorder : « déjà b
    (fini : l'objet ; pas fini : ses ingrédients). Ce qui ne rentre pas attend dans un coffre posé sur la place du
    village, comme les coffres qui étaient posés dans leur pièce. */
 function caseLibre(){            // la case libre la plus proche du milieu de la place du village
-  const c = (N - 1) / 2, portes = new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return idx(x, z); }));
+  const c = (N - 1) / 2, portes = new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot, b.lvl); return idx(x, z); }));
   let best = -1, dist = Infinity;
   for(let z = 0; z < N; z++) for(let x = 0; x < N; x++){
     const i = idx(x, z), d = Math.hypot(x - c, z - c);
@@ -360,6 +360,6 @@ export function upgradeDetail(){
   if(!b || b.lvl >= maxLvl(b.type)) return;
   const c = upCost(b.type, b.lvl);
   if(!canAfford(c)) return;
-  pay(c); agrandirPiece(b, roomSide(b.type, b.lvl), roomSide(b.type, b.lvl + 1)); b.lvl++; placeMesh(b); save(); renderHUD(); closeSheet();
+  pay(c); agrandirPiece(b, roomSide(b.type, b.lvl), roomSide(b.type, b.lvl + 1)); b.lvl++; porteLibre(b, b.lvl - 1); placeMesh(b); save(); renderHUD(); closeSheet();
   toast(`${B[b.type].nom} amélioré au niveau ${b.lvl}`);
 }

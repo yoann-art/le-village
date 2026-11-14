@@ -289,6 +289,25 @@ function dos(g, PO){
     planche(g, PO, .11, L, .08, (x0 + x1) / 2, (HM + SOCLE) / 2, z, 0, 0, (k % 2 ? 1 : -1) * Math.atan2(x1 - x0, h)); }
 }
 
+/* les colombages du côté droit de l'aile (avant, un aplat de torchis) */
+function coteDroit(g, PO){
+  const x = X1 + .09, zs = [Z0 + .07, (2 * Z0 + FW) / 3, (Z0 + 2 * FW) / 3, FW - .07], h = HMW - .05;
+  for(const z of zs) boite(g, PO, .1, h - SOCLE, .15, x, (h + SOCLE) / 2, z);
+  boite(g, PO, .12, .14, FW - Z0 + .1, x, h - .07, (Z0 + FW) / 2); boite(g, PO, .1, .12, FW - Z0, x, SOCLE + .06, (Z0 + FW) / 2);
+  for(let k = 0; k < 3; k++){ const z0 = zs[k] + .08, z1 = zs[k + 1] - .08, hh = h - SOCLE - .26, L = Math.hypot(z1 - z0, hh);
+    planche(g, PO, .08, L, .11, x, (h + SOCLE) / 2, (z0 + z1) / 2, (k % 2 ? 1 : -1) * Math.atan2(z1 - z0, hh), 0, 0); }
+}
+
+/* l'arrière de l'aile de la porte, sous son toit qui va maintenant jusqu'en arrière (Yo, 14 novembre 2026 : la partie droite « pas
+   finie ») : un triangle lisse, ses rives, son poinçon */
+function pignonDos(g, CR, PO){
+  const sh = new THREE.Shape(), b = HMW - .06, h = HRW - .1, z = Z0 - .02;
+  sh.moveTo(XW + .02, b); sh.lineTo(CXW, h); sh.lineTo(X1 - .02, b); sh.closePath();
+  ajoute(g, part(new THREE.ExtrudeGeometry(sh, {depth: .08, bevelEnabled: false}), CR, 1, 1, 1, 0, 0, z - .08));
+  for(const s of [-1, 1]) planche(g, BOIS[0], RUNW * Math.SQRT2, .16, .12, CXW + s * RUNW / 2, HRW - RUNW / 2 - .04, z - .1, 0, 0, -s * Math.PI / 4);
+  boite(g, PO, .12, h - b - .1, .08, CXW, (b + h) / 2 - .05, z - .1);
+}
+
 /* le bout du grand toit, sur un côté : un triangle lisse de torchis (avant, des panneaux en escalier : « on dirait qu'il n'est pas
    fini », Yo, 14 novembre 2026), ses planches de rive le long du toit, des colombages sur le grand mur ; demi : seulement la moitié
    de derrière (devant, c'est le toit du pignon) */
@@ -321,8 +340,8 @@ function fenetreArc(g, fx, fy, fw, fh, z, saison, volets){
 function murs2(g, saison){
   boite(g, CREME2, X1 - X0 - .1, HM - .1, FACADE - Z0 - .1, CX, HM / 2, ZR);
   boite(g, CREME2, X1 - XW - .1, HMW - .1, FW - FACADE + .1, CXW, HMW / 2, (FW + FACADE) / 2 - .05);
-  ajoute(g, part(G.gable, CREME2, X1 - X0 - .1, HR - HM, FACADE - Z0 - .1, CX, HM - .02, ZR));
-  ajoute(g, part(G.gable, CREME2, FW + .3, HRW - HMW, X1 - XW - .1, CXW, HMW - .02, (FW - .3) / 2)).rotation.y = Math.PI / 2;
+  ajoute(g, part(G.gable, CREME2, CXW - X0 - .1, HR - HM, FACADE - Z0 - .1, (X0 + CXW) / 2, HM - .02, ZR));   // les combles du grand toit, jusqu'au milieu de l'aile
+  ajoute(g, part(G.gable, CREME2, FW - Z0, HRW - HMW, X1 - XW - .1, CXW, HMW - .02, (FW + Z0) / 2)).rotation.y = Math.PI / 2;   // celles de l'aile, d'avant en arrière
   /* le socle de grosses pierres grises, jointives ; les grosses pierres des coins */
   socle(g, X0 - .1, XW, FACADE, "x", 1); socle(g, XW, X1 + .1, FW, "x", 1); socle(g, Z0, FACADE, X0, "z", -1); socle(g, Z0, FW, X1, "z", 1); socle(g, X0, X1, Z0, "x", -1);
   for(const [x, z] of [[X0 - .05, FACADE], [X1 + .05, FW]]) bloc(g, pierre(), .42, .46, .42, x, .23, z + .05);
@@ -338,8 +357,9 @@ function murs2(g, saison){
   const toitZ = z => HR - PENTE * Math.abs(z - ZR) - .08;
   torchis2(g, Z0, FACADE, X0 - .02, "z", () => HM - .08);
   boutToit(g, X0 - .02, -1, false, CREME2, POUTRE2);
-  torchis2(g, Z0, FW, X1 + .02, "z", z => z > -.3 ? HMW - .04 : HM - .08);
-  boutToit(g, X1 + .02, 1, true, CREME2, POUTRE2);
+  torchis2(g, Z0, FW, X1 + .02, "z", () => HMW - .04);
+  pignonDos(g, CREME2, POUTRE2);
+  coteDroit(g, POUTRE2);
   dos(g, POUTRE2);
   torchis2(g, X0, X1, Z0 - .02, "x", () => HM);
   for(const [x, z] of [[X0 - .06, Z0 + .07], [X0 - .06, FACADE - .06], [X1 + .06, Z0 + .07], [X1 + .06, FW - .06]]) boite(g, POUTRE2, .1, HM - SOCLE, .15, x, (HM + SOCLE) / 2, z);
@@ -361,13 +381,16 @@ function pignon2(g, saison){
 /* le chaume : comme au niveau 1, et le faîte de chaume roulé (pas de rondin, comme l'image) */
 function toits2(g){
   const a = Math.atan(PENTE), L = RUN / Math.cos(a) + .05;
-  pente(poser(g, 0, HR, ZR, 0, a), X0 - .3, XW + .25, L, 4, .26);
-  pente(poser(g, 0, HR, ZR, Math.PI, a), -(X1 + .3), -(X0 - .3), L, 4, .42);
-  const LW = RUNW * Math.SQRT2 + .05, zA = -.4, zB = FW + .26;
+  /* le grand toit, à gauche, jusqu'au milieu de l'aile (dessous, il passe sous son toit) ; l'aile de la porte, son toit d'avant en
+     arrière, d'un bout à l'autre : plus de bout de toit ouvert ni de tuiles en escalier (Yo, 14 novembre 2026) */
+  pente(poser(g, 0, HR, ZR, 0, a), X0 - .3, CXW, L, 4, .26);
+  pente(poser(g, 0, HR, ZR, Math.PI, a), -CXW, -(X0 - .3), L, 4, .42);
+  const LW = RUNW * Math.SQRT2 + .05, zA = Z0 - AV, zB = FW + .26;
   pente(poser(g, CXW, HRW, 0, Math.PI / 2, Math.PI / 4), -zB, -zA, LW, 4, .26);
   pente(poser(g, CXW, HRW, 0, -Math.PI / 2, Math.PI / 4), zA, zB, LW, 4, .26);
-  const fa = ajoute(g, part(ROND, PAILLE[1], .36, X1 - X0 + .6, .4, CX, HR + .2, ZR)); fa.rotation.z = Math.PI / 2;
-  for(const x of [X0 - .3, X1 + .3]) ajoute(g, part(ECAILLE, PAILLE[0], .38, .4, .42, x, HR + .2, ZR));
+  const fa = ajoute(g, part(ROND, PAILLE[1], .36, CXW - X0 + .3, .4, (X0 - .3 + CXW) / 2, HR + .2, ZR)); fa.rotation.z = Math.PI / 2;
+  ajoute(g, part(ECAILLE, PAILLE[0], .38, .4, .42, X0 - .3, HR + .2, ZR));
+  ajoute(g, part(ECAILLE, PAILLE[0], .32, .34, .3, CXW, HRW + .17, zA));
   ajoute(g, part(ROND, PAILLE[1], .3, zB - zA, .32, CXW, HRW + .17, (zA + zB) / 2)).rotation.x = Math.PI / 2;
   ajoute(g, part(ECAILLE, PAILLE[0], .32, .34, .3, CXW, HRW + .17, zB));
   g.userData.toit = HR + .45;

@@ -7,8 +7,11 @@ export const sizeOf = t => B[t].size || 1;
 /* La case juste devant la porte d'un bâtiment posé en (x, z) : elle doit rester libre. rot (étape 1.9) : le
    bâtiment tourné d'autant de quarts de tour (0 : la porte en bas de l'écran, 1 : à droite, 2 : en haut, 3 : à
    gauche) ; la case tourne avec le bâtiment autour du milieu de son carré */
-export function doorTile(t, x, z, rot = 0){
-  const s = sizeOf(t), k = Math.floor(s/2 + (B[t].door || 0));
+/* La place de la porte sur la façade (B[t].door) ; elle peut changer avec le niveau (B[t].doorNiveau : le Marché niveau 2, porte au
+   milieu, Yo, 14 novembre 2026 : « Au milieu comme l'image ») */
+export const porteX = (t, lvl = 1) => { const n = B[t].doorNiveau; return n && n[lvl] !== undefined ? n[lvl] : (B[t].door || 0); };
+export function doorTile(t, x, z, rot = 0, lvl = 1){
+  const s = sizeOf(t), k = Math.floor(s/2 + porteX(t, lvl));
   switch(rot & 3){
     case 1: return [x + s, z + s - 1 - k];
     case 2: return [x + s - 1 - k, z - 1];
@@ -27,7 +30,7 @@ export const avecCour = b => b.type === "chateau" && (b.lvl || 1) === 1 && !b.ro
 export const dansCour = (b, x, z) => avecCour(b) && x >= b.x && x < b.x + 7 && z >= b.z && z < b.z + 7 && COUR.has((z - b.z) * 7 + (x - b.x));
 /* La case devant la porte par où l'on entre (et où l'on ressort) : pour le Château niveau 1, celle devant la porte de la
    tour, dans la cour */
-export const porteDe = b => avecCour(b) ? [b.x + 1, b.z + 3] : doorTile(b.type, b.x, b.z, b.rot);
+export const porteDe = b => avecCour(b) ? [b.x + 1, b.z + 3] : doorTile(b.type, b.x, b.z, b.rot, b.lvl);
 /* Côté de la pièce intérieure, en P : elle grandit de 1 P à chaque niveau */
 const ROOM = {petite:4, moyenne:6, grande:8};
 /* La pièce grandit de deux cases de côté à chaque niveau (Yo, 13 novembre 2026 : « L'intérieur des bâtiments doit être plus grand

@@ -26,7 +26,7 @@ const SEME = o => o === "thym" || !!FLEURS[o];
 const limite = o => o === "thym" ? FLORE_ILE.thym : FLEURS[o].jardin || FLEURS[o].reserve ? 0 : FLEURS[o].rarete === "commun" ? FLORE_ILE.fleurCommune : FLORE_ILE.fleurPeuCommune;
 /* sauvage : posée par la nature au début (aucun état) ou ressemée seule ; sinon plantée par le joueur */
 const sauvage = i => { const c = state.ile[i]; return !c || !c.plante || !!c.sauvage; };
-const portes = () => new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return inb(x, z) ? idx(x, z) : -1; }));
+const portes = () => new Set(state.buildings.map(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot, b.lvl); return inb(x, z) ? idx(x, z) : -1; }));
 
 function caseLibre(i, bloque){
   return map.type[i] === "grass" && !map.obj[i] && !occ.has(i) && !solAt(i) && !state.chemins[i] && !entrees.has(i) && !bloque.has(i);

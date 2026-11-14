@@ -108,7 +108,7 @@ const garde = new Set();
     if(b.type === "foret") continue;                // l'orée est sur l'eau, au bout du pont
     const s = sizeOf(b.type);
     for(let dz = 0; dz < s; dz++) for(let dx = 0; dx < s; dx++) ajoute(b.x + dx, b.z + dz);
-    const [px, pz] = doorTile(b.type, b.x, b.z, b.rot); ajoute(px, pz);
+    const [px, pz] = doorTile(b.type, b.x, b.z, b.rot, b.lvl); ajoute(px, pz);
     if(b.type === "mine") for(let dx = -1; dx <= 3; dx++) for(const dz of [s, s + 1]) ajoute(b.x + dx, b.z + dz);   // deux rangées devant
   }
   for(const i of Object.keys(state.chemins)) garde.add(+i);
@@ -203,7 +203,7 @@ export const comblable = i => map.type[i] === "water" && lieuEau(i) === "etang";
 }
 /* Rien ne pousse devant la porte d'un bâtiment déjà posé */
 state.buildings.forEach(b => {
-  const [x, z] = doorTile(b.type, b.x, b.z, b.rot);
+  const [x, z] = doorTile(b.type, b.x, b.z, b.rot, b.lvl);
   if(inb(x, z)) map.obj[idx(x, z)] = null;
 });
 /* Ce que le joueur a changé sur l'île (étape 1.5) : state.ile = {case: {o, plante?, coupe?, vide?, arrose?}} ;

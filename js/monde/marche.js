@@ -256,3 +256,206 @@ export function marcheNiveau1(g, opt = {}){
   lanterneMarche(g);
   etal(g, opt.saison || "automne");
 }
+
+/* ================= Le Marché, niveau 2 =================
+   D'après l'image de Yo (14 novembre 2026 : « Voici le marché de niveau 2 » ; « Au milieu comme l'image ») : la même place
+   (5 × 5), la porte au milieu (B.marche.doorNiveau). La grande halle de bois : ses gros poteaux sur des socles de pierres
+   claires, leurs liens en arc, le grand toit de tuiles orange arrondies, son faîte et ses gros blocs ; au milieu, le pavillon
+   de l'entrée, son toit en pignon qui avance, ses colombages et sa fenêtre allumée en arc, la grande porte à deux battants en
+   arc, leurs pentures et leurs deux anneaux, les marches de pierre, une lanterne de chaque côté. À gauche, l'étal des fruits
+   sous son auvent rayé rouge et crème à festons : l'étagère et ses cagettes (les fruits de la saison, comme au niveau 1 et
+   comme la vraie nature), la nappe crème, deux tonneaux, deux caisses. À droite, l'étal des étoffes sous son auvent rayé : la
+   balance dorée, les étoffes pliées, celles pendues à leur barre, la nappe violette à franges dorées, un tonneau, une caisse.
+   La plaque de sable. Les lanternes et la fenêtre brillent plus fort la nuit. Fait le tour : l'arrière et les côtés fermés de
+   planches, rien d'ouvert (Yo, 14 novembre 2026). */
+const M2 = {X0: -2.25, X1: 2.25, Z0: -1.55, ZE: -.25, HR: 3.1, AV: .38, PX: .82, FW: FACADE + .16, HRW: 3.2};
+M2.ZR = (M2.Z0 + FACADE) / 2; M2.RUN = (FACADE - M2.Z0) / 2 + M2.AV; M2.PENTE = (M2.HR - 2.0) / M2.RUN; M2.HM = M2.HR - M2.PENTE * (FACADE - M2.ZR);
+M2.RUNW = M2.PX + .28; M2.HMW = M2.HRW - M2.PX;
+const TUILE2 = [0xE07834, 0xEA8640, 0xD86C2C, 0xF0904A], TUILE2_F = 0xC0602A, RAYE = [0xD8452E, 0xF6E8C8], VIOLET = 0x8A4AA8, OR2 = 0xE3A92C;
+const VITRE2 = toon({color: 0xFFD060, emissive: 0xFFA630, emissiveIntensity: .7});
+lanterne(null, 0, 0, VITRE2);
+const ARC2 = new THREE.TorusGeometry(1, .12, 6, 16, Math.PI), DEMI2 = new THREE.CylinderGeometry(.5, .5, 1, 16, 1, false, -Math.PI / 2, Math.PI);
+/* une pente posée : faîte en (x, y, z), qui descend vers rot (0 : vers l'avant), inclinée de a ; le repère : x le long du faîte,
+   z qui descend la pente, y vers le dehors */
+function poser2(g, x, y, z, rot, a){
+  const o = new THREE.Group(), i = new THREE.Group();
+  o.position.set(x, y, z); o.rotation.y = rot; i.rotation.x = a; o.add(i); g.add(o); return i;
+}
+/* des tuiles orange arrondies en rangs qui se chevauchent, en quinconce, sur un fond de leur couleur ; sauf(u, z) : pas là */
+function tuiles2(g, a, b, L, sauf = () => false){
+  const rangs = Math.max(3, Math.round(L / .36)), h = L / rangs, w = .42;
+  boite(g, TUILE2_F, b - a, .06, L, (a + b) / 2, .02, L / 2);
+  for(let k = 0; k < rangs; k++){
+    const z = (k + .6) * h, y = .07 + (rangs - k) * .012, dec = k % 2 ? w / 2 : 0;
+    for(let i = -1; ; i++){ let u0 = a + i * w + dec, u1 = u0 + w; if(u0 >= b) break; u0 = Math.max(u0, a); u1 = Math.min(u1, b); if(u1 - u0 < .06) continue;
+      if(sauf((u0 + u1) / 2, z)) continue;
+      const t = ajoute(g, part(BLOC_L, TUILE2[(k * 3 + i * 5 + 8) % 4], u1 - u0 - .02, .1, h * 1.45, (u0 + u1) / 2, y, z)); t.rotation.x = -.08; }
+  }
+}
+/* un lien en arc entre un poteau et la poutre (des petits morceaux sur un quart de cercle) */
+function lienArc(g, x, y, z, s, r = .42){
+  for(let k = 0; k < 5; k++){ const a0 = k / 5 * Math.PI / 2, a1 = (k + 1) / 5 * Math.PI / 2, am = (a0 + a1) / 2;
+    planche(g, BOIS[0], .1, r * Math.PI / 2 / 5 + .02, .12, x + s * (r - Math.cos(am) * r), y - r + Math.sin(am) * r, z, 0, 0, s * (Math.PI / 2 - am)); }
+}
+/* la halle : le cœur fermé derrière les étals, les planches de l'arrière et des côtés, les poteaux et leurs socles, la poutre */
+function halle2(g){
+  const {X0, X1, Z0, ZE, HM, ZR, PENTE, HR} = M2;
+  boite(g, FONCE, X1 - X0 - .1, HM - .1, ZE - Z0, 0, HM / 2, (Z0 + ZE) / 2);                       // le cœur, derrière
+  ajoute(g, part(G.gable, FONCE, X1 - X0 - .1, HR - HM, FACADE - Z0 - .1, 0, HM - .02, ZR));        // les combles
+  const toitZ = z => HR - PENTE * Math.abs(z - ZR) - .08;
+  planches(g, X0, X1, Z0 - .02, "x", () => HM);                                                     // l'arrière
+  for(const x of [X0 - .02, X1 + .02]) planches(g, Z0, FACADE, x, "z", z => z < ZE + .05 ? toitZ(z) : HM - .05, SOCLE, [[ZE + .1, FACADE - .1, .95, HM - .15]]);   // les côtés, ouverts en haut sur l'étal
+  for(const x of [X0 + .02, X1 - .02]) for(const z of [Z0 + .06, FACADE]) bloc(g, pierre(), .34, .34, .34, x, .17, z);
+  for(const x of [X0 + .02, X1 - .02]) boite(g, BOIS[0], .2, HM - .34, .2, x, .34 + (HM - .34) / 2, FACADE);   // les poteaux des coins
+  for(const z of [FACADE + .02]) boite(g, BOIS[1], X1 - X0 + .3, .2, .2, 0, HM - .05, z);         // la poutre de devant
+  for(const s of [-1, 1]) lienArc(g, s > 0 ? X1 - .12 : X0 + .12, HM - .15, FACADE + .02, s > 0 ? -1 : 1);
+  /* le fond des étals : des planches couchées ; leur plancher */
+  for(let y = SOCLE; y < HM - .1; y += .21) boite(g, ton(Math.round(y * 10)), X1 - X0 - .1, .19, .07, 0, y + .09, ZE + .04);
+  boite(g, BOIS[2], X1 - X0 - .2, .06, FACADE - ZE, 0, .03, (ZE + FACADE) / 2);
+}
+/* le pavillon de l'entrée : ses murs de planches et ses colombages, les piliers de pierre, la porte, le pignon et sa fenêtre */
+function pavillon(g){
+  const {PX, FW, HMW, HRW, ZE} = M2, z = FW + .02;
+  boite(g, FONCE, PX * 2 - .1, HMW - .1, FW - ZE, 0, HMW / 2, (FW + ZE) / 2);                       // le cœur
+  ajoute(g, part(G.gable, FONCE, FW - M2.ZR + .1, HRW - HMW, PX * 2 - .1, 0, HMW - .02, (FW + M2.ZR) / 2)).rotation.y = Math.PI / 2;
+  for(const x of [-PX + .02, PX - .02]) planches(g, ZE, FW, x, "z", () => HMW - .05);
+  /* les piliers de pierres claires jointives de part et d'autre de la porte, les poteaux au-dessus */
+  for(const s of [-1, 1]){ const x = s * (PX - .14);
+    for(let r = 0; r < 4; r++) bloc(g, pierre(), .32, .24, .3, x, .12 + r * .25, z + .02, 0, BLOC_L);
+    boite(g, BOIS[0], .22, HMW - 1.0, .2, x, 1.0 + (HMW - 1.0) / 2, z + .03);
+    lienArc(g, x - s * .1, HMW - .12, z + .06, -s, .32); }
+  boite(g, BOIS[1], PX * 2 + .14, .2, .2, 0, HMW - .02, z + .05);                                   // la sablière
+  boite(g, BOIS[1], PX * 2 - .2, .14, .14, 0, 1.98, z + .05);                                       // la poutre au-dessus de la porte
+  /* la grande porte à deux battants, en arc, dans son cadre arrondi ; les pentures, les deux anneaux ; les marches */
+  const w = .92, r = w / 2, y0 = SOCLE - .02, hd = 1.18;
+  for(let k = 0; k < 6; k++){ const x = -w / 2 + (k + .5) * w / 6, haut = hd + Math.sqrt(Math.max(0, (r - .02) ** 2 - x * x));
+    boite(g, k % 2 ? PORTE_C : 0xB4682C, w / 6 - .014, haut, .06, x, y0 + haut / 2, z); }
+  boite(g, FONCE, .03, hd + r, .07, 0, y0 + (hd + r) / 2, z + .02);                                // la fente entre les battants
+  const arc = ajoute(g, part(ARC2, BOIS[0], r + .07, r + .07, .9, 0, y0 + hd, z + .04));
+  for(const s of [-1, 1]) boite(g, BOIS[0], .13, hd, .16, s * (r + .07), y0 + hd / 2, z + .04);
+  for(const y of [y0 + .32, y0 + hd - .1]) for(const s of [-1, 1]){ boite(g, FER, w / 2 - .08, .09, .03, s * w / 4, y, z + .05);
+    for(const dx of [.08, .2, .32]) ajoute(g, part(G.head, CLOU, .12, .12, .08, s * dx, y, z + .07)); }
+  for(const s of [-1, 1]){ ajoute(g, part(G.tore, FER, .2, .2, .3, s * .12, y0 + .72, z + .07)); ajoute(g, part(G.cyl, FER, .08, .04, .08, s * .12, y0 + .82, z + .05)).rotation.x = Math.PI / 2; }
+  bloc(g, PIERRE[0], 1.25, .16, .46, 0, .08, FW + .44); bloc(g, PIERRE[2], 1.05, .15, .3, 0, .22, FW + .22);
+  /* le pignon : les planches, le poinçon, les liens en V, la fenêtre allumée en arc */
+  const zp = z;
+  for(let k = 0, n = Math.round(PX * 2 / .2); k < n; k++){ const l = PX * 2 / n, x = -PX + (k + .5) * l, h1 = HRW - .12 - Math.abs(x);
+    if(h1 > HMW) boite(g, k % 2 ? TOILE[0] : TOILE[1], l - .01, h1 - HMW + .05, .06, x, (h1 + HMW) / 2, zp); }
+  boite(g, BOIS[1], .14, HRW - HMW - .15, .1, 0, (HRW + HMW) / 2 - .05, zp + .05);
+  for(const s of [-1, 1]){ const L = Math.hypot(.36, .4); planche(g, BOIS[1], .1, L, .08, s * .2, HMW + .3, zp + .05, 0, 0, -s * Math.atan2(.36, .4)); }
+  const fy = HMW + .26;
+  for(const s of [-1, 1]){ ajoute(g, part(G.box, VITRE2, .2, .26, .03, s * .14, fy, zp + .02)); ajoute(g, part(DEMI2, VITRE2, .2, .03, .2, s * .14, fy + .13, zp + .02)).rotation.x = Math.PI / 2; }
+  for(const s of [-1, 1]) planche(g, BOIS[0], RUNW2() * Math.SQRT2, .18, .14, s * RUNW2() / 2, HRW - RUNW2() / 2 - .04, zp + .12, 0, 0, -s * Math.PI / 4);   // les rives
+}
+const RUNW2 = () => M2.RUNW;
+/* les toits : le grand toit devant et derrière, sa noue derrière le pignon ; le toit du pignon ; les faîtes et leurs blocs */
+function toits2(g){
+  const {X0, X1, HR, ZR, PENTE, RUN, RUNW, HRW, FW} = M2, a = Math.atan(PENTE), L = RUN / Math.cos(a) + .05;
+  tuiles2(poser2(g, 0, HR + .02, ZR, 0, a), X0 - .32, X1 + .32, L, (u, z) => HR - Math.sin(a) * z < HRW - Math.abs(u) + .06 && Math.abs(u) < RUNW);
+  tuiles2(poser2(g, 0, HR + .02, ZR, Math.PI, a), -(X1 + .32), -(X0 - .32), L);
+  const LW = RUNW * Math.SQRT2 + .05, zA = ZR, zB = FW + .32;
+  tuiles2(poser2(g, 0, HRW + .02, 0, Math.PI / 2, Math.PI / 4), -zB, -zA, LW);
+  tuiles2(poser2(g, 0, HRW + .02, 0, -Math.PI / 2, Math.PI / 4), zA, zB, LW);
+  /* le bout des grands toits, sur les côtés : un triangle de planches, ses rives */
+  for(const [x, s] of [[X0 - .03, -1], [X1 + .03, 1]]){
+    const sh = new THREE.Shape(), b = M2.HM - .06, h = HR - .06; sh.moveTo(M2.Z0 - .02, b); sh.lineTo(ZR, h); sh.lineTo(FACADE + .02, b); sh.closePath();
+    ajoute(g, part(new THREE.ExtrudeGeometry(sh, {depth: .06, bevelEnabled: false}).rotateY(-Math.PI / 2), BOIS[1], 1, 1, 1, x + (s > 0 ? .06 : 0), 0, 0));
+    for(const c of [-1, 1]) planche(g, BOIS[0], .1, .17, L + .04, x + s * .06, HR - .04 - Math.sin(a) * L / 2, ZR + c * Math.cos(a) * L / 2, c * a, 0, 0); }
+  /* les faîtes : une poutre de tuiles rondes, de gros blocs cloutés aux bouts et au bout du pignon */
+  const fa = ajoute(g, part(G.cyl, TUILE2[2], .3, X1 - X0 + .7, .3, 0, HR + .16, ZR)); fa.rotation.z = Math.PI / 2;
+  const fb = ajoute(g, part(G.cyl, TUILE2[2], .3, zB - zA, .3, 0, HRW + .16, (zA + zB) / 2)); fb.rotation.x = Math.PI / 2;
+  for(const [x, y, z] of [[X0 - .3, HR + .2, ZR], [X1 + .3, HR + .2, ZR], [0, HRW + .2, zB + .02]]){
+    bloc(g, CLAIR, .38, .34, .38, x, y, z); ajoute(g, part(G.cyl, CLOU, .1, .03, .1, x, y + .18, z)); }
+  g.userData.toit = HRW + .45;
+}
+/* une lanterne de fer sur sa potence, contre le pavillon */
+function lanterne2(g, x, y, z, s){
+  boite(g, FER, .06, .18, .05, x, y + .44, z);
+  boite(g, FER, .05, .05, .26, x, y + .38, z + .12);
+  boite(g, FER, .025, .12, .025, x, y + .29, z + .24);
+  const chapeau = ajoute(g, part(G.cone4, FER, .26, .12, .26, x, y + .18, z + .24)); chapeau.rotation.y = Math.PI / 4;
+  ajoute(g, part(G.box, LUEUR, .14, .2, .14, x, y, z + .24));
+  for(const [dx, dz] of [[-.075, -.075], [.075, -.075], [-.075, .075], [.075, .075]]) boite(g, FER, .025, .24, .025, x + dx, y, z + .24 + dz);
+  boite(g, FER, .2, .04, .2, x, y - .13, z + .24);
+}
+/* un auvent rayé rouge et crème, de u0 à u1, qui descend vers l'avant ; ses festons */
+function auvent(g, u0, u1){
+  const yH = 1.95, yB = 1.62, dz = .7, a = Math.atan2(yH - yB, dz), L = Math.hypot(yH - yB, dz), n = Math.round((u1 - u0) / .24), l = (u1 - u0) / n, zP = FACADE + .04;
+  for(let k = 0; k < n; k++){ const x = u0 + (k + .5) * l;
+    planche(g, RAYE[k % 2], l + .004, .04, L, x, (yH + yB) / 2, zP + dz / 2, a, 0, 0);
+    ajoute(g, part(FESTON, RAYE[k % 2], l * .98, l * .5, .04, x, yB - .01, zP + dz + .01)); }
+  boite(g, BOIS[2], u1 - u0 + .08, .08, .08, (u0 + u1) / 2, yB + .01, zP + dz + .02);               // la baguette du bord
+  for(const x of [u0 + .05, u1 - .05]) planche(g, FER, .03, .55, .03, x, yB + .18, zP + dz * .6, -.9, 0, 0);   // les tirants
+}
+/* un tonneau de douelles cerclé de fer ; une caisse de planches à croisillon */
+function tonneau2(g, x, z, r = .24, h = .5){
+  for(let k = 0; k < 12; k++){ const an = k / 12 * Math.PI * 2; planche(g, ton(k), .13, h, .05, x + Math.sin(an) * r, h / 2 + .02, z + Math.cos(an) * r, 0, an, 0); }
+  ajoute(g, part(G.cyl, BOIS[0], r * 2 - .05, .04, r * 2 - .05, x, h - .04, z));
+  for(const y of [.1, h - .1]){ const c = ajoute(g, part(G.tore, FER, r * 2.15, r * 2.15, .6, x, y, z)); c.rotation.x = Math.PI / 2; }
+}
+function caisse(g, x, z, c = .42, ry = 0){
+  const o = new THREE.Group(); o.position.set(x, 0, z); o.rotation.y = ry; g.add(o);
+  boite(o, BOIS[1], c, c, c, 0, c / 2, 0);
+  for(const s of [-1, 1]){ boite(o, BOIS[0], c + .02, .06, .03, 0, c / 2 + s * (c / 2 - .05), c / 2 + .01); boite(o, BOIS[0], .06, c, .03, s * (c / 2 - .03), c / 2, c / 2 + .01); }
+  planche(o, BOIS[0], .06, c * 1.25, .03, 0, c / 2, c / 2 + .015, 0, 0, Math.PI / 4);
+}
+/* l'étal des fruits, à gauche : l'étagère, ses cagettes (la saison), la nappe crème, les tonneaux, les caisses */
+function etalFruits(g, saison){
+  const {X0, PX} = M2, xa = X0 + .15, xb = -PX - .12, cx = (xa + xb) / 2;
+  auvent(g, X0 - .1, -PX + .02);
+  const fr = SAISON_FRUITS[saison] || SAISON_FRUITS.automne, ye = .7, ze = .55, de = .55;
+  boite(g, BOIS[1], xb - xa, .08, de, cx, ye, ze);                                                  // le plateau
+  for(const x of [xa + .06, xb - .06]) for(const dz of [-de / 2 + .05, de / 2 - .05]) boite(g, FONCE, .08, ye, .08, x, ye / 2, ze + dz);
+  for(const s of [-1, 1]) boite(g, TOILE[0], (xb - xa) / 2 - .02, .38, .03, cx + s * (xb - xa) / 4, ye - .2, ze + de / 2 + .03);   // la nappe crème qui pend
+  [-1.7, -1.17].forEach((x, k) => cagette(g, fr[k], x, ye + .04, ze - .04, .48, .38, .22, (k - .5) * .06));
+  cagette(g, fr[2], -1.3, ye + .3, ze - .2, .46, .34, .22, .05);                                    // une cagette au-dessus, sur la seconde étagère
+  boite(g, BOIS[1], xb - xa, .06, .38, cx, ye + .28, ze - .2); for(const x of [xa + .06, xb - .06]) boite(g, FONCE, .06, .3, .06, x, ye + .14, ze - .35);
+  tonneau2(g, -2.05, 1.58); tonneau2(g, -1.5, 1.72, .22, .44);
+  caisse(g, -.95, 1.7, .36, .1); caisse(g, -1.05, 1.98, .3, -.2);
+}
+/* l'étal des étoffes, à droite : le comptoir, la balance dorée, les étoffes pliées et pendues, la nappe violette, le tonneau, la caisse */
+function etalEtoffes(g){
+  const {X1, PX} = M2, xa = PX + .12, xb = X1 - .15, cx = (xa + xb) / 2, ye = .72, ze = .55, de = .55;
+  auvent(g, PX - .02, X1 + .1);
+  boite(g, BOIS[1], xb - xa, .08, de, cx, ye, ze);
+  for(let y = .1; y < ye - .05; y += .2) boite(g, ton(Math.round(y * 10) + 2), xb - xa, .18, .05, cx, y + .08, ze + de / 2 - .03);
+  for(const x of [xa + .05, xb - .05]) boite(g, FONCE, .08, ye, .08, x, ye / 2, ze - de / 2 + .05);
+  /* la nappe violette et ses franges dorées, qui pend devant */
+  boite(g, VIOLET, .6, .02, de + .02, cx + .2, ye + .05, ze); boite(g, VIOLET, .6, .32, .02, cx + .2, ye - .12, ze + de / 2 + .02);
+  boite(g, OR2, .6, .04, .025, cx + .2, ye - .27, ze + de / 2 + .025);
+  for(let k = 0; k < 6; k++) boite(g, OR2, .02, .07, .02, cx - .07 + k * .1, ye - .32, ze + de / 2 + .025);
+  /* la balance dorée : son pied, sa colonne, le fléau, deux plateaux et leurs fils */
+  const bx = xa + .22, by = ye + .04;
+  ajoute(g, part(G.cyl, OR2, .16, .04, .16, bx, by + .02, ze)); boite(g, OR2, .03, .42, .03, bx, by + .23, ze);
+  boite(g, OR2, .46, .025, .025, bx, by + .43, ze); ajoute(g, part(G.head, OR2, .05, .05, .05, bx, by + .45, ze));
+  for(const s of [-1, 1]){ const px = bx + s * .21;
+    for(const dz of [-.04, .04]) planche(g, 0x9A7A30, .008, .24, .008, px, by + .31, ze + dz, 0, 0, 0);
+    ajoute(g, part(G.cyl, OR2, .16, .025, .16, px, by + .19, ze)); }
+  /* les étoffes pliées, en piles */
+  const PLI = [[0xC8342A, 0xF4E4C6, 0x3E5AA8], [0x3E5AA8, 0xE8B848]];
+  PLI.forEach((p, j) => p.forEach((hex, k) => bloc(g, hex, .34, .07, .26, cx + .22 + j * .02, ye + .08 + k * .072 + j * .23 * 0, ze - .12 + j * .2 * 0 - (j ? .0 : 0) + (j ? .02 : 0), (k - 1) * .04, BLOC_L)));
+  /* la barre et les étoffes qui pendent, contre le fond */
+  boite(g, BOIS[0], xb - xa - .1, .05, .05, cx, 1.55, M2.ZE + .12);
+  for(const [dx, hex] of [[-.3, 0xC8342A], [-.05, 0x3E5AA8], [.22, 0xE8B848]]) boite(g, hex, .2, .5, .02, cx + dx, 1.3, M2.ZE + .14);
+  tonneau2(g, 1.4, 1.62); caisse(g, 2.05, 1.66, .38, -.15);
+}
+/* le sol : la plaque de sable, des cailloux, deux dalles de part et d'autre des marches */
+function sol2(g){
+  const m = ajoute(g, part(G.cyl, SABLE, 4.9, .05, 4.7, 0, .025, .05)); m.receiveShadow = true; m.castShadow = false;
+  for(let k = 0; k < 14; k++){
+    const x = -2.3 + hasard() * 4.6, z = 2.05 + hasard() * .4;
+    if(Math.abs(x) < .75) continue;
+    const c = .05 + hasard() * .05, p = ajoute(g, part(CAILLOU, PIERRE[k % 4], c * 1.4, c * .7, c * 1.2, x, c * .3, z)); p.rotation.set(0, hasard() * 3, 0);
+  }
+}
+export function marcheNiveau2(g, opt = {}){
+  alea = 19;
+  sol2(g);
+  halle2(g);
+  pavillon(g);
+  toits2(g);
+  for(const s of [-1, 1]) lanterne2(g, s * (M2.PX - .02), 1.42, M2.FW + .06, s);
+  etalFruits(g, opt.saison || "automne");
+  etalEtoffes(g);
+}
+export const FACADE2 = M2.FW;

@@ -8,7 +8,7 @@ import { scene } from "./scene.js";
 import { H, idx, N, inb, map, setObj } from "./ile.js";
 import { B, ENTREE_MINE, traversable } from "../donnees.js";
 import { state, save } from "../sauvegarde.js";
-import { sizeOf, maxLvl, doorTile } from "../regles.js";
+import { sizeOf, maxLvl, doorTile, porteX } from "../regles.js";
 import { VITRE, lanterne } from "./ciel.js";
 import { makeMeuble } from "./meubles.js";
 import { scierieNiveau1, scierieNiveau2, scierieNiveau3, FACADE as FACADE_MAISON, DECALE } from "./scierie.js";
@@ -17,7 +17,7 @@ import { carriereNiveau1, carriereNiveau2, FACADE as FACADE_CARRIERE } from "./c
 import { forgeNiveau1, forgeNiveau2, FACADE as FACADE_FORGE } from "./forge.js";
 import { taverneNiveau1, taverneNiveau2, FACADE as FACADE_TAVERNE } from "./taverne.js";
 import { chaumiereNiveau1, chaumiereNiveau2, FACADE as FACADE_CHAUMIERE } from "./chaumiere.js";
-import { marcheNiveau1, FACADE as FACADE_MARCHE } from "./marche.js";
+import { marcheNiveau1, marcheNiveau2, FACADE as FACADE_MARCHE, FACADE2 as FACADE_MARCHE2 } from "./marche.js";
 import { chateauNiveau1, FACADE as FACADE_CHATEAU } from "./chateau.js";
 const FACADE_SCIERIE = FACADE_MAISON + DECALE;            // la façade, dans le carré de 5 × 5
 
@@ -38,7 +38,7 @@ lanterne(null, 0, 0, LANTERNE);
    Yo (NOUVEAUX : la Scierie au niveau 1, scierie.js), leur ancien modèle est agrandi d'autant (echelle) */
 const ANCIEN = {chaumiere: 3, scierie: 3, carriere: 3, forge: 3, marche: 4, taverne: 4, chateau: 4};
 const ANCIENNE_PORTE = {chaumiere: 0, scierie: -.45, carriere: -.45, forge: -.4, marche: 0, taverne: 0, chateau: 0};
-const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE], 2: [carriereNiveau2, FACADE_CARRIERE]}, forge: {1: [forgeNiveau1, FACADE_FORGE], 2: [forgeNiveau2, FACADE_FORGE]}, taverne: {1: [taverneNiveau1, FACADE_TAVERNE], 2: [taverneNiveau2, FACADE_TAVERNE]}, chaumiere: {1: [chaumiereNiveau1, FACADE_CHAUMIERE], 2: [chaumiereNiveau2, FACADE_CHAUMIERE]}, marche: {1: [marcheNiveau1, FACADE_MARCHE]}, chateau: {1: [chateauNiveau1, FACADE_CHATEAU]}};
+const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE], 2: [carriereNiveau2, FACADE_CARRIERE]}, forge: {1: [forgeNiveau1, FACADE_FORGE], 2: [forgeNiveau2, FACADE_FORGE]}, taverne: {1: [taverneNiveau1, FACADE_TAVERNE], 2: [taverneNiveau2, FACADE_TAVERNE]}, chaumiere: {1: [chaumiereNiveau1, FACADE_CHAUMIERE], 2: [chaumiereNiveau2, FACADE_CHAUMIERE]}, marche: {1: [marcheNiveau1, FACADE_MARCHE], 2: [marcheNiveau2, FACADE_MARCHE2]}, chateau: {1: [chateauNiveau1, FACADE_CHATEAU]}};
 const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];   // les niveaux sans image gardent l'ancien modèle agrandi
 const echelle = (type, lvl) => nouveau(type, lvl) || !ANCIEN[type] ? 1 : sizeOf(type) / ANCIEN[type];
 const frontOf = (type, lvl) => nouveau(type, lvl) ? nouveau(type, lvl)[1] : ANCIEN[type] ? (ANCIEN[type] / 2 - .2) * echelle(type, lvl) : sizeOf(type) / 2 - .2;
@@ -495,7 +495,7 @@ export function makeBuilding(type, lvl){
   dedans.scale.setScalar(k); g.add(dedans);
   if(ANCIEN[type]) dedans.position.x = (B[type].door || 0) - ANCIENNE_PORTE[type] * k;   // sa porte d'avant devant la nouvelle place de la porte
   g.userData.toit = (dedans.userData.toit || MUR + 1.05) * k;
-  if(!B[type].fixe) door(g, B[type].door, frontOf(type, n));
+  if(!B[type].fixe) door(g, porteX(type, n), frontOf(type, n));
   return g;
 }
 
@@ -510,9 +510,19 @@ export function footprint(type, x, z){
 /* Les lumières accrochées à la façade de devant, celle de la porte (demande de Yo, 11 octobre 2026 : la torchère et la
    lanterne murales, dehors aussi) : b.facade = [{type, col, torche?}], col = la colonne de cases (0 à gauche), jamais
    celle de la porte (colPorte). Elles suivent le bâtiment (déplacé, amélioré) : elles font partie de son modèle. */
-export const colPorte = type => Math.floor(sizeOf(type) / 2 + (B[type].door || 0));
+export const colPorte = (type, lvl = 1) => Math.floor(sizeOf(type) / 2 + porteX(type, lvl));
+/* Le bâtiment change de niveau (de l0 à b.lvl) et sa porte peut changer de place (le Marché) : ce qui est posé sur la case devant
+   la nouvelle porte va sur la case devant l'ancienne (libre, elle) ; une lumière de façade quitte la colonne de la porte */
+export function porteLibre(b, l0){
+  const [ax, az] = doorTile(b.type, b.x, b.z, b.rot, l0), [nx, nz] = doorTile(b.type, b.x, b.z, b.rot, b.lvl);
+  if(ax === nx && az === nz) return;
+  const i = idx(nx, nz), j = idx(ax, az);
+  if(inb(nx, nz) && map.obj[i] && inb(ax, az) && !map.obj[j]){ const o = map.obj[i], e = {...(state.ile[i] || {})}; setObj(i, null); map.obj[j] = o; state.ile[j] = {...e, o}; setObj(j, o, e.plante); Object.assign(state.ile[j], e); }   // avec son état (sa pousse, sa couleur…)
+  const pc = colPorte(b.type, b.lvl);
+  for(const f of b.facade || []) if(f.col === pc) f.col = pc + 1 < sizeOf(b.type) && !(b.facade || []).some(v => v.col === pc + 1) ? pc + 1 : pc - 1;
+}
 export function placeFacade(type, col, lvl = 1){
-  const s = sizeOf(type), d = B[type].door || 0;
+  const s = sizeOf(type), d = porteX(type, lvl);
   let x = col + .5 - s/2;
   if(Math.abs(x - d) < .75) x += Math.sign(x - d) * .15;     // un peu plus loin du bord de la porte
   return {x, z: frontOf(type, lvl) + .25};                         // la plaque touche le mur de devant
@@ -558,7 +568,7 @@ function agrandirBatiments(){
   if(!state.buildings.length) return;
   const occupe = new Set(), portes = new Set();
   const cases = (t, x, z) => footprint(t, x, z).map(([cx, cz]) => [cx, cz, idx(cx, cz)]);
-  const marquer = b => { cases(b.type, b.x, b.z).forEach(c => occupe.add(c[2])); const [dx, dz] = doorTile(b.type, b.x, b.z, b.rot); if(inb(dx, dz)) portes.add(idx(dx, dz)); };
+  const marquer = b => { cases(b.type, b.x, b.z).forEach(c => occupe.add(c[2])); const [dx, dz] = doorTile(b.type, b.x, b.z, b.rot, b.lvl); if(inb(dx, dz)) portes.add(idx(dx, dz)); };
   const tient = (t, x, z) => {
     const cs = cases(t, x, z);
     if(cs.some(([cx, cz, i]) => !inb(cx, cz) || map.type[i] === "water" || occupe.has(i) || portes.has(i) || (map.obj[i] && !traversable(map.obj[i])))) return false;
@@ -580,7 +590,7 @@ function agrandirBatiments(){
     b.x = x; b.z = z; delete b.rot;
     cases(b.type, x, z).forEach(([, , i]) => { if(map.obj[i]) setObj(i, null); });   // les herbes et les fleurs sous le bâtiment s'en vont
     marquer(b);
-    const pc = colPorte(b.type);
+    const pc = colPorte(b.type, b.lvl);
     for(const f of b.facade || []){ if(f.col === pc) f.col = pc + 1 < sizeOf(b.type) ? pc + 1 : pc - 1; if(f.col >= sizeOf(b.type)) f.col = sizeOf(b.type) - 1; }
   }
   save();
@@ -597,5 +607,5 @@ let saisonVue = saison();
 setInterval(() => {
   if(saison() === saisonVue) return;
   saisonVue = saison();
-  for(const b of state.buildings) if((b.type === "scierie" && b.lvl >= 3) || (b.type === "marche" && b.lvl === 1) || (b.type === "taverne" && b.lvl === 2) || (b.type === "chaumiere" && b.lvl === 2)) placeMesh(b);
+  for(const b of state.buildings) if((b.type === "scierie" && b.lvl >= 3) || (b.type === "marche" && b.lvl <= 2) || (b.type === "taverne" && b.lvl === 2) || (b.type === "chaumiere" && b.lvl === 2)) placeMesh(b);
 }, 60000);

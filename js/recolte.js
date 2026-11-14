@@ -181,7 +181,7 @@ function plantProblem(t, plante){
   if(map.obj[i] || occ.has(i)) return "Cette case est occupée";
   if(solAt(i)) return "Ramasse d'abord ce qui est par terre";
   if(state.chemins[i]) return "Rien ne pousse sur un chemin (la pelle l'enlève)";
-  if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
+  if(state.buildings.some(b => { const [x, z] = doorTile(b.type, b.x, b.z, b.rot, b.lvl); return x === t.x && z === t.z; })) return "La case devant une porte reste libre";
   if(entrees.has(i)) return "Le passage vers le ponton ou le pont reste libre";
   if(tileOf(player.position.x) === t.x && tileOf(player.position.z) === t.z) return "Recule d'un pas pour planter devant toi";
   if(ARBRES.has(plante) && NEAR.some(([dx, dz]) => inb(t.x + dx, t.z + dz) && ARBRES.has(map.obj[idx(t.x + dx, t.z + dz)])))
@@ -707,7 +707,7 @@ function facadeCible(i, x, z){
 }
 function facadeAction(t){
   const {b, col, f} = t;
-  if(!f && col === colPorte(b.type)) return info("🚪 Pas sur la porte : accroche-la à côté");
+  if(!f && col === colPorte(b.type, b.lvl)) return info("🚪 Pas sur la porte : accroche-la à côté");
   if(f){
     const m = MEUBLES[f.type];
     if(m.support && !garniPlein(f.type, f) && garniDispo(f.type))
