@@ -343,6 +343,31 @@ function jardiniereTav(g, x, y, z, w, saison){
   for(let k = 0; k < n; k++) ajoute(g, part(G.head, feuilles[k % 2], .13, .09, .1, x - w / 2 + (k + .5) * w / n, y + .11, z + .09 + (k % 2) * .03));
   for(let k = 0; k < (fl.length ? n - 1 : 0); k++) ajoute(g, part(G.head, fl[k % fl.length], .075, .065, .075, x - w / 2 + (k + 1) * w / n, y + .17 + (k % 2) * .03, z + .11 + (k % 3 - 1) * .03));
 }
+/* le mur de derrière : ses colombages (avant, un aplat crème, Yo, 14 novembre 2026 : faire le tour) */
+function dos(g, PO){
+  const z = Z0 - .08, xs = [X0 + .07, (2 * X0 + X1) / 3, (X0 + 2 * X1) / 3, X1 - .07];
+  for(const x of xs) boite(g, PO, .15, HM - SOCLE, .1, x, (HM + SOCLE) / 2, z);
+  boite(g, PO, X1 - X0 + .1, .14, .12, (X0 + X1) / 2, HM - .07, z); boite(g, PO, X1 - X0 + .1, .12, .1, (X0 + X1) / 2, SOCLE + .06, z);
+  for(let k = 0; k < 3; k++){ const x0 = xs[k] + .08, x1 = xs[k + 1] - .08, h = HM - SOCLE - .26, L = Math.hypot(x1 - x0, h);
+    planche(g, PO, .11, L, .08, (x0 + x1) / 2, (HM + SOCLE) / 2, z, 0, 0, (k % 2 ? 1 : -1) * Math.atan2(x1 - x0, h)); }
+}
+
+/* le bout du grand toit, sur un côté : un triangle lisse de torchis (avant, des panneaux en escalier : « on dirait qu'il n'est pas
+   fini », Yo, 14 novembre 2026), ses planches de rive le long du toit, des colombages sur le grand mur ; demi : seulement la moitié
+   de derrière (devant, c'est le toit du pignon) */
+function boutToit(g, x, dehors, demi, CR, PO){
+  const s = new THREE.Shape(), b = HM - .08, h = HR - .08;
+  s.moveTo(Z0, b); s.lineTo(ZR, h); if(demi) s.lineTo(ZR, b); else s.lineTo(FACADE, b); s.closePath();
+  const geo = new THREE.ExtrudeGeometry(s, {depth: .08, bevelEnabled: false}).rotateY(-Math.PI / 2);
+  ajoute(g, part(geo, CR, 1, 1, 1, x + dehors * .02 + (dehors > 0 ? .08 : 0), 0, 0));
+  const a = Math.atan(PENTE), L = RUN / Math.cos(a) + .04;
+  for(const c of demi ? [-1] : [-1, 1]) planche(g, BOIS[0], .1, .17, L, x + dehors * .1, HR - .04 - Math.sin(a) * L / 2, ZR + c * Math.cos(a) * L / 2, c * a, 0, 0);
+  boite(g, PO, .1, b - SOCLE, .14, x + dehors * .06, (b + SOCLE) / 2, ZR);                          // le poteau du milieu
+  boite(g, PO, .1, .12, FACADE - Z0, x + dehors * .06, b - .02, ZR);                                // la sablière, sous le pignon
+  for(const c of [-1, 1]){ const z0 = ZR + c * .08, z1 = ZR + c * (FACADE - Z0) * .36, y0 = b - .12, y1 = b - .62;   // les liens, de part et d'autre
+    planche(g, PO, .09, Math.hypot(z1 - z0, y1 - y0), .12, x + dehors * .06, (y0 + y1) / 2, (z0 + z1) / 2, -c * Math.atan2(Math.abs(z1 - z0), y0 - y1), 0, 0); }
+}
+
 /* la maison : le socle de pierres, le torchis, les poutres, les fenêtres */
 function murs2(g, saison){
   boite(g, CREME[1], X1 - X0 - .1, HM - .1, FACADE - Z0 - .1, CX, HM / 2, ZR);                 // le cœur, sous le torchis
@@ -365,8 +390,11 @@ function murs2(g, saison){
   fenetre2(g, -1.74, 1.15, .3, .42, zF, undefined, false);
   /* les côtés : le torchis jusqu'aux toits, des poteaux, une poutre ; derrière, le torchis */
   const toitZ = z => HR - PENTE * Math.abs(z - ZR) - .08;
-  torchis(g, Z0, FACADE, X0 - .02, "z", toitZ);
-  torchis(g, Z0, FW, X1 + .02, "z", z => z > -.3 ? HMW - .04 : toitZ(z));
+  torchis(g, Z0, FACADE, X0 - .02, "z", () => HM - .08);
+  boutToit(g, X0 - .02, -1, false, CREME[0], POUTRE);
+  torchis(g, Z0, FW, X1 + .02, "z", z => z > -.3 ? HMW - .04 : HM - .08);
+  boutToit(g, X1 + .02, 1, true, CREME[0], POUTRE);
+  dos(g, POUTRE);
   torchis(g, X0, X1, Z0 - .02, "x", () => HM);
   for(const [x, z] of [[X0 - .05, Z0 + .06], [X0 - .05, FACADE - .06], [X1 + .05, Z0 + .06], [X1 + .05, FW - .06]]) boite(g, POUTRE, .1, HM - SOCLE, .15, x, (HM + SOCLE) / 2, z);
   for(const x of [X0 - .06, X1 + .06]) boite(g, POUTRE, .1, .13, FACADE - Z0, x, HM - .07, ZR);
@@ -400,23 +428,25 @@ function tuiles(g, a, b, L, sauf = () => false, fond = true){
 }
 /* la lucarne du grand toit : ses joues de torchis, sa fenêtre ronde allumée, son petit toit de tuiles en berceau */
 function lucarne(g, a, L){
-  const x = -1.05, t = L * .42, yb = HR - Math.sin(a) * t, zb = ZR + Math.cos(a) * t, w = .66, hh = .62, d = .7;
-  boite(g, BOIS[1], w, hh, d, x, yb + hh / 2 - .05, zb - d / 2 + .05);                       // la lucarne de bois, comme l'image
+  /* assez bas sur la pente pour que tout reste dans le toit, même vu de derrière (Yo, 14 novembre 2026 : faire le tour) */
+  const x = -1.05, t = L * LUC_T, yb = HR - Math.sin(a) * t, zb = ZR + Math.cos(a) * t, w = .6, hh = .5, d = 1.0;
+  boite(g, BOIS[1], w, hh, d, x, yb + hh / 2 - .05, zb - d / 2 + .05);                          // la lucarne de bois, comme l'image
   for(const s of [-1, 1]) boite(g, POUTRE, .09, hh, .09, x + s * (w / 2 - .02), yb + hh / 2 - .05, zb + .04);
-  const fy = yb + .26;
-  ajoute(g, part(G.box, VITRE, .36, .3, .03, x, fy, zb + .06));
-  ajoute(g, part(G.cyl, VITRE, .36, .03, .36, x, fy + .15, zb + .06)).rotation.x = Math.PI / 2;  // le haut rond de la vitre
-  boite(g, FONCE, .03, .44, .04, x, fy + .05, zb + .08); boite(g, FONCE, .36, .03, .04, x, fy + .02, zb + .08);
-  ajoute(g, part(LUC_ARC, BOIS[0], 1, 1, 1, x, fy + .15, zb + .08));                            // le haut de la fenêtre, en arc
-  for(const sx of [-1, 1]) boite(g, BOIS[0], .07, .32, .07, x + sx * .2, fy, zb + .08);
-  boite(g, BOIS[1], .5, .07, .14, x, fy - .18, zb + .1);
-  ajoute(g, part(LUC_TOIT, TUILE[0], 1, 1, 1, x, yb + hh - .05, zb - .47)).rotation.x = Math.PI / 2;   // le berceau, derrière sa fenêtre
+  const fy = yb + .2;
+  ajoute(g, part(G.box, VITRE, .3, .22, .03, x, fy, zb + .06));
+  ajoute(g, part(G.cyl, VITRE, .3, .03, .3, x, fy + .11, zb + .06)).rotation.x = Math.PI / 2;   // le haut rond de la vitre
+  boite(g, FONCE, .03, .36, .04, x, fy + .05, zb + .08); boite(g, FONCE, .3, .03, .04, x, fy + .02, zb + .08);
+  ajoute(g, part(LUC_ARC, BOIS[0], .8, .8, 1, x, fy + .11, zb + .08));                          // le haut de la fenêtre, en arc
+  for(const sx of [-1, 1]) boite(g, BOIS[0], .06, .26, .07, x + sx * .17, fy, zb + .08);
+  boite(g, BOIS[1], .44, .07, .14, x, fy - .15, zb + .1);
+  ajoute(g, part(LUC_TOIT, TUILE[0], .75, 1.2, .75, x, yb + hh - .05, zb - .55)).rotation.x = Math.PI / 2;   // le berceau, derrière sa fenêtre, qui s'enfonce dans le toit
   for(let k = 0; k < 7; k++){ const an = (k + .5) / 7 * Math.PI - Math.PI / 2;
-    ajoute(g, part(BLOC_L, TUILE[k % 4], .16, .07, .26, x + Math.sin(an) * .44, yb + hh - .05 + Math.cos(an) * .44, zb + .02)).rotation.z = -an; }
+    ajoute(g, part(BLOC_L, TUILE[k % 4], .13, .06, .22, x + Math.sin(an) * .33, yb + hh - .05 + Math.cos(an) * .33, zb + .02)).rotation.z = -an; }
 }
+const LUC_T = .68;
 function toits2(g){
   const a = Math.atan(PENTE), L = RUN / Math.cos(a) + .05, chem = (u, z) => false;
-  tuiles(poser(g, 0, HR + .02, ZR, 0, a), X0 - .3, XW + .25, L, (u, z) => Math.abs(u + 1.05) < .4 && z > L * .42 - .78 && z < L * .42 + .02);   // pas sous la lucarne
+  tuiles(poser(g, 0, HR + .02, ZR, 0, a), X0 - .3, XW + .25, L, (u, z) => Math.abs(u + 1.05) < .38 && z > L * LUC_T - 1.05 && z < L * LUC_T + .02);   // pas sous la lucarne
   tuiles(poser(g, 0, HR + .02, ZR, Math.PI, a), -(X1 + .25), -(X0 - .3), L, (u, z) => Math.abs(-u - (-1.45)) < .38 && Math.abs(ZR - Math.cos(a) * z - (-.95)) < .38);
   const LW = RUNW * Math.SQRT2 + .05, zA = -.35, zB = FW + .3;
   tuiles(poser(g, CXW, HRW + .02, 0, Math.PI / 2, Math.PI / 4), -zB, -zA, LW);

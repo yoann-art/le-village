@@ -280,6 +280,31 @@ function jardiniere2(g, x, y, z, w, saison){
   const fl = saison === "automne" ? 2 : n - 1;
   for(let k = 0; k < fl; k++) ajoute(g, part(PETIT, k % 2 ? 0xE8505A : 0xD8342A, .08, .07, .08, x - w / 2 + (k + 1) * w / (fl + 1), y + .17 + (k % 2) * .03, z + .12));
 }
+/* le mur de derrière : ses colombages (avant, un aplat crème, Yo, 14 novembre 2026 : faire le tour) */
+function dos(g, PO){
+  const z = Z0 - .08, xs = [X0 + .07, (2 * X0 + X1) / 3, (X0 + 2 * X1) / 3, X1 - .07];
+  for(const x of xs) boite(g, PO, .15, HM - SOCLE, .1, x, (HM + SOCLE) / 2, z);
+  boite(g, PO, X1 - X0 + .1, .14, .12, (X0 + X1) / 2, HM - .07, z); boite(g, PO, X1 - X0 + .1, .12, .1, (X0 + X1) / 2, SOCLE + .06, z);
+  for(let k = 0; k < 3; k++){ const x0 = xs[k] + .08, x1 = xs[k + 1] - .08, h = HM - SOCLE - .26, L = Math.hypot(x1 - x0, h);
+    planche(g, PO, .11, L, .08, (x0 + x1) / 2, (HM + SOCLE) / 2, z, 0, 0, (k % 2 ? 1 : -1) * Math.atan2(x1 - x0, h)); }
+}
+
+/* le bout du grand toit, sur un côté : un triangle lisse de torchis (avant, des panneaux en escalier : « on dirait qu'il n'est pas
+   fini », Yo, 14 novembre 2026), ses planches de rive le long du toit, des colombages sur le grand mur ; demi : seulement la moitié
+   de derrière (devant, c'est le toit du pignon) */
+function boutToit(g, x, dehors, demi, CR, PO){
+  const s = new THREE.Shape(), b = HM - .08, h = HR - .08;
+  s.moveTo(Z0, b); s.lineTo(ZR, h); if(demi) s.lineTo(ZR, b); else s.lineTo(FACADE, b); s.closePath();
+  const geo = new THREE.ExtrudeGeometry(s, {depth: .08, bevelEnabled: false}).rotateY(-Math.PI / 2);
+  ajoute(g, part(geo, CR, 1, 1, 1, x + dehors * .02 + (dehors > 0 ? .08 : 0), 0, 0));
+  const a = Math.atan(PENTE), L = RUN / Math.cos(a) + .04;
+  for(const c of demi ? [-1] : [-1, 1]) planche(g, BOIS[0], .1, .17, L, x + dehors * .1, HR - .04 - Math.sin(a) * L / 2, ZR + c * Math.cos(a) * L / 2, c * a, 0, 0);
+  boite(g, PO, .1, b - SOCLE, .14, x + dehors * .06, (b + SOCLE) / 2, ZR);                          // le poteau du milieu
+  boite(g, PO, .1, .12, FACADE - Z0, x + dehors * .06, b - .02, ZR);                                // la sablière, sous le pignon
+  for(const c of [-1, 1]){ const z0 = ZR + c * .08, z1 = ZR + c * (FACADE - Z0) * .36, y0 = b - .12, y1 = b - .62;   // les liens, de part et d'autre
+    planche(g, PO, .09, Math.hypot(z1 - z0, y1 - y0), .12, x + dehors * .06, (y0 + y1) / 2, (z0 + z1) / 2, -c * Math.atan2(Math.abs(z1 - z0), y0 - y1), 0, 0); }
+}
+
 /* une fenêtre au haut arrondi : la vitre allumée, ses croisillons, son cadre de bois et son arc ; les volets ; sa jardinière */
 function fenetreArc(g, fx, fy, fw, fh, z, saison, volets){
   ajoute(g, part(G.box, VITRE, fw, fh, .04, fx, fy, z - .01));
@@ -311,8 +336,11 @@ function murs2(g, saison){
   fenetreArc(g, fx, fy, .42, .42, zF, saison, true);
   /* les côtés et l'arrière : le torchis jusqu'aux toits, des poteaux ; le pignon de gauche, sous le grand toit */
   const toitZ = z => HR - PENTE * Math.abs(z - ZR) - .08;
-  torchis2(g, Z0, FACADE, X0 - .02, "z", toitZ);
-  torchis2(g, Z0, FW, X1 + .02, "z", z => z > -.3 ? HMW - .04 : toitZ(z));
+  torchis2(g, Z0, FACADE, X0 - .02, "z", () => HM - .08);
+  boutToit(g, X0 - .02, -1, false, CREME2, POUTRE2);
+  torchis2(g, Z0, FW, X1 + .02, "z", z => z > -.3 ? HMW - .04 : HM - .08);
+  boutToit(g, X1 + .02, 1, true, CREME2, POUTRE2);
+  dos(g, POUTRE2);
   torchis2(g, X0, X1, Z0 - .02, "x", () => HM);
   for(const [x, z] of [[X0 - .06, Z0 + .07], [X0 - .06, FACADE - .06], [X1 + .06, Z0 + .07], [X1 + .06, FW - .06]]) boite(g, POUTRE2, .1, HM - SOCLE, .15, x, (HM + SOCLE) / 2, z);
   for(const x of [X0 - .07, X1 + .07]) boite(g, POUTRE2, .1, .13, FACADE - Z0, x, HM - .07, ZR);

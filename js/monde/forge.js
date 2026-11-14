@@ -406,7 +406,8 @@ function appentis2(g){
   for(const [y0, y1] of rangs){ const y = (y0 + y1) / 2, trous = [];
     if(y0 >= seuil - .01){ if(y < nais) trous.push([ox - ow, ox + ow]); else { const dy = y - nais, w = R > dy ? Math.sqrt(R * R - dy * dy) : 0; if(w) trous.push([ox - w, ox + w]); } }
     rangGris(g, HX0, HX1, trous, y, y1 - y0, HZ, "x", 1, BLOC);
-    rangGris(g, zb, HZ - .12, [], y, y1 - y0, HX0, "z", -1); }
+    rangGris(g, zb, HZ - .12, [], y, y1 - y0, HX0, "z", -1);
+    rangGris(g, HX0 + .12, HX1, [], y, y1 - y0, zb, "x", -1); }                                  // l'arrière du foyer, en pierres aussi (avant, un aplat gris)
   for(let k = 0; k <= 8; k++){ const a = Math.PI * k / 8, r = ow + .09, m = bloc(g, gris(), .2, .2, .3, ox + Math.cos(a) * r, nais + Math.sin(a) * r, HZ + .03);
     m.rotation.z = a - Math.PI / 2; }
   bloc(g, GRIS[2], ow * 2 + .1, .1, .32, ox, seuil - .03, HZ + .05);                              // le seuil
