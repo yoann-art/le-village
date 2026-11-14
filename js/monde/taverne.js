@@ -466,7 +466,7 @@ function lucarne(g, a, L){
 const LUC_T = .68;
 function toits2(g){
   const a = Math.atan(PENTE), L = RUN / Math.cos(a) + .05, chem = (u, z) => false;
-  tuiles(poser(g, 0, HR + .02, ZR, 0, a), X0 - .3, CXW, L, (u, z) => Math.abs(u + 1.05) < .38 && z > L * LUC_T - 1.05 && z < L * LUC_T + .02);   // pas sous la lucarne
+  tuiles(poser(g, 0, HR + .02, ZR, 0, a), X0 - .3, CXW, L, (u, z) => Math.abs(u + 1.05) < .34 && z > L * LUC_T - .5 && z < L * LUC_T + .02);   // pas sous la lucarne
   tuiles(poser(g, 0, HR + .02, ZR, Math.PI, a), -CXW, -(X0 - .3), L, (u, z) => Math.abs(-u - (-1.45)) < .38 && Math.abs(ZR - Math.cos(a) * z - (-.95)) < .38);
   const LW = RUNW * Math.SQRT2 + .05, zA = Z0 - AV, zB = FW + .3;   // l'aile de la porte : son toit d'avant en arrière (Yo, 14 novembre 2026)
   tuiles(poser(g, CXW, HRW + .02, 0, Math.PI / 2, Math.PI / 4), -zB, -zA, LW);
