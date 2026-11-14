@@ -563,6 +563,47 @@ export async function verifier(){
       placePlayer(.5, .5, 0, 1);
     }
   });
+  await etape("Le Château niveau 2 et sa cour (Yo, 14 novembre 2026) : passer la grande porte, traverser la cour, entrer par la porte du donjon, ressortir dans la cour", async () => {
+    const c1 = makeBuilding("chateau", 2), bc = new THREE.Box3().setFromObject(c1);
+    if(bc.min.x < -3.6 || bc.max.x > 3.6 || bc.min.z < -3.6 || bc.max.z > 3.85) throw new Error(`le Château déborde de son carré (${bc.min.x.toFixed(2)} à ${bc.max.x.toFixed(2)}, ${bc.min.z.toFixed(2)} à ${bc.max.z.toFixed(2)})`);
+    /* pas deux sols à la même hauteur dans la cour (ils scintillaient) : de haut en bas, les deux premiers dessus touchés
+       sont séparés d'au moins 1 cm */
+    c1.updateMatrixWorld(true);
+    const rayon = new THREE.Raycaster();
+    for(const [x, z] of [[1, 0], [1.5, 1.5], [-.8, 1.8], [.6, -1]]){
+      rayon.set(new THREE.Vector3(x, 5, z), new THREE.Vector3(0, -1, 0));
+      const ys = rayon.intersectObject(c1, true).filter(h => h.face && h.face.normal.y > .5).map(h => h.point.y);
+      if(ys.length >= 2 && ys[0] - ys[1] < .01) throw new Error(`deux sols à la même hauteur dans la cour en (${x}, ${z}) : ${ys[0].toFixed(3)} et ${ys[1].toFixed(3)} (ils scintillent)`);
+    }
+    /* une place libre de 7 × 7 sur la terre, et la case devant sa porte */
+    let place = null;
+    for(let z = 20; z < N - 20 && !place; z++) for(let x = 20; x < N - 20 && !place; x++){
+      let ok = true;
+      for(let dz = -1; dz <= 8 && ok; dz++) for(let dx = -1; dx <= 7 && ok; dx++){ const i = idx(x + dx, z + dz); if(map.type[i] === "water" || occ.has(i) || (dz >= 7 && map.obj[i])) ok = false; }
+      if(ok) place = {x, z};
+    }
+    if(!place) throw new Error("pas de place libre pour essayer le Château");
+    const b = {id: -7, type: "chateau", lvl: 2, x: place.x, z: place.z};
+    state.buildings.push(b); footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.set(idx(x, z), b.id)); placeMesh(b);
+    const { porteOuverte } = await import("../js/monde/chateau.js");
+    try {
+      placePlayer(b.x + 3 - H + .5, b.z + 7 - H + .5, 0, -1);                         // devant la grande porte, dehors
+      if(!await attendre(() => porteOuverte() > .99)) throw new Error(`devant elle, la grande porte ne s'ouvre pas (${porteOuverte().toFixed(2)})`);
+      keys.u = 1; for(let k = 0; k < 200 && tileOf(player.position.z) > b.z + 4; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
+      if(tileOf(player.position.z) > b.z + 4) throw new Error(`on ne passe pas la grande porte (case ${tileOf(player.position.x) - b.x}, ${tileOf(player.position.z) - b.z})`);
+      keys.u = 1; for(let k = 0; k < 200; k++) updatePlayer(.016); keys.u = 0; updatePlayer(.016);
+      if(tileOf(player.position.z) < b.z + 2) throw new Error("on traverse le donjon");
+      await entrer(b);
+      await sortir();
+      const x = tileOf(player.position.x) - b.x, z = tileOf(player.position.z) - b.z;
+      if(x !== 3 || z !== 2) throw new Error(`en sortant du donjon, on n'est pas dans la cour devant sa porte (case ${x}, ${z})`);
+      if(!await attendre(() => porteOuverte() < .01)) throw new Error(`loin d'elle, la grande porte ne se referme pas (${porteOuverte().toFixed(2)})`);
+      return `la grande porte s'ouvre, on traverse la cour, on entre par le donjon, on ressort devant lui, la grande porte s'est refermée`;
+    } finally {
+      keys.u = 0; footprint("chateau", b.x, b.z).forEach(([x, z]) => occ.delete(idx(x, z))); removeMesh(b.id); state.buildings.splice(state.buildings.indexOf(b), 1);
+      placePlayer(.5, .5, 0, 1);
+    }
+  });
   await etape("La remise à zéro de Yo (4 novembre 2026) : les bâtiments au niveau 1, les coffres vides, seulement les outils sur soi", async () => {
     const p = {buildings: [{type: "taverne", lvl: 3, deco: {items: [{type: "lit", x: 4.6, z: -4.4, rot: 0}]}}, {type: "mine", lvl: 1}],
       coffres: [{id: 1, items: [{k: "bois", n: 5}]}], sac: [{k: "hachePierre", n: 1}, {k: "bois", n: 9}, {k: "torche", n: 1}, {k: "coffrePlein", n: 1, items: [{k: "pierre", n: 2}]}],

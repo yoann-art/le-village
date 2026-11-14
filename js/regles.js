@@ -26,11 +26,17 @@ export const SENS = [{x: 0, z: 1}, {x: 1, z: 0}, {x: 0, z: -1}, {x: -1, z: 0}];
    marche (la grande porte, la cour sans la tour ni le fond de la cour : monde/chateau.js) ; rien ne s'y pose ni ne s'y
    plante (ce sont des cases du bâtiment) */
 const COUR = new Set([[3, 6], [3, 2], [4, 2], [5, 2], ...[3, 4, 5].flatMap(dz => [1, 2, 3, 4, 5].map(dx => [dx, dz]))].map(([dx, dz]) => dz * 7 + dx));
-export const avecCour = b => b.type === "chateau" && (b.lvl || 1) === 1 && !b.rot;
-export const dansCour = (b, x, z) => avecCour(b) && x >= b.x && x < b.x + 7 && z >= b.z && z < b.z + 7 && COUR.has((z - b.z) * 7 + (x - b.x));
+/* La cour du Château niveau 2 (Yo, 14 novembre 2026 : « J'aimerais qu'il ait une cour également ») : plus grande, entre les quatre
+   tours ; au fond, le donjon et sa porte (on entre devant elle, en (3, 2)) ; contre les côtés, l'abri (à gauche), le tonneau et
+   le râtelier (à droite) ; les cases que les tours de devant entament restent hors de la cour */
+const SAUF2 = new Set([[1, 2], [1, 3], [5, 2], [5, 3], [1, 5], [5, 5]].map(([dx, dz]) => dz * 7 + dx));
+const COUR2 = new Set([[3, 6], ...[2, 3, 4, 5].flatMap(dz => [1, 2, 3, 4, 5].map(dx => [dx, dz]))].map(([dx, dz]) => dz * 7 + dx).filter(c => !SAUF2.has(c)));
+export const COURS = {1: COUR, 2: COUR2};
+export const avecCour = b => b.type === "chateau" && (b.lvl || 1) <= 2 && !b.rot;
+export const dansCour = (b, x, z) => avecCour(b) && x >= b.x && x < b.x + 7 && z >= b.z && z < b.z + 7 && COURS[b.lvl || 1].has((z - b.z) * 7 + (x - b.x));
 /* La case devant la porte par où l'on entre (et où l'on ressort) : pour le Château niveau 1, celle devant la porte de la
    tour, dans la cour */
-export const porteDe = b => avecCour(b) ? [b.x + 1, b.z + 3] : doorTile(b.type, b.x, b.z, b.rot, b.lvl);
+export const porteDe = b => avecCour(b) ? ((b.lvl || 1) === 2 ? [b.x + 3, b.z + 2] : [b.x + 1, b.z + 3]) : doorTile(b.type, b.x, b.z, b.rot, b.lvl);   // niveau 2 : devant le donjon
 /* Côté de la pièce intérieure, en P : elle grandit de 1 P à chaque niveau */
 const ROOM = {petite:4, moyenne:6, grande:8};
 /* La pièce grandit de deux cases de côté à chaque niveau (Yo, 13 novembre 2026 : « L'intérieur des bâtiments doit être plus grand

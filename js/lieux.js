@@ -40,7 +40,7 @@ export const currentScene = () => inside ? interior : scene;
 export function doorOf(b){
   const s = sizeOf(b.type), d = porteX(b.type, b.lvl), r = (b.rot || 0) & 3;
   const cx = b.x - H + s/2, cz = b.z - H + s/2;
-  if(avecCour(b)) return {x: cx - 2, z: cz - .5, n: SENS[0]};   // le Château niveau 1 : la porte de la tour, dans la cour (monde/chateau.js : TOUR)
+  if(avecCour(b)) return (b.lvl || 1) === 2 ? {x: cx, z: cz - 1.5, n: SENS[0]} : {x: cx - 2, z: cz - .5, n: SENS[0]};   // le Château : la porte de la tour (niveau 1) ou du donjon (niveau 2), dans la cour (monde/chateau.js)
   return {x: cx + [d, s/2, -d, -s/2][r], z: cz + [s/2, -d, -s/2, d][r], n: SENS[r]};
 }
 /* Où l'on se retrouve en sortant : juste devant la porte, entièrement sur la case
