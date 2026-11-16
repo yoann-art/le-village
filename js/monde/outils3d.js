@@ -3,49 +3,50 @@
    et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
 import { G, part, toon } from "./formes.js";
-import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, enMainDehors } from "../donnees.js";
+import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, enMainDehors, aUnManche, teinteManche } from "../donnees.js";
+import { state } from "../sauvegarde.js";
 import { makeMeuble } from "./meubles.js";
 import { rockMesh } from "./rochers.js";
 
 const C = {wood:0xB07A4A, dark:0x654028, stone:0x9EA3A8, metal:0x6F7884, cream:0xF4EFE6, red:0xC8643C};
 
 const BUILD = {
-  hache(g, o){
-    g.add(part(G.cyl, C.wood, .05, .52, .05, 0, .12, 0));                             // manche
+  hache(g, o, w = C.wood){
+    g.add(part(G.cyl, w, .05, .52, .05, 0, .12, 0));                             // manche
     g.add(part(G.box, o.tete || C.stone, .05, .14, .16, 0, .32, .08));                 // fer de la hache (pierre, cuivre…)
     g.add(part(G.cyl, C.dark, .07, .05, .07, 0, .36, 0));                              // ligature
   },
-  pioche(g, o){
-    g.add(part(G.cyl, C.wood, .05, .52, .05, 0, .12, 0));
+  pioche(g, o, w = C.wood){
+    g.add(part(G.cyl, w, .05, .52, .05, 0, .12, 0));
     const head = part(G.cyl, o.tete || C.stone, .07, .38, .07, 0, .36, 0);                      // tête à deux pointes arrondies
     head.rotation.x = Math.PI/2; g.add(head);
   },
-  canne(g, o){
-    const rod = part(G.cyl, C.wood, .035, .9, .035, 0, .38, 0);                       // gaule
+  canne(g, o, w = C.wood){
+    const rod = part(G.cyl, w, .035, .9, .035, 0, .38, 0);                       // gaule
     g.add(rod);
     g.add(part(G.cyl, o.tete || C.dark, .09, .05, .09, 0, .02, .04));                 // moulinet (bois, cuivre, bronze)
     g.add(part(G.cyl, C.cream, .008, .3, .008, 0, .7, .03));                           // fil
     const bout = new THREE.Object3D(); bout.name = "bout"; bout.position.set(0, .84, 0); g.add(bout);   // le bout de la gaule : le fil de la pêche en part
   },
-  filet(g, o){
-    g.add(part(G.cyl, C.wood, .04, .7, .04, 0, .28, 0));                              // manche
+  filet(g, o, w = C.wood){
+    g.add(part(G.cyl, w, .04, .7, .04, 0, .28, 0));                              // manche
     const cercle = new THREE.Mesh(new THREE.TorusGeometry(.13 + (o.plusLoin || 0) * .04, .015, 6, 16), toon({color: o.tete || C.dark}));
     cercle.position.set(0, .7, 0); cercle.rotation.y = Math.PI/2; g.add(cercle);       // le cercle
     const poche = part(G.cone, 0xF4EFE6, .26, .22, .26, 0, .7, .1);                   // la poche du filet
     poche.rotation.x = -Math.PI/2; poche.material = toon({color: 0xF4EFE6, transparent: true, opacity: .7}); g.add(poche);
   },
-  arrosoir(g, o){
-    g.add(part(G.cyl, o.tete || C.wood, .28, .26, .28, 0, .02, .1));                 // le seau (bois, cuivre, bronze), tenu par son anse
+  arrosoir(g, o, w = C.wood){
+    g.add(part(G.cyl, o.tete || w, .28, .26, .28, 0, .02, .1));                 // le seau (bois, cuivre, bronze), tenu par son anse
     g.add(part(G.cyl, C.dark, .3, .03, .3, 0, .15, .1));                              // cerclage
-    const bec = part(G.cyl, o.tete || C.wood, .05, .3, .05, 0, .1, .32);            // bec verseur
+    const bec = part(G.cyl, o.tete || w, .05, .3, .05, 0, .1, .32);            // bec verseur
     bec.rotation.x = 1.1; g.add(bec);
     const anse = part(G.cyl, C.dark, .03, .3, .03, 0, .24, .1);                       // anse
     anse.rotation.x = Math.PI/2; g.add(anse);
   },
-  pelle(g, o){                                                                       // le manche, et la lame arrondie au bout
-    g.add(part(G.cyl, C.wood, .045, .62, .045, 0, .2, 0));
+  pelle(g, o, w = C.wood){                                                                       // le manche, et la lame arrondie au bout
+    g.add(part(G.cyl, w, .045, .62, .045, 0, .2, 0));
     g.add(part(G.box, C.dark, .14, .04, .04, 0, -.1, 0));                              // la poignée
-    g.add(part(G.head, o.tete || C.wood, .62, .9, .18, 0, .6, .02));                   // la lame (bois, cuivre…)
+    g.add(part(G.head, o.tete || w, .62, .9, .18, 0, .6, .02));                   // la lame (bois, cuivre…)
   },
   bocal(g, o){                                                                       // un bocal de verre, son couvercle de bois
     const v = part(G.cyl, 0xB8DCEE, .26, .3, .26, 0, .05, .08);
@@ -63,11 +64,11 @@ const BUILD = {
     g.add(part(G.cyl, C.cream, .008, .64, .008, 0, .3, .02));                           // la corde
     g.add(part(G.cyl, C.dark, .05, .1, .05, 0, .3, -.13));                              // la poignée
   },
-  arme(g, o){
+  arme(g, o, w = C.wood){
     g.add(part(G.cyl, C.dark, .045, .14, .045, 0, 0, 0));                              // poignée
     g.add(part(G.box, C.dark, .06, .04, .2, 0, .08, 0));                               // garde
-    g.add(part(G.box, o.tete || C.wood, .04, .44, .09, 0, .32, 0));                    // lame (bois, cuivre…)
-    g.add(part(G.head, o.tete || C.wood, .2, .2, .38, 0, .54, 0));                     // bout arrondi
+    g.add(part(G.box, o.tete || w, .04, .44, .09, 0, .32, 0));                    // lame (bois, cuivre…)
+    g.add(part(G.head, o.tete || w, .2, .2, .38, 0, .54, 0));                     // bout arrondi
   }
 };
 function graine(g){
@@ -110,7 +111,7 @@ export function makeOutil(k){
     g.add(c); return g;
   }
   else if(CHEMIN_DE[k]) matiere(g, k);
-  else BUILD[OUTILS[k].famille](g, OUTILS[k]);
+  else BUILD[OUTILS[k].famille](g, OUTILS[k], aUnManche(k) ? teinteManche((state.manches || {})[k]) : C.wood);   // le manche dans l'essence choisie (Yo, 16 novembre 2026)
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;
 }

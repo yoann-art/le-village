@@ -3690,6 +3690,29 @@ export async function verifier(){
     sacTake("lanterneMurale", 1); sacTake("chandelleSuif", 1);               // le sac comme avant (les essais suivants y mettent leurs outils)
     return "accrochée vide, sa chandelle posée, elle éclaire le jour, éteinte et rallumée au geste, puis décrochée avec sa chandelle";
   });
+  /* le manche des outils dans l'essence choisie en les fabriquant (Yo, 16 novembre 2026 : « En fabriquant ») */
+  if(scierie) await etape("Le bois du manche des outils, choisi à l'établi : un bois de l'essence en plus, le manche à sa couleur", async () => {
+    const A = await import("../js/ateliers.js"), {makeOutil} = await import("../js/monde/outils3d.js"), {teinteManche, aUnManche} = await import("../js/donnees.js");
+    const r = A.recettesPour(scierie).find(x => x.out === "hachePierre");
+    if(!r || !aUnManche("hachePierre") || aUnManche("arcIf")) throw new Error("la hache en pierre n'a pas de manche à choisir (ou l'arc en a un)");
+    const q0 = scierie.atelier.queue, m0 = {...(state.manches || {})}, sac0 = JSON.stringify(state.sac), barre0 = JSON.stringify(state.barre), main0 = state.main;
+    scierie.atelier.queue = []; state.sac.length = 0;                 // le sac vidé le temps de l'essai (il est presque plein)
+    const h0 = owned("hachePierre");
+    try {
+      sacAdd("planche", 3); sacAdd("pierre", 2); sacAdd("boisBouleau", 1);
+      const b0 = owned("boisBouleau");
+      A.choisirManche("hachePierre", "boisBouleau"); A.fabriquer(scierie, r);
+      const j = scierie.atelier.queue[0];
+      if(!j || j.manche !== "boisBouleau" || owned("boisBouleau") !== b0 - 1 || j.in.boisBouleau !== 1) throw new Error(`le manche en bouleau ne coûte pas un bois de bouleau (${owned("boisBouleau")} sur ${b0}, ${JSON.stringify(j && j.in)})`);
+      j.start = j.end = Date.now() - 1;
+      if(!await attendre(() => owned("hachePierre") > h0, 4000)) throw new Error("la hache n'arrive pas dans le sac");
+      if((state.manches || {}).hachePierre !== "boisBouleau") throw new Error(`la hache ne garde pas son manche (${JSON.stringify(state.manches)})`);
+      const o = makeOutil("hachePierre"), c = teinteManche("boisBouleau");
+      let vu = false; o.traverse(m => { if(m.isMesh && m.material.color && m.material.color.getHex() === c) vu = true; });
+      if(!vu) throw new Error("le manche n'a pas la couleur du bouleau");
+      return `la hache au manche de bouleau : un bois de bouleau en plus, livrée avec son manche, de sa couleur`;
+    } finally { A.choisirManche("hachePierre", "bois"); scierie.atelier.queue = q0; state.manches = m0; state.sac.splice(0, state.sac.length, ...JSON.parse(sac0)); state.barre.splice(0, state.barre.length, ...JSON.parse(barre0)); state.main = main0; (await import("../js/barre.js")).syncBarre(); }
+  });
   /* les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026) : une photo du modèle, le reste dessiné */
   /* les pièces plus grandes (Yo, 13 novembre 2026) : deux cases de plus par niveau ; ce qui est accroché aux murs suit son mur ;
      les bâtiments refaits au niveau 2 y passent une fois, sans rien payer */

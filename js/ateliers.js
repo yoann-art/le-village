@@ -12,7 +12,7 @@
    Étape 1.11, morceau 4 : à la table de taille, « Ouvrir une géode » (hasard) : le cristal est tiré au sort quand la
    géode est prête (tirerCristal), et s'inscrit au carnet. */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, ETAL_GRAINES, etalDuJour, graineDeFleur, quandFleur, objet, icone, tirerCristal } from "./donnees.js";
+import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, ETAL_GRAINES, etalDuJour, graineDeFleur, quandFleur, objet, icone, tirerCristal, aUnManche, ESSENCES_MANCHE } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre, placesSac } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
@@ -103,12 +103,17 @@ function vendre(a, b, r){
   const quoi = r.tout ? `${nb} prises et plats` : Object.entries(pris).map(([k, v]) => many(k, v)).join(", ");
   toast(`${a.emoji} Vendu : ${quoi}. Tu gagnes ${info(r.out).emoji} ${many(r.out, n)}`, 2600);
 }
-function fabriquer(b, r){
+/* Le bois du manche choisi pour chaque outil, dans la fiche (le chêne d'office) ; ce qu'il coûte en plus */
+const choixManche = {};
+export const mancheChoisi = k => choixManche[k] || "bois";
+export function choisirManche(k, bois){ if(bois === "bois") delete choixManche[k]; else choixManche[k] = bois; }
+const prixAvecManche = r => { const m = aUnManche(r.out) ? mancheChoisi(r.out) : "bois", p = {...r.in}; if(m !== "bois") p[m] = (p[m] || 0) + 1; return p; };
+export function fabriquer(b, r){
   if(ATELIERS[b.type].vente){ vendre(ATELIERS[b.type], b, r); return; }
-  const q = queueOf(b);
-  if(r.lock || b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(r.in)) return;
-  const pris = payer(r.in);                           // un poisson « au choix » : on note lequel, pour pouvoir le rendre
-  q.push({out: r.out, n: r.n || 1, in: pris, t: r.t, start: 0, end: 0, ...(r.nom ? {nom: r.nom} : {}), ...(r.hasard ? {hasard: true} : {})});
+  const q = queueOf(b), prix = prixAvecManche(r), m = aUnManche(r.out) ? mancheChoisi(r.out) : null;
+  if(r.lock || b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(prix)) return;
+  const pris = payer(prix);                           // un poisson « au choix » : on note lequel, pour pouvoir le rendre ; le bois du manche est rendu si on annule
+  q.push({out: r.out, n: r.n || 1, in: pris, t: r.t, start: 0, end: 0, ...(r.nom ? {nom: r.nom} : {}), ...(r.hasard ? {hasard: true} : {}), ...(m ? {manche: m} : {})});
   chain(q); save(); renderHUD();
 }
 function annuler(b, i){
@@ -138,6 +143,7 @@ function livrer(){
       if(ATELIERS[b.type].vente && !j.bonus){ j.n = gain(j.n, j.out); j.bonus = true; }   // une vente : le bonus du Marché
       if(j.hasard){ j.out = tirerCristal(); j.ouverte = true; delete j.hasard; delete j.nom; noterPierre(j.out, j.n); }   // la géode s'ouvre
       const r = addOwned(j.out, j.n);
+      if(j.manche && (r.sac || r.coffre)){ const ms = state.manches || (state.manches = {}); if(j.manche === "bois") delete ms[j.out]; else ms[j.out] = j.manche; }   // l'outil garde le bois de son manche
       if(r.sac && enCaseAuto(j.out)) barreAuto(j.out);     // un nouvel outil prend une case rapide libre
       if(r.sac || r.coffre || r.bourse) faits.push({b, j, sac: r.sac, coffre: r.coffre, bourse: r.bourse || 0});
       if(r.reste){ j.n = r.reste; bloque = true; break; }
@@ -218,17 +224,23 @@ function render(){
     }).join("") +
     (a.vente && !recs.some(r => r.cat === "Prises et plats") ? `<h4 class="rec-cat">Prises et plats</h4><p class="hint-box">Pêche à l'étang ou en mer, attrape des insectes et des oiseaux au filet : tes prises se vendront ici, chacune à son prix.</p>` : ""));
 }
+/* La ligne « Manche : » d'un outil : le chêne, puis chaque bois qu'on a (sa couleur, son nom) */
+const hexCss = h => "#" + h.toString(16).padStart(6, "0");
+function mancheHTML(k){
+  const m = mancheChoisi(k), l = ESSENCES_MANCHE().filter(t => t.k === "bois" || owned(t.k) > 0 || t.k === m);
+  return `<div class="manches"><span class="muted">Manche :</span>${l.map(t => `<button class="manche${t.k === m ? " on" : ""}" data-manche="${t.k}" data-out="${k}" style="--sw:${hexCss(t.hex)}" aria-pressed="${t.k === m}">${t.nom.replace(/^Bois (de |d')/, "")}</button>`).join("")}</div>`;
+}
 function recetteHTML(b, a, r, full){
   if(r.lock) return `<div class="brow"><div class="be" aria-hidden="true">${r.emoji}</div>
     <div class="bt"><span class="bn">${r.nom}</span><p>🔒 ${r.lock}</p></div>
     <button class="btn primary" disabled>Bientôt</button></div>`;
   const plein = full && !a.vente;                     // le comptoir n'a pas de file : on vend tout de suite
-  const locked = b.lvl < r.lvl, ok = !locked && !plein && hasAll(r.in);
+  const prix = a.vente ? r.in : prixAvecManche(r), locked = b.lvl < r.lvl, ok = !locked && !plein && hasAll(prix);
   const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : r.achat ? "Acheter" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
       ${r.achat ? `<p>${many("or", r.in.or)} · ${r.quand} · tu en as : ${owned(r.out)}</p>` : a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : objet(r.out).sac ? `🎒 ${placesSac()} → ${SACS[objet(r.out).sac].places} emplacements` : `tu en as : ${owned(r.out)}`}</p>`}
-      <div>${r.tout ? "" : Object.entries(r.in).map(([k, v]) => chip(k, v)).join("")}</div></div>
+      <div>${r.tout ? "" : Object.entries(prix).map(([k, v]) => chip(k, v)).join("")}</div>${a.vente || !aUnManche(r.out) ? "" : mancheHTML(r.out)}</div>
     <button class="btn primary" data-fab="${r.key}" ${ok ? "" : "disabled"}>${r.tout ? "Tout vendre" : why}</button></div>`;
 }
 /* Ouvre la fiche du plan de travail d'un bâtiment (son bouton, ou « Fabriquer » dans le catalogue) */
@@ -240,7 +252,8 @@ export function openAtelier(b){
 btn.addEventListener("click", () => { const place = currentPlace(); if(place) openAtelier(place.b); });
 wrap.addEventListener("click", e => {
   if(!openFor) return;
-  const fab = e.target.closest("[data-fab]"), ann = e.target.closest("[data-annuler]");
+  const fab = e.target.closest("[data-fab]"), ann = e.target.closest("[data-annuler]"), man = e.target.closest("[data-manche]");
+  if(man){ choisirManche(man.dataset.out, man.dataset.manche); render(); return; }
   if(fab){ const r = recettesDe(openFor).find(x => x.key === fab.dataset.fab); if(r) fabriquer(openFor, r); render(); }
   else if(ann){ annuler(openFor, +ann.dataset.annuler); render(); }
 });

@@ -4743,6 +4743,270 @@ window.PROMPTS_CARNET = [
 "style": "objet",
 "families": [
 {
+"name": "La hache : pierre (ou bois), cuivre, bronze",
+"note": "Couper les arbres. La hache en pierre est faite (ta première image). Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-hache-pierre",
+"name": "Hache en pierre",
+"size": "outil",
+"line": "Une hache en pierre : lame de pierre grise taillée à grandes facettes, au tranchant large et arrondi dont les deux pointes descendent en crochet, tenue au manche par deux bandes de cuir brun croisées et trois tours de cuir serrés juste dessous ; manche de bois orange clair un peu courbe, veiné, au bout arrondi et plus épais, dont la tête ronde dépasse au-dessus de la lame."
+},
+{
+"id": "outm-hache-cuivre",
+"name": "Hache en cuivre",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en cuivre : lame de cuivre orangé forgée, plus fine et lisse, au tranchant arrondi poli et plus clair, deux pointes en crochet plus nettes ; une douille de cuivre enserre le manche, tenue par deux rivets ronds ; une bande de cuir brun enroulée sous la lame."
+},
+{
+"id": "outm-hache-bronze",
+"name": "Hache en bronze",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en bronze : grande lame de bronze doré en demi-lune, élégante, au tranchant poli plus clair, une fine feuille gravée sur la face ; douille de bronze ornée de deux anneaux ; le bas du manche gainé de cuir brun."
+}
+]
+},
+{
+"name": "La pioche : pierre (ou bois), cuivre, bronze",
+"note": "Casser les rochers, creuser la mine. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-pioche-pierre",
+"name": "Pioche en pierre",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pioche en pierre : tête de pierre grise taillée à grandes facettes, deux pointes émoussées un peu recourbées vers le bas, tenue au manche par des bandes de cuir brun croisées et des tours de cuir serrés."
+},
+{
+"id": "outm-pioche-cuivre",
+"name": "Pioche en cuivre",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pioche en cuivre : tête de cuivre orangé forgée, lisse, une pointe fine d'un côté et un petit tranchant plat de l'autre, légèrement recourbée ; une douille de cuivre enserre le manche, tenue par deux rivets ronds."
+},
+{
+"id": "outm-pioche-bronze",
+"name": "Pioche en bronze",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pioche en bronze : longue tête de bronze doré, deux pointes effilées et recourbées vers le bas, une fine ligne gravée le long de la tête ; douille de bronze ornée de deux anneaux ; le bas du manche gainé de cuir brun."
+}
+]
+},
+{
+"name": "La pelle : pierre (ou bois), cuivre, bronze",
+"note": "Creuser un étang ou une rivière, combler l'eau douce. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-pelle-bois",
+"name": "Pelle en bois",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pelle en bois : lame de bois clair taillée d'une seule pièce, arrondie et un peu creuse, au bord usé ; une ligature de corde de fibres à la jonction de la lame ; une poignée en T au bout du manche."
+},
+{
+"id": "outm-pelle-cuivre",
+"name": "Pelle en cuivre",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pelle en cuivre : lame de cuivre orangé arrondie et creuse, au bord plus clair, fixée au manche par une douille de cuivre et deux rivets ronds ; une poignée en T au bout du manche."
+},
+{
+"id": "outm-pelle-bronze",
+"name": "Pelle en bronze",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pelle en bronze : lame de bronze doré en forme de cœur pointu, bords un peu relevés, une feuille gravée au milieu ; douille de bronze ornée d'un anneau ; poignée en T gainée de cuir brun."
+}
+]
+},
+{
+"name": "L'arrosoir : pierre (ou bois), cuivre, bronze",
+"note": "Arroser les groseilliers. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-arrosoir-bois",
+"name": "Arrosoir en bois",
+"size": "outil",
+"line": "Un arrosoir en bois couleur miel, ventre rond fait de douelles serrées et cerclé de deux bandes de cuir brun, long bec de bois terminé par une pomme percée de petits trous, anse de bois arrondie, un peu d'eau qui perle au bec."
+},
+{
+"id": "outm-arrosoir-cuivre",
+"name": "Arrosoir en cuivre",
+"size": "outil",
+"line": "Un arrosoir en cuivre orangé martelé, ventre rond, long bec fin terminé par une pomme percée, anse arrondie rivetée, quelques reflets plus clairs, de la même forme que l'arrosoir en bois."
+},
+{
+"id": "outm-arrosoir-bronze",
+"name": "Arrosoir en bronze",
+"size": "outil",
+"line": "Un arrosoir en bronze doré, ventre rond et plus grand, long bec élégant à pomme percée, anse arrondie ornée d'une petite feuille, une frise gravée autour du ventre, de la même forme que l'arrosoir en bois."
+}
+]
+},
+{
+"name": "La canne à pêche : pierre (ou bois), cuivre, bronze",
+"note": "Pêcher en mer et à l'étang. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-canne-bois",
+"name": "Canne à pêche en bois",
+"size": "outil",
+"line": "Une canne à pêche en bois orange clair, longue et un peu souple, poignée gainée de corde, petit moulinet de bois, fil fin et bouchon rouge et blanc qui pend au bout."
+},
+{
+"id": "outm-canne-cuivre",
+"name": "Canne à pêche en cuivre",
+"size": "outil",
+"line": "Une canne à pêche en bois orange clair, poignée gainée de cuir brun, moulinet de cuivre orangé brillant avec sa manivelle, deux anneaux de cuivre le long de la canne, fil fin et bouchon rouge et blanc, de la même forme que la canne en bois."
+},
+{
+"id": "outm-canne-bronze",
+"name": "Canne à pêche en bronze",
+"size": "outil",
+"line": "Une canne à pêche en bois orange clair, poignée gainée de cuir brun, grand moulinet de bronze doré gravé d'un poisson, trois anneaux de bronze le long de la canne, fil fin et bouchon rouge et blanc, de la même forme que la canne en bois."
+}
+]
+},
+{
+"name": "Le filet : pierre (ou bois), cuivre, bronze",
+"note": "Attraper les insectes et les oiseaux. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-filet-bois",
+"name": "Filet en bois",
+"size": "outil",
+"line": "Un filet à papillons : manche de bois orange clair, cercle de bois courbé lié par une corde de fibres, poche de lin blanc en mailles fines."
+},
+{
+"id": "outm-filet-cuivre",
+"name": "Filet en cuivre",
+"size": "outil",
+"line": "Un filet à papillons : manche de bois orange clair, cercle de cuivre orangé brillant fixé par une douille de cuivre, poche de lin blanc en mailles fines, un peu plus grande, de la même forme que le filet en bois."
+},
+{
+"id": "outm-filet-bronze",
+"name": "Filet en bronze",
+"size": "outil",
+"line": "Un filet à papillons : manche de bois orange clair gainé de cuir en bas, grand cercle de bronze doré gravé de petites feuilles, douille de bronze ornée, poche de lin blanc en mailles fines, la plus grande, de la même forme que le filet en bois."
+}
+]
+},
+{
+"name": "Le bocal : pierre (ou bois), cuivre, bronze",
+"note": "Attraper la luciole et le frelon. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-bocal-verre",
+"name": "Bocal en verre",
+"size": "outil",
+"line": "Un bocal de verre rond et transparent, un peu bleuté, couvercle de bois clair percé de petits trous, poignée de corde de fibres nouée autour du col."
+},
+{
+"id": "outm-bocal-cuivre",
+"name": "Bocal cerclé de cuivre",
+"size": "outil",
+"line": "Un bocal de verre rond et transparent, cerclé de deux bandes de cuivre orangé, couvercle de cuivre percé de petits trous, poignée de cuivre en anse, de la même forme que le bocal en verre."
+},
+{
+"id": "outm-bocal-bronze",
+"name": "Bocal cerclé de bronze",
+"size": "outil",
+"line": "Un bocal de verre rond et transparent, cerclé de bronze doré gravé de feuilles, couvercle de bronze bombé percé de petits trous en étoile, poignée de bronze en anse, de la même forme que le bocal en verre."
+}
+]
+},
+{
+"name": "L'épée : pierre (ou bois), cuivre, bronze",
+"note": "Se défendre dans la grotte. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-epee-bois",
+"name": "Épée en bois",
+"size": "outil",
+"line": "Une épée d'entraînement en bois orange clair taillé d'une pièce, lame large au bout arrondi, petite garde droite en bois, poignée enroulée de corde de fibres, pommeau rond."
+},
+{
+"id": "outm-epee-cuivre",
+"name": "Épée en cuivre",
+"size": "outil",
+"line": "Une épée courte en cuivre orangé, lame large et lisse au bout pointu un peu arrondi, une rainure au milieu, garde de cuivre droite aux bouts ronds, poignée gainée de cuir brun, pommeau rond de cuivre."
+},
+{
+"id": "outm-epee-bronze",
+"name": "Épée en bronze",
+"size": "outil",
+"line": "Une épée en bronze doré, lame plus longue en forme de feuille, une rainure au milieu, garde de bronze aux bouts recourbés, poignée gainée de cuir brun, pommeau rond orné d'une petite feuille."
+}
+]
+},
+{
+"name": "Les flèches : pierre (ou bois), cuivre, bronze",
+"note": "Pour l'arc, par paquets de dix. Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"items": [
+{
+"id": "outm-fleches-pierre",
+"name": "Flèches à pointe de pierre",
+"size": "outil",
+"line": "Trois flèches côte à côte : tige de bois clair bien droite, pointe de pierre grise taillée en feuille liée de corde de fibres, empennage de plumes rouges."
+},
+{
+"id": "outm-fleches-cuivre",
+"name": "Flèches à pointe de cuivre",
+"size": "outil",
+"line": "Trois flèches côte à côte : tige de bois clair bien droite, pointe de cuivre orangé brillante en feuille, empennage de plumes rouges, de la même forme que les flèches à pointe de pierre."
+},
+{
+"id": "outm-fleches-bronze",
+"name": "Flèches à pointe de bronze",
+"size": "outil",
+"line": "Trois flèches côte à côte : tige de bois clair bien droite, pointe de bronze doré effilée et barbelée, petite bague de bronze sous la pointe, empennage de plumes rouges et blanches, de la même forme que les flèches à pointe de pierre."
+}
+]
+},
+{
+"name": "Le fer et l'obsidienne (plus tard)",
+"note": "Prévus au Grand Carnet, pas encore dans le jeu : rien ne presse pour leurs images.",
+"items": [
+{
+"id": "outm-hache-fer",
+"name": "Hache en fer",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en fer : large lame de fer gris acier, épaisse, au tranchant brillant, douille de fer cloutée ; manche cerclé d'une bague de fer, bas du manche gainé de cuir."
+},
+{
+"id": "outm-hache-obsidienne",
+"name": "Hache en obsidienne",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en obsidienne : lame d'obsidienne noire et luisante à reflets violets, taillée à facettes vives, montée dans une douille de fer sombre ; petits liens d'or ; bas du manche gainé de cuir."
+},
+{
+"id": "outm-pioche-fer",
+"name": "Pioche en fer",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pioche en fer : tête de fer gris acier, épaisse, deux pointes effilées recourbées, douille de fer cloutée, bas du manche gainé de cuir."
+},
+{
+"id": "outm-pioche-obsidienne",
+"name": "Pioche en obsidienne",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pioche en obsidienne : tête d'obsidienne noire et luisante à reflets violets, deux pointes taillées à facettes vives, douille de fer sombre, petits liens d'or."
+},
+{
+"id": "outm-pelle-fer",
+"name": "Pelle en fer",
+"size": "outil",
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une pelle en fer : lame de fer gris acier, solide et creuse, bord brillant, douille de fer cloutée, poignée en T cerclée de fer."
+},
+{
+"id": "outm-epee-fer",
+"name": "Épée en fer",
+"size": "outil",
+"line": "Une épée de chevalier en fer gris acier, lame droite et brillante, une rainure au milieu, garde de fer droite, poignée gainée de cuir brun, pommeau rond de fer."
+},
+{
+"id": "outm-epee-obsidienne",
+"name": "Épée en obsidienne",
+"size": "outil",
+"line": "Une épée à lame d'obsidienne noire et luisante à reflets violets, taillée à facettes vives, garde de fer sombre aux bouts recourbés, poignée gainée de cuir sombre, pommeau orné d'une petite pierre violette."
+}
+]
+},
+{
 "name": "Les outils",
 "note": "La première version de chaque outil (bois et pierre, ou cuivre). L'objet seul, posé.",
 "items": [

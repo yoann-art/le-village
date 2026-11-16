@@ -1167,6 +1167,14 @@ export const TEINTES = {
 /* Les teintes d'un meuble (vide s'il n'en a pas), sa teinte de départ, et la couleur à dessiner : sa teinte, l'ancienne
    couleur de la palette gratuite s'il en a une, sinon celle de départ */
 export const teintesDe = type => TEINTES[MATIERE[type]] || [];
+/* Le manche des outils dans l'essence de bois choisie en les fabriquant (Yo, 16 novembre 2026 : « Le manche en bois des
+   outils je voudrais aussi qu'il prenne la couleur de l'essence du bois » ; « En fabriquant ») : le chêne d'office, sans rien
+   de plus ; une autre essence coûte un bois de cette essence. Les outils tout en bois (l'épée et l'arrosoir en bois) la
+   prennent en entier ; pas l'arc (toujours en if) ni le bocal (en verre). state.manches = {outil: clé du bois} */
+const FAMILLES_MANCHE = ["hache", "pioche", "pelle", "canne", "filet"];
+export const aUnManche = k => !!(OUTILS[k] && (FAMILLES_MANCHE.includes(OUTILS[k].famille) || k === "epeeBois" || k === "arrosoir"));
+export const ESSENCES_MANCHE = () => TEINTES.bois;
+export const teinteManche = k => (TEINTES.bois.find(t => t.k === (k || "bois")) || TEINTES.bois[0]).hex;
 export const departDe = type => { const l = teintesDe(type); return l.find(t => t.k === DEPART[type]) || l[0] || null; };
 export function couleurMeuble(type, color){
   const t = teintesDe(type).find(x => x.k === color);

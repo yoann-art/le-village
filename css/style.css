@@ -186,6 +186,11 @@ button{font:inherit;color:inherit}
 .brow .btn{flex:none;padding:9px 12px;font-size:15px}
 .chip{display:inline-block;font-size:15px;margin-right:8px;white-space:nowrap}
 .chip.short{color:var(--gueules);font-weight:700}
+/* le bois du manche d'un outil, choisi en le fabriquant (Yo, 16 novembre 2026) */
+.manches{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:14px}
+.manche{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px 0 6px;border-radius:999px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer;touch-action:manipulation}
+.manche::before{content:"";width:20px;height:20px;border-radius:50%;background:var(--sw);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.manche.on{border-color:var(--ink);font-weight:700}
 .sh-tabs{display:flex;gap:8px;margin:4px 0 10px}
 .sh-tab{flex:1;appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;min-height:46px;font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation}
 .sh-tab[aria-selected="true"]{background:var(--sinople);color:var(--on-sinople);border-color:var(--sinople)}
