@@ -3708,7 +3708,7 @@ export async function verifier(){
       if(!await attendre(() => owned("hachePierre") > h0, 4000)) throw new Error("la hache n'arrive pas dans le sac");
       if((state.manches || {}).hachePierre !== "boisBouleau") throw new Error(`la hache ne garde pas son manche (${JSON.stringify(state.manches)})`);
       const o = makeOutil("hachePierre"), c = teinteManche("boisBouleau");
-      let vu = false; o.traverse(m => { if(m.isMesh && m.material.color && m.material.color.getHex() === c) vu = true; });
+      let vu = false; o.traverse(m => { if(m.isMesh && (m.userData.manche === c || !m.material.vertexColors && m.material.color && m.material.color.getHex() === c)) vu = true; });   // un outil refait garde la couleur de son manche dans ses sommets (userData.manche)
       if(!vu) throw new Error("le manche n'a pas la couleur du bouleau");
       return `la hache au manche de bouleau : un bois de bouleau en plus, livrée avec son manche, de sa couleur`;
     } finally { A.choisirManche("hachePierre", "bois"); scierie.atelier.queue = q0; state.manches = m0; state.sac.splice(0, state.sac.length, ...JSON.parse(sac0)); state.barre.splice(0, state.barre.length, ...JSON.parse(barre0)); state.main = main0; (await import("../js/barre.js")).syncBarre(); }

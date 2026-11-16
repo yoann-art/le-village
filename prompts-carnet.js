@@ -4744,25 +4744,25 @@ window.PROMPTS_CARNET = [
 "families": [
 {
 "name": "La hache : pierre (ou bois), cuivre, bronze",
-"note": "Couper les arbres. La hache en pierre est faite (ta première image). Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
+"note": "Couper les arbres. Toujours un seul tranchant, un talon arrondi de l'autre côté (Yo, 16 novembre 2026 : deux tranchants, on dirait une arme). Une image par matière ; garde la même forme d'une matière à l'autre (même manche, mêmes proportions), seule la tête change.",
 "items": [
 {
 "id": "outm-hache-pierre",
 "name": "Hache en pierre",
 "size": "outil",
-"line": "Une hache en pierre : lame de pierre grise taillée à grandes facettes, au tranchant large et arrondi dont les deux pointes descendent en crochet, tenue au manche par deux bandes de cuir brun croisées et trois tours de cuir serrés juste dessous ; manche de bois orange clair un peu courbe, veiné, au bout arrondi et plus épais, dont la tête ronde dépasse au-dessus de la lame."
+"line": "Une hache en pierre à un seul tranchant : lame de pierre grise taillée à grandes facettes, d'un seul côté du manche, au tranchant large et arrondi dont la pointe du bas descend en crochet ; de l'autre côté, un talon de pierre court et arrondi ; tenue au manche par deux bandes de cuir brun croisées et trois tours de cuir serrés juste dessous ; manche de bois orange clair un peu courbe, veiné, au bout arrondi et plus épais, dont la tête ronde dépasse au-dessus de la lame. Une seule lame, d'un seul côté du manche, le tranchant tourné vers l'extérieur ; de l'autre côté du manche, seulement un talon court et arrondi : surtout pas de deuxième lame, ce n'est pas une hache double ni une arme, c'est un outil de bûcheron. Vue de profil, le tranchant à droite."
 },
 {
 "id": "outm-hache-cuivre",
 "name": "Hache en cuivre",
 "size": "outil",
-"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en cuivre : lame de cuivre orangé forgée, plus fine et lisse, au tranchant arrondi poli et plus clair, deux pointes en crochet plus nettes ; une douille de cuivre enserre le manche, tenue par deux rivets ronds ; une bande de cuir brun enroulée sous la lame."
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en cuivre : lame de cuivre orangé forgée, plus fine et lisse, au tranchant arrondi poli et plus clair, sa pointe du bas en crochet plus nette ; une douille de cuivre enserre le manche, tenue par deux rivets ronds ; une bande de cuir brun enroulée sous la lame. Une seule lame, d'un seul côté du manche, le tranchant tourné vers l'extérieur ; de l'autre côté du manche, seulement un talon court et arrondi : surtout pas de deuxième lame, ce n'est pas une hache double ni une arme, c'est un outil de bûcheron. Vue de profil, le tranchant à droite."
 },
 {
 "id": "outm-hache-bronze",
 "name": "Hache en bronze",
 "size": "outil",
-"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en bronze : grande lame de bronze doré en demi-lune, élégante, au tranchant poli plus clair, une fine feuille gravée sur la face ; douille de bronze ornée de deux anneaux ; le bas du manche gainé de cuir brun."
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en bronze : grande lame de bronze doré en demi-lune, d'un seul côté, élégante, au tranchant poli plus clair, une fine feuille gravée sur la face ; douille de bronze ornée de deux anneaux ; le bas du manche gainé de cuir brun. Une seule lame, d'un seul côté du manche, le tranchant tourné vers l'extérieur ; de l'autre côté du manche, seulement un talon court et arrondi : surtout pas de deuxième lame, ce n'est pas une hache double ni une arme, c'est un outil de bûcheron. Vue de profil, le tranchant à droite."
 }
 ]
 },
@@ -4966,13 +4966,13 @@ window.PROMPTS_CARNET = [
 "id": "outm-hache-fer",
 "name": "Hache en fer",
 "size": "outil",
-"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en fer : large lame de fer gris acier, épaisse, au tranchant brillant, douille de fer cloutée ; manche cerclé d'une bague de fer, bas du manche gainé de cuir."
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en fer : large lame de fer gris acier, d'un seul côté, épaisse, au tranchant brillant, douille de fer cloutée ; manche cerclé d'une bague de fer, bas du manche gainé de cuir. Une seule lame, d'un seul côté du manche, le tranchant tourné vers l'extérieur ; de l'autre côté du manche, seulement un talon court et arrondi : surtout pas de deuxième lame, ce n'est pas une hache double ni une arme, c'est un outil de bûcheron. Vue de profil, le tranchant à droite."
 },
 {
 "id": "outm-hache-obsidienne",
 "name": "Hache en obsidienne",
 "size": "outil",
-"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en obsidienne : lame d'obsidienne noire et luisante à reflets violets, taillée à facettes vives, montée dans une douille de fer sombre ; petits liens d'or ; bas du manche gainé de cuir."
+"line": "Même style que la hache en pierre de référence : manche de bois orange clair, un peu courbe, veiné, plus épais et arrondi au bout, gros volumes doux. Une hache en obsidienne : lame d'obsidienne noire et luisante à reflets violets, d'un seul côté, taillée à facettes vives, montée dans une douille de fer sombre ; petits liens d'or ; bas du manche gainé de cuir. Une seule lame, d'un seul côté du manche, le tranchant tourné vers l'extérieur ; de l'autre côté du manche, seulement un talon court et arrondi : surtout pas de deuxième lame, ce n'est pas une hache double ni une arme, c'est un outil de bûcheron. Vue de profil, le tranchant à droite."
 },
 {
 "id": "outm-pioche-fer",

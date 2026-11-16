@@ -2,7 +2,7 @@
    Le modèle de l'outil tenu en main, en formes simples (phase 1), un par famille d'outils,
    et le sachet d'une graine qu'on va planter.
    Il est construit le manche vers le bas, l'origine dans la main ; le devant regarde +z. */
-import { G, part, toon } from "./formes.js";
+import { G, part, toon, fusionner, MAT_UNI } from "./formes.js";
 import { OUTILS, GRAINES, POSABLES, CHEMIN_DE, enMainDehors, aUnManche, teinteManche } from "../donnees.js";
 import { state } from "../sauvegarde.js";
 import { makeMeuble } from "./meubles.js";
@@ -86,6 +86,104 @@ function matiere(g, k){
     for(const [x, z] of [[-.05, .02], [.05, .08], [0, -.04]]) g.add(part(G.dode, 0x8E8678, .05, .04, .05, x, .12, z));
   }
 }
+/* ---------- Les outils refaits d'après les images de Yo (le chantier des outils, 16 novembre 2026) ----------
+   Un seul dessin chacun : leurs morceaux fusionnés, aux couleurs par sommet (MAT_UNI), l'ombre douce peinte ; la forme est
+   faite une fois par bois du manche, puis partagée. Dessinés à la taille de l'image (le manche mesure 1, la main à 0), puis
+   ramenés à la taille du jeu : RF, et le haut redressé contre l'écrasement de makeOutil (1,6 de large, 1,25 de haut). */
+const formesOutils = new Map();
+const RF = .37;
+const M4o = (x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, "YXZ")), new THREE.Vector3(sx, sy, sz));
+function modeleOutil(cle, morceaux){
+  if(!formesOutils.has(cle)) formesOutils.set(cle, fusionner(morceaux()));
+  const m = new THREE.Mesh(formesOutils.get(cle), MAT_UNI); m.castShadow = m.receiveShadow = true;
+  m.scale.set(RF, RF * 1.6 / 1.25, RF);
+  return m;
+}
+const CUIR = 0xB55A2C;
+/* Un hasard toujours le même (les facettes de la pierre taillée ne changent pas d'une partie à l'autre) */
+const hasard = graine => () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+/* Le manche (le même pour les haches, et plus tard les pioches) : rond, plus large au bout du bas arrondi, un peu courbe ;
+   le haut coupé net, un peu bombé, plus clair (le bois de bout) */
+const MANCHE = (() => {
+  const p = [[0, -.33], [.07, -.325], [.11, -.3], [.13, -.26], [.126, -.2], [.108, -.12], [.094, -.04], [.092, .1], [.096, .3],
+    [.1, .5], [.102, .64], [.095, .672], [.06, .686], [0, .69]].map(([r, y]) => new THREE.Vector2(r, y));
+  const g = new THREE.LatheGeometry(p, 12), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const y = P.getY(i); if(y < .2) P.setZ(i, P.getZ(i) - .07 * ((.2 - y) / .53) ** 2); }   // la courbe du bas
+  g.computeVertexNormals();
+  return g;
+})();
+/* La tête de la hache en pierre (image de Yo, 16 novembre 2026, à un seul tranchant : « Un seul tranchant ») : devant (+z) la
+   lame en croissant, sa pointe du bas en crochet ; derrière (-z) un talon court et arrondi. Chaque côté est une grille tendue
+   entre ses quatre bords (le dessus, le dessous, l'axe du manche, le bout) ; chaque sommet un peu en creux au hasard et chaque
+   triangle plat : la pierre taillée à facettes. L'épaisseur va selon x. cotes : [derrière, devant], chacun {nu, haut, bas, bout,
+   epBord}, ses z comptés depuis l'axe (positifs) */
+function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7}){
+  const bez2 = (a, c, b, t) => [(1 - t) ** 2 * a[0] + 2 * t * (1 - t) * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * t * (1 - t) * c[1] + t * t * b[1]];
+  const bez3 = (a, c, d, b, t) => { const s = 1 - t; return [s ** 3 * a[0] + 3 * s * s * t * c[0] + 3 * s * t * t * d[0] + t ** 3 * b[0],
+    s ** 3 * a[1] + 3 * s * s * t * c[1] + 3 * s * t * t * d[1] + t ** 3 * b[1]]; };
+  const coons = (c, u, v) => {
+    const T = t => bez2(...c.haut, t), B = t => bez2(...c.bas, t), E = t => bez3(...c.bout, t), I = t => [0, B(0)[1] + (T(0)[1] - B(0)[1]) * t];
+    const r = [0, 0];
+    for(const k of [0, 1]) r[k] = (1 - v) * B(u)[k] + v * T(u)[k] + (1 - u) * I(v)[k] + u * E(v)[k]
+      - ((1 - u) * (1 - v) * B(0)[k] + u * (1 - v) * B(1)[k] + (1 - u) * v * T(0)[k] + u * v * T(1)[k]);
+    return r; };
+  const [D, F] = cotes, n0 = D.nu, cols = D.nu + F.nu + 1, rnd = hasard(graine), pts = [];
+  for(let j = 0; j <= nv; j++) for(let i = 0; i < cols; i++){
+    const c = i < n0 ? D : F, s = i < n0 ? -1 : 1, u = Math.abs(i - n0) / c.nu, v = j / nv, [z, y] = coons(c, u, v);
+    const bord = i === 0 || i === cols - 1 || j === 0 || j === nv;
+    const ep = (epCentre + (c.epBord - epCentre) * u ** 1.3) * (bord || i === n0 ? 1 : 1 - creux / epCentre * rnd());
+    pts.push([s * z, y, ep]);
+  }
+  const at = (i, j) => pts[j * cols + i], tri = [];
+  const face = (a, b, c, sx) => { for(const p of sx > 0 ? [a, c, b] : [a, b, c]) tri.push(sx * p[2], p[1], p[0]); };
+  for(const sx of [1, -1]) for(let j = 0; j < nv; j++) for(let i = 0; i < cols - 1; i++){
+    const a = at(i, j), b = at(i + 1, j), c = at(i + 1, j + 1), d = at(i, j + 1);
+    if((i + j) % 2){ face(a, b, c, sx); face(a, c, d, sx); } else { face(a, b, d, sx); face(b, c, d, sx); }
+  }
+  const tour = [];                                                          // le pourtour : le dessous, le tranchant, le dessus, le talon
+  for(let i = 0; i < cols; i++) tour.push(at(i, 0));
+  for(let j = 1; j <= nv; j++) tour.push(at(cols - 1, j));
+  for(let i = cols - 2; i >= 0; i--) tour.push(at(i, nv));
+  for(let j = nv - 1; j > 0; j--) tour.push(at(0, j));
+  for(let k = 0; k < tour.length; k++){
+    const p = tour[k], q = tour[(k + 1) % tour.length], P1 = [p[2], p[1], p[0]], P2 = [-p[2], p[1], p[0]], Q1 = [q[2], q[1], q[0]], Q2 = [-q[2], q[1], q[0]];
+    tri.push(...P1, ...Q2, ...P2, ...P1, ...Q1, ...Q2);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(tri, 3));
+  g.computeVertexNormals();                                                 // sans sommets partagés : chaque triangle plat, une facette
+  return g;
+}
+const LAME_HP = tetePierre({cotes: [
+  {nu: 2, epBord: .11, haut: [[0, .59], [.07, .6], [.13, .575]], bas: [[0, .35], [.07, .34], [.13, .37]],     // le talon arrondi
+    bout: [[.13, .37], [.19, .39], [.19, .555], [.13, .575]]},
+  {nu: 5, epBord: .04, haut: [[0, .59], [.16, .565], [.31, .71]], bas: [[0, .35], [.17, .39], [.26, .11]],   // la lame, son crochet
+    bout: [[.26, .11], [.44, .19], [.46, .61], [.31, .71]]}
+]});
+const LIEN = new THREE.TorusGeometry(1, .16, 5, 14), LANIERE = (() => {   // une lanière plate, courbée pour épouser la pierre
+  const g = new THREE.CylinderGeometry(.5, .5, 1, 8, 4), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++) P.setX(i, P.getX(i) - 3.2 * P.getY(i) ** 2);
+  g.computeVertexNormals(); return g; })();
+/* La hache en pierre (image de Yo, 16 novembre 2026 : « Voici la hache ») : le manche de bois (son essence, choisie en la
+   fabriquant), courbe, le bout du bas arrondi et plus large ; la lame de pierre taillée, à un seul tranchant en croissant (Yo :
+   deux, on dirait une arme), la pointe du bas en crochet, un talon arrondi derrière ; deux lanières de cuir croisées en X sur la lame, qui en font le tour, et quatre tours de cuir
+   serrés sous la lame. Un seul dessin */
+function hachePierre(w){
+  const m = modeleOutil("hachePierre" + w, () => {
+    const out = [];
+    out.push({geo: MANCHE, m: M4o(0, 0, 0), c: w, couleur: (x, y) => y > .675 ? new THREE.Color(w).multiplyScalar(1.18).getHex() : w,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .2) / .09 + .5))});
+    out.push({geo: LAME_HP, m: M4o(0, 0, 0), c: 0xA6A09A, ombre: (x, y) => .84 + .22 * Math.max(0, Math.min(1, (y - .2) / .5))});
+    for(const sx of [1, -1]) for(const a of [.7, -.7])                                          // les deux lanières en X, des deux côtés
+      out.push({geo: LANIERE, m: M4o(sx * .17, .45, Math.sign(a) * .03, a * sx, sx > 0 ? 0 : Math.PI, 0, .03, .32, .09), c: CUIR, ombre: (x, y) => .86 + .2 * Math.max(0, Math.min(1, (y - .35) / .25))});
+    for(const y of [.31, .265, .22, .175])                                                             // les tours de cuir sous la lame
+      out.push({geo: LIEN, m: M4o(0, y, 0, Math.PI / 2, 0, 0, .112, .112, .14), c: CUIR, ombre: (x, y, z) => .9 + .12 * Math.max(0, Math.min(1, x / .1 + .5))});
+    return out;
+  });
+  m.userData.manche = w;                  // le bois du manche (la vérification le lit : ses couleurs sont dans les sommets)
+  return m;
+}
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
@@ -111,6 +209,7 @@ export function makeOutil(k){
     g.add(c); return g;
   }
   else if(CHEMIN_DE[k]) matiere(g, k);
+  else if(k === "hachePierre") g.add(hachePierre(teinteManche((state.manches || {})[k])));   // refaite d'après l'image de Yo
   else BUILD[OUTILS[k].famille](g, OUTILS[k], aUnManche(k) ? teinteManche((state.manches || {})[k]) : C.wood);   // le manche dans l'essence choisie (Yo, 16 novembre 2026)
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;
