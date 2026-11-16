@@ -44,7 +44,7 @@
 
 ## À faire en premier dans la nouvelle séance
 
-1. `git status` : le dossier doit être propre. `git log --oneline -3` doit montrer `daf2902` (ou plus récent).
+1. `git status` : le dossier doit être propre. `git log --oneline -3` doit montrer `f59ab50` (cette passation) ou plus récent.
 2. Lancer le jeu avec `preview_start` « jeu » (il s'arrête parfois : `ERR_CONNECTION_REFUSED`, le relancer).
 3. Lire la dernière vérification de GitHub et le carnet de bugs (seulement les notes de `yoann-art`).
 4. Demander à Yo : la hache en pierre maintenant, ou attendre ses images des autres outils.
