@@ -25,6 +25,8 @@ import { caillouModele, pierreChamps } from "./monde/pierre.js";
 import { thymModele } from "./monde/thym.js";
 import { FLEURS } from "./donnees.js";
 import { makeMeuble, MEUBLES_REFAITS, chandelleSeule } from "./monde/meubles.js";
+import { OUTILS_REFAITS } from "./monde/outils3d.js";
+import { teinteManche } from "./donnees.js";
 
 const VERSION_ICONES = 6, CLE = "le-village-icones", TAILLE = 96;
 /* Ce qu'on photographie : la clé de l'objet, et comment faire son modèle (en été, en fleur, de face : un mâle) */
@@ -53,6 +55,9 @@ for(const k of MEUBLES_REFAITS) PHOTOS[k] = () => makeMeuble(k);
 /* Les coffres de réserve (image de Yo, 8 novembre 2026) : le simple, et le coffre cerclé de cuivre */
 PHOTOS.chandelleSuif = () => { const g = new THREE.Group(); g.add(chandelleSeule()); return g; };   // la chandelle de suif, à poser dans un bougeoir
 Object.assign(PHOTOS, {coffreReserve: () => makeMeuble("coffre"), coffrePlein: () => makeMeuble("coffre"), coffreCuivre: () => makeMeuble("coffre", undefined, {style: "cuivre"})});
+/* Les outils refaits d'après les images de Yo (Yo, 16 novembre 2026 : « Peux tu changer l'icône aussi ? ») : de profil, le
+   manche en chêne, penchés comme sur son image (la tête en haut à droite) */
+for(const k of Object.keys(OUTILS_REFAITS)) PHOTOS[k] = () => { const m = OUTILS_REFAITS[k](teinteManche()); m.rotation.x = .55; return m; };
 const SERRE = new Set(["chandelle", "chandelleSuif"]);   // cadrées sur leur forme, pas sur leur boîte
 const DE_FACE = new Set([...MEUBLES_REFAITS, "coffreReserve", "coffrePlein", "coffreCuivre"]);
 export const iconesPhoto = () => Object.keys(PHOTOS);
@@ -85,7 +90,7 @@ function monter(){
   return studio = {scene, cam, cible, pix, toile, petite};
 }
 const boite = new THREE.Box3(), morceau = new THREE.Box3(), centre = new THREE.Vector3(), sphere = new THREE.Sphere(), coin = new THREE.Vector3();
-const VUE = new THREE.Vector3(-.62, .5, -.9).normalize(), DESSUS = new THREE.Vector3(0, 1, -.42).normalize(), PROFIL = new THREE.Vector3(-1, .25, -.2).normalize(), POISSON = new THREE.Vector3(-.2, .3, 1).normalize();   // un poisson : de côté, la tête à gauche
+const VUE = new THREE.Vector3(-.62, .5, -.9).normalize(), OUTIL = new THREE.Vector3(-1, .12, -.12).normalize(), DESSUS = new THREE.Vector3(0, 1, -.42).normalize(), PROFIL = new THREE.Vector3(-1, .25, -.2).normalize(), POISSON = new THREE.Vector3(-.2, .3, 1).normalize();   // un poisson : de côté, la tête à gauche
 /* les papillons et la libellule se voient d'en haut, ailes ouvertes ; le citron, de profil, ailes fermées comme toujours */
 const D_EN_HAUT = new Set(["pieride", "paonDuJour", "machaon", "vulcain", "sphinx", "phalene", "grandPaon", "libellule"]);
 /* La photo d'un modèle : cadré sur sa forme, de trois quarts devant (la tête des bêtes est vers −z) */
@@ -95,7 +100,7 @@ export function photographier(k){
   const ailes = m.userData.ailes || [], ferme = m.userData.toujoursFerme && m.userData.ferme;
   if(D_EN_HAUT.has(k)) for(const a of ailes) a.pivot.rotation.z = a.cote * .08;
   else if(ferme) for(const a of ailes) a.pivot.rotation.z = a.cote * ferme;
-  const vue = MODELES_POISSONS[k] ? POISSON : D_EN_HAUT.has(k) ? DESSUS : ferme ? PROFIL : VUE;
+  const vue = OUTILS_REFAITS[k] ? OUTIL : MODELES_POISSONS[k] ? POISSON : D_EN_HAUT.has(k) ? DESSUS : ferme ? PROFIL : VUE;
   if(DE_FACE.has(k)) m.rotation.y = Math.PI;        // un meuble se voit par-devant (son devant est vers +z)
   S.scene.add(m);
   m.updateMatrixWorld(true);

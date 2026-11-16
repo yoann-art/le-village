@@ -184,6 +184,8 @@ function hachePierre(w){
   m.userData.manche = w;                  // le bois du manche (la vérification le lit : ses couleurs sont dans les sommets)
   return m;
 }
+/* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
+export const OUTILS_REFAITS = {hachePierre};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
