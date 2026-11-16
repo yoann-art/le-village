@@ -1,83 +1,74 @@
-# Passation de séance (30 octobre 2026)
-
-## Le dernier travail : le personnage
-
-- **v2.1.112** : la fille et le garçon refaits d'après les images de Yo (`js/monde/heros.js`, `fabriqueHeros`, `COULEURS_HEROS` ;
-  `personnage.js` : `habiller`, `placerMains`). Détail : DEVELOPMENT_HISTORY.md, « Le personnage d'après les images de Yo ».
-- Yo n'a pas encore vu le personnage sur son téléphone ; lui demander une session ⏱️ 2 min (référence v2.1.109 : 67 images/s).
-- La suite acceptée par Yo : 3. les réglages (peau 6 à 8 tons, visage, coiffure parmi sa planche, 8 couleurs de cheveux, couleur de
-  la tunique) ; 4. l'écran « Qui es-tu ? » (partie neuve et une fois pour une partie en cours, aperçu qui tourne, `state.perso`,
-  les mains à la première personne de la même peau) ; 5. les accords dans les textes (prêt/prête) ; 6. vérification et docs.
-- Les scripts de portrait et de photo dans le jeu de cette séance : `outils-claude/heros.mjs`, `heros_jeu.mjs`, `lumiere.mjs`.
-
-## Avant (29 octobre 2026)
+# Passation de séance (16 novembre 2026)
 
 ## Où on en est
 
-- Version en ligne : **v2.1.97** (commit `d754a08`), envoyée sur GitHub avec l'accord de Yo le 29 octobre 2026
-  (run de vérification `40844309073`, vert, noté dans `.claude/verif-suivi.txt`). Carnet de bugs : aucune note ouverte.
-- **Les 21 insectes de l'île sont refaits d'après les images de Yo** (v2.1.57 à v2.1.82, le dernier : le Grand Paon de
-  nuit). Le cloporte et l'épeire sont en réserve (`reserve` dans `INSECTES`), décision de Yo.
-- **Les 12 oiseaux de l'île sont refaits d'après ses images** (v2.1.84 à v2.1.97, le dernier : la cigogne), après leurs
-  règles (v2.1.83) : 4 à la fois au printemps et en été, 3 en automne et en hiver ; seuls les communs tant que le carnet
-  compte moins de 3 oiseaux ; les moineaux volent seuls (v2.1.86, Yo est revenu sur les groupes).
-- Les 7 insectes et les 5 oiseaux de la Forêt profonde, les 4 insectes et les 4 oiseaux du Marais gardent leur forme simple.
-- Yo n'a pas encore dit avoir tout validé sur son téléphone.
-- Comparaisons : `C:\Users\Artefact\Desktop\Hearthwild\images\insectes\` et `…\images\oiseaux\` (`<nom>-comparaison.png`).
+- Version en ligne : **v2.1.253** (commit `aee8564`, puis l'historique `daf2902`), envoyée avec l'accord de Yo ; vérification
+  de GitHub **verte** (run `43812987814`, « Tout va bien : 98 gestes réussis », noté dans `.claude/verif-suivi.txt`).
+- La séance du 11 au 16 novembre 2026 (v2.1.218 à v2.1.253) a fini **tous les objets de l'île** (décoration, objets du
+  dehors, plans de travail des 7 bâtiments) et **les 7 bâtiments de niveau 2**, puis a commencé **les outils**.
+- Chaque étape a son entrée dans `DEVELOPMENT_HISTORY.md` (chercher la version, par exemple « v2.1.246 »).
 
-## Les derniers fichiers modifiés
+## La suite : le chantier des outils (mémoire `chantier-outils`)
 
-- `js/monde/oiseaux3d.js` (nouveau, comme `insectes3d.js`) : `MODELES_OISEAUX`, `assembler` (les petits oiseaux ronds :
-  corps, tête sur un pivot au cou, ailes, et selon l'oiseau la queue, le bas du bec, la gorge, le ver, le poisson, les
-  grandes ailes de vol), `echassier` (le héron et la cigogne : cou et pattes sur leurs pivots).
-- `js/oiseaux.js` : `modele` prend d'abord `MODELES_OISEAUX` ; `OISEAUX_SAISON`, `oiseauxAPondre` ; les comportements
-  dans `vivre`, réglés par des données dans `OISEAUX` (`js/donnees.js`) : `acrobate`, `ondule` (mésange), `courbette`
-  (rouge-gorge), `ecoute` (merle), `marche` (pie, mouette), `plane` (mouette, cigogne), `chasse` (hirondelle ;
-  « lente » : la chouette), `peche`, `lent` (héron), `tourneTete` (chouette), `queueHaute` (rossignol), `plonge`
-  (martin-pêcheur), `claque`, `couTendu` (cigogne) ; les états en plus de « pose »/« vol »/« part » : « plane »,
-  « chasse », « plonge ».
-- `js/monde/insectes3d.js`, `js/insectes.js` : les 21 insectes et leurs comportements (voir DEVELOPMENT_HISTORY).
-- `tests/verif-page.js` : un geste par insecte et par oiseau (étapes « Attraper un insecte au filet » et « Attraper un
-  oiseau au filet »). Un geste qui dépend du hasard (un oiseau qui repart chasser) doit l'empêcher le temps du contrôle :
-  la v2.1.95 a échoué sur GitHub pour ça.
+1. **La hache en pierre** d'après l'image de Yo, déjà reçue : `C:\Users\Artefact\Desktop\Hearthwild\images\outils\hache-pierre.png`
+   (manche de bois orange courbe au bout arrondi, lame de pierre à facettes aux deux pointes en crochet, deux bandes de cuir
+   croisées et trois tours de cuir). Le dernier message de Claude avant la passation proposait de la faire tout de suite ou
+   d'attendre les autres images : **demander à Yo**.
+2. Les autres outils : Yo génère leurs images avec les prompts de l'onglet **Outils** de `prompts.html` (34 prompts `outm-…`,
+   en tête de l'onglet : hache, pioche, pelle, arrosoir, canne, filet, bocal, épée, flèches, en pierre ou bois, cuivre,
+   bronze ; le fer et l'obsidienne plus tard). Une forme propre à chaque matière, la même d'une matière à l'autre.
+3. Les modèles d'outils : `js/monde/outils3d.js` (`BUILD[famille](g, o, w)`) ; **le manche se colore avec `w`**, l'essence
+   choisie en fabriquant (v2.1.253 : `aUnManche`, `teinteManche`, `state.manches`, `choisirManche` dans `ateliers.js`).
+   Les flèches n'ont pas encore la couleur de leur bois (à faire avec leur modèle). Chaque outil : la comparaison avec
+   l'image de Yo, une photo dans la main du personnage (de dos), ses triangles (toujours à l'écran).
+4. Ensuite, si Yo le veut : **les bâtiments de niveau 3** (la Scierie 3 existe ; les six autres attendent leurs images).
+
+## Les règles de Yo apprises dans cette séance (toutes en mémoire)
+
+- **Repérer les détails seul** (mémoire `reperer-les-details-seul`) : avant de montrer un modèle, le comparer à l'image de Yo
+  et passer la liste de contrôle (rien en morceaux, rien qui flotte ou traverse, tout droit, aucun trou, récipient plein,
+  le personnage se pose dessus, comme dans la vraie vie) ; dire les écarts qui restent. Yo l'a demandé après avoir dû
+  signaler beaucoup de défauts.
+- **Les bâtiments : la planche à 8 angles** avant de les montrer : `node C:\Users\Artefact\Desktop\Hearthwild\outils-claude\tour8.mjs <type> <niveau>`
+  (variable `D` : la distance de la caméra, 13 pour le Château) ; la regarder **de près, toit par toit** (le trou de la
+  Taverne ne se voyait pas en petit) ; l'envoyer à Yo avec la comparaison. Deux toits qui se croisent : l'aile a son propre
+  toit d'un bout à l'autre et son pignon, le grand toit s'arrête dessous (pas de tuiles ôtées en escalier).
+- **Pas de trous entre les pierres** : pierres jointives, peu arrondies, rangs du bord au bord, le cœur de leur couleur.
+- **Chaque bâtiment refait passe une fois au niveau suivant dans la partie de Yo** sans rien payer : `NIVEAU2_FAITS` dans
+  `js/remise.js` (les 7 y sont). Pour le niveau 3, faire de même (une liste `NIVEAU3_FAITS`, la même façon).
+- Les pièces grandissent de **2 cases par niveau** (moyenne 6, 8, 10 ; grande 8, 10, 12 ; `roomSide`, `agrandirPiece`).
+- La place de la porte peut changer avec le niveau (`B[type].doorNiveau`, `porteX`, `doorTile(…, lvl)`) : le Marché 2 a la
+  porte au milieu. Le Château 1 et 2 ont une cour (`COURS` dans `regles.js`) : on entre par la tour (1) ou le donjon (2).
+- Les objets du dehors se modifient comme dans les pièces (appui long, barre Tourner, Couleur, Ranger, Poser : `deplacer.js`).
+- Quand un modèle de meuble change, l'ajouter à `REPRISES` dans `js/icones.js` pour que son icône soit reprise.
 
 ## À faire en premier dans la nouvelle séance
 
-1. `git status` : le dossier doit être propre.
-2. Lancer le jeu avec `preview_start` « jeu » ; s'il est arrêté pendant une vérification (`ERR_CONNECTION_REFUSED`),
-   le relancer et refaire la vérification (c'est arrivé deux fois le 28 et le 29 octobre).
+1. `git status` : le dossier doit être propre. `git log --oneline -3` doit montrer `daf2902` (ou plus récent).
+2. Lancer le jeu avec `preview_start` « jeu » (il s'arrête parfois : `ERR_CONNECTION_REFUSED`, le relancer).
 3. Lire la dernière vérification de GitHub et le carnet de bugs (seulement les notes de `yoann-art`).
-4. Attendre Yo : son avis sur son téléphone, puis la suite. Yo veut faire **tout ce qui se trouve sur son île en premier**
-   (28 octobre 2026) ; sur l'île, restent par exemple les sons de la nature, le niveau 3 de
-   la Scierie, les bâtiments d'après images (voir [CURRENT_STATE.md](CURRENT_STATE.md)). Lui proposer, ne pas choisir.
+4. Demander à Yo : la hache en pierre maintenant, ou attendre ses images des autres outils.
 
-## Pour refaire un animal (la méthode qui a marché)
+## Les outils de Claude (dans `C:\Users\Artefact\Desktop\Hearthwild\outils-claude\`)
 
-1. Ranger l'image de Yo dans `images\<thème>\<nom>.png`. La comparer au vrai animal et lister les écarts : Yo veut
-   **comme un vrai** (mémoire `insectes-comme-des-vrais`), mâles et femelles au hasard quand ils diffèrent.
-2. Proposer un découpage (le modèle, ce qu'il fait, les vérifications) et des questions ; attendre son accord.
-3. Le modèle : rendu avec `outils-claude\insecte.mjs` pour un insecte ; pour un oiseau, le script de la séance
-   `oiseau.mjs` (dans le dossier temporaire, à recréer au besoin : il charge `MODELES_OISEAUX[clé].fabrique` et rend deux
-   vues ; `HASARD` < 0,5 donne un mâle, `SAISON`, `VUES`, `OUVERT`). Retoucher jusqu'à ce que ce soit au plus près ;
-   une photo dans le jeu (`lacherOiseau(k, x, z, y)` ou `lacherInsecte`) ; la comparaison avec PIL, envoyée à Yo.
-4. Un geste dans `tests/verif-page.js`, la version dans `js/version.js`, une ligne dans `DEVELOPMENT_HISTORY.md` et
-   `CURRENT_STATE.md` ; `NAVIGATEUR=msedge node tests/verif.mjs` jusqu'à « Tout va bien » ; demander « Oui, envoie » ;
-   `git push origin HEAD:main` ; surveiller GitHub, noter le run, mettre à jour le Journal du plan de production ; renvoyer
-   à Yo la liste (✅ faits, restants).
+- `tour8.mjs` (la planche à 8 angles d'un bâtiment), `batiment.mjs`, `meuble.mjs`, `planche.mjs`, `jeu_batiment.mjs` : voir
+  leur LISEZMOI. Les photos vont dans `outils-claude\photos\`. Pour un outil, en écrire un sur le même modèle avec
+  `makeOutil(clé)` (`js/monde/outils3d.js`), et une photo dans la main du personnage.
+- Ne jamais lancer de photo pendant `tests/verif.mjs` : le serveur local sature.
 
 ## Points qui demandent l'accord de Yo
 
-- La suite sur l'île (voir plus haut).
-- La note du carnet du moineau dit encore « s'envole en groupe » (les moineaux volent seuls depuis la v2.1.86) ; celle
-  du rouge-gorge « Il suit le jardinier », que Yo n'a pas voulu dans le jeu.
-- Dans la Boîte à idées : le vulcain sur les pommes tombées, le nid de la cigogne sur les toits.
-- Un petit défaut signalé : la bande turquoise du martin-pêcheur dépasse un peu derrière la tête, vue de côté.
+- Le Journal de production (doc Claude) : ses lignes sont à jour jusqu'à la v2.1.253.
+- Une session ⏱️ 2 min est due vers la v2.1.246 et plus (la dernière : v2.1.241, 72 images/s, 5,4 % au-delà de 22,2 ms ;
+  mémoire `telephone-de-yo`).
+- Dans la Boîte à idées : le lustre, le lampadaire, le bassin d'ornement et la mangeoire (pour une mise à jour ou un
+  événement) ; un trophée de cerf sculpté, un renard assis en statue.
 
 ## Fichiers à lire selon la tâche
 
 - Toujours : `CLAUDE.md`, ce fichier, [CURRENT_STATE.md](CURRENT_STATE.md).
-- Un modèle d'après image : `js/monde/formes.js`, le modèle le plus proche déjà fait (`insectes3d.js`, `oiseaux3d.js`,
-  une fleur, `scierie.js`).
+- Un outil : `js/monde/outils3d.js`, `js/donnees.js` (`OUTILS`), `js/ateliers.js` (la fabrication), `js/monde/mains.js`.
+- Un bâtiment : son fichier dans `js/monde/` (`forge.js`, `taverne.js`…), `batiments.js` (`NOUVEAUX`).
 - Un système de jeu : [ARCHITECTURE.md](ARCHITECTURE.md), puis chercher son nom dans [DEVELOPMENT_HISTORY.md](DEVELOPMENT_HISTORY.md).
 - Rendu, performance, sauvegarde : [TECHNICAL_DECISIONS.md](TECHNICAL_DECISIONS.md).
 - Game design, contenu, règles complètes de Yo : [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).

@@ -1,6 +1,24 @@
-# Hearthwild : l'état actuel (29 octobre 2026, v2.1.97)
+# Hearthwild : l'état actuel (16 novembre 2026, v2.1.253)
 
 ## Ce qui marche (vérifié)
+
+- **v2.1.253 en ligne** (vérification de GitHub verte, run `43812987814`, « Tout va bien : 98 gestes réussis » ; la
+  vérification complète sur le PC aussi). Le détail de chaque version : `DEVELOPMENT_HISTORY.md`.
+- **Les objets de l'île, tous faits d'après les images de Yo** (le chantier de la décoration, du 7 au 13 novembre 2026,
+  mémoire `chantier-decoration`) : les meubles des pièces (48 dans `MEUBLES_REFAITS`), les objets du dehors (clôture, muret,
+  portail, puits, fontaine, panneau, brasero, feu de camp, lumières), les plans de travail des 7 bâtiments (établi, atelier
+  de décoration, table de taille, comptoir, fourneau, enclume, trône). Les objets du dehors se modifient comme dans les
+  pièces (appui long : Tourner, Couleur, Ranger, Poser). Sans trous entre les pierres (règle de Yo). Le lustre, le
+  lampadaire, le bassin d'ornement et la mangeoire : pour une mise à jour ou un événement.
+- **Les 7 bâtiments de niveau 2 faits d'après les images de Yo** (v2.1.243 à v2.1.252 : Scierie, Carrière, Forge, Taverne,
+  Chaumière, Marché porte au milieu, Château avec sa cour et son donjon) ; ceux de la partie de Yo y sont passés sans rien
+  payer (`NIVEAU2_FAITS`). Les pièces grandissent de 2 cases par niveau. La Scierie a aussi son niveau 3.
+- **Les outils** (chantier commencé le 16 novembre 2026, mémoire `chantier-outils`) : le bois du manche choisi en
+  fabriquant, sa couleur sur le manche (v2.1.253) ; les prompts de tous les outils par matière (onglet Outils de
+  `prompts.html`) ; l'image de la hache en pierre reçue. Les modèles des outils sont encore les formes simples.
+- La fluidité mesurée chez Yo en v2.1.241 : 72 images/s, 5,4 % au-delà de 22,2 ms, 0 à-coup au-delà de 50 ms.
+
+## Avant le 30 octobre 2026
 
 - Toute la phase 1 (étapes 1.1 à 1.13, sauf 1.12 reportée) : jouable et validée par Yo sur son téléphone.
 - Étape 2.1 (le décor de l'île) : faite d'après les images de Yo (arbres de l'île, pierre, caillou, branche, herbes,
@@ -36,18 +54,16 @@
   2026). Le ponton allongé à 10 cases, ses poissons plus loin que ceux de la plage (v2.1.154).
 - La Scierie : le niveau 3 fait d'après l'image de Yo (v2.1.104), sur un terrain de 5 × 5 (v2.1.103) ; « la Scierie qui vit » (fumée, scie qui bouge quand l'établi travaille, fenêtres la nuit,
   neige sur le toit) restent ; la roue à eau du niveau 2 tourne déjà.
-- La Carrière : le niveau 1 fait d'après la nouvelle image de Yo (v2.1.106), à ciel ouvert, sur un terrain de 5 × 5 ; les niveaux 2 et 3
-  attendent leurs images (prompts prêts dans `prompts.html`).
-- Les bâtiments agrandis : les 5 autres gardent l'ancien modèle agrandi (`ANCIEN` dans `batiments.js`) en attendant leurs images.
+- Les bâtiments : les 7 faits d'après images aux niveaux 1 et 2 ; le niveau 3 seulement pour la Scierie (les six autres
+  attendent leurs images, et passeront au niveau 3 dans la partie de Yo comme pour le niveau 2).
 - Les fleurs de jardin (rose, tulipe, lavande, tournesol, capucine, cosmos) : en graines à l'étal du Marché, avec leur
   forme simple ; leurs modèles viendront avec leurs lieux.
 - Les galets de l'étang et la marguerite : la marguerite est en réserve (`reserve` dans `FLEURS`).
 
 ## Pas commencé
 
-- Les sons : l'étape 1 sur 5 faite (v2.1.114 : le moteur `js/sons.js`, le réglage 🔊, les sons de l'interface ; la liste
-  de tous les sons dans le document https://claude.ai/artifact/XXaqvJGFDoojdDXZ3SaQ7S) ; restent les gestes, l'ambiance de
-  l'île (les sons de la nature, étape 2.1, morceau 5), les bêtes, les lieux et activités.
+- Les sons : faits jusqu'à l'étape 4 (les objets, v2.1.227, choisis par Yo sur sa page d'écoute) ; voir
+  DEVELOPMENT_HISTORY.md pour ce qui reste.
 - La musique (Yo génère les morceaux avec Suno ; doc
   https://claude.ai/artifact/LWFge8j2WxeRZEdrv88mCe, fichiers attendus dans `C:\Users\Artefact\Desktop\Hearthwild\musiques\`).
 - L'étape 2.3 (la Scierie dedans), 2.4 à 2.7.
@@ -73,4 +89,5 @@
 - Deux doublons signalés à Yo, sans y toucher : l'épeire des jardins et l'araignée tisserande ; l'Entrepôt de la bible
   ferait le travail des coffres.
 - Le lit de la Chaumière demande la Scierie au niveau 3 : les niveaux requis des recettes seront revus (Boîte à idées).
-- `CLAUDE.md` et ces documents sont enregistrés et envoyés (commit `01d7f70`, 26 octobre 2026).
+- Deux outils pareils prennent le bois de manche du dernier fabriqué (`state.manches` par sorte d'outil) ; les flèches
+  n'ont pas encore la couleur de leur bois.
