@@ -3756,7 +3756,8 @@ export async function verifier(){
     if(!ks.includes("piocheCuivre")) throw new Error("la pioche en cuivre (refaite, 17 novembre 2026) n'a pas de photo pour icône");
     if(!ks.includes("piocheBronze")) throw new Error("la pioche en bronze (refaite, 17 novembre 2026) n'a pas de photo pour icône");
     if(!ks.includes("pelleBois")) throw new Error("la pelle en bois (refaite, 17 novembre 2026) n'a pas de photo pour icône");
-    if((objet("pelleCuivre").icone || objet("pelleCuivre").emoji || "").includes("ico-photo")) throw new Error("la pelle en cuivre a une photo, alors qu'elle n'est pas refaite");
+    if(!ks.includes("pelleCuivre")) throw new Error("la pelle en cuivre (refaite, 17 novembre 2026) n'a pas de photo pour icône");
+    if((objet("pelleBronze").icone || objet("pelleBronze").emoji || "").includes("ico-photo")) throw new Error("la pelle en bronze a une photo, alors qu'elle n'est pas refaite");
     /* rien ne se prépare en jouant (demande de Yo, 12 novembre 2026) : les photos qui manquent se prennent au chargement ; un
        insecte ou un oiseau qui apparaît reprend les formes déjà faites (rien de neuf pour la carte graphique) */
     const {prendreIconesMaintenant} = await import("../js/icones.js"), {renderer} = await import("../js/monde/scene.js");
