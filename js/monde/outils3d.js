@@ -283,8 +283,31 @@ function hacheBronze(w){
   m.userData.manche = w;
   return m;
 }
+/* La tête de la pioche en pierre (image de Yo, 17 novembre 2026) : une pierre taillée en arc, ses deux pointes recourbées vers le
+   bas, épaisse au milieu, plus mince vers les pointes ; les facettes comme la hache en pierre */
+const BRAS_PP = {nu: 5, epBord: .05, haut: [[0, .63], [.3, .675], [.4, .37]], bas: [[0, .46], [.22, .47], [.34, .29]],
+  bout: [[.34, .29], [.4, .27], [.43, .32], [.4, .37]]};
+const TETE_PP = tetePierre({nv: 6, epCentre: .11, creux: .025, graine: 11, cotes: [BRAS_PP, BRAS_PP]});
+/* La pioche en pierre (image de Yo, 17 novembre 2026 : « Voici la pioche de pierre ») : le manche des haches, son bout arrondi
+   au-dessus de la pierre ; la tête en arc à facettes ; deux lanières de cuir croisées en X par-dessus, des deux côtés, et trois
+   tours de cuir plats dessous. Un seul dessin */
+function piochePierre(w){
+  const m = modeleOutil("piochePierre" + w, () => {
+    const out = [];
+    out.push({geo: MANCHE, m: M4o(0, 0, 0), c: w, couleur: (x, y) => y > .675 ? new THREE.Color(w).multiplyScalar(1.18).getHex() : w,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .2) / .09 + .5))});
+    out.push({geo: TETE_PP, m: M4o(0, 0, 0), c: 0xB2A69F, ombre: (x, y) => .82 + .24 * Math.max(0, Math.min(1, (y - .35) / .3))});
+    for(const sx of [1, -1]) for(const a of [.55, -.55])                                        // les deux lanières en X, des deux côtés
+      out.push({geo: LANIERE, m: M4o(sx * .12, .53, 0, a * sx, sx > 0 ? 0 : Math.PI, 0, .028, .2, .075), c: CUIR, ombre: (x, y) => .86 + .2 * Math.max(0, Math.min(1, (y - .45) / .2))});
+    for(const y of [.42, .375, .33])                                                                  // les tours de cuir dessous
+      out.push({geo: BANDE, m: M4o(0, y, 0, 0, 0, 0, .107, .04, .107), c: CUIR, ombre: (x, y, z) => .88 + .14 * Math.max(0, Math.min(1, x / .1 + .5))});
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
