@@ -118,7 +118,7 @@ const MANCHE = (() => {
    entre ses quatre bords (le dessus, le dessous, l'axe du manche, le bout) ; chaque sommet un peu en creux au hasard et chaque
    triangle plat : la pierre taillée à facettes. L'épaisseur va selon x. cotes : [derrière, devant], chacun {nu, haut, bas, bout,
    epBord}, ses z comptés depuis l'axe (positifs) */
-function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7, lisse = false, tranchant = 0}){
+function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7, lisse = false, tranchant = 0, marque = null}){
   const bez2 = (a, c, b, t) => [(1 - t) ** 2 * a[0] + 2 * t * (1 - t) * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * t * (1 - t) * c[1] + t * t * b[1]];
   const bez3 = (a, c, d, b, t) => { const s = 1 - t; return [s ** 3 * a[0] + 3 * s * s * t * c[0] + 3 * s * t * t * d[0] + t ** 3 * b[0],
     s ** 3 * a[1] + 3 * s * s * t * c[1] + 3 * s * t * t * d[1] + t ** 3 * b[1]]; };
@@ -133,7 +133,7 @@ function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7, li
     const c = i < n0 ? D : F, s = i < n0 ? -1 : 1, v = j / nv, ii = Math.abs(i - n0), u = c.us ? c.us[ii] : ii / c.nu, [z, y] = coons(c, u, v);
     const bord = i === 0 || i === cols - 1 || j === 0 || j === nv;
     const ep = (epCentre + (c.epBord - epCentre) * u ** 1.3) * (bord || i === n0 ? 1 : 1 - creux / epCentre * rnd());
-    pts.push([s * z, y, ep, tranchant && s > 0 && u >= tranchant ? 1 : 0]);
+    pts.push([s * z, y, ep, marque ? marque(s, u, v) : tranchant && s > 0 && u >= tranchant ? 1 : 0]);
   }
   const at = (i, j) => pts[j * cols + i], tri = [], bords = [];
   const face = (a, b, c, sx) => { for(const p of sx > 0 ? [a, c, b] : [a, b, c]){ tri.push(sx * p[2], p[1], p[0]); bords.push(p[3]); } };
@@ -253,6 +253,15 @@ const BRONZE = 0xC47A2C, BRONZE_CLAIR = 0xF0BC5E, BRONZE_SOMBRE = 0xA9682A, BRON
    d'une douille ronde et lisse, un anneau en relief en haut et en bas, un petit talon rond derrière ; la lame dorée en croissant,
    une branche à cinq feuilles en relief des deux côtés ; le cuir enroulé en spirale en bas du manche, là où on le tient, le bout
    de bois qui dépasse en dessous. Un seul dessin */
+/* Le cuir enroulé en spirale en bas du manche (la famille du bronze) */
+function cuirSpirale(out){
+  const omc = (x, y, z) => .9 + .12 * Math.max(0, Math.min(1, x / .1 + .5));
+  out.push({geo: POIGNEE, m: M4o(0, 0, 0), c: CUIR_SOMBRE, ombre: (x, y, z) => .72 * omc(x, y, z)});                       // le cuir dessous
+  for(const y of [-.215, -.15, -.085, -.025]){                                                                         // en spirale
+    const r = rayonManche(y) + .011, t = .3;
+    out.push({geo: BANDE, m: M4o(0, y, courbeManche(y), t, 0, 0, r, .046, r / Math.cos(t)), c: CUIR_SOMBRE, ombre: omc});
+  }
+}
 function hacheBronze(w){
   const m = modeleOutil("hacheBronze" + w, () => {
     const out = [], bord = LAME_HB.userData.bord;
@@ -272,12 +281,7 @@ function hacheBronze(w){
         out.push({geo: FEUILLE, m: M4o(sur(z), y, z, a, 0, 0, .009, .052, .024), c: BRONZE_FEUILLE, ombre: (x, y2) => .92 + .14 * Math.max(0, Math.min(1, (y2 - y) / .04 + .5))});
       }
     }
-    const omc = (x, y, z) => .9 + .12 * Math.max(0, Math.min(1, x / .1 + .5));
-    out.push({geo: POIGNEE, m: M4o(0, 0, 0), c: CUIR_SOMBRE, ombre: (x, y, z) => .72 * omc(x, y, z)});                       // le cuir dessous
-    for(const y of [-.215, -.15, -.085, -.025]){                                                                         // en spirale
-      const r = rayonManche(y) + .011, t = .3;
-      out.push({geo: BANDE, m: M4o(0, y, courbeManche(y), t, 0, 0, r, .046, r / Math.cos(t)), c: CUIR_SOMBRE, ombre: omc});
-    }
+    cuirSpirale(out);
     return out;
   });
   m.userData.manche = w;
@@ -334,8 +338,33 @@ function piocheCuivre(w){
   m.userData.manche = w;
   return m;
 }
+/* La tête de la pioche en bronze (image de Yo, 17 novembre 2026) : du bronze lisse, deux longues pointes pareilles, fines et
+   recourbées vers le bas ; une rainure peinte le long de chacune, des deux côtés (marque 1 : plus sombre) */
+const BRAS_PB = {nu: 7, epBord: .012, haut: [[0, .59], [.3, .65], [.52, .29]], bas: [[0, .42], [.25, .48], [.5, .28]],
+  bout: [[.5, .28], [.515, .278], [.525, .285], [.52, .29]]};
+const TETE_PB = tetePierre({nv: 8, epCentre: .065, creux: 0, lisse: true, cotes: [BRAS_PB, BRAS_PB],
+  marque: (s, u, v) => u > .2 && u < .82 && Math.abs(v - .625) < .01 ? 1 : 0});
+/* La pioche en bronze (image de Yo, 17 novembre 2026 : « Voici la pioche en bronze ») : le manche des autres outils, son bout
+   arrondi au-dessus d'une douille ronde à deux anneaux (celle de la hache en bronze) ; la tête aux deux pointes, leur rainure ;
+   le cuir en spirale en bas du manche. Un seul dessin */
+function piocheBronze(w){
+  const m = modeleOutil("piocheBronze" + w, () => {
+    const out = [], bord = TETE_PB.userData.bord;
+    out.push({geo: MANCHE, m: M4o(0, 0, 0), c: w, couleur: (x, y) => y > .675 ? new THREE.Color(w).multiplyScalar(1.18).getHex() : w,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .2) / .09 + .5))});
+    out.push({geo: TETE_PB, m: M4o(0, 0, 0), c: BRONZE, couleur: (x, y, z, i) => bord[i] ? 0x8A5418 : BRONZE,
+      ombre: (x, y) => .88 + .2 * Math.max(0, Math.min(1, (y - .3) / .35))});
+    const omb = (x, y, z) => .82 + .26 * Math.max(0, Math.min(1, (x * .7 + z * .3) / .2 + .5));
+    out.push({geo: COLLIER, m: M4o(0, .5, 0, 0, 0, 0, .112, .19, .112), c: BRONZE_SOMBRE, ombre: omb});                     // la douille
+    for(const y of [.6, .405]) out.push({geo: COLLIER, m: M4o(0, y, 0, 0, 0, 0, .13, .04, .13), c: BRONZE_ANNEAU, ombre: omb});    // ses anneaux
+    cuirSpirale(out);
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
