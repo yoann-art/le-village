@@ -226,8 +226,65 @@ function hacheCuivre(w){
   m.userData.manche = w;
   return m;
 }
+/* La lame de la hache en bronze (image de Yo, 17 novembre 2026) : plus grande que la cuivre, le croissant plus creusé, le crochet
+   plus long, la bande claire du tranchant plus large */
+const LAME_HB = tetePierre({nv: 9, epCentre: .05, creux: 0, lisse: true, tranchant: .76, cotes: [
+  {nu: 2, epBord: .045, haut: [[0, .565], [.1, .565], [.15, .56]], bas: [[0, .44], [.1, .44], [.15, .445]],          // le talon
+    bout: [[.15, .445], [.185, .455], [.185, .55], [.15, .56]]},
+  {nu: 7, us: [0, .2, .36, .5, .62, .71, .76, 1], epBord: .012, haut: [[0, .565], [.23, .565], [.335, .725]],          // la lame
+    bas: [[0, .43], [.27, .4], [.16, .115]], bout: [[.16, .115], [.5, .2], [.56, .62], [.335, .725]]}
+]});
+/* L'épaisseur de la lame en bronze à une distance z du manche (pour poser la branche en relief dessus) */
+const epLameHB = z => .05 - .038 * Math.min(1, z / .46) ** 1.3;
+/* Le cuir de la poignée, en bas du manche : il suit le manche (son rayon, sa courbe) */
+const RAYON_MANCHE = [[-.33, .07], [-.3, .11], [-.26, .13], [-.2, .126], [-.12, .108], [-.04, .094], [.1, .092]];
+const rayonManche = y => { for(let k = 1; k < RAYON_MANCHE.length; k++){ const [y0, r0] = RAYON_MANCHE[k - 1], [y1, r1] = RAYON_MANCHE[k];
+  if(y <= y1) return r0 + (r1 - r0) * Math.max(0, (y - y0) / (y1 - y0)); } return .092; };
+const courbeManche = y => y < .2 ? -.07 * ((.2 - y) / .53) ** 2 : 0;
+const POIGNEE = (() => {
+  const p = []; for(let y = -.255; y <= .005; y += .026) p.push(new THREE.Vector2(rayonManche(y) + .01, y));
+  p.unshift(new THREE.Vector2(rayonManche(-.255) - .01, -.265)); p.push(new THREE.Vector2(rayonManche(.005) - .005, .015));
+  const g = new THREE.LatheGeometry(p, 14), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++) P.setZ(i, P.getZ(i) + courbeManche(P.getY(i)));
+  g.computeVertexNormals(); return g; })();
+const FEUILLE = new THREE.SphereGeometry(1, 7, 4), TIGE = new THREE.CylinderGeometry(1, 1, 1, 5, 1);
+const BRONZE = 0xC47A2C, BRONZE_CLAIR = 0xF0BC5E, BRONZE_SOMBRE = 0xA9682A, BRONZE_ANNEAU = 0xCC8A3A, BRONZE_FEUILLE = 0xDB983E;
+/* La hache en bronze (image de Yo, 17 novembre 2026 : « Voici la hache en bronze ») : le même manche, son bout arrondi au-dessus
+   d'une douille ronde et lisse, un anneau en relief en haut et en bas, un petit talon rond derrière ; la lame dorée en croissant,
+   une branche à cinq feuilles en relief des deux côtés ; le cuir enroulé en spirale en bas du manche, là où on le tient, le bout
+   de bois qui dépasse en dessous. Un seul dessin */
+function hacheBronze(w){
+  const m = modeleOutil("hacheBronze" + w, () => {
+    const out = [], bord = LAME_HB.userData.bord;
+    out.push({geo: MANCHE, m: M4o(0, 0, 0), c: w, couleur: (x, y) => y > .675 ? new THREE.Color(w).multiplyScalar(1.18).getHex() : w,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .2) / .09 + .5))});
+    out.push({geo: LAME_HB, m: M4o(0, 0, 0), c: BRONZE, couleur: (x, y, z, i) => bord[i] ? BRONZE_CLAIR : BRONZE,
+      ombre: (x, y) => .9 + .16 * Math.max(0, Math.min(1, (y - .15) / .5))});
+    const omb = (x, y, z) => .82 + .26 * Math.max(0, Math.min(1, (x * .7 + z * .3) / .2 + .5));
+    out.push({geo: COLLIER, m: M4o(0, .487, 0, 0, 0, 0, .112, .2, .112), c: BRONZE_SOMBRE, ombre: omb});                     // la douille
+    for(const y of [.585, .39]) out.push({geo: COLLIER, m: M4o(0, y, 0, 0, 0, 0, .128, .038, .128), c: BRONZE_ANNEAU, ombre: omb});  // ses anneaux
+    const sz = .095, sy = .21, ts = Math.atan2(sz, sy), z0 = .225, y0 = .35;                                         // la branche
+    for(const sx of [1, -1]){
+      const sur = z => sx * (epLameHB(z) + .001);
+      out.push({geo: TIGE, m: M4o(sur(z0 + sz * .45), y0 + sy * .45, z0 + sz * .45, ts, 0, 0, .009, Math.hypot(sz, sy) * .9, .009), c: BRONZE_FEUILLE, ombre: () => 1});
+      for(const [t, da] of [[.3, .85], [.3, -.85], [.62, .8], [.62, -.8], [.98, 0]]){
+        const a = ts + da, z = z0 + sz * t + Math.sin(a) * .05, y = y0 + sy * t + Math.cos(a) * .05;
+        out.push({geo: FEUILLE, m: M4o(sur(z), y, z, a, 0, 0, .009, .052, .024), c: BRONZE_FEUILLE, ombre: (x, y2) => .92 + .14 * Math.max(0, Math.min(1, (y2 - y) / .04 + .5))});
+      }
+    }
+    const omc = (x, y, z) => .9 + .12 * Math.max(0, Math.min(1, x / .1 + .5));
+    out.push({geo: POIGNEE, m: M4o(0, 0, 0), c: CUIR_SOMBRE, ombre: (x, y, z) => .72 * omc(x, y, z)});                       // le cuir dessous
+    for(const y of [-.215, -.15, -.085, -.025]){                                                                         // en spirale
+      const r = rayonManche(y) + .011, t = .3;
+      out.push({geo: BANDE, m: M4o(0, y, courbeManche(y), t, 0, 0, r, .046, r / Math.cos(t)), c: CUIR_SOMBRE, ombre: omc});
+    }
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
