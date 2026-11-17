@@ -118,7 +118,7 @@ const MANCHE = (() => {
    entre ses quatre bords (le dessus, le dessous, l'axe du manche, le bout) ; chaque sommet un peu en creux au hasard et chaque
    triangle plat : la pierre taillée à facettes. L'épaisseur va selon x. cotes : [derrière, devant], chacun {nu, haut, bas, bout,
    epBord}, ses z comptés depuis l'axe (positifs) */
-function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7}){
+function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7, lisse = false, tranchant = 0}){
   const bez2 = (a, c, b, t) => [(1 - t) ** 2 * a[0] + 2 * t * (1 - t) * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * t * (1 - t) * c[1] + t * t * b[1]];
   const bez3 = (a, c, d, b, t) => { const s = 1 - t; return [s ** 3 * a[0] + 3 * s * s * t * c[0] + 3 * s * t * t * d[0] + t ** 3 * b[0],
     s ** 3 * a[1] + 3 * s * s * t * c[1] + 3 * s * t * t * d[1] + t ** 3 * b[1]]; };
@@ -130,13 +130,13 @@ function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7}){
     return r; };
   const [D, F] = cotes, n0 = D.nu, cols = D.nu + F.nu + 1, rnd = hasard(graine), pts = [];
   for(let j = 0; j <= nv; j++) for(let i = 0; i < cols; i++){
-    const c = i < n0 ? D : F, s = i < n0 ? -1 : 1, u = Math.abs(i - n0) / c.nu, v = j / nv, [z, y] = coons(c, u, v);
+    const c = i < n0 ? D : F, s = i < n0 ? -1 : 1, v = j / nv, ii = Math.abs(i - n0), u = c.us ? c.us[ii] : ii / c.nu, [z, y] = coons(c, u, v);
     const bord = i === 0 || i === cols - 1 || j === 0 || j === nv;
     const ep = (epCentre + (c.epBord - epCentre) * u ** 1.3) * (bord || i === n0 ? 1 : 1 - creux / epCentre * rnd());
-    pts.push([s * z, y, ep]);
+    pts.push([s * z, y, ep, tranchant && s > 0 && u >= tranchant ? 1 : 0]);
   }
-  const at = (i, j) => pts[j * cols + i], tri = [];
-  const face = (a, b, c, sx) => { for(const p of sx > 0 ? [a, c, b] : [a, b, c]) tri.push(sx * p[2], p[1], p[0]); };
+  const at = (i, j) => pts[j * cols + i], tri = [], bords = [];
+  const face = (a, b, c, sx) => { for(const p of sx > 0 ? [a, c, b] : [a, b, c]){ tri.push(sx * p[2], p[1], p[0]); bords.push(p[3]); } };
   for(const sx of [1, -1]) for(let j = 0; j < nv; j++) for(let i = 0; i < cols - 1; i++){
     const a = at(i, j), b = at(i + 1, j), c = at(i + 1, j + 1), d = at(i, j + 1);
     if((i + j) % 2){ face(a, b, c, sx); face(a, c, d, sx); } else { face(a, b, d, sx); face(b, c, d, sx); }
@@ -148,11 +148,17 @@ function tetePierre({cotes, nv = 7, epCentre = .16, creux = .032, graine = 7}){
   for(let j = nv - 1; j > 0; j--) tour.push(at(0, j));
   for(let k = 0; k < tour.length; k++){
     const p = tour[k], q = tour[(k + 1) % tour.length], P1 = [p[2], p[1], p[0]], P2 = [-p[2], p[1], p[0]], Q1 = [q[2], q[1], q[0]], Q2 = [-q[2], q[1], q[0]];
-    tri.push(...P1, ...Q2, ...P2, ...P1, ...Q1, ...Q2);
+    tri.push(...P1, ...Q2, ...P2, ...P1, ...Q1, ...Q2); bords.push(p[3], q[3], p[3], p[3], q[3], q[3]);
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(tri, 3));
   g.computeVertexNormals();                                                 // sans sommets partagés : chaque triangle plat, une facette
+  if(lisse){                                                                // le métal : lisse, les normales d'un même point mises en commun
+    const P = g.attributes.position, N = g.attributes.normal, somme = new Map(), cle = i => P.getX(i).toFixed(4) + "," + P.getY(i).toFixed(4) + "," + P.getZ(i).toFixed(4);
+    for(let i = 0; i < P.count; i++){ const k = cle(i), n = somme.get(k) || [0, 0, 0]; n[0] += N.getX(i); n[1] += N.getY(i); n[2] += N.getZ(i); somme.set(k, n); }
+    for(let i = 0; i < P.count; i++){ const n = somme.get(cle(i)), l = Math.hypot(...n) || 1; N.setXYZ(i, n[0] / l, n[1] / l, n[2] / l); }
+  }
+  g.userData.bord = bords;                                                  // 1 : le tranchant (plus clair sur le métal)
   return g;
 }
 const LAME_HP = tetePierre({cotes: [
@@ -184,8 +190,44 @@ function hachePierre(w){
   m.userData.manche = w;                  // le bois du manche (la vérification le lit : ses couleurs sont dans les sommets)
   return m;
 }
+/* La lame de la hache en cuivre (image de Yo, 17 novembre 2026) : du métal lisse, mince au tranchant ; devant le croissant et son
+   long crochet en bas, qui revient vers le manche ; derrière un petit talon arrondi. Le tranchant (les colonnes du bout) plus clair */
+const LAME_HC = tetePierre({nv: 8, epCentre: .05, creux: 0, lisse: true, tranchant: .79, cotes: [
+  {nu: 2, epBord: .045, haut: [[0, .59], [.08, .59], [.125, .585]], bas: [[0, .445], [.08, .445], [.125, .45]],   // le talon
+    bout: [[.125, .45], [.165, .46], [.165, .575], [.125, .585]]},
+  {nu: 7, us: [0, .2, .38, .54, .68, .75, .79, 1], epBord: .012, haut: [[0, .605], [.25, .615], [.36, .735]],      // la lame
+    bas: [[0, .41], [.215, .425], [.235, .155]], bout: [[.235, .155], [.47, .25], [.53, .6], [.36, .735]]}
+]});
+const RIVET = new THREE.SphereGeometry(1, 8, 6), COLLIER = new THREE.CylinderGeometry(1, 1, 1, 14, 1);
+const BANDE = new THREE.LatheGeometry([[.93, -.5], [1, -.38], [1, .38], [.93, .5]].map(([r, y]) => new THREE.Vector2(r, y)), 14);   // une bande de cuir plate autour du manche
+const CUIVRE = 0xD86A2C, CUIVRE_CLAIR = 0xF4A55A, CUIVRE_SOMBRE = 0xC25A22, CUIR_SOMBRE = 0x93482A;
+/* La hache en cuivre (image de Yo, 17 novembre 2026 : « Voici la hache en cuivre ») : le même manche que la pierre, son bout
+   arrondi dépasse au-dessus d'une douille de cuivre qui serre le haut, deux rivets de chaque côté ; la lame lisse en croissant,
+   le tranchant plus clair, un petit talon rond derrière ; sous la douille le cuir enroulé, croisé en X. Un seul dessin */
+function hacheCuivre(w){
+  const m = modeleOutil("hacheCuivre" + w, () => {
+    const out = [], bord = LAME_HC.userData.bord;
+    out.push({geo: MANCHE, m: M4o(0, 0, 0), c: w, couleur: (x, y) => y > .675 ? new THREE.Color(w).multiplyScalar(1.18).getHex() : w,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .2) / .09 + .5))});
+    out.push({geo: LAME_HC, m: M4o(0, 0, 0), c: CUIVRE, couleur: (x, y, z, i) => bord[i] ? CUIVRE_CLAIR : CUIVRE,
+      ombre: (x, y) => .82 + .24 * Math.max(0, Math.min(1, (y - .2) / .5))});
+    const omb = (x, y, z) => .84 + .22 * Math.max(0, Math.min(1, (y - .4) / .22));
+    out.push({geo: COLLIER, m: M4o(0, .51, .01, 0, 0, 0, .125, .2, .1), c: CUIVRE_SOMBRE, ombre: omb});                       // la douille
+    for(const y of [.607, .413]) out.push({geo: COLLIER, m: M4o(0, y, .01, 0, 0, 0, .135, .026, .11), c: CUIVRE_SOMBRE, ombre: omb}); // ses bords
+    for(const sx of [1, -1]) for(const y of [.56, .47])                                                                     // les rivets
+      out.push({geo: RIVET, m: M4o(sx * .122, y, .012, 0, 0, 0, .022, .028, .028), c: CUIVRE_CLAIR, ombre: (x, y2, z) => .85 + .2 * Math.max(0, Math.min(1, (y2 - y) / .028 + .5))});
+    const omc = (x, y, z) => .9 + .12 * Math.max(0, Math.min(1, x / .1 + .5));
+    out.push({geo: BANDE, m: M4o(0, .27, 0, 0, 0, 0, .1, .2, .1), c: CUIR_SOMBRE, ombre: (x, y, z) => .68 * omc(x, y, z)});        // le cuir dessous
+    for(const y of [.345, .195]) out.push({geo: BANDE, m: M4o(0, y, 0, 0, 0, 0, .108, .058, .108), c: CUIR_SOMBRE, ombre: omc});   // le cuir
+    for(const t of [.5, -.5])                                                                                               // croisé en X
+      out.push({geo: BANDE, m: M4o(0, .27, 0, t, 0, 0, .105, .055, .105 / Math.cos(t)), c: CUIR_SOMBRE, ombre: omc});
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
@@ -211,7 +253,7 @@ export function makeOutil(k){
     g.add(c); return g;
   }
   else if(CHEMIN_DE[k]) matiere(g, k);
-  else if(k === "hachePierre") g.add(hachePierre(teinteManche((state.manches || {})[k])));   // refaite d'après l'image de Yo
+  else if(OUTILS_REFAITS[k]) g.add(OUTILS_REFAITS[k](teinteManche((state.manches || {})[k])));   // refaits d'après les images de Yo
   else BUILD[OUTILS[k].famille](g, OUTILS[k], aUnManche(k) ? teinteManche((state.manches || {})[k]) : C.wood);   // le manche dans l'essence choisie (Yo, 16 novembre 2026)
   g.scale.set(1.6, 1.25, 1.6);          // plus épais que nature, pour bien le voir sur un téléphone (style jouet)
   return g;

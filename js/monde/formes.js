@@ -79,7 +79,7 @@ export function fusionner(morceaux){
       n0.set(Nn.getX(i), Nn.getY(i), Nn.getZ(i));
       const v = p.normale ? p.normale(x, y, z, n0) : n0;
       nor[o * 3] = v.x; nor[o * 3 + 1] = v.y; nor[o * 3 + 2] = v.z;
-      if(p.couleur) cTmp.set(p.couleur(x, y, z));
+      if(p.couleur) cTmp.set(p.couleur(x, y, z, i));
       const k = (T ? T.getX(i) : 1) * (p.ombre ? p.ombre(x, y, z) : 1);
       col[o * 3] = cTmp.r * k; col[o * 3 + 1] = cTmp.g * k; col[o * 3 + 2] = cTmp.b * k;
     }
