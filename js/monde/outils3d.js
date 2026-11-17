@@ -306,8 +306,36 @@ function piochePierre(w){
   m.userData.manche = w;
   return m;
 }
+/* La tête de la pioche en cuivre (image de Yo, 17 novembre 2026) : du cuivre lisse ; derrière une longue pointe fine recourbée
+   vers le bas, devant un bout plus court et large, coupé à plat comme un ciseau, sa face coupée plus claire */
+const TETE_PC = tetePierre({nv: 6, epCentre: .07, creux: 0, lisse: true, tranchant: .95, cotes: [
+  {nu: 6, epBord: .014, haut: [[0, .6], [.3, .645], [.5, .37]], bas: [[0, .4], [.27, .47], [.48, .355]],          // la pointe
+    bout: [[.48, .355], [.495, .355], [.505, .363], [.5, .37]]},
+  {nu: 6, us: [0, .25, .5, .72, .87, .95, 1], epBord: .045, haut: [[0, .6], [.25, .595], [.46, .44]],           // le ciseau
+    bas: [[0, .4], [.2, .4], [.37, .25]], bout: [[.37, .25], [.395, .31], [.43, .38], [.46, .44]]}
+]});
+/* La pioche en cuivre (image de Yo, 17 novembre 2026 : « Voici la pioche de cuivre ») : le manche des autres outils, son bout
+   arrondi au-dessus de la douille de la hache en cuivre (deux rivets de chaque côté) ; la tête lisse, la pointe derrière, le
+   ciseau devant. Pas de cuir. Un seul dessin */
+function piocheCuivre(w){
+  const m = modeleOutil("piocheCuivre" + w, () => {
+    const out = [], bord = TETE_PC.userData.bord;
+    out.push({geo: MANCHE, m: M4o(0, 0, 0), c: w, couleur: (x, y) => y > .675 ? new THREE.Color(w).multiplyScalar(1.18).getHex() : w,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .2) / .09 + .5))});
+    out.push({geo: TETE_PC, m: M4o(0, 0, 0), c: CUIVRE, couleur: (x, y, z, i) => bord[i] ? CUIVRE_CLAIR : CUIVRE,
+      ombre: (x, y) => .82 + .24 * Math.max(0, Math.min(1, (y - .3) / .35))});
+    const omb = (x, y, z) => .84 + .22 * Math.max(0, Math.min(1, (y - .4) / .22));
+    out.push({geo: COLLIER, m: M4o(0, .51, 0, 0, 0, 0, .125, .2, .11), c: CUIVRE_SOMBRE, ombre: omb});                       // la douille
+    for(const y of [.607, .413]) out.push({geo: COLLIER, m: M4o(0, y, 0, 0, 0, 0, .135, .026, .12), c: CUIVRE_SOMBRE, ombre: omb}); // ses bords
+    for(const sx of [1, -1]) for(const y of [.56, .47])                                                                     // les rivets
+      out.push({geo: RIVET, m: M4o(sx * .122, y, 0, 0, 0, 0, .022, .028, .028), c: CUIVRE_CLAIR, ombre: (x, y2, z) => .85 + .2 * Math.max(0, Math.min(1, (y2 - y) / .028 + .5))});
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
