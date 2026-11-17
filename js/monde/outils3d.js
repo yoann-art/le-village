@@ -363,8 +363,74 @@ function piocheBronze(w){
   m.userData.manche = w;
   return m;
 }
+/* La pelle en bois (image de Yo, 17 novembre 2026) : on la tient par la poignée en T (en bas, la main à 0), le manche monte, la
+   lame creusée au bout. Toutes les mesures en unités du modèle (le manche des haches mesure 1) */
+const MANCHE_PELLE = (() => {                                                        // droit, un peu courbe, plus fin vers la lame
+  const g = new THREE.CylinderGeometry(.08, .09, 1.22, 10, 6), P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const y = P.getY(i); P.setY(i, y + .45); P.setZ(i, P.getZ(i) + .05 * Math.sin((y + .61) / 1.22 * Math.PI)); }
+  g.computeVertexNormals(); return g; })();
+const POIGNEE_T = (() => {                                                           // la barre en travers, ses bouts plus gros et arrondis
+  const p = [[0, -.3], [.06, -.3], [.085, -.285], [.09, -.24], [.072, -.17], [.068, 0], [.072, .17], [.09, .24], [.085, .285], [.06, .3], [0, .3]];
+  const g = new THREE.LatheGeometry(p.map(([r, y]) => new THREE.Vector2(r, y)), 10); g.rotateZ(Math.PI / 2); return g; })();
+/* La lame : une écope à peu près carrée, le bout arrondi, creusée devant (+z), un rebord tout autour ; le dos un peu bombé.
+   Une grille devant, une derrière, le bord qui les relie ; userData.marque : 1 pour les petites entailles du bord */
+const LAME_PELLE = (() => {
+  const nu = 10, nv = 12, W = .39, L = .95, y0 = 1.0, pos = [], idx = [], marque = [];
+  const larg = v => v < .55 ? W : W * (1 - .4 * ((v - .55) / .45) ** 2.2);
+  const point = (i, j, devant) => {
+    const u = i / nu * 2 - 1, v = j / nv, x = u * larg(v), y = y0 + v * L, e = Math.max(Math.abs(u), v < .5 ? 1 - v / .08 : (v - .86) / .14);
+    const creux = .1 * (1 - Math.abs(u) ** 3) * Math.min(1, v / .15) * Math.min(1, (1 - v) / .25);
+    const z = devant ? -creux + (e > .8 ? .035 * Math.min(1, (e - .8) / .2) : 0) : -.05 - .07 * (1 - u * u) * Math.min(1, v / .2) * Math.min(1, (1 - v) / .3);
+    const ent = devant && ((Math.abs(u) > .99 && (j === 4 || j === 8)) || (j === nv && (i === 3 || i === 7)));
+    pos.push(x, y, z); marque.push(ent ? 1 : 0); };
+  for(const devant of [true, false]) for(let j = 0; j <= nv; j++) for(let i = 0; i <= nu; i++) point(i, j, devant);
+  const n = (nu + 1) * (nv + 1), at = (i, j, k) => k * n + j * (nu + 1) + i;
+  for(const k of [0, 1]) for(let j = 0; j < nv; j++) for(let i = 0; i < nu; i++){
+    const a = at(i, j, k), b = at(i + 1, j, k), c = at(i + 1, j + 1, k), d = at(i, j + 1, k);
+    if(k === 0) idx.push(a, b, c, a, c, d); else idx.push(a, c, b, a, d, c);
+  }
+  const tour = [];                                                                  // le bord : le bas, un côté, le bout, l'autre côté
+  for(let i = 0; i <= nu; i++) tour.push([i, 0]);
+  for(let j = 1; j <= nv; j++) tour.push([nu, j]);
+  for(let i = nu - 1; i >= 0; i--) tour.push([i, nv]);
+  for(let j = nv - 1; j > 0; j--) tour.push([0, j]);
+  for(let k = 0; k < tour.length; k++){
+    const [i1, j1] = tour[k], [i2, j2] = tour[(k + 1) % tour.length];
+    idx.push(at(i1, j1, 0), at(i1, j1, 1), at(i2, j2, 1), at(i1, j1, 0), at(i2, j2, 1), at(i2, j2, 0));
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  g.userData.marque = marque; return g; })();
+/* La corde torsadée : un anneau dont les torsades sont peintes (teinte) */
+const CORDE = (() => {
+  const g = new THREE.TorusGeometry(1, .3, 6, 30), t = [];
+  for(let j = 0; j <= 6; j++) for(let i = 0; i <= 30; i++) t.push(Math.sin(i / 30 * Math.PI * 2 * 9 + j / 6 * Math.PI * 2) > 0 ? 1.04 : .8);
+  g.setAttribute("teinte", new THREE.Float32BufferAttribute(t, 1)); return g; })();
+const PAILLE = 0xE6BE78;
+/* La pelle en bois (image de Yo, 17 novembre 2026 : « Voici la pelle en bois ») : toute dans le bois choisi en la fabriquant ;
+   la poignée en T, le manche, la lame creusée, sa nervure, ses petites entailles ; la corde de fibre torsadée, en X, là où le
+   manche rejoint la lame. Un seul dessin */
+function pelleBois(w){
+  const m = modeleOutil("pelleBois" + w, () => {
+    const out = [], marque = LAME_PELLE.userData.marque, sombre = new THREE.Color(w).multiplyScalar(.62).getHex();
+    const omb = (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .3) / .09 + .5));
+    out.push({geo: POIGNEE_T, m: M4o(0, -.17, 0), c: w, ombre: omb});
+    out.push({geo: MANCHE_PELLE, m: M4o(0, 0, 0), c: w, ombre: omb});
+    out.push({geo: LAME_PELLE, m: M4o(0, 0, 0), c: w, couleur: (x, y, z, i) => marque[i] ? sombre : w,
+      ombre: (x, y, z) => z > -.03 ? 1.06 : .86 + .1 * Math.max(0, Math.min(1, (y - 1.1) / .7))});
+    out.push({geo: COLLIER, m: M4o(0, 1.2, -.035, 0, 0, 0, .075, .42, .04), c: w, ombre: () => 1.02});                // la nervure
+    const omc = (x, y, z) => .9 + .14 * Math.max(0, Math.min(1, x / .1 + .5));
+    for(const y of [.8, 1.02]) out.push({geo: CORDE, m: M4o(0, y, .02, Math.PI / 2, 0, 0, .108, .108, .108), c: PAILLE, ombre: omc});   // la corde
+    for(const t of [.55, -.55]) out.push({geo: CORDE, m: M4o(0, .91, .02, Math.PI / 2 + t, 0, 0, .105, .105 / Math.cos(t), .105), c: PAILLE, ombre: omc});
+    const petite = new THREE.Matrix4().makeScale(.75, .75, .75);                   // une petite pelle, comme sur l'image (style jouet)
+    for(const p of out) p.m.premultiply(petite);
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
