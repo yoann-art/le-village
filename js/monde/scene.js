@@ -75,17 +75,18 @@ setDistance(distanceFor(8));
    qu'une forme est dessinée, le téléphone l'envoie à sa carte graphique ; la première fois qu'une matière l'est, il compile
    son programme. En marchant, cela tombait au moment où un arbre, un buisson ou une pierre entrait dans l'écran. On le fait
    donc une fois pour toutes au chargement (main.js) : un dessin de toute la scène, tout montré (même ce qui est caché, de
-   près comme de loin), avec ses ombres, dans une toute petite image qu'on ne voit jamais. Rien ne change à l'écran */
-export function preparer(){
+   près comme de loin), avec ses ombres, dans une toute petite image qu'on ne voit jamais. Rien ne change à l'écran.
+   sc, cam : une autre scène (la pièce d'un bâtiment, à l'entrée, l'écran noir : lieux.js) */
+export function preparer(sc = scene, cam = camera){
   const montres = [], entiers = [], lods = [];
-  scene.traverse(o => {
+  sc.traverse(o => {
     if(!o.visible){ o.visible = true; montres.push(o); }
     if(o.frustumCulled){ o.frustumCulled = false; entiers.push(o); }
     if(o.isLOD && o.autoUpdate){ o.autoUpdate = false; lods.push(o); }
   });
   const cible = new THREE.WebGLRenderTarget(4, 4);
   renderer.setRenderTarget(cible);
-  try { renderer.render(scene, camera); }
+  try { renderer.render(sc, cam); }
   finally {
     renderer.setRenderTarget(null); cible.dispose();
     for(const o of montres) o.visible = false;

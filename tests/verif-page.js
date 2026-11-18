@@ -3770,6 +3770,26 @@ export async function verifier(){
     const {preparerOutil} = await import("../js/monde/mains.js"), {OUTILS_REFAITS} = await import("../js/monde/outils3d.js"), {teinteManche} = await import("../js/donnees.js");
     preparerOutil("hacheCuivre", "boisCypres");
     if(!recue(OUTILS_REFAITS.hacheCuivre(teinteManche("boisCypres")).geometry)) throw new Error("la hache en cuivre au manche de cyprès n'est pas préparée quand on la commande");
+    /* entrer dans une pièce meublée : ses meubles envoyés à la carte graphique pendant le noir, rien à la première image après
+       (session ⏱️ de Yo, 18 novembre 2026) */
+    {
+      const piece = {id: -9, type: "chaumiere", lvl: 1, x: 0, z: 0, deco: {items: ["fauteuil", "armoire", "lit", "petitTapis"].map((type, i) => ({id: i + 1, type, color: "boisAulne", x: i * 1.4 - 2, z: -1, rot: 0})), next: 9}};
+      const F = $("#fondu"); let g0 = -1, noir = false;
+      const obs = new MutationObserver(() => { if(F.classList.contains("on")) noir = true; else if(noir && g0 < 0) g0 = renderer.info.memory.geometries; });
+      obs.observe(F, {attributes: true});
+      const ici = {x: player.position.x, z: player.position.z};
+      try {
+        const {setWalkable} = await import("../js/monde/personnage.js");
+        allerA(piece, {x: 0, z: 1, fx: 0, fz: -1}, null, room => setWalkable((x, z) => Math.abs(x) < room.w / 2 && Math.abs(z) < room.d / 2));   // une pièce de bâtiment : ses murs (comme installer, lieux.js)
+        if(!await attendre(() => g0 >= 0 && isInside())) throw new Error("on n'est pas entré dans la pièce d'essai");
+        await wait(500);                                  // quelques vraies images dans la pièce
+        const n = renderer.info.memory.geometries - g0;
+        if(n > 0) throw new Error(`${n} formes envoyées à la carte graphique après le noir de l'entrée`);
+      } finally {
+        obs.disconnect();
+        retourIle(ici.x, ici.z, 0, 1); await attendre(() => !isInside());
+      }
+    }
     const ins = await import("../js/insectes.js"), ois = await import("../js/oiseaux.js");
     const formes = m => { const l = []; m.traverse(o => { if(o.isMesh) l.push(o.geometry); }); return l; };
     const a1 = formes(ins.modeleInsecte("coccinelle")), a2 = formes(ins.modeleInsecte("coccinelle")), b1 = formes(ois.modeleOiseau("rougeGorge")), b2 = formes(ois.modeleOiseau("rougeGorge"));
