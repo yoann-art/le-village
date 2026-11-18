@@ -374,11 +374,14 @@ const POIGNEE_T = (() => {                                                      
   const g = new THREE.LatheGeometry(p.map(([r, y]) => new THREE.Vector2(r, y)), 10); g.rotateZ(Math.PI / 2); return g; })();
 /* La lame : une écope à peu près carrée, le bout arrondi, creusée devant (+z), un rebord tout autour ; le dos un peu bombé.
    Une grille devant, une derrière, le bord qui les relie ; userData.marque : 1 pour les petites entailles du bord */
-function lamePelle(metal){
-  const nu = 10, nv = 12, W = .39, L = .95, y0 = 1.0, pos = [], idx = [], marque = [];
-  const larg = metal ? v => v < .45 ? W : W * Math.sqrt(1 - ((v - .45) / .58) ** 2) : v => v < .55 ? W : W * (1 - .4 * ((v - .55) / .45) ** 2.2);
+function lamePelle(metal, coeur){
+  const nu = coeur ? 12 : 10, nv = coeur ? 14 : 12, W = coeur ? .46 : .39, L = coeur ? .82 : .95, y0 = 1.0, pos = [], idx = [], marque = [];
+  const larg = coeur ? v => v < .26 ? W * (.5 + .5 * Math.sqrt(1 - ((.26 - v) / .26) ** 2))         // le cœur : deux lobes ronds,
+      : W * Math.max(.01, 1 - ((v - .26) / .74) ** 1.9)                                             // les côtés bombés, la pointe
+    : metal ? v => v < .45 ? W : W * Math.sqrt(1 - ((v - .45) / .58) ** 2) : v => v < .55 ? W : W * (1 - .4 * ((v - .55) / .45) ** 2.2);
+  const dent = (u, v) => coeur ? .17 * Math.max(0, 1 - Math.abs(u) / .55) ** 1.3 * Math.max(0, 1 - v / .32) : 0;   // le creux entre les lobes
   const point = (i, j, devant) => {
-    const u = i / nu * 2 - 1, v = j / nv, x = u * larg(v), y = y0 + v * L, e = Math.max(Math.abs(u), v < .5 ? 1 - v / .08 : (v - .86) / .14);
+    const u = i / nu * 2 - 1, v = j / nv, x = u * larg(v), y = y0 + v * L + dent(u, v), e = Math.max(Math.abs(u), v < .5 ? 1 - v / .08 : (v - .86) / .14);
     const creux = .1 * (1 - Math.abs(u) ** 3) * Math.min(1, v / .15) * Math.min(1, (1 - v) / .25);
     const z = devant ? -creux + (e > .8 ? .035 * Math.min(1, (e - .8) / .2) : 0) : (metal ? -.035 : -.05) - .07 * (1 - u * u) * Math.min(1, v / .2) * Math.min(1, (1 - v) / .3);
     const ent = metal ? (devant ? e > .74 && j > 0 : i === 0 || i === nu || j === nv)                       // le métal : le bord plus clair
@@ -401,9 +404,12 @@ function lamePelle(metal){
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-  g.userData.marque = marque; return g;
+  g.userData.marque = marque;
+  g.userData.fond = (x, y) => { const v = (y - y0) / L, u = Math.min(1, Math.abs(x) / larg(v));       // le fond creusé, devant
+    return -.1 * (1 - u ** 3) * Math.min(1, v / .15) * Math.min(1, (1 - v) / .25); };
+  return g;
 }
-const LAME_PELLE = lamePelle(false), LAME_PELLE_CUIVRE = lamePelle(true);
+const LAME_PELLE = lamePelle(false), LAME_PELLE_CUIVRE = lamePelle(true), LAME_PELLE_BRONZE = lamePelle(true, true);
 /* La corde torsadée : un anneau dont les torsades sont peintes (teinte) */
 const CORDE = (() => {
   const g = new THREE.TorusGeometry(1, .3, 6, 30), t = [];
@@ -457,8 +463,44 @@ function pelleCuivre(w){
   m.userData.manche = w;
   return m;
 }
+/* La pelle en bronze (image de Yo, 18 novembre 2026 : « Voici la pelle en bronze ») : la poignée en T et le manche de la pelle en
+   bois (son bois choisi), le milieu de la poignée enroulé de cuir brun-rouge, des lanières croisées en X, un manchon de cuir
+   sous la poignée ; une douille de bronze à deux anneaux, sa pointe qui descend dans la lame ; la lame en cœur, creusée, son
+   rebord plus clair, un brin à quatre feuilles gravé au fond (celui de la hache en bronze). Un seul dessin */
+const CUIR_ROUGE = 0xA4472A, GRAVURE = 0x9C5A1E;
+function pelleBronze(w){
+  const m = modeleOutil("pelleBronze" + w, () => {
+    const out = [], lame = LAME_PELLE_BRONZE, marque = lame.userData.marque, fond = lame.userData.fond;
+    const omb = (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (x * .6 + z * .3) / .09 + .5));
+    out.push({geo: POIGNEE_T, m: M4o(0, -.17, 0), c: w, ombre: omb});
+    out.push({geo: MANCHE_PELLE, m: M4o(0, 0, 0), c: w, ombre: omb});
+    const omcu = (x, y, z) => .82 + .24 * Math.max(0, Math.min(1, (y + .17) / .16 + .5));
+    out.push({geo: COLLIER, m: M4o(0, -.17, 0, 0, 0, Math.PI / 2, .083, .4, .083), c: CUIR_ROUGE, ombre: omcu});            // le cuir de la poignée
+    for(const [x, t] of [[-.19, 0], [-.135, .42], [-.135, -.42], [.135, .42], [.135, -.42], [.19, 0]])                       // ses lanières
+      out.push({geo: BANDE, m: M4o(x, -.17, 0, 0, 0, Math.PI / 2 + t, .09 / Math.cos(t), .032, .09), c: 0x8A3A22, ombre: omcu});
+    out.push({geo: COLLIER, m: M4o(0, -.065, .002, 0, 0, 0, .112, .17, .112), c: CUIR_ROUGE, ombre: omb});                       // le manchon
+    out.push({geo: lame, m: M4o(0, 0, 0), c: BRONZE, couleur: (x, y, z, i) => marque[i] ? BRONZE_CLAIR : BRONZE,
+      ombre: (x, y, z) => .86 + .2 * Math.max(0, Math.min(1, (y - 1.05) / .7))});
+    const omc = (x, y, z) => .84 + .24 * Math.max(0, Math.min(1, (x * .6 + z * .4) / .2 + .5));
+    out.push({geo: COLLIER, m: M4o(0, .95, .015, 0, 0, 0, .1, .2, .1), c: BRONZE, ombre: omc});                          // la douille
+    for(const y of [.8, .86]) out.push({geo: COLLIER, m: M4o(0, y, .02, 0, 0, 0, .118, .042, .118), c: BRONZE_ANNEAU, ombre: omc});   // ses anneaux
+    out.push({geo: POINTE_NERVURE, m: M4o(0, 1.15, 0, 0, 0, 0, .1, .32, .085), c: BRONZE_SOMBRE, ombre: () => .97});      // sa pointe
+    const sur = (x, y) => fond(x, y) + .007;                                                                             // le brin gravé
+    const x0 = -.075, y0 = 1.68, x1 = .09, y1 = 1.36, ts = Math.atan2(x0 - x1, y1 - y0);
+    out.push({geo: TIGE, m: M4o((x0 + x1) / 2, (y0 + y1) / 2, sur((x0 + x1) / 2, (y0 + y1) / 2), 0, 0, ts, .009, Math.hypot(x1 - x0, y1 - y0), .003), c: GRAVURE, ombre: () => 1});
+    for(const [t, da] of [[.3, .85], [.55, -.85], [.72, .8], [1.02, 0]]){
+      const a = ts + da, x = x0 + (x1 - x0) * t - Math.sin(a) * .066, y = y0 + (y1 - y0) * t + Math.cos(a) * .066;
+      out.push({geo: FEUILLE, m: M4o(x, y, sur(x, y), 0, 0, a, .03, .072, .003), c: GRAVURE, ombre: () => 1});
+    }
+    const petite = new THREE.Matrix4().makeScale(.75, .75, .75);
+    for(const p of out) p.m.premultiply(petite);
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
