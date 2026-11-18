@@ -536,24 +536,85 @@ function arrosoirBois(w){
         ombre: (x, y2) => .85 + .25 * Math.max(0, Math.min(1, (y2 - y) / .03 + .5))});
     }
     out.push({geo: ANSE_ARR, m: M4o(0, 0, 0), c: w, ombre: omb});                                                     // l'anse
-    const a = .78, L = .74, b0 = [0, -.72, zc + .3], d = [Math.cos(a), Math.sin(a)];                                  // le bec, vers l'avant
-    out.push({geo: BEC_ARR, m: M4o(0, b0[1] + d[1] * L / 2, b0[2] + d[0] * L / 2, Math.PI / 2 - a, 0, 0, 1, L, 1), c: w, ombre: omb});
-    const pr = [0, b0[1] + d[1] * (L + .02), b0[2] + d[0] * (L + .02)], ra = Math.PI / 2 - a;
-    out.push({geo: COLLIER, m: M4o(pr[0], pr[1], pr[2], ra, 0, 0, .17, .085, .17), c: w, ombre: () => 1.04});           // la pomme
-    const nz = [0, d[1], d[0]];                                                                                        // les trous, sur sa face
-    const ux = [1, 0, 0], uy = [0, -d[0], d[1]];
-    for(const [px, py] of [[0, 0], [.08, 0], [-.08, 0], [.04, .07], [-.04, .07], [.04, -.07], [-.04, -.07], [0, .13], [0, -.13]])
-      out.push({geo: TROU, m: M4o(pr[0] + px * ux[0], pr[1] + nz[1] * .04 + py * uy[1], pr[2] + nz[2] * .04 + py * uy[2], ra, 0, 0, .017, .006, .017),
-        c: 0x5A3418, ombre: () => 1});
-    const reduit = new THREE.Matrix4().makeScale(.66, .66, .66).multiply(new THREE.Matrix4().makeTranslation(0, .38, .35));   // tenu par le dos de l'anse
-    for(const p of out) p.m.premultiply(reduit);
+    becArrosoir(out, zc, w, omb, 0x5A3418);
+    tenuParAnse(out);
     return out;
   });
   m.userData.manche = w;
   return m;
 }
+/* Le bec d'un arrosoir, vers l'avant : plus large contre le corps ; la pomme ronde et plate, ses neuf trous peints */
+function becArrosoir(out, zc, c, omb, cTrou, cPomme = c){
+  const a = .78, L = .74, b0 = [0, -.72, zc + .3], d = [Math.cos(a), Math.sin(a)];
+  out.push({geo: BEC_ARR, m: M4o(0, b0[1] + d[1] * L / 2, b0[2] + d[0] * L / 2, Math.PI / 2 - a, 0, 0, 1, L, 1), c, ombre: omb});
+  const pr = [0, b0[1] + d[1] * (L + .02), b0[2] + d[0] * (L + .02)], ra = Math.PI / 2 - a;
+  out.push({geo: COLLIER, m: M4o(pr[0], pr[1], pr[2], ra, 0, 0, .17, .085, .17), c: cPomme, ombre: () => 1.04});           // la pomme
+  const nz = [0, d[1], d[0]], uy = [0, -d[0], d[1]];                                                                 // les trous, sur sa face
+  for(const [px, py] of [[0, 0], [.08, 0], [-.08, 0], [.04, .07], [-.04, .07], [.04, -.07], [-.04, -.07], [0, .13], [0, -.13]])
+    out.push({geo: TROU, m: M4o(pr[0] + px, pr[1] + nz[1] * .04 + py * uy[1], pr[2] + nz[2] * .04 + py * uy[2], ra, 0, 0, .017, .006, .017),
+      c: cTrou, ombre: () => 1});
+}
+/* Tenu par le dos de l'anse (la main à 0), à la taille du jeu */
+function tenuParAnse(out, dy = .38, dz = .35){
+  const reduit = new THREE.Matrix4().makeScale(.66, .66, .66).multiply(new THREE.Matrix4().makeTranslation(0, dy, dz));
+  for(const p of out) p.m.premultiply(reduit);
+}
+/* L'arrosoir en cuivre (image de Yo, 18 novembre 2026 : « Voici l'arrosoir en cuivre ») : tout en cuivre ; le corps en pot, bombé,
+   plus large en bas, un col court, martelé (ses facettes peintes, toujours les mêmes : teinte) ; le bord rond de l'ouverture ;
+   deux bandes en relief plus claires, rivetées tout autour, celle du bas sur un petit socle ; le bec et sa pomme percée ;
+   l'anse en boucle, rivetée en haut et en bas. Tenu comme l'arrosoir en bois. Un seul dessin */
+const PROFIL_POT = [[0, -1.0], [.33, -1.0], [.35, -.96], [.385, -.86], [.405, -.72], [.395, -.6], [.365, -.5], [.315, -.42],
+  [.285, -.36], [.275, -.3], [.27, -.27], [.19, -.27], [.18, -.31], [0, -.37]];
+const rayonPot = y => { for(let k = 2; k < 11; k++){ const [r0, y0] = PROFIL_POT[k - 1], [r1, y1] = PROFIL_POT[k];
+  if(y <= y1) return r0 + (r1 - r0) * (y - y0) / (y1 - y0); } return .27; };
+const POT = (() => {                                                                 // martelé : des facettes plates, chacune sa teinte
+  const pts = []; for(let k = 1; k < 11; k++){ const [r0, y0] = PROFIL_POT[k - 1], [r1, y1] = PROFIL_POT[k], n = k > 2 && k < 9 ? 2 : 1;
+    for(let q = 0; q < n; q++) pts.push([r0 + (r1 - r0) * q / n, y0 + (y1 - y0) * q / n]); }
+  const ext = pts.length; pts.push(...PROFIL_POT.slice(10));
+  const seg = 32, l = new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg), rnd = hasard(23), t = [], np = pts.length;
+  const L = l.attributes.position, bosse = [];                                                    // chaque coup de marteau : le sommet bouge un peu
+  for(let i = 0; i < seg; i++) for(let j = 0; j < np; j++) bosse.push([(rnd() - .5) * .07, (rnd() - .5) * .018, 1 + (rnd() - .5) * .035]);
+  for(let v = 0; v < L.count; v++){ const i = Math.floor(v / np) % seg, j = v % np; if(j === 0 || j >= ext - 1) continue;
+    const [da, dy, k] = bosse[i * np + j], x = L.getX(v), z = L.getZ(v), r = Math.hypot(x, z) * k, a = Math.atan2(x, z) + da * Math.PI * 2 / seg * 3;
+    L.setXYZ(v, r * Math.sin(a), L.getY(v) + dy, r * Math.cos(a)); }
+  const g = l.toNonIndexed();
+  const P = g.attributes.position;
+  for(let f = 0; f < P.count / 3; f++){
+    const y = (P.getY(f * 3) + P.getY(f * 3 + 1) + P.getY(f * 3 + 2)) / 3, r = Math.hypot(P.getX(f * 3), P.getZ(f * 3));
+    const v = y > -.28 && r < .2 ? .5 : .95 + .1 * rnd();                // le dedans sombre ; un quad, une teinte
+    t.push(v, v, v); }
+  g.setAttribute("teinte", new THREE.Float32BufferAttribute(t, 1)); g.computeVertexNormals(); return g; })();
+const RIVET_P = new THREE.SphereGeometry(1, 6, 4);
+const ANSE_POT = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, -.43, .3], [0, -.2, .26], [0, -.02, .14], [0, .02, -.04], [0, -.1, -.2],
+  [0, -.34, -.25], [0, -.56, -.14], [0, -.66, .08], [0, -.68, .22]].map(([x, y, z]) => new THREE.Vector3(x, y, z))), 24, .066, 8);
+const bandePot = (y0, y1, e) => new THREE.LatheGeometry([[-.006, y0 - .006], [0, y0], [0, y1], [-.006, y1 + .006]]
+  .map(([dr, y]) => new THREE.Vector2(rayonPot(y) + e + dr, y)), 30);
+const BANDES_POT = [bandePot(-.47, -.39, .018), bandePot(-.95, -.84, .02)];
+const BORD_POT = new THREE.TorusGeometry(.228, .045, 8, 30);
+const RIVET_CUIVRE = 0xF2B04A;
+function arrosoirCuivre(w){
+  return modeleOutil("arrosoirCuivre", () => {
+    const out = [], zc = .6, omb = (x, y, z) => .84 + .22 * Math.max(0, Math.min(1, (x * .5 + (z - zc) * .3 + (y + .6) * .4) / .45 + .5));
+    out.push({geo: POT, m: M4o(0, 0, zc), c: CUIVRE, ombre: omb});                                                     // le corps
+    out.push({geo: BORD_POT, m: M4o(0, -.26, zc, Math.PI / 2, 0, 0), c: CUIVRE_CLAIR, ombre: omb});                    // le bord
+    for(const [k, y, n] of [[0, -.43, 8], [1, -.895, 10]]){                                                             // les bandes
+      out.push({geo: BANDES_POT[k], m: M4o(0, 0, zc), c: CUIVRE_CLAIR, ombre: omb});
+      const r = rayonPot(y) + (k ? .02 : .018);
+      for(let i = 0; i < n; i++){ const a = (i + .5) / n * Math.PI * 2;
+        if(Math.abs(Math.cos(a) - 1) < .05) continue;                                                                   // pas sous le bec
+        out.push({geo: RIVET_P, m: M4o(Math.sin(a) * (r + .006), y, zc + Math.cos(a) * (r + .006), 0, a, 0, .026, .026, .02), c: RIVET_CUIVRE,
+          ombre: (x, y2) => .85 + .25 * Math.max(0, Math.min(1, (y2 - y) / .026 + .5))}); }
+    }
+    out.push({geo: ANSE_POT, m: M4o(0, 0, 0, 0, 0, 0, 1.25, 1, 1), c: CUIVRE, ombre: omb});                            // l'anse, plate, ses rivets
+    for(const [y, z] of [[-.43, .27], [-.67, .19]]) for(const sx of [1, -1])
+      out.push({geo: RIVET_P, m: M4o(sx * .085, y, z, 0, 0, 0, .022, .028, .028), c: RIVET_CUIVRE, ombre: () => 1.05});
+    becArrosoir(out, zc, CUIVRE, omb, 0x6A2A10, CUIVRE_CLAIR);
+    tenuParAnse(out, .36, .25);
+    return out;
+  });
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze, arrosoir: arrosoirBois};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze, arrosoir: arrosoirBois, arrosoirCuivre};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
