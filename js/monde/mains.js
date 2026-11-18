@@ -16,8 +16,8 @@
      éclairent d'une lueur chaude.
    - À la pêche, le fil part du bout de la canne qu'on voit à l'écran (boutFPS, pour peche.js). */
 import { G, part, toon } from "./formes.js";
-import { makeOutil } from "./outils3d.js";
-import { OUTILS, GRAINES, POSABLES } from "../donnees.js";
+import { makeOutil, OUTILS_REFAITS } from "./outils3d.js";
+import { OUTILS, GRAINES, POSABLES, teinteManche } from "../donnees.js";
 import { renderer, camera, hemi as hemiIle, sun } from "./scene.js";
 import { hemiDedans, lampeDedans } from "./interieurs.js";
 import { outilTenu, angleMain, mainGauche, allure } from "./personnage.js";
@@ -199,6 +199,18 @@ export function preparerMains(){
   renderer.setRenderTarget(cible);
   try { for(const lueur of [0, 1]){ feu.intensity = lueur; renderer.render(scene, cam); } }   // sans la lueur de la torche (elle ne compte pas, éteinte) et avec
   finally { feu.intensity = 0; renderer.setRenderTarget(null); cible.dispose(); scene.remove(tous); [D.g.visible, Gc.g.visible] = vus; }
+}
+/* Un outil refait dans le bois choisi à l'établi (ateliers.js, quand on lance la fabrication, la fiche ouverte) : sa forme est
+   faite et envoyée à la carte graphique tout de suite, pas la première fois qu'on le prend en main (session ⏱️ de Yo,
+   18 novembre 2026) ; le chargement prépare déjà les outils qu'on a, dans leur bois */
+export function preparerOutil(k, bois){
+  if(!OUTILS_REFAITS[k]) return;
+  const o = OUTILS_REFAITS[k](teinteManche(bois)); o.position.z = -.6; o.frustumCulled = false;
+  scene.add(o);
+  const cible = new THREE.WebGLRenderTarget(4, 4);
+  renderer.setRenderTarget(cible);
+  try { renderer.render(scene, cam); }
+  finally { renderer.setRenderTarget(null); cible.dispose(); scene.remove(o); }
 }
 export function mainsInactives(){ actif = false; lacet = null; geste = null; }
 /* À la pêche : le bout de la canne vu à l'écran, ramené dans le monde à un pas devant les yeux (peche.js) */

@@ -41,7 +41,7 @@ import { updateVoyage, voyageEnCours } from "./voyage.js";
 import { updateMarais } from "./monde/marais.js";
 import { lueurLanternes } from "./monde/essences.js";
 import { updateCiel, nuitIci } from "./monde/ciel.js";
-import { updateMeteo, couvertIci, meteo } from "./monde/meteo.js";
+import { updateMeteo, couvertIci, meteo, GROUPE_METEO } from "./monde/meteo.js";
 import { updateRecolte } from "./recolte.js";
 import { echantillonsInsectes } from "./insectes.js";
 import { echantillonsFontaine } from "./monde/meubles.js";
@@ -254,7 +254,7 @@ $("#version").textContent = "v" + VERSION;
 renderHUD();
 garde("icônes", () => prendreIconesMaintenant());                                           // les photos des objets nouveaux, au chargement plutôt qu'en jouant
 { const t0 = performance.now(), betes = new THREE.Group();                                  // la carte graphique prête avant la première marche (scene.js),
-  garde("préparation", () => { betes.add(echantillonsInsectes(), echantillonsOiseaux(), echantillonsFontaine()); scene.add(betes); preparer(); preparerMains(); });   // les insectes et les oiseaux compris
+  garde("préparation", () => { betes.add(echantillonsInsectes(), echantillonsOiseaux(), echantillonsFontaine(), GROUPE_METEO); scene.add(betes); preparer(); preparerMains(); });   // les insectes et les oiseaux compris
   scene.remove(betes); noterPreparation(performance.now() - t0); }
 /* Préparer les polices (mission de Yo, 16 octobre 2026 : les saccades) : la première fois qu'un texte en gras apparaissait
    (le nom de ce qu'on vise, sur le bouton d'action, en marchant vers une pierre), le navigateur préparait cette police à ce

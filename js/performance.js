@@ -145,8 +145,25 @@ function compterSession(j){
   s.tri += TRI[j]; s.dessins += DES[j]; s.prog += PROG[j]; s.geo += GEO[j];
   if(s.joue >= s.duree) finirSession();
 }
+/* Ce qui se prépare en jouant, pendant une session (la règle de Yo : rien ne se prépare en jouant) : chaque forme envoyée pour
+   la première fois à la carte graphique, avec l'endroit du code qui l'a faite, et chaque nouveau shader ; le rapport les liste
+   (session ⏱️ de Yo, 18 novembre 2026 : 6 shaders et 10 formes qu'on ne retrouvait pas sur le PC) */
+const prepares = [];
+const origine = () => (new Error().stack || "").split(String.fromCharCode(10)).filter(l => l.includes("/js/") && !/performance\.js|formes\.js/.test(l)).slice(0, 3)
+  .map(l => l.replace(/.*\/js\//, "").replace(/:\d+\)?\s*$/, "")).join(" ← ");
+const poser = THREE.BufferGeometry.prototype.setAttribute;
+THREE.BufferGeometry.prototype.setAttribute = function(n, a){ if(S && !this.userData.faiteA) this.userData.faiteA = origine(); return poser.call(this, n, a); };
+const ecouter = THREE.BufferGeometry.prototype.addEventListener;
+THREE.BufferGeometry.prototype.addEventListener = function(t, f){       // la carte graphique reçoit la forme (WebGLGeometries)
+  if(S && t === "dispose" && prepares.length < 30) prepares.push(`${minSec(S.joue)} forme de ${this.attributes.position ? this.attributes.position.count : "?"} sommets (${lieu()}) : ${this.userData.faiteA || "faite avant la session"}`);
+  return ecouter.call(this, t, f);
+};
+function noterShaders(avant, apres){
+  const P = renderer.info.programs;
+  for(let k = avant; k < apres && prepares.length < 30; k++){ const p = P[k]; if(p) prepares.push(`${minSec(S.joue)} shader ${p.name} (${lieu()}) : ${String(p.cacheKey || "").slice(0, 70)}`); }
+}
 export function lancerSession(ms = 120000){
-  S = nouvelleSession(ms);
+  S = nouvelleSession(ms); prepares.length = 0;
   toast(`⏱️ Mesure de ${Math.round(ms / 60000)} min lancée : joue normalement (marche, tourne la caméra, entre dans la forêt…). Le rapport s'ouvrira tout seul.`, 4200);
   if(actif) afficher();
 }
@@ -206,6 +223,7 @@ export function finImage(){
     TRAV[tete] = fin - debut;
     const p = renderer.info.programs ? renderer.info.programs.length : 0, g = renderer.info.memory.geometries;
     PROG[tete] = Math.max(0, p - progAvant); GEO[tete] = Math.max(0, g - geoAvant);
+    if(S && p > progAvant) noterShaders(progAvant, p);
     progAvant = p; geoAvant = g;
   }
   tri = renderer.info.render.triangles; dessins = renderer.info.render.calls;
@@ -425,6 +443,7 @@ export function rapportSession(){
     `Détail du travail en ms (moyenne, pire ; « dessin » : la préparation et l'envoi du dessin par le processeur) : ${lourds || "rien de lourd"}`,
     `Dessiné en moyenne : ${fmt(s.tri / nb)} triangles, ${Math.round(s.dessins / nb)} dessins par image`,
     `Nouveaux pendant la session : ${s.prog} shaders, ${s.geo} formes envoyées à la carte graphique`,
+    ...prepares.map(x => `   · ${x}`),
     mem,
     `Minute par minute : ${minutes.join(" ; ")}`,
     ...pied()

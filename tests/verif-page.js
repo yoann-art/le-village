@@ -3762,6 +3762,14 @@ export async function verifier(){
        insecte ou un oiseau qui apparaît reprend les formes déjà faites (rien de neuf pour la carte graphique) */
     const {prendreIconesMaintenant} = await import("../js/icones.js"), {renderer} = await import("../js/monde/scene.js");
     if(typeof prendreIconesMaintenant !== "function" || prendreIconesMaintenant() !== 0) throw new Error("les photos qui manquent ne se prennent pas au chargement");
+    /* la pluie et la neige préparées au chargement ; un outil refait préparé dans le bois choisi à l'établi (session ⏱️ de Yo,
+       18 novembre 2026) : leurs formes déjà reçues par la carte graphique (elle les écoute pour les jeter un jour) */
+    const recue = g => !!(g._listeners && g._listeners.dispose && g._listeners.dispose.length);
+    const {GROUPE_METEO} = await import("../js/monde/meteo.js");
+    for(const o of GROUPE_METEO.children) if(!recue(o.geometry)) throw new Error(`la ${o.isPoints ? "neige" : "pluie"} n'est pas préparée au chargement`);
+    const {preparerOutil} = await import("../js/monde/mains.js"), {OUTILS_REFAITS} = await import("../js/monde/outils3d.js"), {teinteManche} = await import("../js/donnees.js");
+    preparerOutil("hacheCuivre", "boisCypres");
+    if(!recue(OUTILS_REFAITS.hacheCuivre(teinteManche("boisCypres")).geometry)) throw new Error("la hache en cuivre au manche de cyprès n'est pas préparée quand on la commande");
     const ins = await import("../js/insectes.js"), ois = await import("../js/oiseaux.js");
     const formes = m => { const l = []; m.traverse(o => { if(o.isMesh) l.push(o.geometry); }); return l; };
     const a1 = formes(ins.modeleInsecte("coccinelle")), a2 = formes(ins.modeleInsecte("coccinelle")), b1 = formes(ois.modeleOiseau("rougeGorge")), b2 = formes(ois.modeleOiseau("rougeGorge"));

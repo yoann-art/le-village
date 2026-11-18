@@ -17,6 +17,7 @@ import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre, placesSac } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
 import { player } from "./monde/personnage.js";
+import { preparerOutil } from "./monde/mains.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
 import { barreAuto, enCaseAuto } from "./barre.js";
@@ -114,6 +115,7 @@ export function fabriquer(b, r){
   if(r.lock || b.lvl < r.lvl || q.length >= queueSlots(b.lvl) || !hasAll(prix)) return;
   const pris = payer(prix);                           // un poisson « au choix » : on note lequel, pour pouvoir le rendre ; le bois du manche est rendu si on annule
   q.push({out: r.out, n: r.n || 1, in: pris, t: r.t, start: 0, end: 0, ...(r.nom ? {nom: r.nom} : {}), ...(r.hasard ? {hasard: true} : {}), ...(m ? {manche: m} : {})});
+  if(m) preparerOutil(r.out, m);                       // sa forme dans ce bois, faite maintenant (la fiche ouverte), pas en jouant
   chain(q); save(); renderHUD();
 }
 function annuler(b, i){

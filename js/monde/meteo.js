@@ -86,6 +86,9 @@ const neige = new THREE.Points(gn, new THREE.PointsMaterial({color: 0xFFFFFF, si
 const groupe = new THREE.Group();
 groupe.add(pluie, neige);
 for(const o of [pluie, neige]){ o.frustumCulled = false; o.renderOrder = 2; }
+/* La pluie et la neige, pour la préparation du chargement (main.js) : leurs formes et le shader des flocons prêts avant la
+   première averse (session ⏱️ de Yo, 18 novembre 2026) */
+export const GROUPE_METEO = groupe;
 
 let couv = 0, force = 0, flocons = 0, eclair = 0, prochain = 8, ici = null;
 export const couvertIci = () => couv;                       // 0 : ciel dégagé ; 1 : très couvert (ciel.js)
