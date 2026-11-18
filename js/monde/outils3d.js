@@ -499,8 +499,61 @@ function pelleBronze(w){
   m.userData.manche = w;
   return m;
 }
+/* L'arrosoir en bois (image de Yo, 18 novembre 2026 : « Voici l'arrosoir en bois mais retire les gouttes d'eau ») : on le tient
+   par le dos de son anse (la main à 0), comme pour verser ; le corps devant, le bec vers +z. Le corps en tonneau : douze douelles (leurs
+   sillons peints, teinte), le bord épais de l'ouverture, le dedans sombre */
+const PROFIL_TONNEAU = [[0, -1.0], [.3, -1.0], [.345, -.92], [.375, -.76], [.372, -.6], [.35, -.45], [.315, -.33], [.29, -.27],
+  [.28, -.25], [.19, -.25], [.18, -.3], [0, -.36]];
+const rayonTonneau = y => { for(let k = 2; k < 8; k++){ const [r0, y0] = PROFIL_TONNEAU[k - 1], [r1, y1] = PROFIL_TONNEAU[k];
+  if(y <= y1) return r0 + (r1 - r0) * (y - y0) / (y1 - y0); } return .31; };
+const TONNEAU = (() => {
+  const n = PROFIL_TONNEAU.length, seg = 36, g = new THREE.LatheGeometry(PROFIL_TONNEAU.map(([r, y]) => new THREE.Vector2(r, y)), seg), t = [];
+  for(let i = 0; i <= seg; i++) for(let j = 0; j < n; j++) t.push(j >= 9 ? .55 : j === 8 ? 1.06 : i % 3 === 0 && j > 0 && j < 8 ? .74 : 1);
+  g.setAttribute("teinte", new THREE.Float32BufferAttribute(t, 1)); douelles(g, n); return g; })();
+/* Les colonnes d'un tour serrées contre le sillon de chaque douelle (0°, 2,5°, 27,5° de ses 30°) : le sillon reste un trait fin */
+function douelles(g, n){
+  const P = g.attributes.position;
+  for(let i = 0; i < P.count; i++){ const c = Math.floor(i / n), a = (Math.floor(c / 3) * 30 + [0, 2.5, 27.5][c % 3]) * Math.PI / 180, r = Math.hypot(P.getX(i), P.getZ(i));
+    P.setX(i, r * Math.sin(a)); P.setZ(i, r * Math.cos(a)); }
+  g.computeVertexNormals();
+}
+/* Un cerclage qui épouse le tonneau entre y0 et y1 */
+const cerclage = (y0, y1) => { const p = [[-.004, y0 - .004], [0, y0], [0, y1], [-.004, y1 + .004]]
+  .map(([dr, y]) => new THREE.Vector2(rayonTonneau(y) * 1.15 + .016 + dr, y)), g = new THREE.LatheGeometry(p, 36); douelles(g, 4); return g; };
+const CERCLAGES_ARR = [cerclage(-.44, -.32), cerclage(-.93, -.81)];
+const ANSE_ARR = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, -.3, .3], [0, -.06, .16], [0, .04, -.04], [0, -.03, -.24],
+  [0, -.24, -.36], [0, -.5, -.34], [0, -.7, -.16], [0, -.8, .12], [0, -.82, .26]].map(([x, y, z]) => new THREE.Vector3(x, y, z))), 24, .095, 8);
+const BEC_ARR = new THREE.CylinderGeometry(.07, .125, 1, 10, 1), TROU = new THREE.CylinderGeometry(1, 1, 1, 6, 1);
+const CERCLE_ARR = 0x9A4528, RIVET_ARR = 0xE3A040;
+function arrosoirBois(w){
+  const m = modeleOutil("arrosoir" + w, () => {
+    const out = [], zc = .6, LT = 1.15, omb = (x, y, z) => .84 + .22 * Math.max(0, Math.min(1, (x * .5 + (z - zc) * .3 + (y + .6) * .4) / .45 + .5));
+    out.push({geo: TONNEAU, m: M4o(0, 0, zc, 0, 0, 0, LT, 1, LT), c: w, ombre: omb});                                                     // le corps
+    for(const [k, y] of [[0, -.38], [1, -.87]]){                                                                      // les cerclages
+      const r = rayonTonneau(y) * LT + .016;
+      out.push({geo: CERCLAGES_ARR[k], m: M4o(0, 0, zc), c: CERCLE_ARR, ombre: omb});
+      for(const sx of [1, -1]) out.push({geo: RIVET, m: M4o(sx * (r + .008), y, zc, 0, 0, 0, .025, .038, .038), c: RIVET_ARR,
+        ombre: (x, y2) => .85 + .25 * Math.max(0, Math.min(1, (y2 - y) / .03 + .5))});
+    }
+    out.push({geo: ANSE_ARR, m: M4o(0, 0, 0), c: w, ombre: omb});                                                     // l'anse
+    const a = .78, L = .74, b0 = [0, -.72, zc + .3], d = [Math.cos(a), Math.sin(a)];                                  // le bec, vers l'avant
+    out.push({geo: BEC_ARR, m: M4o(0, b0[1] + d[1] * L / 2, b0[2] + d[0] * L / 2, Math.PI / 2 - a, 0, 0, 1, L, 1), c: w, ombre: omb});
+    const pr = [0, b0[1] + d[1] * (L + .02), b0[2] + d[0] * (L + .02)], ra = Math.PI / 2 - a;
+    out.push({geo: COLLIER, m: M4o(pr[0], pr[1], pr[2], ra, 0, 0, .17, .085, .17), c: w, ombre: () => 1.04});           // la pomme
+    const nz = [0, d[1], d[0]];                                                                                        // les trous, sur sa face
+    const ux = [1, 0, 0], uy = [0, -d[0], d[1]];
+    for(const [px, py] of [[0, 0], [.08, 0], [-.08, 0], [.04, .07], [-.04, .07], [.04, -.07], [-.04, -.07], [0, .13], [0, -.13]])
+      out.push({geo: TROU, m: M4o(pr[0] + px * ux[0], pr[1] + nz[1] * .04 + py * uy[1], pr[2] + nz[2] * .04 + py * uy[2], ra, 0, 0, .017, .006, .017),
+        c: 0x5A3418, ombre: () => 1});
+    const reduit = new THREE.Matrix4().makeScale(.66, .66, .66).multiply(new THREE.Matrix4().makeTranslation(0, .38, .35));   // tenu par le dos de l'anse
+    for(const p of out) p.m.premultiply(reduit);
+    return out;
+  });
+  m.userData.manche = w;
+  return m;
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze, arrosoir: arrosoirBois};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
