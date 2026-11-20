@@ -3765,6 +3765,16 @@ export async function verifier(){
        insecte ou un oiseau qui apparaît reprend les formes déjà faites (rien de neuf pour la carte graphique) */
     const {prendreIconesMaintenant} = await import("../js/icones.js"), {renderer} = await import("../js/monde/scene.js");
     if(typeof prendreIconesMaintenant !== "function" || prendreIconesMaintenant() !== 0) throw new Error("les photos qui manquent ne se prennent pas au chargement");
+    /* une photo prise au chargement : les cases du bas la montrent aussitôt, sans clic (Yo, 20 novembre 2026 : l'ancien dessin
+       restait jusqu'au clic) */
+    { const {iconesAuChargement, oublierIcone} = await import("../js/icones.js"), {renderBarre} = await import("../js/barre.js");
+      const {state} = await import("../js/sauvegarde.js"), avant = state.barre[2];
+      state.barre[2] = {k: "arrosoirBronze", n: 1}; oublierIcone("arrosoirBronze"); renderBarre();
+      const vue = () => document.querySelector('#barre [data-case="2"]').innerHTML.includes("ico-photo");
+      if(vue()) throw new Error("l'essai des cases : l'arrosoir en bronze a encore sa photo une fois oubliée");
+      const n = iconesAuChargement(renderBarre), ok = vue();
+      state.barre[2] = avant; renderBarre();
+      if(n !== 1 || !ok) throw new Error(`une photo prise au chargement ne se voit pas dans la case du bas (${n} prise)`); }
     /* la pluie et la neige préparées au chargement ; un outil refait préparé dans le bois choisi à l'établi (session ⏱️ de Yo,
        18 novembre 2026) : leurs formes déjà reçues par la carte graphique (elle les écoute pour les jeter un jour) */
     const recue = g => !!(g._listeners && g._listeners.dispose && g._listeners.dispose.length);

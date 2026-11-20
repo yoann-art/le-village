@@ -20,7 +20,7 @@ import "./monde/batiments.js";
 import { player, updatePlayer, regard, viser, yeuxPose } from "./monde/personnage.js";
 import "./coffres.js";
 import { view, setLacet } from "./commandes.js";
-import { prendreIcones, prendreIconesMaintenant } from "./icones.js";                 // les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026)
+import { prendreIcones, iconesAuChargement } from "./icones.js";                 // les icônes d'après les modèles refaits (demande de Yo, 29 octobre 2026)
 import { state, save, migrationMsg, eraseSave } from "./sauvegarde.js";
 import { renderHUD, toast, wrap, closeSheet } from "./interface.js";
 import { placing, startPlacing, stopPlacing, updateInteraction, upgradeDetail, placementFocus } from "./construire.js";
@@ -53,7 +53,7 @@ import { enBarque } from "./barque.js";
 import "./sac.js";
 import { updateAmbiance } from "./ambiance.js";
 import "./pas.js";                                       // les pas, selon le sol (les sons, étape 2b)
-import "./barre.js";
+import { renderBarre } from "./barre.js";
 import "./statues.js";                                    // la petite statue : sculpter une bête du carnet
 import "./remise.js";                                     // la remise à neuf de la décoration (une fois, Yo, 10 novembre 2026)
 import "./saisons.js";
@@ -252,7 +252,8 @@ function camera_(now, dt, marche){
 /* ================= Démarrage ================= */
 $("#version").textContent = "v" + VERSION;
 renderHUD();
-garde("icônes", () => prendreIconesMaintenant());                                           // les photos des objets nouveaux, au chargement plutôt qu'en jouant
+garde("icônes", () => iconesAuChargement(renderBarre));                            // les photos des objets nouveaux, au chargement plutôt qu'en jouant ; les cases
+                                                                                             // du bas redessinées (Yo, 20 novembre 2026 : l'ancien dessin jusqu'au clic)
 { const t0 = performance.now(), betes = new THREE.Group();                                  // la carte graphique prête avant la première marche (scene.js),
   garde("préparation", () => { betes.add(echantillonsInsectes(), echantillonsOiseaux(), echantillonsFontaine(), GROUPE_METEO); scene.add(betes); preparer(); preparerMains(); });   // les insectes et les oiseaux compris
   scene.remove(betes); noterPreparation(performance.now() - t0); }
@@ -273,4 +274,4 @@ setTimeout(() => {
   if(migrationMsg) toast(migrationMsg, 4200);
   else if(!state.buildings.some(b => !B[b.type].fixe)) toast("Ramasse les branches de chêne et les cailloux au sol, cueille des herbes hautes : de quoi bâtir ta Scierie (Construire).", 5200);
 }, 700);
-prendreIcones();                                         // les photos des modèles refaits, une à la fois, quelques secondes après le chargement
+prendreIcones(4000, 250, renderBarre);                   // les photos des modèles refaits, une à la fois, quelques secondes après le chargement ; les cases redessinées

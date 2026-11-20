@@ -139,14 +139,15 @@ export function photographier(k){
 /* Les photos qui manquent, une à la fois, après le chargement : chacune remplace aussitôt le dessin */
 let prises = 0;
 export const iconesPrises = () => prises;
-export function prendreIcones(delai = 4000, entre = 250){
+export function prendreIcones(delai = 4000, entre = 250, apres = null){        // apres : redessine l'écran (les cases du bas montrent les photos)
   const reste = Object.keys(PHOTOS).filter(k => !gardees[cle(k)]);
   if(!reste.length) return;
+  const redessiner = () => { if(apres) try{ apres(); }catch(e){ console.warn("icônes", e); } };
   const suivante = () => {
     const k = reste.shift();
-    if(!k){ garder(); return; }
+    if(!k){ garder(); redessiner(); return; }
     try{ const url = photographier(k); if(url){ gardees[cle(k)] = url; poser(k, url); prises++; } }catch(e){ console.warn("icône", k, e); }
-    if(prises % 8 === 0) garder();
+    if(prises % 8 === 0){ garder(); redessiner(); }
     setTimeout(suivante, entre);
   };
   setTimeout(suivante, delai);
@@ -164,5 +165,10 @@ export function prendreIconesMaintenant(max = 30){
   garder();
   return reste.length;
 }
+/* Au chargement (main.js) : les photos qui manquent, puis l'écran redessiné s'il en a fallu (les cases du bas montraient l'ancien
+   dessin jusqu'au premier clic : Yo, 20 novembre 2026) */
+export function iconesAuChargement(redessiner){ const n = prendreIconesMaintenant(); if(n) redessiner(); return n; }
+/* Pour la vérification : oublier la photo d'un objet (il reprend son dessin, jusqu'à la prochaine photo) */
+export function oublierIcone(k){ delete gardees[cle(k)]; const o = objet(k); if(o) delete o.icone; }
 /* Pour la vérification : oublier les photos gardées (elles seront reprises) */
 export function oublierIcones(){ gardees = {}; try{ localStorage.removeItem(CLE); }catch(_){} }
