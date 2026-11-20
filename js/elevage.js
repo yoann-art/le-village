@@ -32,8 +32,9 @@ export const aUnAbri = esp => state.buildings.some(b => b.type === ELEVAGE[esp].
 /* Les noms, au hasard parmi ceux qui ne sont pas déjà pris */
 const NOMS = {poule: {f: ["Rousse", "Cocotte", "Noisette", "Paprika", "Caramel", "Brioche", "Praline", "Cannelle", "Pâquerette", "Mirabelle", "Biscotte", "Muscade"],
   m: ["Gaston", "Hector", "Fernand", "Barnabé", "Anatole", "Léon", "Firmin", "Achille"]}};
-function nomAuHasard(esp, sexe){
-  const pris = new Set(state.animaux.map(a => a.nom)), l = (NOMS[esp] && NOMS[esp][sexe]) || ["Petit"];
+const NOMS_PETITS = ["Plume", "Pipou", "Duvet", "Brindille", "Pépite", "Miette", "Bouton", "Noisette", "Grelot", "Flocon", "Papillote", "Câline"];   // un poussin : un nom qui va aux deux
+function nomAuHasard(esp, sexe, petit){
+  const pris = new Set(state.animaux.map(a => a.nom)), l = petit ? NOMS_PETITS : (NOMS[esp] && NOMS[esp][sexe]) || ["Petit"];
   const libres = l.filter(n => !pris.has(n));
   return libres.length ? libres[Math.floor(Math.random() * libres.length)] : l[Math.floor(Math.random() * l.length)] + " " + (state.animaux.length + 1);
 }
@@ -53,14 +54,18 @@ const { x0, x1, z0, z1 } = ENCLOS, BORD = .22;
 const auHasard = () => ({x: x0 + BORD + Math.random() * (x1 - x0 - 2 * BORD), z: z0 + BORD + Math.random() * (z1 - z0 - 2 * BORD)});
 function nouvelleBete(a, g){
   const k = sorteDe(a.esp, a.sexe, estPetit(a)), m = modeleAnimal(k), p = auHasard();
-  const v = {m, k, x: p.x, z: p.z, dir: Math.random() * Math.PI * 2, act: "repos", t: 0, T: 1 + Math.random() * 2, vers: null, pas: Math.random() * 6};
+  const v = {a, m, k, x: p.x, z: p.z, dir: Math.random() * Math.PI * 2, act: "repos", t: 0, T: 1 + Math.random() * 2, vers: null, pas: Math.random() * 6};
   m.g.position.set(v.x, 0, v.z); g.add(m.g);
   return v;
 }
 /* Ce que fait une bête ensuite : marcher (le plus souvent), picorer, gratter le sol, se reposer en tournant la tête */
+const dansEnclos = p => ({x: Math.max(x0 + BORD, Math.min(x1 - BORD, p.x)), z: Math.max(z0 + BORD, Math.min(z1 - BORD, p.z))});
 function choisir(v, e){
   const r = Math.random();
   v.t = 0;
+  const mere = v.a.suit && betes.get(v.a.suit);                                         // le poussin suit sa mère partout, comme un vrai
+  if(estPetit(v.a) && mere && r < .75){
+    v.act = "marche"; v.vers = dansEnclos({x: mere.x + (Math.random() - .5) * .35, z: mere.z + (Math.random() - .5) * .35}); v.T = 3; v.puisPicore = Math.random() < .5; return; }
   if(e && e.grain && Date.now() < e.grain.fin && r < .8){                              // du grain par terre : on y court, on picore
     const p = e.grain.pts[Math.floor(Math.random() * e.grain.pts.length)];
     v.act = "marche"; v.vers = {x: p.x, z: p.z}; v.T = 5; v.puisPicore = true; return; }
@@ -72,8 +77,16 @@ function choisir(v, e){
 }
 const lisse = x => x * x * (3 - 2 * x);
 function bouger(v, dt, e){
-  const {corps, tete, pattes} = v.m, petit = v.k === "poussin", vit = petit ? .28 : .38;
+  const {corps, tete, pattes} = v.m, petit = v.k === "poussin", vit = petit ? .42 : .38;
   v.t += dt;
+  if(v.a.couve){                                                                         // la couveuse, assise sur son nid, ne bouge plus
+    v.x = NID.x; v.z = NID.z; v.dir = -.6;
+    v.m.g.position.set(v.x, 0, v.z); v.m.g.rotation.y = v.dir;
+    corps.rotation.x = 0; corps.position.y = pattes[0].position.y * .2; pattes[0].visible = pattes[1].visible = false;
+    tete.rotation.x = 0; tete.rotation.y = Math.sin(v.t * .7) * .5;
+    return;
+  }
+  if(!pattes[0].visible) pattes[0].visible = pattes[1].visible = true;
   let jambe = 0, penche = 0, tet = 0, tour = 0, gratte = 0;
   if(v.act === "marche"){
     const dx = v.vers.x - v.x, dz = v.vers.z - v.z, d = Math.hypot(dx, dz);
@@ -111,7 +124,7 @@ function bouger(v, dt, e){
    Comme le Grand Carnet : un animal négligé produit moins (une poule sans cœur ne pond pas), il ne meurt jamais. */
 export const jourDe = (t = Date.now()) => Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / 864e5);
 const NOURRITURES = ["grain", "baie", "pomme"];                 // le grain d'abord, puis les groseilles et les pommes (les vraies poules en mangent)
-const PONTE = 2 * 60 * 1000, NICHOIR_MAX = 8;                   // l'œuf tombe deux minutes après le repas
+const PONTE = 2 * 60 * 1000, NICHOIR_MAX = 8, NID = {x: 1.15, z: .3}, COUVAISON = 24 * 3600 * 1000;   // l'éclosion : un jour (le Grand Carnet, commun)                   // l'œuf tombe deux minutes après le repas
 const estPondeuse = a => a.sexe === "f" && !estPetit(a);
 /* Les jours passés depuis la dernière fois : un jour sans repas, un cœur de moins */
 export function bilan(a){
@@ -132,7 +145,7 @@ export function nourrir(b){
     const k = NOURRITURES.find(k => owned(k) > 0);
     if(!k) break;
     addOwned(k, -1); a.nourri = j; a.coeurs = Math.min(5, a.coeurs + 1); nourris++;
-    if(estPondeuse(a) && a.coeurs >= 1 && pondAujourdhui() && a.pondJour !== j){ a.ponte = Date.now() + PONTE + Math.random() * 60000; a.pondJour = j; }
+    if(estPondeuse(a) && !a.couve && a.coeurs >= 1 && pondAujourdhui() && a.pondJour !== j){ a.ponte = Date.now() + PONTE + Math.random() * 60000; a.pondJour = j; }
   }
   if(nourris){ const e = enclos.get(b.id); if(e) jeterGrain(e); save(); }
   return {nourris, manque: faim.length - nourris};
@@ -151,7 +164,7 @@ export function offrirInsecte(a){
 export function ramasser(b){
   const o = b.oeufs || [];
   let n = 0;
-  while(o.length && placeFor(o[0]) > 0){ addOwned(o.shift(), 1); n++; }
+  while(o.length && placeFor(sorteOeuf(o[0])) > 0){ addOwned(sorteOeuf(o.shift()), 1); n++; }
   if(n) save();
   return n;
 }
@@ -161,18 +174,53 @@ function pontes(b){
   for(const a of animauxDe(b)) if(a.ponte && t >= a.ponte){
     delete a.ponte;
     const o = b.oeufs || (b.oeufs = []);
-    if(o.length < NICHOIR_MAX) o.push(Math.random() < Math.max(0, (a.coeurs - 2.5) / 5) ? "belOeuf" : "oeuf");
+    const coq = animauxDe(b).find(c => c.sexe === "m" && !estPetit(c) && coeursDe(c) >= 3);
+    const k = Math.random() < Math.max(0, (a.coeurs - 2.5) / 5) ? "belOeuf" : "oeuf";
+    if(o.length < NICHOIR_MAX) o.push(coq && a.coeurs >= 3 && Math.random() < .6 ? `${k}:f:${coq.id}:${a.id}` : k);   // fécondé : un coq et une poule heureux
     a.pondus = (a.pondus || 0) + 1; save();
   }
+  /* l'éclosion : les poussins sortent de l'œuf ; chacun son nom, sa génération (le parent le plus avancé, plus un), ses parents */
+  for(const a of animauxDe(b)) if(a.couve && t >= a.couve.fin){
+    let nes = 0;
+    for(const [p, m] of a.couve.oeufs){
+      if(placesLibres(b) < 1) break;
+      const pere = state.animaux.find(x => x.id === p), mere = state.animaux.find(x => x.id === m), sexe = Math.random() < .5 ? "m" : "f";
+      state.animaux.push({id: state.nextAnimal = (state.nextAnimal || 0) + 1, esp: a.esp, sexe, ne: t, abri: b.id, nom: nomAuHasard(a.esp, sexe, true),
+        gen: Math.max(pere ? pere.gen : 0, mere ? mere.gen : 0) + 1, pere: p, mere: m, suit: a.id, coeurs: 3});
+      nes++;
+    }
+    delete a.couve; save();
+    if(nes) toast(`🐣 ${nes} poussin${nes > 1 ? "s sont nés" : " est né"} au ${B[b.type].nom.toLowerCase()} : ${a.nom} les a couvés`, 3600);
+  }
+}
+const sorteOeuf = o => o.split(":")[0];
+export const oeufsFeconds = b => (b.oeufs || []).filter(o => o.includes(":f:"));
+/* Mettre à couver : la poule la plus heureuse (au moins 3 cœurs, pas déjà couveuse) prend jusqu'à 4 œufs fécondés, autant qu'il y
+   a de places pour les petits ; rend la couveuse, ou null */
+export function couver(b){
+  const f = oeufsFeconds(b), n = Math.min(4, f.length, placesLibres(b));
+  if(!n || animauxDe(b).some(a => a.couve)) return null;
+  const poule = animauxDe(b).filter(a => estPondeuse(a) && coeursDe(a) >= 3).sort((p, q) => q.coeurs - p.coeurs)[0];
+  if(!poule) return null;
+  const pris = f.slice(0, n);
+  for(const o of pris) b.oeufs.splice(b.oeufs.indexOf(o), 1);
+  poule.couve = {fin: Date.now() + COUVAISON, oeufs: pris.map(o => { const [, , p, m] = o.split(":"); return [+p, +m]; })};
+  save();
+  return poule;
 }
 export function renommer(a, nom){ nom = String(nom || "").trim().slice(0, 18); if(nom){ a.nom = nom; save(); } return a.nom; }
+const nomDe = id => { const x = state.animaux.find(v => v.id === id); return x ? x.nom : null; };
+const parentsHTML = a => { if(!a.pere && !a.mere) return ""; const p = nomDe(a.pere), m = nomDe(a.mere), f = !estPetit(a) && a.sexe === "f";
+  return `<p class="muted" style="margin:0">${estPetit(a) ? "Petit" : f ? "Fille" : "Fils"} de ${[p, m].filter(Boolean).join(" et ") || "parents partis"}.</p>`; };
+const quand = t => { const m = Math.max(0, Math.round((t - Date.now()) / 60000)); return m < 60 ? `dans ${m} min` : `dans ${Math.round(m / 60)} h`; };
 const age = a => { const d = Math.floor((Date.now() - a.ne) / 864e5); return estPetit(a) ? `${d} jour${d > 1 ? "s" : ""}` : "adulte"; };
 /* La fiche d'une bête */
 export function ficheAnimal(a){
   bilan(a);
   const j = jourDe(), b = state.buildings.find(v => v.id === a.abri), ins = Object.keys(INSECTES).some(k => INSECTES[k].rarete !== "legendaire" && owned(k) > 0);
   return `<div class="sh-head"><h2 class="display">${emojiAnimal(a)} ${a.nom}</h2><button class="btn ghost" data-elevage="abri" data-id="${a.abri}">Retour</button></div>
-    <p style="margin:4px 0">${nomEspece(a)} ${a.sexe === "m" ? "♂" : "♀"} · génération ${a.gen} · ${age(a)}</p>
+    <p style="margin:4px 0">${nomEspece(a)} ${estPetit(a) ? "(coq ou poule ? on le saura en grandissant)" : a.sexe === "m" ? "♂" : "♀"} · génération ${a.gen} · ${age(a)}</p>
+    ${parentsHTML(a)}${a.couve ? `<p style="margin:4px 0">🪺 Elle couve ${a.couve.oeufs.length} œuf${a.couve.oeufs.length > 1 ? "s" : ""} : éclosion ${quand(a.couve.fin)}.</p>` : ""}
     <p style="margin:4px 0;font-size:1.2em" aria-label="${Math.round(a.coeurs)} cœurs sur 5">${coeursHTML(a)}</p>
     <p class="muted" style="margin:0">${a.nourri === j ? "Nourri" + (a.sexe === "f" ? "e" : "") + " aujourd'hui." : "Pas encore nourri" + (a.sexe === "f" ? "e" : "") + " aujourd'hui."}${a.sexe === "f" ? ` ${a.pondus || 0} œuf${(a.pondus || 0) > 1 ? "s" : ""} pondu${(a.pondus || 0) > 1 ? "s" : ""}.` : ""}</p>
     <div class="brow"><div class="bt"><label class="muted" for="nom-animal">Son nom</label> <input id="nom-animal" maxlength="18" value="${a.nom.replace(/"/g, "&quot;")}" style="font:inherit;width:9em"></div>
@@ -195,9 +243,21 @@ export function ficheAbri(b){
     <div class="brow"><div class="be" aria-hidden="true">🌾</div><div class="bt"><span class="bn">Nourrir</span>
       <p>${faim ? `${faim} à nourrir · ` : "Toutes ont mangé aujourd'hui · "}tu as ${owned("grain")} grain, ${owned("baie")} groseille${owned("baie") > 1 ? "s" : ""}, ${owned("pomme")} pomme${owned("pomme") > 1 ? "s" : ""}</p></div>
       <button class="btn primary" data-elevage="nourrir" data-id="${b.id}" ${faim && nour ? "" : "disabled"}>Nourrir</button></div>
+    ${couveuseHTML(b)}
     <div class="brow"><div class="be" aria-hidden="true">🥚</div><div class="bt"><span class="bn">Les nichoirs</span><p>${oeufs ? `${oeufs} œuf${oeufs > 1 ? "s" : ""} à ramasser` : "Pas d'œuf pour l'instant"}</p></div>
       <button class="btn primary" data-elevage="ramasser" data-id="${b.id}" ${oeufs ? "" : "disabled"}>Ramasser</button></div>` : "") + (lignes ||
     `<p class="muted">Pas encore de poules. Achète des poules et des coqs au comptoir du Marché : ils viennent s'installer ici.</p>`);
+}
+/* La couvaison, dans la fiche du poulailler : la couveuse et l'éclosion, ou les œufs fécondés à mettre à couver */
+function couveuseHTML(b){
+  const c = animauxDe(b).find(a => a.couve);
+  if(c) return `<div class="brow"><div class="be" aria-hidden="true">🪺</div><div class="bt"><span class="bn">${c.nom} couve</span><p>${c.couve.oeufs.length} œuf${c.couve.oeufs.length > 1 ? "s" : ""} · éclosion ${quand(c.couve.fin)}</p></div></div>`;
+  const f = oeufsFeconds(b).length;
+  if(!f) return animauxDe(b).some(a => a.sexe === "m" && !estPetit(a)) ? "" : `<p class="muted" style="margin:4px 0">Sans coq, les œufs ne donnent pas de poussins.</p>`;
+  const ok = placesLibres(b) > 0 && animauxDe(b).some(a => estPondeuse(a) && coeursDe(a) >= 3);
+  return `<div class="brow"><div class="be" aria-hidden="true">🪺</div><div class="bt"><span class="bn">Mettre à couver</span>
+    <p>${f} œuf${f > 1 ? "s" : ""} fécondé${f > 1 ? "s" : ""} · ${ok ? "une poule heureuse les couvera un jour" : placesLibres(b) < 1 ? "plus de place pour des petits" : "il faut une poule à 3 cœurs"}</p></div>
+    <button class="btn primary" data-elevage="couver" data-id="${b.id}" ${ok ? "" : "disabled"}>Couver</button></div>`;
 }
 const ouvrirAbri = b => openSheet(`<div class="sh-head"><h2 class="display">${B[b.type].emoji} ${B[b.type].nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
   <p class="muted" style="margin:4px 0">${B[b.type].stars} ★ pour ton village.</p>${ficheAbri(b)}`);
@@ -213,6 +273,7 @@ wrap.addEventListener("click", e => {
     toast(r.nourris ? `🌾 Tu nourris ${r.nourris} bête${r.nourris > 1 ? "s" : ""}${r.manque ? ` ; il manque de quoi en nourrir ${r.manque}` : ""}` : "🌾 Il te faut du grain (comptoir du Marché), des groseilles ou des pommes", 2800);
     renderHUD(); ouvrirAbri(b);
   }
+  else if(quoi === "couver" && b){ const c = couver(b); toast(c ? `🪺 ${c.nom} s'installe sur le nid : éclosion dans un jour` : "🪺 Pas de poule heureuse ou plus de place", 2800); ouvrirAbri(b); }
   else if(quoi === "ramasser" && b){ const n = ramasser(b); toast(n ? `🥚 Tu ramasses ${n} œuf${n > 1 ? "s" : ""}` : "🎒 Fais de la place dans ton sac ou un coffre", 2400); renderHUD(); ouvrirAbri(b); }
   else if(quoi === "caresser" && a){ if(caresser(a)) toast(`${emojiAnimal(a)} ${a.nom} se laisse caresser`, 2000); openSheet(ficheAnimal(a)); }
   else if(quoi === "insecte" && a){ const k = offrirInsecte(a); if(k) toast(`${emojiAnimal(a)} ${a.nom} se régale : ${objet(k).nom.toLowerCase()}`, 2400); renderHUD(); openSheet(ficheAnimal(a)); }
@@ -227,6 +288,14 @@ function jeterGrain(e){
   mesh.castShadow = mesh.receiveShadow = false; e.g.add(mesh);
   e.grain = {mesh, pts, fin: Date.now() + 60000};
 }
+/* Le nid de paille de la couveuse, dans l'enclos */
+function nidModele(){
+  const g = new THREE.Group(), m = toon({color: 0xE8B84A});
+  for(let k = 0; k < 14; k++){ const a = k / 14 * Math.PI * 2, b = new THREE.Mesh(GRAIN_GEO, m);
+    b.scale.set(3.4, 1.6, 8); b.position.set(Math.cos(a) * .16, .03, Math.sin(a) * .16); b.rotation.y = -a; g.add(b); }
+  const fond = new THREE.Mesh(new THREE.CylinderGeometry(.16, .18, .03, 10), toon({color: 0xD8A23C})); fond.position.y = .015; g.add(fond);
+  return g;
+}
 /* Les œufs dans les nichoirs : bruns (les poules rousses), le bel œuf plus gros et plus foncé */
 const OEUF_GEO = (() => { const g = new THREE.SphereGeometry(.035, 8, 6), p = g.attributes.position; for(let i = 0; i < p.count; i++) p.setY(i, p.getY(i) * (p.getY(i) > 0 ? 1.4 : 1.15)); g.computeVertexNormals(); return g; })();
 const OEUF_MAT = {oeuf: toon({color: 0xD9A878}), belOeuf: toon({color: 0xC08050})};
@@ -236,9 +305,9 @@ function montrerOeufs(e, b){
   e.vusOeufs = cle;
   if(e.oeufs) e.g.remove(e.oeufs);
   e.oeufs = new THREE.Group(); e.g.add(e.oeufs);
-  o.forEach((k, i) => { const n = NICHOIRS[i % 2], r = Math.floor(i / 2), m = new THREE.Mesh(OEUF_GEO, OEUF_MAT[k]);
+  o.forEach((k, i) => { const n = NICHOIRS[i % 2], r = Math.floor(i / 2), m = new THREE.Mesh(OEUF_GEO, OEUF_MAT[sorteOeuf(k)]);
     m.position.set(n.x + (r % 2 ? .09 : -.09) * (r ? 1 : 0) + (r > 1 ? (r - 2) * .05 : 0), n.y, n.z - .02 + (r > 1 ? .05 : 0)); m.rotation.z = (i % 3 - 1) * .5;
-    if(k === "belOeuf") m.scale.setScalar(1.25); e.oeufs.add(m); });
+    if(sorteOeuf(k) === "belOeuf") m.scale.setScalar(1.25); e.oeufs.add(m); });
 }
 
 let tick = 0;
@@ -257,11 +326,16 @@ export function updateElevage(dt, dehors){
     e.g.visible = !nuit;                                                              // la nuit, les poules dorment dans la cabane
     vus.add(b.id);
     pontes(b); montrerOeufs(e, b);
+    const couve = animauxDe(b).some(a => a.couve);
+    if(couve && !e.nid){ e.nid = nidModele(); e.nid.position.set(NID.x, 0, NID.z); e.g.add(e.nid); }
+    if(!couve && e.nid){ e.g.remove(e.nid); e.nid = null; }
     if(e.grain && Date.now() > e.grain.fin){ e.g.remove(e.grain.mesh); e.grain = null; }
     const pres = Math.hypot(player.position.x - e.g.position.x, player.position.z - e.g.position.z) < 26;
     for(const a of animauxDe(b)){
       let v = betes.get(a.id);
+      if(v && v.k !== sorteDe(a.esp, a.sexe, estPetit(a))){ v.parent.remove(v.m.g); v = null; }   // le poussin devenu grand : coq ou poule
       if(!v || v.parent !== e.g){ if(v) v.parent.remove(v.m.g); v = nouvelleBete(a, e.g); v.parent = e.g; betes.set(a.id, v); }
+      if(estPetit(a)) v.m.g.scale.setScalar(.8 + .6 * Math.min(1, (Date.now() - a.ne) / ADULTE));   // il grandit en temps réel
       if(pres && !nuit) bouger(v, dt, e);
     }
   }

@@ -3203,7 +3203,23 @@ export async function verifier(){
       if(a.nom !== "Essai") throw new Error("la poule ne se renomme pas");
       (await import("../js/interface.js")).closeSheet(); await wait(200);
       for(const k of ["oeuf", "belOeuf"]) if(av(k)) addOwned(k, -av(k));
-      return `${a.nom}, poule achetée 10 or, au poulailler ; ${vue} bête(s) visible(s) dehors ; nourrie, un œuf ramassé, caressée, renommée`;
+      /* le troisième envoi : un coq et une poule heureux, un œuf fécondé, la couvaison, l'éclosion, le poussin qui grandit */
+      state.res.or += 10; const coq = E.installer("poule", "m");
+      if(!coq || coq.abri !== poul.id) throw new Error("le coq ne s'installe pas au poulailler");
+      a.coeurs = 5; coq.coeurs = 5; a.pondJour = -1; a.nourri = -1; place(1); addOwned("grain", 2);
+      let fec = 0;
+      for(let k = 0; k < 12 && !E.oeufsFeconds(poul).length; k++){ a.pondJour = -1; a.nourri = -1; a.ponte = Date.now() - 1; E.updateElevage(.05, true); fec++; }
+      if(!E.oeufsFeconds(poul).length) throw new Error("pas d'œuf fécondé avec un coq et une poule heureux");
+      const c = E.couver(poul);
+      if(!c || !c.couve || !c.couve.oeufs.length) throw new Error("la poule ne se met pas à couver");
+      const n0 = E.animauxDe(poul).length; c.couve.fin = Date.now() - 1; E.updateElevage(.05, true);
+      const p = E.animauxDe(poul).find(x => E.estPetit(x));
+      if(!p || E.animauxDe(poul).length <= n0) throw new Error("pas de poussin à l'éclosion");
+      if(p.gen !== 1 || p.pere !== coq.id || p.mere !== a.id || p.suit !== c.id) throw new Error(`le poussin n'a pas sa génération ou ses parents (génération ${p.gen})`);
+      if(!E.ficheAnimal(p).includes("on le saura en grandissant")) throw new Error("la fiche du poussin dit déjà s'il est coq ou poule");
+      p.ne -= E.ADULTE; E.updateElevage(.05, true);
+      if(E.estPetit(p)) throw new Error("le poussin ne grandit pas");
+      return `${a.nom}, poule achetée 10 or, au poulailler ; ${vue} bête(s) visible(s) dehors ; nourrie, un œuf ramassé, caressée, renommée ; ${E.animauxDe(poul).length - n0} poussin(s) né(s), génération 1, devenu(s) ${p.sexe === "m" ? "coq" : "poule"}`;
     } finally {
       state.animaux = state.animaux.filter(x => x.abri !== poul.id);
       for(const b of [marche, ferme, poul]){ const i = state.buildings.indexOf(b); if(i >= 0) state.buildings.splice(i, 1); }
