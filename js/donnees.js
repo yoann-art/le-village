@@ -765,6 +765,15 @@ function pierreIco(forme, c1, c2){
   })[forme] + f;
 }
 export const PRODUITS = {
+  /* L'élevage, deuxième envoi (Yo, 20 novembre 2026, choix « C ») : le grain qu'on achète au comptoir du Marché pour les poules
+     (elles mangent aussi les groseilles et les pommes, et adorent les insectes) ; les œufs qu'elles pondent. Les poules rousses
+     pondent des œufs bruns, comme les vraies. Prix proposés par Claude (le Grand Carnet en PDF : les œufs 1 or) */
+  grain:  {nom:"Grain", pluriel:"grain", emoji:"🌾", prix:0, aide:"Le grain s'achète au comptoir du Marché : 5 poignées pour 1 or.",
+    usage:"Pour nourrir les poules : devant le poulailler, ouvre sa fiche, puis « Nourrir ». Une poignée par bête et par jour."},
+  oeuf:   {nom:"Œuf", pluriel:"œufs", emoji:"🥚", prix:1, aide:"Une poule nourrie pond un œuf par jour (un jour sur deux l'hiver), dans un nichoir du poulailler.",
+    usage:"Il se vend au comptoir du Marché ; il servira pour la cuisine."},
+  belOeuf:{nom:"Bel œuf", pluriel:"beaux œufs", emoji:"🥚", prix:3, aide:"Une poule heureuse (beaucoup de cœurs) pond parfois un bel œuf, plus gros.",
+    usage:"Il se vend plus cher au comptoir du Marché ; il servira pour la cuisine."},
   planche:{nom:"Planche", pluriel:"planches", emoji:"🟫", aide:"Les planches se fabriquent à l'établi de la Scierie.",
     usage:"Pour fabriquer et bâtir. En main, « 👣 Tracer » fait un chemin de planches : une planche par case."},
   bloc:   {nom:"Bloc", pluriel:"blocs", emoji:"🧱", aide:"Les blocs se taillent à la table de taille de la Carrière.",

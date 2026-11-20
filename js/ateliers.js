@@ -67,6 +67,8 @@ function recettesDe(b){
     list.push({key: "a:" + k, cat: "L'étal de graines (aujourd'hui)", achat: true, nom: `Graine de ${FLEURS[f].nom.toLowerCase()}`, icone: icone(k),
       quand: `${FLEURS[f].une ? "elle" : "il"} fleurit ${quandFleur(FLEURS[f])}`, out: k, n: 1, in: {or: prix}, lvl: 1});
   }
+  /* le grain des poules (choix de Yo « C ») : 5 poignées pour 1 or */
+  if(aUnAbri("poule")) list.push({key: "g:grain", cat: "Les animaux", achat: true, nom: "5 poignées de grain", icone: "🌾", quand: "pour nourrir les poules", out: "grain", n: 5, in: {or: 1}, lvl: 1});
   /* les animaux de l'élevage (Yo, 20 novembre 2026) : une femelle ou un mâle, qui va s'installer dans son abri */
   for(const [esp, e] of Object.entries(ELEVAGE)) for(const sexe of ["f", "m"]){
     const nom = sexe === "m" ? e.male : e.femelle, une = sexe === "f";
@@ -82,6 +84,7 @@ function recettesDe(b){
     out: "or", n: Object.entries(tous).reduce((s, [k, v]) => s + v * objet(k).prix, 0), in: tous, lvl: 1});
   for(const k of aVendre) list.push({key: "v:" + k, cat, out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   /* les bois et la cueillette de la Forêt profonde (pas dans « Tout vendre » : on les garde souvent) */
+  for(const k of ["oeuf", "belOeuf"]) if(owned(k) > 0) list.push({key: "v:" + k, cat: "L'élevage", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   for(const k of VERGER_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Les arbres et les groseilliers de l'île", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   for(const k of FORET_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "La Forêt profonde", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
   for(const k of MARAIS_VENTE) if(owned(k) > 0) list.push({key: "v:" + k, cat: "Le Marais brumeux", out: "or", n: objet(k).prix, in: {[k]: 1}, lvl: 1});
@@ -107,11 +110,11 @@ function vendre(a, b, r){
     return;
   }
   if(r.achat){                                        // l'étal de graines : on achète, sans le bonus du Marché
-    if(placeFor(r.out) < 1){ toast("🎒 Fais de la place dans ton sac ou un coffre pour cette graine", 2600); return; }
-    payer(r.in); addOwned(r.out, 1);
+    if(placeFor(r.out) < (r.n || 1)){ toast(`🎒 Fais de la place dans ton sac ou un coffre pour ${r.out === "grain" ? "ce grain" : "cette graine"}`, 2600); return; }
+    payer(r.in); addOwned(r.out, r.n || 1);
     if(enCaseAuto(r.out)) barreAuto(r.out);
     save(); renderHUD();
-    toast(`🌱 Tu achètes une ${r.nom.toLowerCase()} pour ${many("or", r.in.or)}`, 2600);
+    toast(r.out === "grain" ? `🌾 Tu achètes ${r.nom} pour ${many("or", r.in.or)}` : `🌱 Tu achètes une ${r.nom.toLowerCase()} pour ${many("or", r.in.or)}`, 2600);
     return;
   }
   const pris = payer(r.in), n = gain(r.n || 1, r.out);

@@ -5,7 +5,7 @@
    la porte, qui doit rester libre. Tourner les bâtiments (v1.9.3) : retiré à la demande de Yo le 9 octobre 2026 (la
    vue reste la même, ça ne sert à rien) ; un bâtiment tourné pendant l'essai reprend sa porte en bas (voir plus bas). */
 import { $ } from "./outils.js";
-import { ficheAbri } from "./elevage.js";
+import { ouvrirAbri } from "./elevage.js";
 import { RES, B, ORDER, ATELIERS, FABRIQUE_A, COFFRE, traversable, RECOLTE, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace, agrandirPiece } from "./regles.js";
@@ -337,8 +337,7 @@ function openDetail(b){
   detailId = b.id;
   const d = B[b.type], max = maxLvl(b.type);
   if(d.sansPiece){                                     // le poulailler : ses poules (elevage.js)
-    openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
-      <p class="muted" style="margin:4px 0">${d.stars} ★ pour ton village.</p>${ficheAbri(b)}`);
+    ouvrirAbri(b);
     return;
   }
   if(d.fixe){                                          // la mine : rien à améliorer

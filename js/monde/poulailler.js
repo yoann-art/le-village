@@ -45,6 +45,8 @@ const PENTE = (YR - YM) / ((ZF - Z0) / 2 + AV);
 /* l'enclos : ses piquets, de la cabane jusqu'au devant, pans coupés ; le portillon entre PX0 et PX1 */
 export const ENCLOS = {x0: -1.7, x1: 1.7, z0: -1.55, z1: 1.7};
 const PX0 = -.95, PX1 = -.08;
+/* les deux nichoirs : où apparaissent les œufs (elevage.js) */
+export const NICHOIRS = [{x: -.7, y: .82, z: -.36}, {x: .7, y: .82, z: -.36}];
 
 function cabane(g){
   for(const [x, z] of [[X0 + .12, Z0 + .12], [X1 - .12, Z0 + .12], [X0 + .12, ZF - .12], [X1 - .12, ZF - .12]]) boite(g, POUTRE, .2, Y0, .2, x, Y0 / 2, z);   // les pilotis

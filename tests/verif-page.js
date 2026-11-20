@@ -3182,7 +3182,28 @@ export async function verifier(){
       E.updateElevage(.05, true);
       const vue = E.betesVisibles();
       if(!E.ficheAbri(poul).includes(a.nom)) throw new Error("la poule n'est pas dans la fiche du poulailler");
-      return `${a.nom}, poule achetée 10 or, au poulailler ; ${vue} bête(s) visible(s) dehors`;
+      /* le deuxième envoi : nourrir (le grain), l'œuf dans le nichoir, le ramasser, le bonheur, la fiche de la poule */
+      const { owned: av, addOwned } = await import("../js/regles.js");
+      place(2); addOwned("grain", 3);
+      const g0 = av("grain"), c0 = E.coeursDe(a);
+      E.ouvrirAbri(poul); await wait(150);
+      const bn = $(`#sheet [data-elevage="nourrir"]`);
+      if(!bn || bn.disabled) throw new Error("pas de bouton « Nourrir » dans la fiche du poulailler");
+      bn.click(); await wait(150);
+      if(a.nourri !== E.jourDe() || av("grain") !== g0 - 1 || E.coeursDe(a) <= c0) throw new Error("la poule n'est pas nourrie (une poignée de grain, un cœur de plus)");
+      a.ponte = Date.now() - 1; E.updateElevage(.05, true);
+      if(!poul.oeufs || poul.oeufs.length !== 1) throw new Error("pas d'œuf dans le nichoir après le repas");
+      const o0 = av("oeuf") + av("belOeuf");
+      E.ouvrirAbri(poul); await wait(150); $(`#sheet [data-elevage="ramasser"]`).click(); await wait(150);
+      if(av("oeuf") + av("belOeuf") !== o0 + 1 || poul.oeufs.length) throw new Error("l'œuf ramassé n'est pas dans le sac");
+      $(`#sheet [data-elevage="voir"][data-id="${a.id}"]`).click(); await wait(150);
+      const c1 = E.coeursDe(a); $(`#sheet [data-elevage="caresser"]`).click(); await wait(150);
+      if(E.coeursDe(a) !== Math.min(5, c1 + .5)) throw new Error("caresser ne donne pas de demi-cœur");
+      $("#nom-animal").value = "Essai"; $(`#sheet [data-elevage="renommer"]`).click(); await wait(100);
+      if(a.nom !== "Essai") throw new Error("la poule ne se renomme pas");
+      (await import("../js/interface.js")).closeSheet(); await wait(200);
+      for(const k of ["oeuf", "belOeuf"]) if(av(k)) addOwned(k, -av(k));
+      return `${a.nom}, poule achetée 10 or, au poulailler ; ${vue} bête(s) visible(s) dehors ; nourrie, un œuf ramassé, caressée, renommée`;
     } finally {
       state.animaux = state.animaux.filter(x => x.abri !== poul.id);
       for(const b of [marche, ferme, poul]){ const i = state.buildings.indexOf(b); if(i >= 0) state.buildings.splice(i, 1); }
