@@ -3760,7 +3760,7 @@ export async function verifier(){
     if(!ks.includes("pelleBronze")) throw new Error("la pelle en bronze (refaite, 18 novembre 2026) n'a pas de photo pour icône");
     if(!ks.includes("arrosoir")) throw new Error("l'arrosoir en bois (refait, 18 novembre 2026) n'a pas de photo pour icône");
     if(!ks.includes("arrosoirCuivre")) throw new Error("l'arrosoir en cuivre (refait, 18 novembre 2026) n'a pas de photo pour icône");
-    if((objet("arrosoirBronze").icone || objet("arrosoirBronze").emoji || "").includes("ico-photo")) throw new Error("l'arrosoir en bronze a une photo, alors qu'il n'est pas refait");
+    if(!ks.includes("arrosoirBronze")) throw new Error("l'arrosoir en bronze (refait, 20 novembre 2026) n'a pas de photo pour icône");
     /* rien ne se prépare en jouant (demande de Yo, 12 novembre 2026) : les photos qui manquent se prennent au chargement ; un
        insecte ou un oiseau qui apparaît reprend les formes déjà faites (rien de neuf pour la carte graphique) */
     const {prendreIconesMaintenant} = await import("../js/icones.js"), {renderer} = await import("../js/monde/scene.js");

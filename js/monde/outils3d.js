@@ -613,8 +613,57 @@ function arrosoirCuivre(w){
     return out;
   });
 }
+/* L'arrosoir en bronze (image de Yo, 20 novembre 2026 : « Voici l'arrosoir de bronze ») : tout en bronze poli ; le corps en pot
+   bien rond, plus large en bas, un col court ; le bord rond de l'ouverture ; un anneau en relief sous le col, un double anneau en
+   socle ; une frise tout autour du ventre : une tige qui ondule, ses feuilles en relief, des perles (le brin de la famille du
+   bronze) ; l'anse épaisse posée sur une attache au bord, une feuille sur son dessus, un tenon en bas. Un seul dessin */
+const PROFIL_BR = [[0, -1.0], [.31, -1.0], [.335, -.97], [.37, -.9], [.4, -.78], [.41, -.66], [.395, -.54], [.36, -.45], [.31, -.38],
+  [.28, -.33], [.27, -.28], [.27, -.26], [.19, -.26], [.18, -.3], [0, -.36]];
+const rayonBr = y => { for(let k = 2; k < 12; k++){ const [r0, y0] = PROFIL_BR[k - 1], [r1, y1] = PROFIL_BR[k];
+  if(y <= y1) return r0 + (r1 - r0) * (y - y0) / (y1 - y0); } return .27; };
+const POT_BR = (() => {
+  const n = PROFIL_BR.length, seg = 32, g = new THREE.LatheGeometry(PROFIL_BR.map(([r, y]) => new THREE.Vector2(r, y)), seg), t = [];
+  for(let i = 0; i <= seg; i++) for(let j = 0; j < n; j++) t.push(j >= 12 ? .5 : 1);
+  g.setAttribute("teinte", new THREE.Float32BufferAttribute(t, 1)); return g; })();
+const anneauBr = (y0, y1, e) => new THREE.LatheGeometry([[-.008, y0 - .006], [0, y0 + .006], [0, y1 - .006], [-.008, y1 + .006]]
+  .map(([dr, y]) => new THREE.Vector2(rayonBr(y) + e + dr, y)), 32);
+const ANNEAUX_BR = [anneauBr(-.41, -.37, .016), anneauBr(-.925, -.86, .02), anneauBr(-.985, -.945, .014)];
+const FRISE_Y = -.64, FRISE_A = .05, FRISE_K = 6;
+const friseY = t => FRISE_Y + FRISE_A * Math.sin(FRISE_K * t);
+const FRISE_TIGE = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({length: 72}, (_, i) => { const t = i / 72 * Math.PI * 2, y = friseY(t), r = rayonBr(y) + .004;
+  return new THREE.Vector3(r * Math.sin(t), y, r * Math.cos(t)); }), true), 72, .015, 3, true);
+const ANSE_BR = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, -.3, .32], [0, -.08, .26], [0, .06, .12], [0, .08, -.06], [0, -.06, -.22],
+  [0, -.32, -.27], [0, -.56, -.16], [0, -.66, .06], [0, -.68, .2]].map(([x, y, z]) => new THREE.Vector3(x, y, z))), 24, .078, 8);
+function arrosoirBronze(w){
+  return modeleOutil("arrosoirBronze", () => {
+    const out = [], zc = .6;
+    const omb = (x, y, z) => .8 + .24 * Math.max(0, Math.min(1, (x * .5 + (z - zc) * .3 + (y + .6) * .5) / .45 + .5));
+    const reflet = (x, y, z) => omb(x, y, z) * (1 + .14 * Math.max(0, 1 - Math.hypot(x - .2, y + .55, (z - zc) * .6) / .2));   // le poli
+    out.push({geo: POT_BR, m: M4o(0, 0, zc), c: BRONZE, ombre: reflet});                                                // le corps
+    out.push({geo: BORD_POT, m: M4o(0, -.255, zc, Math.PI / 2, 0, 0, 1.03, 1.03, 1.1), c: BRONZE_CLAIR, ombre: omb});    // le bord
+    for(const a of ANNEAUX_BR) out.push({geo: a, m: M4o(0, 0, zc), c: BRONZE_CLAIR, ombre: omb});                     // les moulures
+    out.push({geo: FRISE_TIGE, m: M4o(0, 0, zc), c: BRONZE_ANNEAU, ombre: omb});                                      // la frise
+    const surBr = (t, y, d, rz, sx, sy, sz, geo, c) => { const r = rayonBr(y) + .006, tx = Math.cos(t), tz = -Math.sin(t);
+      const ox = -Math.sin(rz) * d, oy = Math.cos(rz) * d;
+      out.push({geo, m: M4o(r * Math.sin(t) + tx * ox, y + oy, zc + r * Math.cos(t) + tz * ox, 0, t, rz, sx, sy, sz), c, ombre: omb}); };
+    for(let i = 0; i < FRISE_K; i++){
+      const t1 = (i + .25) / FRISE_K * Math.PI * 2, t2 = (i + .75) / FRISE_K * Math.PI * 2;                           // une feuille en haut, une en bas
+      surBr(t1, friseY(t1), .07, -.75, .036, .075, .008, FEUILLE, BRONZE_FEUILLE);
+      surBr(t2, friseY(t2), .07, Math.PI + .75, .036, .075, .008, FEUILLE, BRONZE_FEUILLE);
+      const t3 = (i + .55) / FRISE_K * Math.PI * 2;                                                                    // une perle
+      surBr(t3, friseY(t3) + .06, 0, 0, .022, .022, .014, RIVET_P, BRONZE_FEUILLE);
+    }
+    out.push({geo: ANSE_BR, m: M4o(0, 0, 0), c: BRONZE, ombre: omb});                                                 // l'anse
+    out.push({geo: FEUILLE, m: M4o(0, .155, .0, Math.PI / 2 + .1, 0, 0, .042, .1, .014), c: BRONZE_FEUILLE, ombre: () => 1.08});   // sa feuille
+    out.push({geo: COLLIER, m: M4o(0, -.27, .33, 0, 0, 0, .075, .05, .05), c: BRONZE_CLAIR, ombre: omb});              // l'attache
+    out.push({geo: RIVET_P, m: M4o(0, -.68, .2, 0, 0, 0, .06, .05, .05), c: BRONZE_CLAIR, ombre: omb});                // le tenon
+    becArrosoir(out, zc, BRONZE, omb, 0x6A3A10, BRONZE_CLAIR);
+    tenuParAnse(out, .36, .27);
+    return out;
+  });
+}
 /* Les outils refaits, pour leur icône (icones.js) : leur modèle, le manche dans le bois donné */
-export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze, arrosoir: arrosoirBois, arrosoirCuivre};
+export const OUTILS_REFAITS = {hachePierre, hacheCuivre, hacheBronze, piochePierre, piocheCuivre, piocheBronze, pelleBois, pelleCuivre, pelleBronze, arrosoir: arrosoirBois, arrosoirCuivre, arrosoirBronze};
 const MEUBLES_MUR = new Set(["torchereMurale", "lanterneMurale"]);     // en main, on les tient par leur plaque
 /* Une flèche en vol (la chasse, et l'arc contre les monstres) : la tige, la pointe de son métal, l'empennage rouge ;
    elle pointe vers +z */
