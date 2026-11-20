@@ -57,6 +57,9 @@ const VENDABLES = () => [...Object.keys(POISSONS), ...Object.keys(INSECTES), ...
 /* Le sac qui s'agrandit (demande de Yo, 11 octobre 2026) : seul le sac suivant se fabrique, et pas s'il est déjà en cours */
 const sacEnCours = () => state.buildings.some(b => b.atelier && b.atelier.queue.some(j => objet(j.out).sac));
 const sacPropose = r => !r.out || !objet(r.out).sac || (objet(r.out).sac === (state.sacNiveau || 0) + 1 && !sacEnCours());
+/* l'abri d'un animal, bien accordé : « au poulailler », « à l'étable » ; « un poulailler », « une étable » */
+const aLAbri = t => /^[aeéiou]/i.test(B[t].nom) ? `à l'${B[t].nom.toLowerCase()}` : `au ${B[t].nom.toLowerCase()}`;
+const unAbri = t => `${t === "etable" ? "une" : "un"} ${B[t].nom.toLowerCase()}`;
 export const recettesPour = b => recettesDe(b);   // pour la vérification
 function recettesDe(b){
   const a = ATELIERS[b.type], list = a.recettes.map((r, i) => ({...r, key: "r" + i})).filter(r => sacPropose(r) && !r.plusTard);   // plusTard : gardé pour une mise à jour (donnees.js)
@@ -73,9 +76,9 @@ function recettesDe(b){
   for(const [esp, e] of Object.entries(ELEVAGE)) for(const sexe of ["f", "m"]){
     const nom = sexe === "m" ? e.male : e.femelle, une = sexe === "f";
     if(!aUnAbri(esp)){ list.push({key: `e:${esp}:${sexe}`, cat: "Les animaux", emoji: sexe === "m" ? e.emojiMale : e.emoji, nom: `${une ? "Une" : "Un"} ${nom.toLowerCase()}`,
-      lock: `Bâtis d'abord la Ferme, puis un ${B[e.abri].nom.toLowerCase()} contre elle`, in: {or: e.prix}, lvl: 1}); continue; }
+      lock: `Bâtis d'abord la Ferme, puis ${unAbri(e.abri)} contre elle`, in: {or: e.prix}, lvl: 1}); continue; }
     list.push({key: `e:${esp}:${sexe}`, cat: "Les animaux", achat: true, animal: {esp, sexe}, nom: `${une ? "Une" : "Un"} ${nom.toLowerCase()}`, icone: sexe === "m" ? e.emojiMale : e.emoji,
-      quand: `${une ? "elle" : "il"} vit au ${B[e.abri].nom.toLowerCase()}`, in: {or: e.prix}, lvl: 1});
+      quand: `${une ? "elle" : "il"} vit ${aLAbri(e.abri)}`, in: {or: e.prix}, lvl: 1});
   }
   const cat = "Prises et plats", aVendre = VENDABLES().filter(k => owned(k) > 0), tous = {};
   for(const k of aVendre) if(!(POISSONS[k] && POISSONS[k].rarete === "legendaire")) tous[k] = owned(k);
@@ -103,10 +106,10 @@ function vendre(a, b, r){
   if(r.lock || b.lvl < r.lvl || !hasAll(r.in)) return;
   if(r.animal){                                       // un animal : il s'installe dans son abri (elevage.js)
     const e = ELEVAGE[r.animal.esp];
-    if(!abriPour(r.animal.esp)){ toast(`${e.emoji} Plus de place au ${B[e.abri].nom.toLowerCase()}`, 2600); return; }
+    if(!abriPour(r.animal.esp)){ toast(`${e.emoji} Plus de place ${aLAbri(e.abri)}`, 2600); return; }
     payer(r.in); const an = installer(r.animal.esp, r.animal.sexe);
     save(); renderHUD();
-    toast(`${r.icone} ${an.nom}, ${r.nom.toLowerCase().replace(/^une? /, "ta ")}, s'installe au ${B[e.abri].nom.toLowerCase()} (${many("or", r.in.or)})`.replace("ta coq", "ton coq"), 3200);
+    toast(`${r.icone} ${an.nom}, ${r.nom.toLowerCase().replace(/^une? /, r.animal.sexe === "m" ? "ton " : "ta ")}, s'installe ${aLAbri(e.abri)} (${many("or", r.in.or)})`, 3200);
     return;
   }
   if(r.achat){                                        // l'étal de graines : on achète, sans le bonus du Marché

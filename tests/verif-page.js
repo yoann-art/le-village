@@ -3226,6 +3226,40 @@ export async function verifier(){
       state.res.or = orAvant; E.updateElevage(.05, true); renderHUD();
     }
   });
+  await etape("L'étable : après la Ferme ; une vache et un taureau achetés au comptoir s'installent dans le pré et s'y promènent", async () => {
+    /* Yo, 20 novembre 2026 : « La vache » ; l'étable à part, contre la Ferme (« A »). Un Marché, une Ferme et une étable d'essai (retirés ensuite) */
+    const E = await import("../js/elevage.js"), { B, ELEVAGE, ABRIS } = await import("../js/donnees.js"), V = await import("../js/monde/vaches3d.js");
+    const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
+    const ferme = {id: -5, type: "ferme", lvl: 1, x: 6, z: 0}, et = {id: -7, type: "etable", lvl: 1, x: 12, z: 0};
+    const orAvant = state.res.or;
+    state.buildings.push(marche);
+    try {
+      if(!B.etable || B.etable.apres !== "ferme" || !B.etable.sansPiece || ELEVAGE.vache.abri !== "etable" || !ABRIS.etable) throw new Error("l'étable ou la vache manquent");
+      openAtelier(marche); await wait(200);
+      const verrou = $(`#sheet [data-fab='e:vache:f']`);
+      if(!state.buildings.some(b => b.type === "etable") && verrou && !verrou.disabled) throw new Error("une vache s'achète sans étable");
+      $("#sheetWrap [data-close]").click(); await wait(250);
+      state.buildings.push(ferme, et);
+      state.res.or += 40; renderHUD(); openAtelier(marche); await wait(200);
+      const bf = $(`#sheet [data-fab='e:vache:f']`);
+      if(!bf || bf.disabled || !bf.closest(".brow").textContent.includes("à l'étable")) throw new Error("pas de vache à acheter au comptoir (ou « à l'étable » mal dit)");
+      bf.click(); await wait(100); $(`#sheet [data-fab='e:vache:m']`).click(); await wait(100);
+      const l = E.animauxDe(et);
+      if(l.length !== 2 || !l.some(a => a.sexe === "f") || !l.some(a => a.sexe === "m") || l.some(a => a.esp !== "vache")) throw new Error("la vache et le taureau ne s'installent pas à l'étable");
+      if(state.res.or !== orAvant) throw new Error(`la vache et le taureau ont coûté ${orAvant + 40 - state.res.or} or (40 voulus)`);
+      $("#sheetWrap [data-close]").click(); await wait(250);
+      E.updateElevage(.05, true);
+      if(E.betesVisibles() < 2) throw new Error("les vaches ne sont pas dans le pré");
+      for(let k = 0; k < 40; k++) E.updateElevage(.25, true);   // elles vivent : marcher, brouter, se coucher (rien ne casse)
+      if(!E.ficheAbri(et).includes(l[0].nom) || E.ficheAbri(et).includes("Nourrir")) throw new Error("la fiche de l'étable ne montre pas ses bêtes (ou propose déjà de les nourrir)");
+      const pv = V.poidsAnimal("vache"), pt = V.poidsAnimal("taureau");
+      return `une vache et un taureau, 20 or chacun, dans le pré ; ${E.betesVisibles()} bête(s) visible(s) ; vache ${pv.triangles} triangles, taureau ${pt.triangles}, ${pv.dessins} dessins chacun`;
+    } finally {
+      state.animaux = state.animaux.filter(x => x.abri !== et.id);
+      for(const b of [marche, ferme, et]){ const i = state.buildings.indexOf(b); if(i >= 0) state.buildings.splice(i, 1); }
+      state.res.or = orAvant; E.updateElevage(.05, true); renderHUD();
+    }
+  });
   await etape("Le sac qui s'agrandit : tisser la toile, fabriquer le sac de cuir à l'atelier de décoration", async () => {
     /* une Chaumière d'essai, avec son atelier de décoration (retirée ensuite) ; le sac revient ensuite à la besace */
     const chaumiere = {id: -3, type: "chaumiere", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "atelierDeco", x: 0, z: 0, rot: 0}], next: 2}};

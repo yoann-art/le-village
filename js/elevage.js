@@ -16,7 +16,13 @@ import { toon } from "./monde/formes.js";
 import { nuitIci } from "./monde/ciel.js";
 import { player } from "./monde/personnage.js";
 import { ENCLOS, NICHOIRS } from "./monde/poulailler.js";
-import { modeleAnimal, sorteDe, COU } from "./monde/poules3d.js";
+import * as POULES from "./monde/poules3d.js";
+import * as VACHES from "./monde/vaches3d.js";
+import { PRE } from "./monde/etable.js";
+/* chaque espèce : ses modèles, son enclos (le pré de l'étable : choix de Yo « A »), la marge au bord (une vache est longue) */
+const ESPECES = {poule: {mod: POULES, zone: ENCLOS, bord: .22}, vache: {mod: VACHES, zone: PRE, bord: .62}};
+const esp = a => ESPECES[a.esp] || ESPECES.poule;
+const sorteDe = (e, sexe, petit) => (ESPECES[e] || ESPECES.poule).mod.sorteDe(e, sexe, petit);
 
 if(!Array.isArray(state.animaux)) state.animaux = [];
 /* L'âge adulte (le petit grandit en temps réel jusque-là : envoi 3) */
@@ -31,7 +37,9 @@ export const abriPour = esp => state.buildings.find(b => b.type === ELEVAGE[esp]
 export const aUnAbri = esp => state.buildings.some(b => b.type === ELEVAGE[esp].abri);
 /* Les noms, au hasard parmi ceux qui ne sont pas déjà pris */
 const NOMS = {poule: {f: ["Rousse", "Cocotte", "Noisette", "Paprika", "Caramel", "Brioche", "Praline", "Cannelle", "Pâquerette", "Mirabelle", "Biscotte", "Muscade"],
-  m: ["Gaston", "Hector", "Fernand", "Barnabé", "Anatole", "Léon", "Firmin", "Achille"]}};
+  m: ["Gaston", "Hector", "Fernand", "Barnabé", "Anatole", "Léon", "Firmin", "Achille"]},
+  vache: {f: ["Marguerite", "Blanchette", "Clochette", "Roussette", "Violette", "Câlinette", "Pâquerette", "Mirabelle", "Framboise", "Bergamote"],
+    m: ["Hercule", "Ferdinand", "Bastien", "Gaspard", "Augustin", "Balthazar", "Célestin", "Norbert"]}};
 const NOMS_PETITS = ["Plume", "Pipou", "Duvet", "Brindille", "Pépite", "Miette", "Bouton", "Noisette", "Grelot", "Flocon", "Papillote", "Câline"];   // un poussin : un nom qui va aux deux
 function nomAuHasard(esp, sexe, petit){
   const pris = new Set(state.animaux.map(a => a.nom)), l = petit ? NOMS_PETITS : (NOMS[esp] && NOMS[esp][sexe]) || ["Petit"];
@@ -50,33 +58,34 @@ export function installer(esp, sexe){
 const groupe = new THREE.Group(); groupe.name = "élevage"; scene.add(groupe);
 const enclos = new Map();                       // b.id → {g}
 const betes = new Map();                        // a.id → {m (modeleAnimal), x, z, dir, act, t, T, vers, sorte}
-const { x0, x1, z0, z1 } = ENCLOS, BORD = .22;
-const auHasard = () => ({x: x0 + BORD + Math.random() * (x1 - x0 - 2 * BORD), z: z0 + BORD + Math.random() * (z1 - z0 - 2 * BORD)});
+const auHasard = a => { const {zone: {x0, x1, z0, z1}, bord} = esp(a); return {x: x0 + bord + Math.random() * (x1 - x0 - 2 * bord), z: z0 + bord + Math.random() * (z1 - z0 - 2 * bord)}; };
 function nouvelleBete(a, g){
-  const k = sorteDe(a.esp, a.sexe, estPetit(a)), m = modeleAnimal(k), p = auHasard();
+  const k = sorteDe(a.esp, a.sexe, estPetit(a)), m = esp(a).mod.modeleAnimal(k), p = auHasard(a);
   const v = {a, m, k, x: p.x, z: p.z, dir: Math.random() * Math.PI * 2, act: "repos", t: 0, T: 1 + Math.random() * 2, vers: null, pas: Math.random() * 6};
   m.g.position.set(v.x, 0, v.z); g.add(m.g);
   return v;
 }
 /* Ce que fait une bête ensuite : marcher (le plus souvent), picorer, gratter le sol, se reposer en tournant la tête */
-const dansEnclos = p => ({x: Math.max(x0 + BORD, Math.min(x1 - BORD, p.x)), z: Math.max(z0 + BORD, Math.min(z1 - BORD, p.z))});
+const dansEnclos = (p, a) => { const {zone: {x0, x1, z0, z1}, bord} = esp(a); return {x: Math.max(x0 + bord, Math.min(x1 - bord, p.x)), z: Math.max(z0 + bord, Math.min(z1 - bord, p.z))}; };
 function choisir(v, e){
+  if(v.a.esp === "vache") return choisirVache(v);
   const r = Math.random();
   v.t = 0;
   const mere = v.a.suit && betes.get(v.a.suit);                                         // le poussin suit sa mère partout, comme un vrai
   if(estPetit(v.a) && mere && r < .75){
-    v.act = "marche"; v.vers = dansEnclos({x: mere.x + (Math.random() - .5) * .35, z: mere.z + (Math.random() - .5) * .35}); v.T = 3; v.puisPicore = Math.random() < .5; return; }
+    v.act = "marche"; v.vers = dansEnclos({x: mere.x + (Math.random() - .5) * .35, z: mere.z + (Math.random() - .5) * .35}, v.a); v.T = 3; v.puisPicore = Math.random() < .5; return; }
   if(e && e.grain && Date.now() < e.grain.fin && r < .8){                              // du grain par terre : on y court, on picore
     const p = e.grain.pts[Math.floor(Math.random() * e.grain.pts.length)];
     v.act = "marche"; v.vers = {x: p.x, z: p.z}; v.T = 5; v.puisPicore = true; return; }
   if(v.puisPicore){ v.puisPicore = false; v.act = "picore"; v.T = 1.5 + Math.random() * 1.5; return; }
-  if(r < .42){ v.act = "marche"; v.vers = auHasard(); v.T = 6; }
+  if(r < .42){ v.act = "marche"; v.vers = auHasard(v.a); v.T = 6; }
   else if(r < .72){ v.act = "picore"; v.T = 1.6 + Math.random() * 2; }
   else if(r < .88){ v.act = "gratte"; v.T = 1.2 + Math.random(); }
   else { v.act = "repos"; v.T = 1.5 + Math.random() * 2.5; }
 }
 const lisse = x => x * x * (3 - 2 * x);
 function bouger(v, dt, e){
+  if(v.a.esp === "vache") return bougerVache(v, dt);
   const {corps, tete, pattes} = v.m, petit = v.k === "poussin", vit = petit ? .42 : .38;
   v.t += dt;
   if(v.a.couve){                                                                         // la couveuse, assise sur son nid, ne bouge plus
@@ -116,6 +125,58 @@ function bouger(v, dt, e){
   tete.rotation.x = tet; tete.rotation.y = tour;
   pattes[0].rotation.x = jambe + (gratte > 0 ? -gratte * .7 : 0);
   pattes[1].rotation.x = -jambe + (gratte < 0 ? gratte * .7 : 0);
+}
+
+/* ----- Les vaches dans le pré (Yo, 20 novembre 2026 : « La vache ») : comme des vraies, elles broutent le plus souvent, marchent
+   lentement, se couchent pour ruminer, chassent les mouches de la queue ; le veau suit sa mère ----- */
+function choisirVache(v){
+  const r = Math.random(), mere = v.a.suit && betes.get(v.a.suit);
+  v.t = 0;
+  if(estPetit(v.a) && mere && !mere.couchee && r < .7){
+    v.act = "marche"; v.vers = dansEnclos({x: mere.x + (Math.random() - .5) * .8, z: mere.z + (Math.random() - .5) * .8}, v.a); v.T = 6; return; }
+  if(r < .3){ v.act = "marche"; v.vers = auHasard(v.a); v.T = 10; }
+  else if(r < .72){ v.act = "broute"; v.T = 5 + Math.random() * 7; }
+  else if(r < .86){ v.act = "couchee"; v.T = 10 + Math.random() * 14; }
+  else { v.act = "repos"; v.T = 3 + Math.random() * 4; }
+}
+function bougerVache(v, dt){
+  const {corps, tete, queue, pattes} = v.m, petit = v.k === "veau", h = VACHES.HANCHE(v.k), vit = petit ? .5 : .32;
+  v.t += dt;
+  let pas = 0, baisse = 0, tour = 0, machoire = 0, bas = 0;
+  if(v.act === "marche"){
+    const dx = v.vers.x - v.x, dz = v.vers.z - v.z, d = Math.hypot(dx, dz);
+    if(d < .08 || v.t > v.T) choisirVache(v);
+    else {
+      const but = Math.atan2(dx, dz); let da = but - v.dir; da = Math.atan2(Math.sin(da), Math.cos(da));
+      v.dir += da * Math.min(1, dt * 2.5);
+      const s = Math.min(d, vit * dt * (Math.abs(da) < .8 ? 1 : .25));
+      v.x += Math.sin(v.dir) * s; v.z += Math.cos(v.dir) * s;
+      v.pas += dt * (petit ? 9 : 6);
+      pas = Math.sin(v.pas) * .38; baisse = .12;
+    }
+  } else if(v.act === "broute"){                                  // la tête dans l'herbe, elle arrache et mâche ; un pas de temps en temps
+    baisse = 1.05 * lisse(Math.min(1, v.t * 1.5)); machoire = Math.sin(v.t * 9) * .05; tour = Math.sin(v.t * .6) * .15;
+    if(v.t > v.T) choisirVache(v);
+  } else if(v.act === "couchee"){                                 // couchée, les pattes repliées : elle rumine
+    const k = lisse(Math.min(1, v.t / 1.2, Math.max(0, (v.T - v.t) / 1.2)));
+    bas = k; machoire = Math.sin(v.t * 5) * .04; tour = Math.sin(v.t * .4) * .5 * k;
+    if(v.t > v.T) choisirVache(v);
+  } else {
+    tour = Math.sin(v.t * .9) * .6 * lisse(Math.min(1, v.t));
+    if(v.t > v.T) choisirVache(v);
+  }
+  v.couchee = bas > .5;
+  if(!bas) for(const w of betes.values()) if(w !== v && w.parent === v.parent && w.a.esp === "vache"){   // chacune sa place : elles ne se marchent pas dessus
+    const dx = v.x - w.x, dz = v.z - w.z, d = Math.hypot(dx, dz), min = (petit || w.k === "veau" ? .75 : 1.05);
+    if(d < min && d > 1e-4){ const p = dansEnclos({x: v.x + dx / d * (min - d) * Math.min(1, dt * 3), z: v.z + dz / d * (min - d) * Math.min(1, dt * 3)}, v.a); v.x = p.x; v.z = p.z; }
+  }
+  v.m.g.position.set(v.x, 0, v.z); v.m.g.rotation.y = v.dir;
+  corps.position.y = h * (1 - .62 * bas) + (pas ? Math.abs(Math.cos(v.pas)) * .01 : 0);
+  corps.rotation.x = .04 * baisse;
+  tete.rotation.x = baisse + machoire; tete.rotation.y = tour;
+  queue.rotation.z = Math.sin(v.t * (v.act === "broute" ? 2.2 : 1.3)) * .28; queue.rotation.x = .1 + Math.max(0, Math.sin(v.t * 3.1)) * .15;   // la queue chasse les mouches
+  const vis = bas < .5;
+  pattes.forEach((p, i) => { p.visible = vis; p.rotation.x = (i === 0 || i === 3 ? pas : -pas); });
 }
 
 /* ----- Deuxième envoi (Yo, 20 novembre 2026 : « Oui je veux bien », la nourriture « C ») : nourrir, les œufs, le bonheur, la fiche -----
@@ -219,16 +280,16 @@ export function ficheAnimal(a){
   bilan(a);
   const j = jourDe(), b = state.buildings.find(v => v.id === a.abri), ins = Object.keys(INSECTES).some(k => INSECTES[k].rarete !== "legendaire" && owned(k) > 0);
   return `<div class="sh-head"><h2 class="display">${emojiAnimal(a)} ${a.nom}</h2><button class="btn ghost" data-elevage="abri" data-id="${a.abri}">Retour</button></div>
-    <p style="margin:4px 0">${nomEspece(a)} ${estPetit(a) ? "(coq ou poule ? on le saura en grandissant)" : a.sexe === "m" ? "♂" : "♀"} · génération ${a.gen} · ${age(a)}</p>
+    <p style="margin:4px 0">${nomEspece(a)} ${estPetit(a) ? `(${ELEVAGE[a.esp].male.toLowerCase()} ou ${ELEVAGE[a.esp].femelle.toLowerCase()} ? on le saura en grandissant)` : a.sexe === "m" ? "♂" : "♀"} · génération ${a.gen} · ${age(a)}</p>
     ${parentsHTML(a)}${a.couve ? `<p style="margin:4px 0">🪺 Elle couve ${a.couve.oeufs.length} œuf${a.couve.oeufs.length > 1 ? "s" : ""} : éclosion ${quand(a.couve.fin)}.</p>` : ""}
-    <p style="margin:4px 0;font-size:1.2em" aria-label="${Math.round(a.coeurs)} cœurs sur 5">${coeursHTML(a)}</p>
-    <p class="muted" style="margin:0">${a.nourri === j ? "Nourri" + (a.sexe === "f" ? "e" : "") + " aujourd'hui." : "Pas encore nourri" + (a.sexe === "f" ? "e" : "") + " aujourd'hui."}${a.sexe === "f" ? ` ${a.pondus || 0} œuf${(a.pondus || 0) > 1 ? "s" : ""} pondu${(a.pondus || 0) > 1 ? "s" : ""}.` : ""}</p>
+    ${a.esp === "vache" ? "" : `<p style="margin:4px 0;font-size:1.2em" aria-label="${Math.round(a.coeurs)} cœurs sur 5">${coeursHTML(a)}</p>
+    <p class="muted" style="margin:0">${a.nourri === j ? "Nourri" + (a.sexe === "f" ? "e" : "") + " aujourd'hui." : "Pas encore nourri" + (a.sexe === "f" ? "e" : "") + " aujourd'hui."}${a.sexe === "f" ? ` ${a.pondus || 0} œuf${(a.pondus || 0) > 1 ? "s" : ""} pondu${(a.pondus || 0) > 1 ? "s" : ""}.` : ""}</p>`}
     <div class="brow"><div class="bt"><label class="muted" for="nom-animal">Son nom</label> <input id="nom-animal" maxlength="18" value="${a.nom.replace(/"/g, "&quot;")}" style="font:inherit;width:9em"></div>
       <button class="btn" data-elevage="renommer" data-id="${a.id}">Renommer</button></div>
     <div class="brow"><div class="bt"><span class="bn">Caresser</span><p>Un demi-cœur, une fois par jour</p></div>
       <button class="btn primary" data-elevage="caresser" data-id="${a.id}" ${a.caresse === j ? "disabled" : ""}>${a.caresse === j ? "Déjà caressé" + (a.sexe === "f" ? "e" : "") : "Caresser"}</button></div>
-    <div class="brow"><div class="bt"><span class="bn">Offrir un insecte</span><p>Un cœur de plus, une fois par jour (les poules adorent)</p></div>
-      <button class="btn primary" data-elevage="insecte" data-id="${a.id}" ${a.gate === j || !ins ? "disabled" : ""}>${a.gate === j ? "Déjà offert" : ins ? "Offrir" : "Pas d'insecte"}</button></div>`;
+    ${a.esp === "vache" ? `<p class="muted" style="margin:4px 0">La nourrir et son lait arrivent au prochain envoi.</p>` : `<div class="brow"><div class="bt"><span class="bn">Offrir un insecte</span><p>Un cœur de plus, une fois par jour (les poules adorent)</p></div>
+      <button class="btn primary" data-elevage="insecte" data-id="${a.id}" ${a.gate === j || !ins ? "disabled" : ""}>${a.gate === j ? "Déjà offert" : ins ? "Offrir" : "Pas d'insecte"}</button></div>`}`;
 }
 /* La fiche de l'abri (construire.js : le bouton du bâtiment devant soi) */
 export function ficheAbri(b){
@@ -239,6 +300,8 @@ export function ficheAbri(b){
   const lignes = l.map(a => `<div class="brow"><div class="be" aria-hidden="true">${emojiAnimal(a)}</div>
     <div class="bt"><span class="bn">${a.nom}</span><p>${nomEspece(a)} ${a.sexe === "m" ? "♂" : "♀"} · ${coeursHTML(a)}${a.nourri === j ? " · nourri" + (a.sexe === "f" ? "e" : "") : ""}</p></div>
     <button class="btn" data-elevage="voir" data-id="${a.id}">Voir</button></div>`).join("");
+  if(b.type === "etable") return `<p style="margin:4px 0">${l.length} sur ${max} places.</p>` + (lignes.replace(/ · [❤️🤍]+/gu, "").replace(/ · nourrie?/g, "") ||
+    `<p class="muted">Pas encore de vaches. Achète des vaches et des taureaux au comptoir du Marché : ils viennent s'installer dans le pré.</p>`);
   return `<p style="margin:4px 0">${l.length} sur ${max} places.</p>` + (l.length ? `
     <div class="brow"><div class="be" aria-hidden="true">🌾</div><div class="bt"><span class="bn">Nourrir</span>
       <p>${faim ? `${faim} à nourrir · ` : "Toutes ont mangé aujourd'hui · "}tu as ${owned("grain")} grain, ${owned("baie")} groseille${owned("baie") > 1 ? "s" : ""}, ${owned("pomme")} pomme${owned("pomme") > 1 ? "s" : ""}</p></div>
