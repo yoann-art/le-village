@@ -19,12 +19,26 @@ export const B = {
   taverne:  {nom:"Taverne", emoji:"🍺", cost:{planche:30, bloc:25, or:20}, stars:3, size:5, door:.9, taille:"grande", all:10, desc:"+10 % sur toutes les récoltes, par niveau."},
   forge:    {nom:"Forge", emoji:"⚒️", cost:{bloc:30, cuivre:15, or:20}, stars:3, size:5, door:.9, taille:"moyenne", desc:"Le forgeron équipe le village. Beaucoup d'étoiles."},
   chateau:  {nom:"Château", emoji:"🏰", cost:{bloc:60, planche:40, cuivre:30, or:80}, stars:10, size:7, door:0, taille:"grande", desc:"Le cœur du village. Il couronne ta partie."},
+  /* L'élevage (Yo, 20 novembre 2026 : « Je veux pouvoir déjà les élever ») : la Ferme (bible : taille moyenne, « paille, bois,
+     bêtes »), d'après l'image de Yo ; le poulailler, un petit bâtiment sans pièce qu'on pose contre la Ferme (choix de Yo : « 1 »),
+     où vivent les poules qu'on achète au Marché (ELEVAGE). Chiffres proposés par Claude, à régler en jouant */
+  ferme:    {nom:"Ferme", emoji:"🌾", cost:{planche:20, pierre:10, fibre:15}, stars:2, size:5, door:0, taille:"moyenne", desc:"Le cœur de l'élevage. Ses abris se posent autour : le poulailler d'abord."},
+  poulailler:{nom:"Poulailler", emoji:"🐔", cost:{planche:12, fibre:8}, stars:1, size:4, door:-.5, taille:"petite", sansPiece:true, niveaux:1, apres:"ferme",
+    desc:"Un abri pour tes poules, à poser contre la Ferme. On y installe les poules et les coqs achetés au Marché."},
   /* La mine (étape 1.5, demande de Yo : on y entre) : posée une fois sur l'île, ni construite, ni déplacée, ni améliorée */
   mine:     {nom:"Mine", emoji:"⛰️", cost:{}, stars:0, size:3, door:0, taille:"mine", fixe:true, desc:"L'entrée de la mine. Dedans, des rochers de pierre et de cuivre, qui reviennent chaque jour."},
   /* L'orée de la Forêt profonde (étape 1.7), au bout du pont du nord de l'île : on y entre à pied (voir monde/foret.js) */
   foret:    {nom:"Forêt profonde", emoji:"🌲", cost:{}, stars:0, size:3, door:0, taille:"foret", fixe:true, desc:"L'orée de la Forêt profonde, la première zone sauvage. Dedans, de grands arbres qui repoussent, des clairières, un ruisseau ; le gibier arrive bientôt."}
 };
-export const ORDER = ["scierie","chaumiere","carriere","marche","taverne","forge","chateau"];
+export const ORDER = ["scierie","chaumiere","carriere","marche","ferme","poulailler","taverne","forge","chateau"];
+/* Les animaux qu'on élève (le Grand Carnet, « L'élevage » ; Yo, 20 novembre 2026) : l'espèce, le nom du mâle, de la femelle et
+   du petit, son abri, son prix au comptoir du Marché (le Grand Carnet en PDF : 10 or la poule), combien un abri en loge ; un
+   animal ne meurt jamais et ne s'enfuit pas (refuge). Chiffres proposés par Claude, à régler en jouant */
+export const ELEVAGE = {
+  poule: {male: "Coq", femelle: "Poule", petit: "Poussin", emoji: "🐔", emojiMale: "🐓", emojiPetit: "🐣", abri: "poulailler", prix: 10, rarete: "commun",
+    note: "Elle pond des œufs ; un coq et une poule heureux ont des poussins"}
+};
+export const ABRIS = {poulailler: {places: 6}};
 /* L'entrée de la mine (étape 1.11, morceau 1 ; choix de Yo : on déblaie d'abord l'éboulement à la pioche, puis on pose
    les étais) : une partie neuve la trouve éboulée ; chaque coup rend des pierres. Chiffres choisis par Claude */
 export const ENTREE_MINE = {coups: 5, pierres: 1, cost: {planche: 15, pierre: 10, torche: 4}};

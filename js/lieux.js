@@ -214,6 +214,7 @@ export function checkDoors(pushing){
   /* dehors : on entre en marchant vers la porte, juste devant elle (quel que soit le côté où elle regarde) */
   for(const b of state.buildings){
     if(b.type === "mine" && !mineOuverte()) continue;          // l'entrée de la mine pas encore construite (étape 1.11)
+    if(B[b.type] && B[b.type].sansPiece) continue;             // le poulailler : pas de pièce, on n'y entre pas
     const door = doorOf(b), n = door.n;
     if(d.x !== -n.x || d.z !== -n.z) continue;
     const cote = n.x === 0 ? Math.abs(p.x - door.x) : Math.abs(p.z - door.z), devant = (p.x - door.x) * n.x + (p.z - door.z) * n.z;

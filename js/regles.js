@@ -184,7 +184,7 @@ export function addOwned(k, n){
 export const hasAll = need => Object.entries(need).every(([k, v]) => owned(k) >= v);
 /* File d'attente d'un plan de travail : 3 places au niveau 1, une de plus par niveau */
 export const queueSlots = lvl => 2 + lvl;
-export const maxLvl = t => B[t].fixe ? 1 : 3;
+export const maxLvl = t => B[t].fixe ? 1 : B[t].niveaux || 3;   // le poulailler : un seul niveau
 /* La mine est-elle ouverte ? Une partie neuve la trouve éboulée (étape 1.11 : entreeMine.js) */
 export const mineOuverte = () => !state.entreeMine;          // 3 niveaux pour tous, le Château aussi (demande de Yo, v1.10.2)
 /* La page « 💎 Pierres » du carnet (étape 1.11, morceau 4) : chaque pierre trouvée s'y inscrit (state.carnet.pierres) */

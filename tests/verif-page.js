@@ -3154,6 +3154,41 @@ export async function verifier(){
       state.buildings.splice(state.buildings.indexOf(marche), 1); renderHUD();
     }
   });
+  await etape("L'élevage : la Ferme, puis le poulailler ; une poule achetée au comptoir s'installe au poulailler et s'y promène", async () => {
+    /* Yo, 20 novembre 2026 : « Je veux pouvoir déjà les élever ». Un Marché, une Ferme et un poulailler d'essai (retirés ensuite) */
+    const E = await import("../js/elevage.js"), { B } = await import("../js/donnees.js");
+    const marche = {id: -1, type: "marche", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "comptoir", x: 0, z: 0, rot: 0}], next: 2}};
+    const ferme = {id: -5, type: "ferme", lvl: 1, x: 6, z: 0}, poul = {id: -6, type: "poulailler", lvl: 1, x: 12, z: 0};
+    const avant = state.animaux.length, orAvant = state.res.or;
+    state.buildings.push(marche);
+    try {
+      if(!B.ferme || !B.poulailler || B.poulailler.apres !== "ferme" || !B.poulailler.sansPiece) throw new Error("la Ferme ou le poulailler manquent aux bâtiments");
+      $("#btn-build").click(); await wait(200);
+      const pick = $(`#sheet [data-pick="poulailler"]`);
+      if(!state.buildings.some(b => b.type === "ferme") && (!pick || !pick.disabled)) throw new Error("le poulailler se choisit avant la Ferme");
+      $("#sheetWrap [data-close]").click(); await wait(250);
+      openAtelier(marche); await wait(200);
+      if(!state.buildings.some(b => b.type === "poulailler") && $(`#sheet [data-fab='e:poule:f']`)) throw new Error("une poule s'achète sans poulailler");
+      $("#sheetWrap [data-close]").click(); await wait(250);
+      state.buildings.push(ferme, poul);
+      state.res.or += 20; renderHUD(); openAtelier(marche); await wait(200);
+      const btn = $(`#sheet [data-fab='e:poule:f']`);
+      if(!btn || btn.disabled) throw new Error("pas de poule à acheter au comptoir");
+      btn.click(); await wait(100);
+      const a = state.animaux[state.animaux.length - 1];
+      if(state.animaux.length !== avant + 1 || a.abri !== poul.id || a.sexe !== "f" || a.esp !== "poule") throw new Error("la poule achetée ne s'installe pas au poulailler");
+      if(state.res.or !== orAvant + 20 - 10) throw new Error(`la poule a coûté ${orAvant + 20 - state.res.or} or (10 voulus)`);
+      $("#sheetWrap [data-close]").click(); await wait(250);
+      E.updateElevage(.05, true);
+      const vue = E.betesVisibles();
+      if(!E.ficheAbri(poul).includes(a.nom)) throw new Error("la poule n'est pas dans la fiche du poulailler");
+      return `${a.nom}, poule achetée 10 or, au poulailler ; ${vue} bête(s) visible(s) dehors`;
+    } finally {
+      state.animaux = state.animaux.filter(x => x.abri !== poul.id);
+      for(const b of [marche, ferme, poul]){ const i = state.buildings.indexOf(b); if(i >= 0) state.buildings.splice(i, 1); }
+      state.res.or = orAvant; E.updateElevage(.05, true); renderHUD();
+    }
+  });
   await etape("Le sac qui s'agrandit : tisser la toile, fabriquer le sac de cuir à l'atelier de décoration", async () => {
     /* une Chaumière d'essai, avec son atelier de décoration (retirée ensuite) ; le sac revient ensuite à la besace */
     const chaumiere = {id: -3, type: "chaumiere", lvl: 1, x: 0, z: 0, deco: {items: [{id: 1, type: "atelierDeco", x: 0, z: 0, rot: 0}], next: 2}};

@@ -5,6 +5,7 @@
    la porte, qui doit rester libre. Tourner les bâtiments (v1.9.3) : retiré à la demande de Yo le 9 octobre 2026 (la
    vue reste la même, ça ne sert à rien) ; un bâtiment tourné pendant l'essai reprend sa porte en bas (voir plus bas). */
 import { $ } from "./outils.js";
+import { ficheAbri } from "./elevage.js";
 import { RES, B, ORDER, ATELIERS, FABRIQUE_A, COFFRE, traversable, RECOLTE, objet } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { sizeOf, doorTile, roomSide, maxLvl, upCost, canAfford, pay, totalStars, costHTML, missingHTML, addOwned, slotsAdd, slotsPlace, agrandirPiece } from "./regles.js";
@@ -195,6 +196,7 @@ $("#btn-place").addEventListener("click", () => {
   }
   const type = placing, d = B[type];
   if(dejaBati(type)){ toast(`${d.emoji} ${d.nom} : déjà sur ton île, améliore-${MASC.has(type) ? "le" : "la"} depuis sa fiche`); stopPlacing(); return; }
+  if(d.apres && !dejaBati(d.apres)){ toast(`${d.emoji} ${d.nom} : bâtis d'abord ${B[d.apres].nom === "Ferme" ? "la" : "le"} ${B[d.apres].nom}`); stopPlacing(); return; }
   if(!canAfford(d.cost)){ toast("Ressources insuffisantes"); stopPlacing(); return; }
   pay(d.cost);
   const b = {id:state.nextId++, type, lvl:1, x:ax, z:az};
@@ -234,7 +236,7 @@ if(state.aRendre && state.aRendre.length){
 /* Un seul bâtiment de chaque sorte (demande de Yo, v1.10.2) : ensuite, on l'améliore depuis sa fiche, jusqu'au
    niveau 3. Avant, on pouvait en bâtir plusieurs, et leurs bonus s'additionnaient. */
 const dejaBati = t => state.buildings.some(v => v.type === t);
-const MASC = new Set(["marche", "chateau"]);      // pour accorder : « déjà bâti », « déjà bâtie »
+const MASC = new Set(["marche", "chateau", "poulailler"]);      // pour accorder : « déjà bâti », « déjà bâtie »
 /* Les doubles d'une partie déjà commencée sont démontés une fois (choix de Yo, v1.10.2). On garde le plus haut niveau
    (à égalité, celui qui a le plus de meubles, puis le plus ancien). Tout ce que les autres ont coûté revient dans le
    sac et les coffres : la construction et les améliorations, le plan de travail, les meubles, ce qu'ils fabriquaient
@@ -316,10 +318,10 @@ $("#btn-build").addEventListener("click", () => {
   openSheet(`<div class="sh-head"><h2 class="display">Que veux-tu bâtir ?</h2><button class="btn ghost" data-close>Fermer</button></div>
     <p class="muted" style="margin:0 0 6px">Tu choisis : le bâtiment apparaît devant toi, fais-le glisser du doigt. Un seul de chaque sorte : ensuite, améliore-le depuis sa fiche (niveaux 2 et 3). Pour déplacer un bâtiment déjà posé, garde le doigt appuyé dessus.</p>` +
     ORDER.map((t, k) => (k === 1 ? ligneEntree() : "") + (() => {
-      const b = B[t], built = dejaBati(t), ok = !built && canAfford(b.cost);
+      const b = B[t], built = dejaBati(t), avant = b.apres && !dejaBati(b.apres), ok = !built && !avant && canAfford(b.cost);   // le poulailler : après la Ferme
       return `<div class="brow"><div class="be" aria-hidden="true">${b.emoji}</div>
         <div class="bt"><span class="bn">${b.nom}</span><span class="st">★ ${b.stars}</span><p>${b.desc}</p><div>${costHTML(b.cost)}</div>
-          ${built || ok ? "" : `<p class="manque">${missingHTML(b.cost)}</p>`}</div>
+          ${built || ok ? "" : avant ? `<p class="manque">Bâtis d'abord la ${B[b.apres].nom}</p>` : `<p class="manque">${missingHTML(b.cost)}</p>`}</div>
         <button class="btn primary" data-pick="${t}" ${ok ? "" : "disabled"}>${built ? `Déjà bâti${MASC.has(t) ? "" : "e"}` : "Choisir"}</button></div>`;
     })()).join(""));
 });
@@ -334,6 +336,11 @@ let detailId = null;
 function openDetail(b){
   detailId = b.id;
   const d = B[b.type], max = maxLvl(b.type);
+  if(d.sansPiece){                                     // le poulailler : ses poules (elevage.js)
+    openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
+      <p class="muted" style="margin:4px 0">${d.stars} ★ pour ton village.</p>${ficheAbri(b)}`);
+    return;
+  }
   if(d.fixe){                                          // la mine : rien à améliorer
     openSheet(`<div class="sh-head"><h2 class="display">${d.emoji} ${d.nom}</h2><button class="btn ghost" data-close>Fermer</button></div>
       <p class="muted" style="margin:4px 0">${d.desc} Entre en marchant dans l'ouverture.</p>`);

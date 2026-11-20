@@ -19,6 +19,8 @@ import { taverneNiveau1, taverneNiveau2, FACADE as FACADE_TAVERNE } from "./tave
 import { chaumiereNiveau1, chaumiereNiveau2, FACADE as FACADE_CHAUMIERE } from "./chaumiere.js";
 import { marcheNiveau1, marcheNiveau2, FACADE as FACADE_MARCHE, FACADE2 as FACADE_MARCHE2 } from "./marche.js";
 import { chateauNiveau1, chateauNiveau2, FACADE as FACADE_CHATEAU } from "./chateau.js";
+import { fermeNiveau1, FACADE as FACADE_FERME } from "./ferme.js";
+import { poulaillerModele, ENCLOS } from "./poulailler.js";
 const FACADE_SCIERIE = FACADE_MAISON + DECALE;            // la façade, dans le carré de 5 × 5
 
 const MUR = 2 * P, PORTE = 1.5 * P;
@@ -38,7 +40,8 @@ lanterne(null, 0, 0, LANTERNE);
    Yo (NOUVEAUX : la Scierie au niveau 1, scierie.js), leur ancien modèle est agrandi d'autant (echelle) */
 const ANCIEN = {chaumiere: 3, scierie: 3, carriere: 3, forge: 3, marche: 4, taverne: 4, chateau: 4};
 const ANCIENNE_PORTE = {chaumiere: 0, scierie: -.45, carriere: -.45, forge: -.4, marche: 0, taverne: 0, chateau: 0};
-const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE], 2: [carriereNiveau2, FACADE_CARRIERE]}, forge: {1: [forgeNiveau1, FACADE_FORGE], 2: [forgeNiveau2, FACADE_FORGE]}, taverne: {1: [taverneNiveau1, FACADE_TAVERNE], 2: [taverneNiveau2, FACADE_TAVERNE]}, chaumiere: {1: [chaumiereNiveau1, FACADE_CHAUMIERE], 2: [chaumiereNiveau2, FACADE_CHAUMIERE]}, marche: {1: [marcheNiveau1, FACADE_MARCHE], 2: [marcheNiveau2, FACADE_MARCHE2]}, chateau: {1: [chateauNiveau1, FACADE_CHATEAU], 2: [chateauNiveau2, FACADE_CHATEAU]}};
+const NOUVEAUX = {scierie: {1: [scierieNiveau1, FACADE_SCIERIE], 2: [scierieNiveau2, FACADE_SCIERIE], 3: [scierieNiveau3, FACADE_SCIERIE + .05]}, carriere: {1: [carriereNiveau1, FACADE_CARRIERE], 2: [carriereNiveau2, FACADE_CARRIERE]}, forge: {1: [forgeNiveau1, FACADE_FORGE], 2: [forgeNiveau2, FACADE_FORGE]}, taverne: {1: [taverneNiveau1, FACADE_TAVERNE], 2: [taverneNiveau2, FACADE_TAVERNE]}, chaumiere: {1: [chaumiereNiveau1, FACADE_CHAUMIERE], 2: [chaumiereNiveau2, FACADE_CHAUMIERE]}, marche: {1: [marcheNiveau1, FACADE_MARCHE], 2: [marcheNiveau2, FACADE_MARCHE2]}, chateau: {1: [chateauNiveau1, FACADE_CHATEAU], 2: [chateauNiveau2, FACADE_CHATEAU]},
+  ferme: {1: [fermeNiveau1, FACADE_FERME], 2: [fermeNiveau1, FACADE_FERME], 3: [fermeNiveau1, FACADE_FERME]}, poulailler: {1: [poulaillerModele, ENCLOS.z1]}};   // la Ferme : le niveau 1 en attendant les images des niveaux 2 et 3
 const nouveau = (type, lvl) => NOUVEAUX[type] && NOUVEAUX[type][Math.min(maxLvl(type), Math.max(1, lvl || 1))];   // les niveaux sans image gardent l'ancien modèle agrandi
 const echelle = (type, lvl) => nouveau(type, lvl) || !ANCIEN[type] ? 1 : sizeOf(type) / ANCIEN[type];
 const frontOf = (type, lvl) => nouveau(type, lvl) ? nouveau(type, lvl)[1] : ANCIEN[type] ? (ANCIEN[type] / 2 - .2) * echelle(type, lvl) : sizeOf(type) / 2 - .2;

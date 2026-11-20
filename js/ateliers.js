@@ -12,7 +12,7 @@
    Étape 1.11, morceau 4 : à la table de taille, « Ouvrir une géode » (hasard) : le cristal est tiré au sort quand la
    géode est prête (tirerCristal), et s'inscrit au carnet. */
 import { $ } from "./outils.js";
-import { B, ATELIERS, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, ETAL_GRAINES, etalDuJour, graineDeFleur, quandFleur, objet, icone, tirerCristal, aUnManche, ESSENCES_MANCHE } from "./donnees.js";
+import { B, ATELIERS, ELEVAGE, POISSONS, INSECTES, OISEAUX, FLEURS, SACS, PLANTES_MARAIS, ETAL_GRAINES, etalDuJour, graineDeFleur, quandFleur, objet, icone, tirerCristal, aUnManche, ESSENCES_MANCHE } from "./donnees.js";
 import { state, save } from "./sauvegarde.js";
 import { owned, addOwned, hasAll, queueSlots, placeFor, gain, payer, noterPierre, placesSac } from "./regles.js";
 import { footOf, hasPlan } from "./monde/meubles.js";
@@ -21,6 +21,7 @@ import { preparerOutil } from "./monde/mains.js";
 import { openSheet, toast, wrap, renderHUD } from "./interface.js";
 import { currentPlace } from "./lieux.js";
 import { barreAuto, enCaseAuto } from "./barre.js";
+import { installer, abriPour, aUnAbri } from "./elevage.js";
 
 /* ----- Noms et images de ce qu'on fabrique ou utilise ----- */
 const info = k => { const o = objet(k); return {nom: o.nom, pluriel: o.pluriel || o.nom, emoji: o.emoji}; };
@@ -66,6 +67,14 @@ function recettesDe(b){
     list.push({key: "a:" + k, cat: "L'étal de graines (aujourd'hui)", achat: true, nom: `Graine de ${FLEURS[f].nom.toLowerCase()}`, icone: icone(k),
       quand: `${FLEURS[f].une ? "elle" : "il"} fleurit ${quandFleur(FLEURS[f])}`, out: k, n: 1, in: {or: prix}, lvl: 1});
   }
+  /* les animaux de l'élevage (Yo, 20 novembre 2026) : une femelle ou un mâle, qui va s'installer dans son abri */
+  for(const [esp, e] of Object.entries(ELEVAGE)) for(const sexe of ["f", "m"]){
+    const nom = sexe === "m" ? e.male : e.femelle, une = sexe === "f";
+    if(!aUnAbri(esp)){ list.push({key: `e:${esp}:${sexe}`, cat: "Les animaux", emoji: sexe === "m" ? e.emojiMale : e.emoji, nom: `${une ? "Une" : "Un"} ${nom.toLowerCase()}`,
+      lock: `Bâtis d'abord la Ferme, puis un ${B[e.abri].nom.toLowerCase()} contre elle`, in: {or: e.prix}, lvl: 1}); continue; }
+    list.push({key: `e:${esp}:${sexe}`, cat: "Les animaux", achat: true, animal: {esp, sexe}, nom: `${une ? "Une" : "Un"} ${nom.toLowerCase()}`, icone: sexe === "m" ? e.emojiMale : e.emoji,
+      quand: `${une ? "elle" : "il"} vit au ${B[e.abri].nom.toLowerCase()}`, in: {or: e.prix}, lvl: 1});
+  }
   const cat = "Prises et plats", aVendre = VENDABLES().filter(k => owned(k) > 0), tous = {};
   for(const k of aVendre) if(!(POISSONS[k] && POISSONS[k].rarete === "legendaire")) tous[k] = owned(k);
   const nb = Object.values(tous).reduce((n, v) => n + v, 0);
@@ -89,6 +98,14 @@ function recettesDe(b){
 /* Vendre au comptoir : tout de suite (demande de Yo) ; l'or va dans la bourse, avec le bonus du Marché */
 function vendre(a, b, r){
   if(r.lock || b.lvl < r.lvl || !hasAll(r.in)) return;
+  if(r.animal){                                       // un animal : il s'installe dans son abri (elevage.js)
+    const e = ELEVAGE[r.animal.esp];
+    if(!abriPour(r.animal.esp)){ toast(`${e.emoji} Plus de place au ${B[e.abri].nom.toLowerCase()}`, 2600); return; }
+    payer(r.in); const an = installer(r.animal.esp, r.animal.sexe);
+    save(); renderHUD();
+    toast(`${r.icone} ${an.nom}, ${r.nom.toLowerCase().replace(/^une? /, "ta ")}, s'installe au ${B[e.abri].nom.toLowerCase()} (${many("or", r.in.or)})`.replace("ta coq", "ton coq"), 3200);
+    return;
+  }
   if(r.achat){                                        // l'étal de graines : on achète, sans le bonus du Marché
     if(placeFor(r.out) < 1){ toast("🎒 Fais de la place dans ton sac ou un coffre pour cette graine", 2600); return; }
     payer(r.in); addOwned(r.out, 1);
@@ -241,7 +258,7 @@ function recetteHTML(b, a, r, full){
   const why = locked ? `Niveau ${r.lvl}` : plein ? "File pleine" : r.achat ? "Acheter" : a.vente ? "Vendre" : "Fabriquer";
   return `<div class="brow"><div class="be" aria-hidden="true">${emojiOf(a, r)}</div>
     <div class="bt"><span class="bn">${nameOf(a, r)}</span>
-      ${r.achat ? `<p>${many("or", r.in.or)} · ${r.quand} · tu en as : ${owned(r.out)}</p>` : a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : objet(r.out).sac ? `🎒 ${placesSac()} → ${SACS[objet(r.out).sac].places} emplacements` : `tu en as : ${owned(r.out)}`}</p>`}
+      ${r.achat ? `<p>${many("or", r.in.or)} · ${r.quand} · tu en as : ${r.animal ? state.animaux.filter(x => x.esp === r.animal.esp && x.sexe === r.animal.sexe).length : owned(r.out)}</p>` : a.vente ? "" : `<p>⏱ ${duree(r.t)} · ${r.hasard ? "un cristal surprise" : objet(r.out).sac ? `🎒 ${placesSac()} → ${SACS[objet(r.out).sac].places} emplacements` : `tu en as : ${owned(r.out)}`}</p>`}
       <div>${r.tout ? "" : Object.entries(prix).map(([k, v]) => chip(k, v)).join("")}</div>${a.vente || !aUnManche(r.out) ? "" : mancheHTML(r.out)}</div>
     <button class="btn primary" data-fab="${r.key}" ${ok ? "" : "disabled"}>${r.tout ? "Tout vendre" : why}</button></div>`;
 }

@@ -42,7 +42,8 @@ const AMBIANCE = {
   marche:   {floor:[0xD9825B, 0xCC7550], wall:0xF4E3C1, beam:0x8B5A3C, band:0xC8553D, light:0xFFF4E0, power:.75}, // étals colorés, animé
   taverne:  {floor:[0x8A5A3B, 0x7E5234], wall:0xE8C48A, beam:0x5A3A22, light:0xFFB870, power:.75},            // chaude, feu de bois
   forge:    {floor:[0x5E5A57, 0x55514E], wall:0x6F6A66, beam:0x3E2E24, light:0xFF9A5A, power:.8, ground:0x5A2A1A}, // braises rougeoyantes, fumée
-  chateau:  {floor:[0xB8B4AC, 0xAAA69E], wall:0xA7A9AD, beam:0x8E9195, banner:0xA9322A, light:0xFFF4E0, power:.6} // solennel, bannières, pierre
+  chateau:  {floor:[0xB8B4AC, 0xAAA69E], wall:0xA7A9AD, beam:0x8E9195, banner:0xA9322A, light:0xFFF4E0, power:.6}, // solennel, bannières, pierre
+  ferme:    {floor:[0xE6C26A, 0xDDB55C], wall:0xE0AE6A, beam:0x9B6433, light:0xFFEFC8, power:.7}              // paille, bois, bêtes (bible)
 };
 
 const MUR = 2 * P, EP = .2, D_FORET = 36;                    // hauteur et épaisseur des murs
